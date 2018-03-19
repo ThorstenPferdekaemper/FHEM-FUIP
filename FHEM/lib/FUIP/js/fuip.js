@@ -479,7 +479,7 @@ function valueHelp(fieldName,type) {
 			function(value) {
 				$('#'+fieldName).val(value);
 				$('#'+fieldName).trigger("input");
-			});
+			},false);
 		return;
 	};	
 	// all others
@@ -587,7 +587,7 @@ function valueHelp(fieldName,type) {
 };	
 
 
-function valueHelpForDevice(fieldTitle, callbackFunction, multiSelect = false) {
+function valueHelpForDevice(fieldTitle, callbackFunction, multiSelect) {
 	var name = $("html").attr("data-name");
 	createValueHelpDialog(function(){
 		var resultArray = [];
