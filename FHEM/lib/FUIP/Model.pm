@@ -179,9 +179,9 @@ sub getDevice($$$) {
 	# which fields are missing?
 	my %fieldHash;
 	@fieldHash{@$fields} = undef;
-	delete(@fieldHash{keys $device->{Attributes}});
-	delete(@fieldHash{keys $device->{Readings}});
-	delete(@fieldHash{keys $device->{Internals}});
+	delete(@fieldHash{keys %{$device->{Attributes}}});
+	delete(@fieldHash{keys %{$device->{Readings}}});
+	delete(@fieldHash{keys %{$device->{Internals}}});
 	delete(@fieldHash{@{$device->{undefs}}});    # non-existing to avoid asking again
 	# anything left?
 	if(%fieldHash or not @$fields) {
@@ -208,9 +208,9 @@ sub getDevice($$$) {
 		};
 		# check for missing ones
 		@fieldHash{@$fields} = undef;
-		delete(@fieldHash{keys $device->{Attributes}});
-		delete(@fieldHash{keys $device->{Readings}});
-		delete(@fieldHash{keys $device->{Internals}});
+		delete(@fieldHash{keys %{$device->{Attributes}}});
+		delete(@fieldHash{keys %{$device->{Readings}}});
+		delete(@fieldHash{keys %{$device->{Internals}}});
 		my @missing = keys %fieldHash;
 		push @{$device->{undefs}}, @missing;
 	};
