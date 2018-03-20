@@ -123,7 +123,7 @@ sub getReadingsOfDevice($$) {
 		};	
 	}else{
 		if(defined($main::defs{$device})) {
-			@readings = keys($main::defs{$device}{READINGS});
+			@readings = keys(%{$main::defs{$device}{READINGS}});
 		};
 	};
 	@readings = sort(@readings);
