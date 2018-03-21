@@ -3,3 +3,5 @@ DIR FHEM/lib/FUIP
 DIR FHEM/lib/FUIP/css
 DIR FHEM/lib/FUIP/js
 DIR FHEM/lib/FUIP/View
+DIR FHEM/lib/FUIP/jquery-ui
+DIR FHEM/lib/FUIP/jquery-ui/images

@@ -31,7 +31,9 @@ my @filelist2 = (
   "FHEM/lib/FUIP/.*.pm",
   "FHEM/lib/FUIP/css/.*.css",
   "FHEM/lib/FUIP/js/.*.js",
-  "FHEM/lib/FUIP/View/.*.pm"
+  "FHEM/lib/FUIP/View/.*.pm",
+  "FHEM/lib/FUIP/jquery-ui/.*",
+  "FHEM/lib/FUIP/jquery-ui/images/.*"
 );
 
 

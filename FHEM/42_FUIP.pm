@@ -5,7 +5,7 @@
 # e-mail
 #
 ##############################################
-# $Id: 42_FUIP.pm 00005 2018-03-20 22:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00006 2018-03-21 10:00:00Z Thorsten Pferdekaemper $
 
 # VIEW
 # Parameters
@@ -290,7 +290,7 @@ sub renderPage($$$) {
 				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/nesges.css\">
 				<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
 		        <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery-ui.min.js\"></script>".
-				($locked ? "" : "<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/jquery-ui/jquery-ui.css\">
+				($locked ? "" : "<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.css\">
 								<!-- tablesorter -->
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.js\"></script>
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.widgets.js\"></script>").
