@@ -191,7 +191,7 @@ sub getDevice($$$) {
 		if($url) {
 			$jsonResult = _sendRemoteCommand($url,$cmd);
 		}else{
-			$jsonResult = main::fhem($cmd);
+			$jsonResult = main::fhem($cmd,1);
 		};
 		my $newDev = parse_json($jsonResult);
 		for my $entry (@{$newDev->{Results}}) {
