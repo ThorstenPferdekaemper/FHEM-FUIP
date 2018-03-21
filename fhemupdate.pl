@@ -59,6 +59,9 @@ foreach my $fspec (@filelist2) {
                 $mt[5]+1900, $mt[4]+1, $mt[3], $mt[2], $mt[1], $mt[0];
 				
 	open(FH, "$dir/$file");
+	if($file =~ m/.*png$/) {
+		binmode FH;
+	};	
     my $data = join("", <FH>);
     close(FH);			
 					
