@@ -1,4 +1,3 @@
-# class FUIP::View
 package FUIP::View;
 
 use strict;
@@ -32,6 +31,8 @@ use Scalar::Util qw(blessed weaken);
 		return ($self->{posX}, $self->{posY});
 	}
 
+	# declaration to avoid warnings because of recursion
+	sub serializeRef($$);
 	
 	sub serializeRef($$) {
 		my ($ref,$indent) = @_;
@@ -94,7 +95,10 @@ use Scalar::Util qw(blessed weaken);
 		$result .= "\n".$blanks."}";
 		return $result;
 	}
+
 	
+	# declaration to avoid warnings because of recursion
+	sub reconstructRec($$);
 	
 	sub reconstructRec($$) {
 		my ($ref,$fuip) = @_;

@@ -19,7 +19,7 @@ sub getStructure($) {
 		if($field->{id} eq "text") {
 			$field->{default} = { type => "const", value => "Home" };
 		}elsif($field->{id} eq "link"){
-			$field->{default} = { type => "const", value => "" };
+			$field->{default} = { type => "const", value => "home" };
 		}elsif($field->{id} eq "icon"){
 			$field->{default} = { type => "const", value => "oa-control_building_s_all" };
 		};	

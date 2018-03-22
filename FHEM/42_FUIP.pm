@@ -5,7 +5,7 @@
 # e-mail
 #
 ##############################################
-# $Id: 42_FUIP.pm 00007 2018-03-21 14:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00008 2018-03-22 22:00:00Z Thorsten Pferdekaemper $
 
 # VIEW
 # Parameters
@@ -137,7 +137,7 @@ sub addExtension($$$$) {
     my $url = "/".$2;
     my $modlink = $1;
 
-    main::Log3 $name, 3, "Registering FUIP $name for URL $url   and assigned link $modlink ...";
+    main::Log3 $name, 3, "Registering FUIP $name for URL $url";
     $main::data{FWEXT}{$url}{deviceName}= $name;
     $main::data{FWEXT}{$url}{FUNC} = $func;
     $main::data{FWEXT}{$url}{LINK} = $modlink;
@@ -178,8 +178,6 @@ sub Define($$$) {
   $hash->{fhem}{infix}= $infix;
   $hash->{fhem}{directory}= $directory;
   $hash->{fhem}{friendlyname}= $friendlyname;
-
-  main::Log3 $name, 3, "$name: new ext defined infix:$infix: dir:$directory:";
 
   addExtension($name, "FUIP::CGI", $infix, $friendlyname);
   
@@ -247,7 +245,7 @@ sub createRoomsMenu($$) {
 sub addStandardCells($$$) {
 	my ($hash,$cells,$pageid) = @_;
 	my $view = FUIP::View::HomeButton->createDefaultInstance($hash);
-	$view->{active} = ($pageid eq "" ? 1 : 0);
+	$view->{active} = ($pageid eq "home" ? 1 : 0);
 	$view->position(0,0);
 	my $cell = FUIP::Cell->createDefaultInstance($hash);
 	$cell->position(0,0);
@@ -259,7 +257,7 @@ sub addStandardCells($$$) {
 	$cell->position(5,0);
 	$cell->{views} = [ $view ];
 	push(@$cells,$cell);
-	my $title = ($pageid eq "" ? "Home, sweet home" : ( split '/', $pageid )[ -1 ]);
+	my $title = ($pageid eq "home" ? "Home, sweet home" : ( split '/', $pageid )[ -1 ]);
 	$view = FUIP::View::Title->createDefaultInstance($hash);
 	$view->{text} = $title;
 	$view->position(0,0);
@@ -356,7 +354,7 @@ sub defaultPageIndex($) {
 	my ($hash) = @_;
 	my @cells;
 	# home button and rooms menu
-	addStandardCells($hash, \@cells, "");
+	addStandardCells($hash, \@cells, "home");
 	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
 	# get "room views" 
 	my @rooms = FUIP::Model::getRooms($hash->{NAME});
@@ -374,8 +372,8 @@ sub defaultPageIndex($) {
 		$cell->dimensions(1,undef);  #let system determine height
 		push(@cells, $cell);
 	};
-	$hash->{pages}{""} = FUIP::Page->createDefaultInstance($hash);
-	$hash->{pages}{""}{cells} = \@cells;
+	$hash->{pages}{"home"} = FUIP::Page->createDefaultInstance($hash);
+	$hash->{pages}{"home"}{cells} = \@cells;
 };
 
 
@@ -667,10 +665,15 @@ sub getFuipPage($$) {
 	# if not locked, this would mean very bad performance for e.g. value help for devices
 	FUIP::Model::refresh($hash->{NAME}) if($locked);
 	
+	# "" goes to "home", unless "" is already defined for compatibility 
+	# TODO: The "unless" part can be removed after a while
+	if($pageid eq "" and not defined($hash->{pages}{""})) {
+		$pageid = "home";
+	};	
 	# do we need to create the page?
 	if(not defined($hash->{pages}{$pageid})) {
 		return("text/plain; charset=utf-8", "FUIP page $pageid does not exist") if($locked);
-		if($pageid eq ""){
+		if($pageid eq "home"){
 			defaultPageIndex($hash);
 		}else{
 			my @path = split(/\//,$pageid);
@@ -930,6 +933,9 @@ sub setField($$$$$) {
 };
 
 
+# declaration to avoid warnings because of recursion
+sub setViewSettings($$$$;$);
+
 sub setViewSettings($$$$;$) {
 	my ($hash, $viewlist, $viewindex, $h, $prefix) = @_;
 	$prefix = "" unless defined $prefix;
@@ -1132,7 +1138,7 @@ sub Set($$$)
 			$oldPageId = $a->[2];
 			$newPageId = $a->[3];
 		}elsif(exists($a->[2])) {	
-			$newPageId = $a->[2];  # copy from "home"
+			$newPageId = $a->[2];  # copy from old "home" (which was "") TODO: Remove after a while
 		}else{
 			return "\"set pagecopy\" needs at least one page id";
 		};	
