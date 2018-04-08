@@ -96,6 +96,8 @@ sub getStructure($) {
 		];
 };
 
-	
+
+# register me as selectable
+$FUIP::View::selectableViews{"FUIP::View::Batteries"}{title} = "Batteries"; 
 	
 1;	

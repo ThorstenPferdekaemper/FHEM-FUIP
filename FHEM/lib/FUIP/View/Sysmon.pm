@@ -55,4 +55,8 @@ sub getStructure($) {
 		{ id => "title", type => "text", default => { type => "field", value => "device"} }	];
 };
 
+
+# register me as selectable
+$FUIP::View::selectableViews{"FUIP::View::Sysmon"}{title} = "System Monitor"; 
+
 1;	

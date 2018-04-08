@@ -40,4 +40,8 @@ sub getStructure($) {
 		];
 };
 
+
+# register me as selectable
+$FUIP::View::selectableViews{"FUIP::View::SimpleSwitch"}{title} = "Simple Switch"; 
+
 1;	

@@ -29,4 +29,8 @@ sub getStructure($) {
 		];
 };
 
+
+# register me as selectable
+$FUIP::View::selectableViews{"FUIP::View::UpStopDown"}{title} = "Up, Stop and Down"; 
+
 1;	

@@ -46,5 +46,7 @@ sub getStructure($) {
 		];
 };
 
+# register me as selectable
+$FUIP::View::selectableViews{"FUIP::View::ReadingsList"}{title} = "List of all Readings"; 
 
 1;	

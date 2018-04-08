@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Scalar::Util qw(blessed weaken);
 
+my %selectableViews;
 	
 	sub dimensions($;$$){
 		my $self = shift;
@@ -350,5 +351,10 @@ sub getConfigFields($) {
 	};
 	return $result;
 }
+
+
+# register me as selectable
+$FUIP::View::selectableViews{"FUIP::View"}{title} = "The Empty View"; 
+
 	
 1;	

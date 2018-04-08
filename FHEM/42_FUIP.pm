@@ -5,7 +5,7 @@
 # e-mail
 #
 ##############################################
-# $Id: 42_FUIP.pm 00008 2018-03-22 22:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00009 2018-04-08 21:00:00Z Thorsten Pferdekaemper $
 
 # VIEW
 # Parameters
@@ -43,6 +43,8 @@ package main;
 
 sub
 FUIP_Initialize($) {
+	# load view modules
+	FUIP::loadViews();
     my ($hash) = @_;
     $hash->{DefFn}     = "FUIP::Define";
 	$hash->{SetFn}     = "FUIP::Set";
@@ -66,62 +68,38 @@ use Scalar::Util qw(blessed);
 use URI::Escape::XS;
 
 use lib::FUIP::Model;
-
-# TODO: loading of views should work automatically
-# class FUIP::View
 use lib::FUIP::View;
-use lib::FUIP::View::Cell;
-use lib::FUIP::View::Page;
-use lib::FUIP::View::STATE;
-# class FUIP::View::SimpleSwitch
-use lib::FUIP::View::SimpleSwitch;
-# class FUIP::View::ReadingsList
-use lib::FUIP::View::ReadingsList;
-# class FUIP::View::HeatingOverview
-use lib::FUIP::View::HeatingOverview;
-use lib::FUIP::View::HeatingControl;
-use lib::FUIP::View::ShutterOverview;
-use lib::FUIP::View::ShutterControl;
-use lib::FUIP::View::HomeButton;
-use lib::FUIP::View::Clock;
-use lib::FUIP::View::Title;
-use lib::FUIP::View::MenuItem;
-use lib::FUIP::View::LabelTemperature;
-use lib::FUIP::View::LabelHumidity;
-use lib::FUIP::View::UpStopDown;
-use lib::FUIP::View::Html;
-use lib::FUIP::View::Brightness;
-use lib::FUIP::View::Batteries;
-use lib::FUIP::View::Sysmon;
-use lib::FUIP::View::SpinDim;
-
 
 # selectable views
-# TODO: let the view implementation decide
-my @selectableViews = (
-	{ id => "FUIP::View::SimpleSwitch", title => "Simple switch" },
-	{ id => "FUIP::View::HeatingOverview", title => "Heating (overview)" },
-	{ id => "FUIP::View::HeatingControl", title => "Heating (detail)" },
-	{ id => "FUIP::View::ShutterOverview", title => "Shutter (overview)" }, 
-	{ id => "FUIP::View::ShutterControl", title => "Shutter (detail)" },
-	{ id => "FUIP::View::HomeButton", title => "Home button" },
-	{ id => "FUIP::View::Clock", title => "Clock (client time)" },
-	{ id => "FUIP::View::Title", title => "Title" },
-	{ id => "FUIP::View", title => "The empty view" },
-	{ id => "FUIP::View::STATE", title => "Display STATE" },
-	{ id => "FUIP::View::ReadingsList", title => "List all readings" },
-	{ id => "FUIP::View::MenuItem", title => "Menu item" },
-	{ id => "FUIP::View::LabelTemperature", title => "Temperature label" },
-	{ id => "FUIP::View::LabelHumidity", title => "Humidity label" },
-	{ id => "FUIP::View::UpStopDown", title => "Up, stop and down" },
-	{ id => "FUIP::View::Html", title => "Free HTML" },
-	{ id => "FUIP::View::Brightness", title => "Brightness" },
-	{ id => "FUIP::View::Batteries", title => "Batteries" },
-	{ id => "FUIP::View::Sysmon", title => "System Monitor" },
-	{ id => "FUIP::View::SpinDim", title => "Dimmer (as Spinner)" }
-);
+my $selectableViews = \%FUIP::View::selectableViews;
 
 my $matchlink = "^\/?(([^\/]*(\/[^\/]+)*)\/?)\$";
+
+
+# load view modules
+sub loadViews() {
+	my $viewsPath = $main::attr{global}{modpath} . "/FHEM/lib/FUIP/View/";
+
+	if(not opendir(DH, $viewsPath)) {
+		main::Log3('FUIP', 1, "ERROR: Cannot read view modules");
+		return;
+	};	
+	foreach my $m (sort readdir(DH)) {
+		next if($m !~ m/(.*)\.pm$/);
+		my $viewFile = $viewsPath . $m;
+		if(-r $viewFile) {
+			main::Log3("FUIP", 4, 'Loading view: ' .  $viewFile);
+			my $includeResult = do $viewFile;
+			if(not $includeResult) {
+				main::Log3("FUIP", 1, 'Error in view module: ' . $viewFile . ":\n $@");
+			}
+		} else {
+			main::Log3("FUIP", 1, 'Error loading view module file: ' .  $viewFile);
+		}
+	}
+	closedir(DH);
+};
+
 
 #########################
 sub addExtension($$$$) {
@@ -317,6 +295,23 @@ sub renderPage($$$) {
 						border-radius: 0;
 						padding: 4px !important;
 					}
+					select.fuip {
+						-moz-appearance: auto;
+						-webkit-appearance: menulist;
+						appearance: auto;
+						border-radius: 0;
+						padding: 1px 0px !important;	
+						border-style: inset;	
+						border-width: 2px;
+						border-color: initial;
+						border-image: initial;
+						width: initial;
+						color: initial;
+						background-color: initial;
+					}
+					option.fuip {
+						background-color: initial;
+					}	
                 </style>
 				<meta name=\"widget_base_width\" content=\"".$baseWidth."\">
 				<meta name=\"widget_base_height\" content=\"".$baseHeight."\">".
@@ -1212,7 +1207,7 @@ sub Set($$$)
 
 
 sub _getViewClasses() {
-	my @result = map {$_->{id}} @selectableViews;
+	my @result = keys %$selectableViews;
 	return \@result;
 };
 
@@ -1288,7 +1283,8 @@ sub Get($$$)
 		# return as to JSON
 		return _toJson($cell->getConfigFields());
 	}elsif($opt eq "viewclasslist") {
-		return _toJson(\@selectableViews);
+		my @result = map { { id => $_, title => $selectableViews->{$_}{title} } } sort keys(%$selectableViews);
+		return _toJson(\@result);
 	}elsif($opt eq "viewdefaults") {
 		my $class = $a->[2];
 		return "\"get viewdefaults\" needs a view class as an argument" unless $class;
@@ -1320,6 +1316,8 @@ sub Get($$$)
 	}elsif($opt eq "readingslist") {
 		# TODO: check if $a->[2] exists
 		return _toJson(FUIP::Model::getReadingsOfDevice($hash->{NAME},$a->[2]));
+	}elsif($opt eq "sets") {
+		return _toJson(FUIP::Model::getSetsOfDevice($hash->{NAME},$a->[2]));
 	}else{
 		# get all possible cells
 		my @cells;
@@ -1329,7 +1327,7 @@ sub Get($$$)
 			};
 		};
 		my $viewclasses = _getViewClasses();
-		return "Unknown argument $opt, choose one of cellsettings:".join(",",@cells)." viewclasslist:noArg viewdefaults:".join(",",@$viewclasses)." pagelist:noArg pagesettings devicelist:noArg readingslist";
+		return "Unknown argument $opt, choose one of cellsettings:".join(",",@cells)." viewclasslist:noArg viewdefaults:".join(",",@$viewclasses)." pagelist:noArg pagesettings devicelist:noArg readingslist sets";
 	}
 }
 

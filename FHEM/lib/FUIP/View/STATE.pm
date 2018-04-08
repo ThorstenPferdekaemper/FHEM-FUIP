@@ -43,4 +43,8 @@ sub getStructure($) {
 		];
 };
 
+
+# register me as selectable
+$FUIP::View::selectableViews{"FUIP::View::STATE"}{title} = "Display STATE"; 
+
 1;	

@@ -27,4 +27,7 @@ sub getStructure($) {
 	return $structure;
 };
 
+# register me as selectable
+$FUIP::View::selectableViews{"FUIP::View::HomeButton"}{title} = "Home Button"; 
+
 1;	

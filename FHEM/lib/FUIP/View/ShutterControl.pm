@@ -75,5 +75,8 @@ sub getStructure($) {
 		{ id => "height", type => "internal", value => 140 }
 		];
 };
+
+# register me as selectable
+$FUIP::View::selectableViews{"FUIP::View::ShutterControl"}{title} = "Shutter (detail)"; 
 	
 1;	

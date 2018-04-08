@@ -34,5 +34,9 @@ use warnings;
 		{ id => "height", type => "number", min => 5, max => 1000, step => 1, value => 25 }	
 		];
 };
+
+
+# register me as selectable
+$FUIP::View::selectableViews{"FUIP::View::Html"}{title} = "Free HTML"; 
 	
 1;	

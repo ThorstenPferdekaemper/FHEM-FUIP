@@ -141,7 +141,7 @@ function acceptSettings() {
 		};	
 	});
 	// collect inputs and checkboxes
-	$("#viewsettings input, #viewsettings textarea").each(function() {
+	$("#viewsettings input, #viewsettings textarea, #viewsettings select.fuip").each(function() {
 		var value;
 		if($(this).attr("type") == "checkbox") {
 			value = ($(this).is(":checked") ? 1 : 0);
@@ -296,11 +296,15 @@ function defaultCheckChanged(id,defaultDef) {
 	if($("#" + id + "-check").is(":checked")) {
 		inputField.attr("style", "visibility: visible;");
 		inputField.removeAttr("readonly");
+		inputField.removeAttr("disabled");
 		// value help visible
 		$('#'+id+'-value').attr("style","padding:1px 0px;");
 	}else{
 		inputField.attr("style", "visibility: visible;background-color:#EBEBE4;");
 		inputField.attr("readonly", "readonly");
+		if(inputField.is("select")) {
+			inputField.attr("disabled","disabled");
+		};	
 		// value help invisible
 		$('#'+id+'-value').attr("style","padding:1px 0px;visibility:hidden;");
 		switch(defaultDef.type) {
@@ -472,6 +476,15 @@ function valueHelpFilterRoom(e, n, f, i, $r, c, data) {
 };
 	
 
+// determine full reference field name (e.g. from refdevice for field type set)	
+function getFullRefName(fieldname,reftype) {	
+	var shortRefName = $('#'+fieldname).attr("data-"+reftype);  // this is the short name
+	var nameArray = fieldname.split("-").slice(0,-1);
+	nameArray.push(shortRefName);
+	return nameArray.join("-");
+};
+	
+	
 function valueHelp(fieldName,type) {
 	// device help has its own function
 	if(type == "device" || type == "device-reading" && fieldName.match(/-device$/) ) {
@@ -481,6 +494,16 @@ function valueHelp(fieldName,type) {
 				$('#'+fieldName).trigger("input");
 			},false);
 		return;
+	};	
+	// setoptions
+	if(type == "setoptions") {
+		valueHelpForOptions(fieldName,
+			function(selected) {
+				var value = JSON.stringify(selected);
+				$('#'+fieldName).val(value);
+				$('#'+fieldName).trigger("input");
+			});	
+		return;	
 	};	
 	// all others
 	var name = $("html").attr("data-name");
@@ -496,8 +519,26 @@ function valueHelp(fieldName,type) {
 	valueDialog.dialog("option","title","Possible values for " + fieldName); 
 	valueDialog.html("Please wait...");
 	valueDialog.dialog("open");
-	if(type == "device-reading" && fieldName.match(/-reading$/) ) {
-		var deviceFieldName = fieldName.replace(/-reading$/,"-device");
+
+	// put select-only-one mechanism
+    var registerClicked = function() {		 
+		$( "#valuehelptable tbody tr" ).on( "click", function() {
+			var oldSelected = $('#valuehelptable').attr('data-selected');
+			if(oldSelected.length) {
+				$('#'+oldSelected).children("td").removeAttr("style"); 	
+			};	
+			$('#valuehelptable').attr('data-selected',$(this).attr('id'));
+			$(this).children("td").attr("style", "background:#F39814;color:black;");
+		});
+	};
+
+	if(type == "device-reading" && fieldName.match(/-reading$/) || type == "reading") {
+		var deviceFieldName;
+		if(type == "reading") {
+			deviceFieldName = getFullRefName(fieldName,"refdevice");
+		}else{
+			deviceFieldName = fieldName.replace(/-reading$/,"-device");
+		};	
 		var device = $('#'+deviceFieldName).val();
 		var cmd = "get " + name + " readingslist " + device;
 		sendFhemCommandLocal(cmd).done(function(readingsListJson){
@@ -509,17 +550,23 @@ function valueHelp(fieldName,type) {
 			};
 			html += "</table>";
 			valueDialog.html(html);
-			$(function() {
-				$( "#valuehelptable tbody tr" ).on( "click", function() {
-					// alert( $( this ).text() );
-					var oldSelected = $('#valuehelptable').attr('data-selected');
-					if(oldSelected.length) {
-						$('#'+oldSelected).removeAttr("style"); 	
-					};	
-					$('#valuehelptable').attr('data-selected',$(this).attr('id'));
-					$(this).attr("style", "background: #F39814;");
-				});
-			});	
+			registerClicked();
+		});
+	}else if(type == "set") {	
+	    var refdeviceFullName = getFullRefName(fieldName,"refdevice");
+		var device = $('#'+refdeviceFullName).val();
+		if(!device) { return };
+		var cmd = "get " + name + " sets " + device;
+		sendFhemCommandLocal(cmd).done(function(json){
+			var sets = Object.keys(json2object(json));
+			var valueDialog = $( "#valuehelp" );
+			var html = "<table id='valuehelptable' data-selected=''><tr><th>Name</th></tr>";
+			for(var i = 0; i < sets.length; i++){
+				html += "<tr id='valuehelp-row-"+i+"' data-key='"+sets[i]+"'><td>"+sets[i]+"</td></tr>";
+			};
+			html += "</table>";
+			valueDialog.html(html);
+			registerClicked();
 		});	
 	}else if(type == "icon") {
 		var allIcons = getIcons();
@@ -540,16 +587,7 @@ function valueHelp(fieldName,type) {
 					0: { sorter: false, parser: false }
 				}
 			});
-			$( "#valuehelptable tbody tr" ).on( "click", function() {
-				// alert( $( this ).text() );
-				var oldSelected = $('#valuehelptable').attr('data-selected');
-				if(oldSelected.length) {
-					$('#'+oldSelected).children("td").removeAttr("style"); 	
-				};	
-				$('#valuehelptable').attr('data-selected',$(this).attr('id'));
-				$(this).attr("style", "background: #F39814;");
-				$(this).children("td").attr("style", "background: #F39814;");
-			});
+			registerClicked();
 		});	
 	}else if(type == "pageid") {
 		var cmd = "get " + name + " pagelist";
@@ -570,15 +608,7 @@ function valueHelp(fieldName,type) {
 					theme: "blue",
 					widgets: ["filter"],
 				});
-				$( "#valuehelptable tbody tr" ).on( "click", function() {
-					// alert( $( this ).text() );
-					var oldSelected = $('#valuehelptable').attr('data-selected');
-					if(oldSelected.length) {
-						$('#'+oldSelected).children("td").removeAttr("style"); 	
-					};	
-					$('#valuehelptable').attr('data-selected',$(this).attr('id'));
-					$(this).children("td").attr("style", "background: #F39814;");
-				});
+				registerClicked();
 			});	
 		});	
 	}else{
@@ -647,7 +677,7 @@ function valueHelpForDevice(fieldTitle, callbackFunction, multiSelect) {
 						$(this).children("td").removeAttr("style"); 	
 					}else{
 						$(this).attr('data-selected','X');
-						$(this).children("td").attr("style", "background: #F39814;");
+						$(this).children("td").attr("style", "background:#F39814;color:black;");
 					};				
 				}else{  // single select
 					$("tr[data-selected='X']").each(function(){
@@ -655,10 +685,65 @@ function valueHelpForDevice(fieldTitle, callbackFunction, multiSelect) {
 						$(this).children("td").removeAttr("style"); 							
 					});
 					$(this).attr('data-selected','X');					
-					$(this).children("td").attr("style", "background: #F39814;");
+					$(this).children("td").attr("style", "background: #F39814;color:black;");
 				};	
 			});
 		});	
+	});	
+};	
+
+
+function valueHelpForOptions(fieldName, callbackFunction) {
+	var name = $("html").attr("data-name");
+	createValueHelpDialog(function(){
+		var resultArray = [];
+		$("tr[data-selected='X']").each(function(){
+			resultArray.push($(this).attr('data-key'));
+		});	
+		$( "#valuehelp" ).dialog("close");
+		callbackFunction(resultArray);
+	});
+	var valueDialog = $( "#valuehelp" );
+	valueDialog.dialog("option","title","Possible values for " + fieldName); 
+	valueDialog.html("Please wait...");
+	valueDialog.dialog("open");
+	// get set name and device name
+    var refSetFullName = getFullRefName(fieldName,"refset");
+    var refDeviceFullName = getFullRefName(refSetFullName, "refdevice");
+	var cmd = "get " + name + " sets " + $("#"+refDeviceFullName).val();
+	sendFhemCommandLocal(cmd).done(function(json){
+		var sets = json2object(json);
+		var options = sets[$("#"+refSetFullName).val()];
+		var valueDialog = $( "#valuehelp" );
+		var html = "<table id='valuehelptable'><thead><tr><th>Name</th></tr></thead>";
+		html += "<tbody>";
+		// which of the options are set?
+		var selected = json2object($("#"+fieldName).val());
+		if(!(selected instanceof Array)) {
+			selected = [];
+		};	
+		for(var i = 0; i < options.length; i++){
+			var isSel = '';
+			var style = '';
+			if(selected.length == 0 || selected.indexOf(options[i]) > -1) {
+				isSel = 'X';
+				style = " style='background:#F39814;color:black;'";
+			};	
+			html += "<tr id='valuehelp-row-"+i+"' data-selected='"+isSel+"' data-key='"+options[i]+"'><td"+style+">"+options[i]+"</td></tr>";
+		};
+		html += "</tbody></table>";
+		valueDialog.dialog("option","width",120);
+		valueDialog.dialog("option","height",300);			
+		valueDialog.html(html);
+		$( "#valuehelptable tbody tr" ).on( "click", function() {
+			if($(this).attr('data-selected') == 'X') {
+				$(this).attr('data-selected','');
+				$(this).children("td").removeAttr("style"); 	
+			}else{
+				$(this).attr('data-selected','X');
+				$(this).children("td").attr("style", "background: #F39814;color:black;");
+			};				
+		});
 	});	
 };	
 
@@ -709,23 +794,37 @@ function createField(settings, fieldNum, component,prefix) {
 			+ fieldStyle + " oninput='inputChanged(this," + JSON.stringify(influencedFields) +")' >"
 			+ fieldValue + "</textarea>";
 	}else{
-		result += "<input type='text' name='" + fieldName + "' id='" + fieldName + "' ";
 		if(fieldComp.hasOwnProperty("options")){
-			result += "list='" + fieldName + "-list' ";
-		};
+			result += "<select class='fuip'";
+			if(parseInt(fieldComp.default.used)) {
+				result += " disabled";
+			};	
+		}else{
+			result += "<input type='text'";
+		};		
+		result += " name='" + fieldName + "' id='" + fieldName + "' ";
+		if(fieldComp.hasOwnProperty("refdevice")){
+			result += "data-refdevice='" + fieldComp.refdevice + "' ";
+		};	
+		if(fieldComp.hasOwnProperty("refset")){
+			result += "data-refset='" + fieldComp.refset + "' ";
+		};	
 		result += "value='" + fieldValue + "' " 
 				+ fieldStyle + " oninput='inputChanged(this," + JSON.stringify(influencedFields) +")' >";
-	};	
-	// are there options to show?
-	if(fieldComp.hasOwnProperty("options")){
-		result += "<datalist id='" + fieldName + "-list'>";
-		for(var i = 0; i < fieldComp.options.length; i++) {
-			result += "<option value='" + fieldComp.options[i] + "'>";
+		// are there options to show? (dropdown)
+		if(fieldComp.hasOwnProperty("options")){
+			for(var i = 0; i < fieldComp.options.length; i++) {
+				result += "<option ";
+				if(fieldComp.options[i] == fieldValue) {
+					result += "selected ";
+				};	
+				result += "class='fuip' value='" + fieldComp.options[i] + "'>" + fieldComp.options[i] + "</option>";
+			};	
+			result += "</select>";
 		};	
-		result += "</datalist>";
 	};	
 	// do we have a value help?
-	if(field.type == "device" || field.type == "device-reading" || field.type == "icon") {
+	if(field.type == "device" || field.type == "device-reading" || field.type == "reading" || field.type == "icon" || field.type == "set" || field.type == "setoptions") {
 		result += "<button id='" + fieldName + "-value' onclick='valueHelp(\""+fieldName+"\",\""+field.type+"\")' type='button' style='padding:1px 0px;" 
 		// value help invisible?
 		if(checkVisibility == "visible" && checkValue != " checked") {
@@ -852,7 +951,11 @@ function decodeObject(o) {
 
 
 function json2object(json) {
-	var o = JSON.parse(json);
+	try {
+		var o = JSON.parse(json);
+	} catch(e) {
+		return null;
+	};	
 	decodeObject(o);
 	return o;
 };	

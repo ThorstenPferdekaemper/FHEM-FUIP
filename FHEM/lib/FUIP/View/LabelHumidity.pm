@@ -38,6 +38,7 @@ use warnings;
 		];
 };
 
-	
+# register me as selectable
+$FUIP::View::selectableViews{"FUIP::View::LabelHumidity"}{title} = "Humidity Label"; 
 	
 1;	

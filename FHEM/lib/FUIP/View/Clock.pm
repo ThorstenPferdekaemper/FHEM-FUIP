@@ -26,5 +26,8 @@ use parent -norequire, 'FUIP::View';
 		];
 };
 
+
+# register me as selectable
+$FUIP::View::selectableViews{"FUIP::View::Clock"}{title} = "Clock (client time)"; 
 	
 1;	

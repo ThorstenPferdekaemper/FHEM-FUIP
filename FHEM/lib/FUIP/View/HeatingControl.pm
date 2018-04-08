@@ -122,4 +122,8 @@ sub getStructure($) {
 	return $result;		
 };
 
+
+# register me as selectable
+$FUIP::View::selectableViews{"FUIP::View::HeatingControl"}{title} = "Heating (detail)"; 
+
 1;	

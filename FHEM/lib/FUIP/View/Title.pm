@@ -41,6 +41,8 @@ use warnings;
 		];
 };
 
-	
+
+# register me as selectable
+$FUIP::View::selectableViews{"FUIP::View::Title"}{title} = "Title"; 
 	
 1;	

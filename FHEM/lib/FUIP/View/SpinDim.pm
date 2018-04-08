@@ -44,4 +44,8 @@ sub getStructure($) {
 		];
 };
 
+
+# register me as selectable
+$FUIP::View::selectableViews{"FUIP::View::SpinDim"}{title} = "Dimmer (as spinner)"; 
+
 1;	

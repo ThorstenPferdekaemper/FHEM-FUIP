@@ -54,5 +54,7 @@ use warnings;
 		];
 };
 
+# register me as selectable
+$FUIP::View::selectableViews{"FUIP::View::ShutterOverview"}{title} = "Shutter (overview)"; 
 	
 1;	

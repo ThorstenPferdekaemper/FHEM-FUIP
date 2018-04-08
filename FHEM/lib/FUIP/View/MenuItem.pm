@@ -1,4 +1,3 @@
-# class FUIP::View
 package FUIP::View::MenuItem;
 
 use strict;
@@ -46,5 +45,9 @@ sub getStructure($) {
 		{ id => "height", type => "internal", value => 42 }
 		];
 };
+
+
+# register me as selectable
+$FUIP::View::selectableViews{"FUIP::View::MenuItem"}{title} = "Menu Item"; 
 	
 1;	

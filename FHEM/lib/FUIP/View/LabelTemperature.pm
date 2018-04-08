@@ -1,5 +1,3 @@
-
-# class FUIPViewLabel
 package FUIP::View::LabelTemperature;
 
 use strict;
@@ -45,5 +43,8 @@ sub getStructure($) {
 		{ id => "height", type => "internal", value => 25 }
 		];
 };
+	
+# register me as selectable
+$FUIP::View::selectableViews{"FUIP::View::LabelTemperature"}{title} = "Temperature Label"; 
 	
 1;	

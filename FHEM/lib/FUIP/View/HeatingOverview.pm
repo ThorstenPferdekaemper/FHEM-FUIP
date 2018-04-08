@@ -126,6 +126,8 @@ use warnings;
 		];
 };
 
-	
+
+# register me as selectable
+$FUIP::View::selectableViews{"FUIP::View::HeatingOverview"}{title} = "Heating (overview)"; 
 	
 1;	

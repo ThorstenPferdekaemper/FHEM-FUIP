@@ -218,6 +218,36 @@ sub getDevice($$$) {
 	return $device;
 };	
 	
+
+# get all sets incl. options for device	
+# (same as in FHEMWEB)
+sub getSetsOfDevice($$) {
+	my ($fuipName, $devName) = @_;
+	# buffered?
+	return $buffer{$fuipName}{devicesets}{$devName} if(defined($buffer{$fuipName}{devicesets}{$devName}));
+	# not buffered, determine
+	my $url = getFhemwebUrl($fuipName);
+	my $resultStr;
+	$DB::single = 1;
+	if($url) {
+		$resultStr = _sendRemoteCommand($url,
+			'{  
+				return getAllSets("'.$devName.'");;
+			}');
+	}else{
+		$resultStr = main::getAllSets($devName);
+	};
+	# split into sets
+	my %result;
+	for my $setStr (split(" ",$resultStr)) {
+		my ($set,$optStr) = split(":",$setStr,2);
+		my @options = split(",",$optStr);
+		$result{$set} = \@options;
+	};
+	$buffer{$fuipName}{devicesets}{$devName} = \%result;
+	return \%result;
+};	
+	
 	
 sub getDevicesForReading($$) {
 # get all devices which have a certain reading

@@ -41,6 +41,7 @@ use warnings;
 		];
 };
 
-	
+# register me as selectable
+$FUIP::View::selectableViews{"FUIP::View::Brightness"}{title} = "Brightness"; 
 	
 1;	
