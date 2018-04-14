@@ -1045,7 +1045,8 @@ function copyCurrentPage() {
 			icon: 'ui-icon-check',
 			click: function() {
 				var newname = $("#newpagename").val();			
-				if(!newname.length) { return; }; // don't overwrite home page
+				if(!newname.length) { return; }; // page needs a name
+				// TODO: This allows overwriting page "home". Is this good?
 				sendFhemCommandLocal("set " + name + " pagecopy " + pageid + " " + newname)
 					.done(function() {
 						window.location = "/fhem/"+name+"/page/"+newname;

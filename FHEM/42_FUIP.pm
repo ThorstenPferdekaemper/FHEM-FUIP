@@ -1,43 +1,10 @@
 #
 #
 # 42_FUIP.pm
-# written by 
-# e-mail
+# written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00009 2018-04-08 21:00:00Z Thorsten Pferdekaemper $
-
-# VIEW
-# Parameters
-#	device (for now...)
-# Attributes (determined) 
-#   sizeX
-#   sizeY
-#   documentation (?)
-# Methods:
-#	getHTML	
-
-# views must be a subclass of FUIP::View
-# e.g. FUIP::View::SimpleSwitch
-#	   FUIP::View::ReadingsList
-#      FUIP::View::StateLabel    # this is FUIP::View itself, currently
-#      FUIP::View::HeatingControl
-#      FUIP::View::HeatingOverview
-#      FUIP::View::ShutterControl
-#      FUIP::View::ShutterOverview
-#      FUIP::View::LightsGrid (here we need multiple devices) 	
-#      FUIP::View itself (display sth like the name of the device and STATE)
-
-# Each instance of a view is assigned to "its" devices/readings
-# Each page is assigned a set of view instances with a given position 
-#    Position means: Which grid element and where in this grid element (TODO: how?)
-
-# Defaulting for overview (for now)
-#	TYPE = dummy 		=> SimpleSwitch
-#   subType = heating 	=> HeatingOverview
-#   subtype = shutter 	=> ShutterOverview
-#   others 				=> View itself
-
+# $Id: 42_FUIP.pm 00010 2018-04-14 21:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
@@ -50,7 +17,7 @@ FUIP_Initialize($) {
 	$hash->{SetFn}     = "FUIP::Set";
 	$hash->{GetFn}     = "FUIP::Get";
     $hash->{UndefFn}   = "FUIP::Undef";
-    $hash->{AttrList}  = "locked:0,1 fhemwebUrl baseWidth baseHeight";
+    $hash->{AttrList}  = "locked:0,1 fhemwebUrl baseWidth baseHeight styleColor";
 	$hash->{AttrFn}    = "FUIP::Attr";
 	$hash->{parseParams} = 1;	
     return undef;
@@ -256,6 +223,7 @@ sub renderPage($$$) {
 	$title = "FHEM Tablet UI by FUIP" unless $title;
 	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
 	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
+	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","#808080");
   	my $result = 
 	   "<!DOCTYPE html>
 		<html".($locked ? "" : " data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\"").">
@@ -276,8 +244,8 @@ sub renderPage($$$) {
 								 <script>fuipInit(".$baseWidth.",".$baseHeight.")</script>
 								 <link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/css/theme.blue.css\">").
                 "<style type=\"text/css\">
-	                td {
-		                color: #808080;
+	                .fuip-color {
+		                color: ".$styleColor.";
                     }
 					.gridster ul li {
 						border-radius:8px;
@@ -357,6 +325,7 @@ sub defaultPageIndex($) {
 	    my $cell = FUIP::Cell->createDefaultInstance($hash);
 		$cell->{title} = $room;
 		$cell->{views} = getDeviceViewsForRoom($hash,$room,"overview");
+		$cell->applyDefaults();
 		my $posY = 0;  
 		for my $view (@{$cell->{views}}) {
 			# try to center in X direction
@@ -486,13 +455,15 @@ sub getDeviceView($$$){
 		$device->{Internals}{TYPE} eq "CUL_HM" and defined($device->{Internals}{chanNo}) 
 			and ( $model eq "HM-CC-RT-DN" and $device->{Internals}{chanNo} eq "04"
 			   or $model eq "HM-TC-IT-WM-W-EU" and $device->{Internals}{chanNo} eq "02" )){
+		my $view = FUIP::View::Thermostat->createDefaultInstance($hash);
+		$view->{device} = $name;
 		if($level eq 'overview') {
-			my $view = FUIP::View::HeatingOverview->createDefaultInstance($hash);
-			$view->{device} = $name;
+			$view->{readonly} = "on";
+			$view->{defaulted}{readonly} = 0;
 			return $view;
 		}else{
-			my $view = FUIP::View::HeatingControl->createDefaultInstance($hash);
-			$view->{device} = $name;
+			$view->{size} = "big";	
+			$view->{defaulted}{size} = 0;
 			return $view;
 		};	
 	};
@@ -660,9 +631,8 @@ sub getFuipPage($$) {
 	# if not locked, this would mean very bad performance for e.g. value help for devices
 	FUIP::Model::refresh($hash->{NAME}) if($locked);
 	
-	# "" goes to "home", unless "" is already defined for compatibility 
-	# TODO: The "unless" part can be removed after a while
-	if($pageid eq "" and not defined($hash->{pages}{""})) {
+	# "" goes to "home" 
+	if($pageid eq "") {
 		$pageid = "home";
 	};	
 	# do we need to create the page?
@@ -1128,15 +1098,8 @@ sub Set($$$)
 		delete($hash->{pages}{$pageId});
 	}elsif($cmd eq "pagecopy") {
 		#get page ids
-		my ($oldPageId,$newPageId) = ("",undef);
-		if(exists($a->[3])) {
-			$oldPageId = $a->[2];
-			$newPageId = $a->[3];
-		}elsif(exists($a->[2])) {	
-			$newPageId = $a->[2];  # copy from old "home" (which was "") TODO: Remove after a while
-		}else{
-			return "\"set pagecopy\" needs at least one page id";
-		};	
+		return "\"set pagecopy\" needs two page ids" unless exists($a->[3]);
+		my ($oldPageId,$newPageId) = ($a->[2], $a->[3]);
 		return "\"set pagecopy\": page ".$oldPageId." does not exist" unless defined $hash->{pages}{$oldPageId};
 		$hash->{pages}{$newPageId} = cloneView($hash->{pages}{$oldPageId});
 	}elsif($cmd eq "cellcopy") {

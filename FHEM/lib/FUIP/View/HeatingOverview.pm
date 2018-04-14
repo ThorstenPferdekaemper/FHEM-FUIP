@@ -1,6 +1,7 @@
-
-# class FUIPViewHeatingOverview
 package FUIP::View::HeatingOverview;
+
+# deprecated
+# use FUIP::View::Thermostat instead 
 
 use strict;
 use warnings;
@@ -126,8 +127,4 @@ use warnings;
 		];
 };
 
-
-# register me as selectable
-$FUIP::View::selectableViews{"FUIP::View::HeatingOverview"}{title} = "Heating (overview)"; 
-	
 1;	

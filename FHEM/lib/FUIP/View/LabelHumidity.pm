@@ -9,9 +9,16 @@ use warnings;
 	use parent -norequire, 'FUIP::View';
 	
 	
-	sub getHTML($){
-		my ($self) = @_;
-		my $result = "<div data-type=\"label\" 
+sub getHTML($){
+	my ($self) = @_;
+	my $result = '';
+	if($self->{label}) {
+		$result .= '<div class="fuip-color big left">'.$self->{label}.':</div>
+					<div style="position:absolute;top:0px;left:120px"';
+	}else{
+		$result .= '<div';
+	};	
+	$result .= " data-type=\"label\" 
 						 data-device=\"".$self->{humidity}{device}."\" 
 						 data-get=\"".$self->{humidity}{reading}."\"
 						 data-unit=\" %\"
@@ -19,9 +26,16 @@ use warnings;
 						 data-colors='[\"#ffffff\",\"#6699ff\",\"#AA6900\",\"FFCC80\",\"#AD3333\",\"#FF0000\"]'
 						 class=\"big\">
 					</div>";
-		return $result;	
-	};
+	return $result;	
+};
 
+	
+sub dimensions($;$$){
+	my $self = shift;
+	return (180,25) if($self->{label});
+	return (60, 25);	
+};	
+	
 	
 	sub getStructure($) {
 	# class method
@@ -33,8 +47,7 @@ use warnings;
 		{ id => "humidity", type => "device-reading",
 			device => { },
 			reading => { default => { type => "const", value => "humidity"} } },
-		{ id => "width", type => "internal", value => 75 },
-		{ id => "height", type => "internal", value => 25 }
+		{ id => "label", type => "text", default => { type => "field", value => "humidity-reading"} }			
 		];
 };
 

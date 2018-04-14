@@ -9,7 +9,14 @@ use parent -norequire, 'FUIP::View';
 	
 sub getHTML($){
 	my ($self) = @_;
-	my $result = "<div data-type=\"label\" 
+	my $result = '';
+	if($self->{label}) {
+		$result .= '<div class="fuip-color big left">'.$self->{label}.':</div>
+					<div style="position:absolute;top:0px;left:120px"';
+	}else{
+		$result .= '<div';
+	};	
+	$result .= " data-type=\"label\" 
 				 data-device=\"".$self->{temperature}{device}."\" 
 				 data-get=\"".$self->{temperature}{reading}."\"
 				 data-unit=\" %B0C%0A\"
@@ -25,6 +32,13 @@ sub getHTML($){
 	return $result;	
 };
 
+
+sub dimensions($;$$){
+	my $self = shift;
+	return (180,25) if($self->{label});
+	return (60, 25);	
+};	
+
 	
 sub getStructure($) {
 # class method
@@ -38,9 +52,8 @@ sub getStructure($) {
 			reading => { default => { type => "const", value => "measured-temp" } } },	
 		{ id => "colors", type => "text", 
 				default => { type => "const", value => "air" },
-				options => ["air","boiler"] }, 	
-		{ id => "width", type => "internal", value => 75 },
-		{ id => "height", type => "internal", value => 25 }
+				options => ["air","boiler"] },
+		{ id => "label", type => "text", default => { type => "field", value => "temperature-reading"} }		
 		];
 };
 	

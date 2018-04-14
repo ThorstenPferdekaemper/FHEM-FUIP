@@ -20,7 +20,7 @@ use warnings;
 			data-set-off="off">
 		</div>
 				</td></tr>
-			<tr><td>'.$self->{label}.'</td></tr>
+			<tr><td class="fuip-color">'.$self->{label}.'</td></tr>
 		</table>';	 
 	};
 

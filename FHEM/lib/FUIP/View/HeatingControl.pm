@@ -1,5 +1,8 @@
 package FUIP::View::HeatingControl;
 
+# deprecated
+# use FUIP::View::Thermostat instead 
+
 use strict;
 use warnings;
 
@@ -44,13 +47,7 @@ sub getStructure($) {
 		my ($self) = @_;
 		my $result = '
 			<div>
-				<div data-type="thermostat" data-device="'.$self->{device}.'" data-valve="';
-		if(not $self->{valvePos2}{device} and not $self->{valvePos3}{device} and $self->{valvePos1}{device} eq $self->{device}) {
-			$result .= $self->{valvePos1}{reading};
-		}else{
-			$result .= "dumdumdummy";
-		};	
-		$result .= '" data-step="0.5"
+				<div data-type="thermostat" data-device="'.$self->{device}.'" data-valve="dumdumdummy" data-step="0.5"
 					class="cell left big">
 				</div>
 				<table>
@@ -83,47 +80,41 @@ sub getStructure($) {
 					</tr>' : '').
 				'</table>	
 			</div>';	
-	if($self->{valvePos2}{device} or $self->{valvePos3}{device} or $self->{valvePos1}{device} and not $self->{valvePos1}{device} eq $self->{device}) {
-		$result .= "<table style=\"width:120px;position:absolute;top:150px;left:55px\">
-					<tr>";
-		if($self->{valvePos1}{device}) {
-			$result .= "<td>
-						<div data-type=\"label\" 
-							 data-device=\"".$self->{valvePos1}{device}."\" 
-							 data-get=\"".$self->{valvePos1}{reading}."\"
-							 data-unit=\"%\"
-							 class=\"big\"
-						</div> 
-					</td>"; 
-		};	
-		if($self->{valvePos2}{device}) {
-			$result .= "<td>
-						<div data-type=\"label\" 
-							 data-device=\"".$self->{valvePos2}{device}."\" 
-							 data-get=\"".$self->{valvePos2}{reading}."\"
-							 data-unit=\"%\"
-							 class=\"big\"
-						</div> 
-						</td>";
-		};
-		if($self->{valvePos3}{device}) {
-			$result .= "<td>
-						<div data-type=\"label\" 
-							 data-device=\"".$self->{valvePos3}{device}."\" 
-							 data-get=\"".$self->{valvePos3}{reading}."\"
-							 data-unit=\"%\"
-							 class=\"big\"
-						</div> 
-						</td>";
-		};
-		$result .= "</tr>
-			</table>";
-	};		
+	$result .= "<table style=\"width:120px;position:absolute;top:150px;left:55px\">
+				<tr>";
+	if($self->{valvePos1}{device}) {
+		$result .= "<td>
+					<div data-type=\"label\" 
+						 data-device=\"".$self->{valvePos1}{device}."\" 
+						 data-get=\"".$self->{valvePos1}{reading}."\"
+						 data-unit=\"%\"
+						 class=\"big\"
+					</div> 
+				</td>"; 
+	};	
+	if($self->{valvePos2}{device}) {
+		$result .= "<td>
+					<div data-type=\"label\" 
+						 data-device=\"".$self->{valvePos2}{device}."\" 
+						 data-get=\"".$self->{valvePos2}{reading}."\"
+						 data-unit=\"%\"
+						 class=\"big\"
+					</div> 
+					</td>";
+	};
+	if($self->{valvePos3}{device}) {
+		$result .= "<td>
+					<div data-type=\"label\" 
+						 data-device=\"".$self->{valvePos3}{device}."\" 
+						 data-get=\"".$self->{valvePos3}{reading}."\"
+						 data-unit=\"%\"
+						 class=\"big\"
+					</div> 
+					</td>";
+	};
+	$result .= "</tr>
+		</table>";
 	return $result;		
 };
-
-
-# register me as selectable
-$FUIP::View::selectableViews{"FUIP::View::HeatingControl"}{title} = "Heating (detail)"; 
 
 1;	
