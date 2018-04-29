@@ -375,9 +375,19 @@ function createClassField(selectedClass,prefix) {
 		sendFhemCommandLocal(cmd).done(function(classListJson){
 			var classList = json2object(classListJson);
 			var html = "<select id='" + fieldName + "' name='" + fieldName + "' class='class-select'>";
+			var selectedExists = false;
 			for(var i = 0; i < classList.length; i++) {
-				html +=  "<option" + (classList[i].id == selectedClass ? " selected" : "") + ">" + classList[i].id + "</option>";
+				if(classList[i].id == selectedClass) {
+					selectedExists = true;
+					html +=  "<option selected>" + classList[i].id + "</option>";
+				}else{
+					html +=  "<option>" + classList[i].id + "</option>";
+				};
 			};
+			// allow to "deprecate" old views
+			if(!selectedExists) {
+				html +=  "<option selected>" + selectedClass + "</option>";				
+			};	
 			html += "</select>";
 			$("#" + fieldName).html(html);
 		});
