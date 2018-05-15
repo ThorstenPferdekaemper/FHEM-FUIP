@@ -610,6 +610,7 @@ sub renderCells($$$) {
 		# TODO: find better handle for dragging
 		if(not $locked or $cell->{title}) {
 			$result .= "<header>".($cell->{title} ? $cell->{title} : "").($locked ? "" : " ".$i."
+							<span style=\"position: absolute; right: 1px; top: 0;\" class=\"fa-stack fa-lg\"
 								onclick=\"openSettingsDialog('".$hash->{NAME}."','".$pageId."','".$i."')\">
 									<i class=\"fa fa-square-o fa-stack-2x\"></i>
 									<i class=\"fa fa-cog fa-stack-1x\"></i>
