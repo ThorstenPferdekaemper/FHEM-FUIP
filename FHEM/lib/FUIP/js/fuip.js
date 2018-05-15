@@ -1,7 +1,7 @@
 // everything which should be run after the page has loaded
 var fuipGridster;
 
-function fuipInit(baseWidth,baseHeight) {
+function fuipInit(baseWidth,baseHeight,maxCols) {
 	$( function() {
 		// the settings dialog
 		var viewsettings;
@@ -35,6 +35,8 @@ function fuipInit(baseWidth,baseHeight) {
 		fuipGridster =  $(".gridster ul").gridster({
 			widget_base_dimensions: [baseWidth,baseHeight],
 			widget_margins: [5, 5],
+			autogrow_cols: true,
+			max_cols: maxCols,
 			resize: {
 				enabled: true,
 				stop: onGridsterChangeStop	

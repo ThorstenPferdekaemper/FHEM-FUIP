@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00011 2018-04-29 20:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00012 2018-05-15 14:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
@@ -17,7 +17,7 @@ FUIP_Initialize($) {
 	$hash->{SetFn}     = "FUIP::Set";
 	$hash->{GetFn}     = "FUIP::Get";
     $hash->{UndefFn}   = "FUIP::Undef";
-    $hash->{AttrList}  = "locked:0,1 fhemwebUrl baseWidth baseHeight styleColor";
+    $hash->{AttrList}  = "locked:0,1 fhemwebUrl baseWidth baseHeight pageWidth styleColor";
 	$hash->{AttrFn}    = "FUIP::Attr";
 	$hash->{parseParams} = 1;	
     return undef;
@@ -154,6 +154,11 @@ sub Attr ($$$$) {
 	if($attrName eq "fhemwebUrl") {
 		FUIP::Model::refresh($name);
 	};
+	if($cmd eq "set" and $attrName eq "pageWidth") {
+		if($attrValue < 100 or $attrValue > 2500) {
+			return "pageWidth must be a number between 100 and 2500";
+		}	
+	};
 	return undef;
 }
 
@@ -214,16 +219,31 @@ sub addStandardCells($$$) {
 };
 
 
+sub determineMaxCols($;$) {
+	my ($hash,$default) = @_;
+	$default = 7 unless defined $default;
+	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
+	my $pageWidth = main::AttrVal($hash->{NAME},"pageWidth",undef);
+	#should be compatible to what we did before
+	return $default unless $pageWidth;
+	use integer;
+	my $maxCols = $pageWidth / ($baseWidth + 10);
+	no integer;
+	return 1 unless $maxCols > 1;  # 0 or negative cols do not make sense
+	return $maxCols;
+};
+
+
 sub renderPage($$$) {
 	my ($hash,$currentLocation,$locked) = @_;
 	# falls $locked, dann werden die Editierfunktionen nicht mit gerendert
-	# TODO: jquery-ui.css ausliefern! (Ist bei tablet UI normalerweise nicht dabei.)
 	my $title = $hash->{pages}{$currentLocation}{title};
 	$title = $currentLocation unless $title;
 	$title = "FHEM Tablet UI by FUIP" unless $title;
 	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
 	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
 	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","#808080");
+	my $pageWidth = main::AttrVal($hash->{NAME},"pageWidth",undef);
   	my $result = 
 	   "<!DOCTYPE html>
 		<html".($locked ? "" : " data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\"").">
@@ -240,8 +260,11 @@ sub renderPage($$$) {
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.widgets.js\"></script>").
 				"<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.gridster.min.js\"></script>
                 <script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>".
-				($locked ? "" : "<script src=\"/fhem/".lc($hash->{NAME})."/fuip/js/fuip.js\"></script>
-								 <script>fuipInit(".$baseWidth.",".$baseHeight.")</script>
+				($locked ? "" : "<script src=\"/fhem/".lc($hash->{NAME}).
+				"/fuip/js/fuip.js\"></script>
+  				    <script>
+						fuipInit(".$baseWidth.",".$baseHeight.",".determineMaxCols($hash,99).")
+					</script>
 								 <link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/css/theme.blue.css\">").
                 "<style type=\"text/css\">
 	                .fuip-color {
@@ -287,15 +310,18 @@ sub renderPage($$$) {
 				($locked ? '<meta name="gridster_disable" content="1">' : "").
             "</head>
             <body>
-                <div class=\"gridster\" style=\"width:1070px\">
-                    <ul>";
+                <div class=\"gridster\"";
+	if($pageWidth) {
+		$result .= ' style="width:'.$pageWidth.'px"';
+	};
+	$result .= '>
+                    <ul>';
 	# render Cells	
 	$result .= renderCells($hash,$currentLocation,$locked);
 	$result.= '</ul>
 	           </div>'.
 			   ($locked ? "" :
 			   '<div id="viewsettings">
-					Something went wrong
 			   </div>
 			   <div id="valuehelp">
 			   </div>
@@ -501,10 +527,9 @@ sub getDeviceViewsForRoom($$$) {
 };
 
 
-sub findPositions($) {
-	my ($cells) = @_;
+sub findPositions($$) {
+	my ($cells,$maxCols) = @_;
 	# find positions for all views
-	# TODO: This should be stored somewhere and allow user to move it around
 	# cells array:
     #   0 or undef means that the cell is free
     #   everything else means that the cell is occupied 	
@@ -533,7 +558,10 @@ sub findPositions($) {
 		# find a nice free spot
 		my $found = 0;
 		for ($y = 0; 1; $y++) {
-			for ($x=0; $x + $dim[0] - 1 <= 6; $x++) {
+			# for each column in the row
+			# we need to check after the loop body to give
+			# views a chance which are actually wider than the page
+			for ($x=0; 1; $x++) {
 				$found = 1;
 				# check dimensions of view
 				for (my $yv = $y; $yv < $y + $dim[1]; $yv++) {
@@ -545,7 +573,7 @@ sub findPositions($) {
 					}	
 					last unless $found;
 				}
-				last if $found;
+				last if $found or $x + $dim[0] >= $maxCols;
 			}
 			last if $found;
 	    };
@@ -567,7 +595,7 @@ sub findPositions($) {
 sub renderCells($$$) {
 	my ($hash,$pageId,$locked) = @_;
 	my $cells = $hash->{pages}{$pageId}{cells};
-	findPositions($cells);
+	findPositions($cells,determineMaxCols($hash));
 	# now try to render this
 	my $result;
 	my $i = 0;
@@ -582,7 +610,6 @@ sub renderCells($$$) {
 		# TODO: find better handle for dragging
 		if(not $locked or $cell->{title}) {
 			$result .= "<header>".($cell->{title} ? $cell->{title} : "").($locked ? "" : " ".$i."
-							<span style=\"position: absolute; right: 0; top: 0;\" class=\"fa-stack fa-lg\"
 								onclick=\"openSettingsDialog('".$hash->{NAME}."','".$pageId."','".$i."')\">
 									<i class=\"fa fa-square-o fa-stack-2x\"></i>
 									<i class=\"fa fa-cog fa-stack-1x\"></i>
