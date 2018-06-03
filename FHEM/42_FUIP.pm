@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00012 2018-05-15 14:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00013 2018-06-03 15:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
@@ -1263,9 +1263,9 @@ sub Get($$$)
     my $opt = $a->[1];
 	
 	if($opt eq "cellsettings"){
-		# get viewId
+		# get cell
 		my @pageAndCellId = split(/_/,$a->[2]);
-		return "\"get viewsettings\" needs a page id and a cell id" unless(@pageAndCellId > 1);
+		return "\"get cellsettings\" needs a page id and a cell id" unless(@pageAndCellId > 1);
 		my $cellId = pop(@pageAndCellId);
 		my $pageId = join("_",@pageAndCellId);
 		# get field list and values from views 
@@ -1299,7 +1299,9 @@ sub Get($$$)
 		my @result = map { {id => $_, title => ($hash->{pages}{$_}{title} ? $hash->{pages}{$_}{title} : $_) } } @pagelist;
 		return _toJson(\@result);		
 	}elsif($opt eq "pagesettings"){
+		return "\"get pagesettings\" needs a page id" unless(defined($a->[2]));
 		my $pageId = $a->[2];
+		return "\"get pagesettings\": page ".$pageId." not found" unless(defined($hash->{pages}{$pageId}));
 		my $page = $hash->{pages}{$pageId};	
 		return _toJson($page->getConfigFields());			
 	}elsif($opt eq "devicelist"){
@@ -1310,15 +1312,17 @@ sub Get($$$)
 	}elsif($opt eq "sets") {
 		return _toJson(FUIP::Model::getSetsOfDevice($hash->{NAME},$a->[2]));
 	}else{
+		# get all pages
+		my @pages = sort keys %{$hash->{pages}};
 		# get all possible cells
 		my @cells;
-		for my $pKey (sort keys %{$hash->{pages}}) {
+		for my $pKey (@pages) {
 			for(my $cKey = 0; $cKey < @{$hash->{pages}{$pKey}{cells}}; $cKey++) {
 				push(@cells,$pKey."_".$cKey);
 			};
 		};
 		my $viewclasses = _getViewClasses();
-		return "Unknown argument $opt, choose one of cellsettings:".join(",",@cells)." viewclasslist:noArg viewdefaults:".join(",",@$viewclasses)." pagelist:noArg pagesettings devicelist:noArg readingslist sets";
+		return "Unknown argument $opt, choose one of cellsettings:".join(",",@cells)." viewclasslist:noArg viewdefaults:".join(",",@$viewclasses)." pagelist:noArg pagesettings:".join(",",@pages)." devicelist:noArg readingslist sets";
 	}
 }
 
