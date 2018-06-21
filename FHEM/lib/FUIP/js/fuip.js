@@ -104,6 +104,25 @@ function sendFhemCommandLocal(cmdline) {
 		}
 	});
 };
+
+
+function postImportCommand(content,isCell,pageid) {
+	var data = encodeURIComponent(content);
+	var url = location.origin + '/fhem/' + $("html").attr("data-name") + '/fuip/import?pageid=' + pageid;
+	if(isCell) { 
+		url += '&cellid=' + $("#viewsettings").attr("data-viewid");
+	};	
+	return $.ajax({
+		async: true,
+		cache: false,
+		method: 'POST',
+		dataType: 'text',
+		url: url,
+		// username: ftui.config.username,
+		// password: ftui.config.password,
+		data: 'content=' + data
+	});
+};
 					
 					
 function autoArrange() {
@@ -1004,6 +1023,26 @@ function changeSettingsDialog(settingsJson,viewId) {
 			icon: 'ui-icon-copy',
 			click: copyCurrentCell,
 			showLabel: false },
+		{	text: 'Export cell',
+			icon: ' ui-icon-arrowstop-1-s',
+			click: function() { location.href = location.origin + '/fhem/' + $("html").attr("data-name") + '/fuip/export?pageid=' + $("html").attr("data-pageid") 
+			          + '&cellid=' + $("#viewsettings").attr("data-viewid"); },
+			showLabel: false },	
+		{	text: 'Import cell',
+			icon: ' ui-icon-arrowstop-1-n',
+			click: function() { var input = $('<input type="file">');
+								input.on("change",function(evt){
+									var reader = new FileReader();
+									reader.onload = function(e) {
+										// TODO: error handling when sending command
+										postImportCommand(e.target.result,true,$("html").attr("data-pageid"))
+											.done(function(){location.reload(true)});	
+									};	
+									reader.readAsText(evt.target.files[0]);
+								});
+								input.click();
+			},
+			showLabel: false },
 		{   text: 'Delete cell',
 			icon: 'ui-icon-trash',
 			click: deleteView,
@@ -1078,6 +1117,44 @@ function copyCurrentPage() {
 	popup.dialog("open");
 };	
 			
+
+function importAsNewPage(content) {
+	// get current name and page id
+	var name = $("html").attr("data-name");
+	// create popup to input new page id
+	var popup;	
+	popup = $( "#inputpopup01" ).dialog({
+		autoOpen: false,
+		width: 400,
+		height: 250,
+		modal: true,
+		title: "Import page: enter name of new page",
+		buttons: [{
+			text: 'Ok',
+			icon: 'ui-icon-check',
+			click: function() {
+				var newname = $("#newpagename").val();			
+				if(!newname.length) { return; }; // page needs a name
+				// TODO: This allows overwriting any page. Is this good?
+				postImportCommand(content,false,newname)
+					.done(function() {
+						window.location = "/fhem/"+name+"/page/"+newname;
+					});	
+			},
+			showLabel: false },
+		  { text: 'Cancel',
+			icon: 'ui-icon-close',
+			click: function() {	popup.dialog( "close" ); },
+			showLabel: false }
+		],
+	});
+	popup.html('<form onsubmit="return false;">'+
+					'<label for="newpagename">New page name</label>'+
+					'<input type="text" id="newpagename" style="visibility:visible;" value=""/>'+
+				'</form>');
+	popup.dialog("open");
+};	
+
 			
 function toggleCellPage() {
 	var settingsDialog = $( "#viewsettings" );
@@ -1098,6 +1175,25 @@ function toggleCellPage() {
 				icon: 'ui-icon-copy',
 				click: copyCurrentPage,
 				showLabel: false },
+			{	text: 'Export page',
+				icon: ' ui-icon-arrowstop-1-s',
+				click: function() { location.href = location.origin + '/fhem/' + $("html").attr("data-name") + '/fuip/export?pageid=' + $("html").attr("data-pageid"); },
+				showLabel: false },	
+			{	text: 'Import page',
+				icon: ' ui-icon-arrowstop-1-n',
+				click: function() { var input = $('<input type="file">');
+									input.on("change",function(evt){
+										var reader = new FileReader();
+										reader.onload = function(e) {
+										//var	cmd = "set uilocal import bla_001 " + e.target.result; 
+										// TODO: error handling when sending command
+											importAsNewPage(e.target.result);
+									};	
+									reader.readAsText(evt.target.files[0]);
+								});
+								input.click();
+				},
+				showLabel: false },	
 			{   text: 'Cancel',
 				icon: 'ui-icon-close',
 				click: function() {	settingsDialog.dialog( "close" ); },

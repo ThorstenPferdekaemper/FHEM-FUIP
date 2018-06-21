@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00013 2018-06-03 15:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00014 2018-06-21 20:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
@@ -760,6 +760,74 @@ sub showAllIcons() {
 };
 
 
+sub urlParamsGet($) {
+	my ($request) = @_;
+	my @splitAtQ = split(/\?/,$request,2);
+	return {} unless exists $splitAtQ[1];
+	my @splitAtA = split(/&/,$splitAtQ[1]);
+	my %result;
+	foreach my $entry (@splitAtA) {
+		my ($key,$value) = split(/=/,$entry,2);
+		$result{$key} = $value;
+	};
+	return \%result;
+};
+
+
+sub settingsExport($$) {
+	my ($hash,$request) = @_;
+	# get pageid and cellid
+	my $urlParams = urlParamsGet($request);
+	# TODO: error management
+	return undef unless exists $urlParams->{pageid};
+	my $result = "";
+	my $filename = "";
+	if(exists $urlParams->{cellid}) {
+		# export cell
+		$result = $hash->{pages}{$urlParams->{pageid}}{cells}[$urlParams->{cellid}]->serialize(); 	
+		$filename = $hash->{NAME}."_".$urlParams->{pageid}."_".$urlParams->{cellid};
+	}else{	
+		# export page
+		$result = $hash->{pages}{$urlParams->{pageid}}->serialize(); 	
+		$filename = $hash->{NAME}."_".$urlParams->{pageid};
+	};	
+	$filename = encodeURIComponent($filename).".fuipexp";
+	return("application/octet-stream; charset=utf-8\r\nContent-Disposition: attachment; filename=\"".$filename."\"",
+		$result); 
+};
+
+
+sub settingsImport($$) {
+	my ($hash,$request) = @_;
+	# get pageid and cellid
+	my $urlParams = urlParamsGet($request);
+	# TODO: error management
+	# content is now in $urlParams->{content}, but URI-encoded
+	return unless $urlParams->{content};
+	my $content = $urlParams->{content};
+	$content =~ s/\+/%20/g;
+	$content = decodeURIComponent($content);
+	my $confHash = eval($content);
+	# cell or page?
+	# TODO: Also maybe full FUIP instances?
+	my $class = $confHash->{class}; # This allows for other cell-implementations (???)
+	delete($confHash->{class});
+	# we only allow FUIP::Cell and FUIP::Page so far
+	# TODO: real error handling
+	return undef unless (exists($urlParams->{cellid}) and $class eq "FUIP::Cell" 
+						 or not exists($urlParams->{cellid}) and $class eq "FUIP::Page"); 
+	my $newObject = $class->reconstruct($confHash,$hash);
+	if(exists($urlParams->{cellid})) {
+		delete $newObject->{posX};
+		delete $newObject->{posY};
+		push(@{$hash->{pages}{$urlParams->{pageid}}{cells}},$newObject);
+	}else{
+		$hash->{pages}{$urlParams->{pageid}} = $newObject;
+	};	
+	return("text/plain; charset=utf-8", "File imported successfully");
+};
+
+
 ##################
 #
 # here we answer any request to http://host:port/fhem/$infix and below
@@ -767,7 +835,7 @@ sub showAllIcons() {
 sub CGI() {
 
   my ($request) = @_;   # /$infix/filename
-
+  
   # main::Log3(undef,1,"FUIP Request: ".$request);
   
 #  Debug "request= $request";
@@ -799,8 +867,16 @@ sub CGI() {
 		if(@path > 0){ shift @path };
 		return getFuipPage($hash,join('/',@path));
 	};
+	
 	# fuip builtin stuff
 	if($path[0] eq "fuip") {
+		# export/import settings
+		if($path[1] =~ m/^export/) {
+			return settingsExport($hash,$request);
+		}elsif($path[1] =~ m/^import/) {
+			return settingsImport($hash,$request);
+		};
+		# other built in fuip files
 		shift @path;
 		$filename = $main::attr{global}{modpath}."/FHEM/lib/FUIP/".join('/',@path);
 		my $MIMEtype= main::filename2MIMEType($filename);
