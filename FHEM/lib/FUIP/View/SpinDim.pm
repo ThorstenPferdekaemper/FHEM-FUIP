@@ -8,7 +8,11 @@ use parent -norequire, 'FUIP::View';
 	
 sub getHTML($){
 	my ($self) = @_;
-	return '<div 
+	my (undef,$height) = $self->dimensions();
+	my $result = '<table style="width:100%;height:'.$height.'px !important;border-collapse: collapse;">
+					<tr>
+					<td style="padding:0;">
+			<div 
 				data-type="spinner" 
 				data-device="'.$self->{dimmer}{device}.'"
 				data-get="'.$self->{dimmer}{reading}.'"
@@ -19,15 +23,20 @@ sub getHTML($){
 				data-icon-left="fa-caret-down"
 				data-icon-right="fa-caret-up"
 				data-gradient-color=\'["black","white"]\'>
-			</div>';	
-
-			
+			</div></td></tr>';	
+	if($self->{label}) {
+		$result .= '<tr><td  style="padding:0;" class="fuip-color">'.$self->{label}.'</td></tr>';
+	};	
+	$result .= '</table>';	
+	return $result;
 };
 
 
 sub dimensions($;$$){
-	# we ignore any settings
-	return (160, 40);
+    my $self = shift;
+	my $height = 40;
+	$height += 17 if($self->{label});
+	return (160, $height);
 };	
 	
 	
@@ -40,10 +49,10 @@ sub getStructure($) {
 		{ id => "dimmer", type => "device-reading", 
 			device => {},
 			reading => { default => { type => "const", value => "level" } } },	
-		{ id => "title", type => "text", default => { type => "field", value => "dimmer-device"} }
+		{ id => "title", type => "text", default => { type => "field", value => "dimmer-device"} },
+		{ id => "label", type => "text" }
 		];
 };
-
 
 # register me as selectable
 $FUIP::View::selectableViews{"FUIP::View::SpinDim"}{title} = "Dimmer (as spinner)"; 
