@@ -108,7 +108,7 @@ function sendFhemCommandLocal(cmdline) {
 
 function postImportCommand(content,isCell,pageid) {
 	var data = encodeURIComponent(content);
-	var url = location.origin + '/fhem/' + $("html").attr("data-name") + '/fuip/import?pageid=' + pageid;
+	var url = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() + '/fuip/import?pageid=' + pageid;
 	if(isCell) { 
 		url += '&cellid=' + $("#viewsettings").attr("data-viewid");
 	};	
@@ -1025,7 +1025,7 @@ function changeSettingsDialog(settingsJson,viewId) {
 			showLabel: false },
 		{	text: 'Export cell',
 			icon: ' ui-icon-arrowstop-1-s',
-			click: function() { location.href = location.origin + '/fhem/' + $("html").attr("data-name") + '/fuip/export?pageid=' + $("html").attr("data-pageid") 
+			click: function() { location.href = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() + '/fuip/export?pageid=' + $("html").attr("data-pageid") 
 			          + '&cellid=' + $("#viewsettings").attr("data-viewid"); },
 			showLabel: false },	
 		{	text: 'Import cell',
@@ -1100,7 +1100,7 @@ function copyCurrentPage() {
 				// TODO: This allows overwriting page "home". Is this good?
 				sendFhemCommandLocal("set " + name + " pagecopy " + pageid + " " + newname)
 					.done(function() {
-						window.location = "/fhem/"+name+"/page/"+newname;
+						window.location = "/fhem/" + name.toLowerCase() +"/page/"+newname;
 					});	
 			},
 			showLabel: false },
@@ -1138,7 +1138,7 @@ function importAsNewPage(content) {
 				// TODO: This allows overwriting any page. Is this good?
 				postImportCommand(content,false,newname)
 					.done(function() {
-						window.location = "/fhem/"+name+"/page/"+newname;
+						window.location = "/fhem/" + name.toLowerCase() + "/page/"+newname;
 					});	
 			},
 			showLabel: false },
@@ -1177,7 +1177,7 @@ function toggleCellPage() {
 				showLabel: false },
 			{	text: 'Export page',
 				icon: ' ui-icon-arrowstop-1-s',
-				click: function() { location.href = location.origin + '/fhem/' + $("html").attr("data-name") + '/fuip/export?pageid=' + $("html").attr("data-pageid"); },
+				click: function() { location.href = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() + '/fuip/export?pageid=' + $("html").attr("data-pageid"); },
 				showLabel: false },	
 			{	text: 'Import page',
 				icon: ' ui-icon-arrowstop-1-n',

@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00015 2018-06-23 20:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00016 2018-06-24 14:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
@@ -82,11 +82,19 @@ sub addExtension($$$$) {
     my $url = "/".$2;
     my $modlink = $1;
 
+	if(exists($main::data{FWEXT}{$url})) {
+		my $msg = 'Link "'.$url.'" already registered';
+		if(defined($main::data{FWEXT}{$url}{deviceName})) {
+			$msg .= ' by device '.$main::data{FWEXT}{$url}{deviceName};
+		};	
+		return $msg;
+	};
     main::Log3 $name, 3, "Registering FUIP $name for URL $url";
-    $main::data{FWEXT}{$url}{deviceName}= $name;
+    $main::data{FWEXT}{$url}{deviceName} = $name;
     $main::data{FWEXT}{$url}{FUNC} = $func;
     $main::data{FWEXT}{$url}{LINK} = $modlink;
     $main::data{FWEXT}{$url}{NAME} = $friendlyname;
+	return undef;
 }
 
 sub removeExtension($) {
@@ -114,7 +122,6 @@ sub Define($$$) {
   my ($hash, $a, undef) = @_;
   # return "Usage: define <name> FUIP <infix> <directory> <friendlyname>"  if(int(@a) != 5);
   my $name= $a->[0];
-  # TODO: check if a device with the same name (except lowercase/uppercase) already exists
   # TODO: check if name allows to be used in an URL
   my $infix= lc($name)."/";
   my $directory= "./www/tablet";  # TODO: change via attribute?
@@ -124,7 +131,8 @@ sub Define($$$) {
   $hash->{fhem}{directory}= $directory;
   $hash->{fhem}{friendlyname}= $friendlyname;
 
-  addExtension($name, "FUIP::CGI", $infix, $friendlyname);
+  my $msg = addExtension($name, "FUIP::CGI", $infix, $friendlyname);
+  return $msg if($msg);
   
   $hash->{STATE} = $name;
   $hash->{pages} = {};
