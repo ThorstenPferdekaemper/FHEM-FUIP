@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00016 2018-06-24 14:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00017 2018-06-25 13:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
@@ -33,6 +33,7 @@ use vars qw(%data);
 use HttpUtils;
 use Scalar::Util qw(blessed);
 use URI::Escape::XS;
+use File::Basename qw(basename);
 
 use lib::FUIP::Model;
 use lib::FUIP::View;
@@ -261,7 +262,7 @@ sub renderPage($$$) {
 				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/font-awesome.min.css\" />
 				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/nesges.css\">
 				<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
-		        <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery-ui.min.js\"></script>".
+		        <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.min.js\"></script>".
 				($locked ? "" : "<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.css\">
 								<!-- tablesorter -->
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.js\"></script>
@@ -907,6 +908,13 @@ sub CGI() {
 	# otherwise, this is some library file or js or...	
 	
     $filename =~ s/\?.*//;
+	
+	# The following is to block any widget to load jquery-ui again. It would break drag/drop of views.
+	my $basename = basename($filename);
+	if($basename eq "jquery-ui.js" or $basename eq "jquery-ui.min.js") {
+		return("text/plain; charset=utf-8", "");	
+	};
+		
     my $MIMEtype= main::filename2MIMEType($filename);
     my $directory= $main::defs{$name}{fhem}{directory};
     $filename= "$directory/$filename";
