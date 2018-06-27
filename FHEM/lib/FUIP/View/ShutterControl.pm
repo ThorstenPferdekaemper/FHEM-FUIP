@@ -49,7 +49,7 @@ use parent -norequire, 'FUIP::View';
 			</table>  		
 			<div style="position:absolute; top:92px; left:210px;"
 				data-type="wdtimer" 
-				data-device="'.$device.'Timer"    
+				data-device="'.$self->{timer}.'"    
 				data-style="round" 
 				data-theme="dark" 
 				data-title="'.$device.'"  
@@ -71,6 +71,7 @@ sub getStructure($) {
 		{ id => "class", type => "class", value => $class },
 		{ id => "device", type => "device" },
 		{ id => "title", type => "text", default => { type => "field", value => "device"} },
+		{ id => "timer", type => "device", default => { type => "field", value => "device", suffix => "Timer" } },
 		{ id => "width", type => "internal", value => 260 },
 		{ id => "height", type => "internal", value => 140 }
 		];

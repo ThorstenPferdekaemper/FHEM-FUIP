@@ -306,8 +306,8 @@ function inputChanged(inputElem,influencedFields) {
 	for(var i = 0; i < influencedFields.length; i++) {
 		// default or own value?
 		if($('#' + influencedFields[i] + '-check').is(':checked')) { continue; };
-		// default, set parent value
-		$('#' + influencedFields[i]).val($(inputElem).val());
+		// default, set default value
+		$('#' + influencedFields[i] + '-check').trigger("change");
 	};
 };
 					
@@ -333,7 +333,11 @@ function defaultCheckChanged(id,defaultDef) {
 				inputField.val(defaultDef.value);
 				break;
 			case 'field':
-				inputField.val($("#" + defaultDef.value).val());
+				var value = $("#" + defaultDef.value).val();
+				if(defaultDef.hasOwnProperty("suffix")) {
+					value += defaultDef.suffix;
+				};	
+				inputField.val(value);
 				break;
 			default:
 				break;
@@ -801,7 +805,11 @@ function createField(settings, fieldNum, component,prefix) {
 			checkValue = " checked";
 		};	
 		var defaultVal = (fieldComp.default.type == 'const' ? '' : prefix) + fieldComp.default.value; 
-		defaultDef = '{type: "' + fieldComp.default.type + '", value: "' + defaultVal + '"}';
+		defaultDef = '{type: "' + fieldComp.default.type + '", value: "' + defaultVal + '"';
+		if(fieldComp.default.hasOwnProperty("suffix")) {
+			defaultDef += ', suffix: "' + fieldComp.default.suffix + '"';
+		};	
+		defaultDef += ' }';
 	};		
 	// find the fields which might be influenced by this field (non-recursive)
 	var influencedFields = [];
