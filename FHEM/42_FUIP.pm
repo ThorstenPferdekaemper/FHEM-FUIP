@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00018 2018-06-27 15:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00019 2018-06-28 14:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
@@ -42,11 +42,11 @@ use lib::FUIP::View;
 my $selectableViews = \%FUIP::View::selectableViews;
 
 my $matchlink = "^\/?(([^\/]*(\/[^\/]+)*)\/?)\$";
-
+my $fuipPath = $main::attr{global}{modpath} . "/FHEM/lib/FUIP/";
 
 # load view modules
 sub loadViews() {
-	my $viewsPath = $main::attr{global}{modpath} . "/FHEM/lib/FUIP/View/";
+	my $viewsPath = $fuipPath . "View/";
 
 	if(not opendir(DH, $viewsPath)) {
 		main::Log3('FUIP', 1, "ERROR: Cannot read view modules");
@@ -957,7 +957,7 @@ sub save($) {
 	my $config = serialize($hash);   
 	my $filename = "FUIP_".$hash->{NAME}.".cfg";
     my @content = split(/\n/,$config);
-	return main::FileWrite($filename,@content);		
+	return main::FileWrite($fuipPath."config/".$filename,@content);		
 };
 
 
@@ -965,8 +965,14 @@ sub load($) {
 	# TODO: some form of error management
 	my ($hash) = @_;
 	my $filename = "FUIP_".$hash->{NAME}.".cfg";
-	my ($error, @content) = main::FileRead($filename);	
-	return $error if($error);
+	# try to read from FUIP directory
+	my ($error, @content) = main::FileRead($fuipPath."config/".$filename);	
+	if($error) {
+		# not found or other issue => try to read from main fhem directory (old location for this file)
+		my $err2;
+		($err2, @content) = main::FileRead($filename);
+		return $error if($err2);  # return $error, even though second read failed. This is to avoid confusing error messages.
+	};	
 	my $config = join("\n",@content);
 	# now config is sth we can "eval"
 	my $confHash = eval($config);

@@ -1,34 +1,28 @@
-# class FUIP::View
 package FUIP::View::STATE;
 
 use strict;
 use warnings;
 
-    use lib::FUIP::View;
-	use parent -norequire, 'FUIP::View';
+use lib::FUIP::View;
+use parent -norequire, 'FUIP::View';
 
 
-	sub getHTML($){
-		my ($self) = @_;
-		# show STATE
-		return "<table width='100%' style='border:1px solid #808080; border-radius:8px;'>
-					<tr><td>".$self->{device}."</td></tr>
-					<tr><td><div data-type=\"label\" 
-								 data-device=\"".$self->{device}."\">
-					</div></td></tr>
-				</table>";
-	};
+sub getHTML($){
+	my ($self) = @_;
+	# show STATE
+	return "<table width='100%' style='border:1px solid #808080; border-radius:8px;'>
+				<tr><td>".$self->{label}."</td></tr>
+				<tr><td><div data-type=\"label\" 
+							 data-device=\"".$self->{device}."\">
+				</div></td></tr>
+			</table>";
+};
 	
 	
-	sub dimensions($;$$){
-		my $self = shift;
-		if (@_) {
-			$self->{width} = shift;
-			$self->{height} = shift;
-		}	
-		$self->{width} = main::AttrVal($self->{fuip}{NAME},"baseWidth",142) unless $self->{width};
-		return ($self->{width}, $self->{height});
-	};	
+sub dimensions($;$$){
+	my $self = shift;
+	return (main::AttrVal($self->{fuip}{NAME},"baseWidth",142), 60);
+};	
 	
 
 sub getStructure($) {
@@ -39,7 +33,7 @@ sub getStructure($) {
 		{ id => "class", type => "class", value => $class },
 		{ id => "device", type => "device" },
 		{ id => "title", type => "text", default => { type => "field", value => "device"} },
-		{ id => "height", type => "internal", value => 60 }
+		{ id => "label", type => "text", default => { type => "field", value => "title"} }
 		];
 };
 
