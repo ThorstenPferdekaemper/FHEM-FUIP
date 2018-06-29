@@ -1,8 +1,11 @@
 // everything which should be run after the page has loaded
 var fuipGridster;
+var fuip = {};
 
 function fuipInit(baseWidth,baseHeight,maxCols) {
 	$( function() {
+		// csrf token
+		getLocalCSrf();
 		// the settings dialog
 		var viewsettings;
 		viewsettings = $( "#viewsettings" ).dialog({
@@ -50,6 +53,25 @@ function fuipInit(baseWidth,baseHeight,maxCols) {
 };
 				
 
+function getLocalCSrf() {
+    $.ajax({
+        'url': location.origin + '/fhem/',
+        'type': 'GET',
+        cache: false,
+        data: {
+            XHR: "1"
+        },
+        'success': function (data, textStatus, jqXHR) {
+            fuip.csrf = jqXHR.getResponseHeader('X-FHEM-csrfToken');
+            // ftui.log(1, 'Got csrf from FHEM:' + ftui.config.csrf);
+        }
+    }); //.fail(function (jqXHR, textStatus, errorThrown) {
+            //ftui.log(1, "Failed to get csrfToken: " + textStatus + ": " + errorThrown);
+            //ftui.config.shortPollDelay = 30000;
+        //});
+};
+				
+				
 
 // when cell move/resize stops
 function onGridsterChangeStop(e,ui,widget) {
@@ -99,7 +121,7 @@ function sendFhemCommandLocal(cmdline) {
 		// password: ftui.config.password,
 		data: {
 			cmd: cmdline,
-			// fwcsrf: ftui.config.csrf,
+			fwcsrf: fuip.csrf,
 			XHR: "1"
 		}
 	});

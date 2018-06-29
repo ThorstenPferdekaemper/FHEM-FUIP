@@ -28,10 +28,74 @@ sub getFhemwebUrl($) {
 };
 
 
-sub _sendRemoteCommand($$) {
-	my ($url,$cmd) = @_;
-	my $fullurl = $url.'?cmd='.main::urlEncode($cmd).'&XHR=1';
-	return main::GetFileFromURL($fullurl);
+sub _getCsrfToken($)
+{
+	my ($url) = @_;
+	my $hash = { 
+			hideurl   => 0,
+			url       => $url,
+            timeout   => undef,
+            data      => undef,
+            noshutdown=> undef,
+            loglevel  => 4,
+        };
+	my ($err, $ret) = main::HttpUtils_BlockingGet($hash);
+	return "err" if $err;
+	return "err" unless defined($hash->{httpheader});
+	$hash->{httpheader} =~ /X-FHEM-csrfToken:[\x20 ](\S*)/;
+	return "" unless $1;
+	return $1;	
+}
+
+
+sub _sendRemoteCommand($$$) {
+	my ($name,$url,$cmd) = @_;
+	# get csrf token unless buffered
+	if(not defined $buffer{$name}{csrfToken}) {
+		$buffer{$name}{csrfToken} = _getCsrfToken($url);
+		main::Log3('FUIP:'.$name, 3, "Determined new csrfToken: ".$buffer{$name}{csrfToken});
+	};	
+	my $fullurl = $url.'?cmd='.main::urlEncode($cmd).'&XHR=1&fwcsrf='.$buffer{$name}{csrfToken};
+	
+	my $hash = { hideurl   => 0,
+               url       => $fullurl,
+               timeout   => undef,
+               data      => undef,
+               noshutdown=> undef,
+               loglevel  => 4,
+             };
+	my ($err, $ret) = main::HttpUtils_BlockingGet($hash);
+	if($err) {
+		main::Log3("FUIP:".$name, 3, "Access remote system: $err");
+		return undef;
+	}
+	# do we have an issue with the csrf token?
+	if($hash->{code} == 400) {
+		# no header -> sth else
+		# TODO: really proper error management
+		return undef unless defined($hash->{httpheader});	
+		$hash->{httpheader} =~ /X-FHEM-csrfToken:[\x20 ](\S*)/;
+		return undef unless $1;
+		return undef if($1 eq $buffer{$name}{csrfToken});
+		# ok, we have a different token
+		$buffer{$name}{csrfToken} = $1;  # set new token
+		main::Log3('FUIP:'.$name, 3, "Determined new csrfToken: ".$buffer{$name}{csrfToken});
+		# retry, but only once
+		$fullurl = $url.'?cmd='.main::urlEncode($cmd).'&XHR=1&fwcsrf='.$buffer{$name}{csrfToken};
+		$hash = { hideurl   => 0,
+               url       => $url.'?cmd='.main::urlEncode($cmd).'&XHR=1&fwcsrf='.$buffer{$name}{csrfToken},
+               timeout   => undef,
+               data      => undef,
+               noshutdown=> undef,
+               loglevel  => 4,
+              };
+		($err, $ret) = main::HttpUtils_BlockingGet($hash);
+		if($err) {
+			main::Log3("FUIP:".$name, 3, "Access remote system: $err");
+			return undef;
+		}
+	};  
+	return $ret;
 };
 
 
@@ -45,7 +109,7 @@ sub getDeviceKeys($) {
 	my @devices;
 	my $url = getFhemwebUrl($name);
 	if($url) {
-		my $devicesStr = _sendRemoteCommand($url,
+		my $devicesStr = _sendRemoteCommand($name,$url,
 			'{  
 				return join(",",(keys %defs));;
 			}');
@@ -71,7 +135,7 @@ sub getRooms($) {
 	my @rooms;
 	my $url = getFhemwebUrl($name);
 	if($url) {
-		my $roomsStr = _sendRemoteCommand($url,
+		my $roomsStr = _sendRemoteCommand($name,$url,
 			'{
 				my %rooms;;
 				foreach my $d (keys %defs ) {
@@ -111,7 +175,7 @@ sub getReadingsOfDevice($$) {
 	my @readings;
 	my $url = getFhemwebUrl($name);
 	if($url) {
-		my $readingsStr = _sendRemoteCommand($url,
+		my $readingsStr = _sendRemoteCommand($name,$url,
 			'{  
 				return "" unless defined $defs{"'.$device.'"};;
 				return join(",",(keys($defs{"'.$device.'"}{READINGS})));;
@@ -141,7 +205,7 @@ sub getDevicesForRoom($$) {
 	my @devices;
 	my $url = getFhemwebUrl($name);
 	if($url) {
-		my $devicesStr = _sendRemoteCommand($url,
+		my $devicesStr = _sendRemoteCommand($name,$url,
 			'{  
 				my @devices;;
 				foreach my $d (keys %attr ) {
@@ -189,7 +253,7 @@ sub getDevice($$$) {
 		my $cmd = 'jsonlist2 '.$devName.' '.join(' ',keys %fieldHash);
 		my $jsonResult;
 		if($url) {
-			$jsonResult = _sendRemoteCommand($url,$cmd);
+			$jsonResult = _sendRemoteCommand($name,$url,$cmd);
 		}else{
 			$jsonResult = main::fhem($cmd,1);
 		};
@@ -230,7 +294,7 @@ sub getSetsOfDevice($$) {
 	my $resultStr;
 	$DB::single = 1;
 	if($url) {
-		$resultStr = _sendRemoteCommand($url,
+		$resultStr = _sendRemoteCommand($fuipName,$url,
 			'{  
 				return getAllSets("'.$devName.'");;
 			}');
@@ -258,7 +322,7 @@ sub getDevicesForReading($$) {
 	my @devices;
 	my $url = getFhemwebUrl($name);
 	if($url) {
-		my $devicesStr = _sendRemoteCommand($url,
+		my $devicesStr = _sendRemoteCommand($name,$url,
 			'{  
 				return join(",", grep { defined $defs{$_}{READINGS}{"'.$reading.'"} } keys %defs) 
 			}');
