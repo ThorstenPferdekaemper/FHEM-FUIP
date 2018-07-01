@@ -3,29 +3,39 @@ package FUIP::View::Select;
 use strict;
 use warnings;
 
-    use lib::FUIP::View;
-	use parent -norequire, 'FUIP::View';
+use lib::FUIP::View;
+use parent -norequire, 'FUIP::View';
 	
 	
-	sub getHTML($){
-		my ($self) = @_;
-		my $widthclass = "";
-		if($self->{width} eq "single") {
-			$widthclass = "1";
-		}elsif($self->{width} eq "double") {
-			$widthclass = "2";
-		}elsif($self->{width} eq "triple") {
-			$widthclass = "3";
-		};
-		if($widthclass) {
-			$widthclass = ' class="w'.$widthclass.'x"';
-		};
-		return ' <div data-type="select"'.$widthclass.'
+sub getHTML($){
+	my ($self) = @_;
+	my $widthclass = "";
+	if($self->{width} eq "single") {
+		$widthclass = "1";
+	}elsif($self->{width} eq "double") {
+		$widthclass = "2";
+	}elsif($self->{width} eq "triple") {
+		$widthclass = "3";
+	};
+	if($widthclass) {
+		$widthclass = ' class="w'.$widthclass.'x"';
+	};
+	my (undef,$height) = $self->dimensions();
+	my $result = '<table style="width:100%;height:'.$height.'px !important;border-collapse: collapse;">
+					<tr>
+					<td style="padding:0;">
+					<div data-type="select"'.$widthclass.'
 					data-device="'.$self->{device}.'"
 					data-items=\''.$self->{options}.'\'
 					data-get="'.$self->{reading}.'"
-					data-set="'.$self->{set}.'"></div>';
+					data-set="'.$self->{set}.'"></div>
+					</td></tr>';
+	if($self->{label}) {
+		$result .= '<tr><td  style="padding:0;" class="fuip-color">'.$self->{label}.'</td></tr>';
 	};
+	$result .= '</table>';	
+	return $result;
+};				
 
 	
 sub dimensions($;$$){
@@ -37,11 +47,11 @@ sub dimensions($;$$){
 	}elsif($self->{width} eq "triple") {
 		$width = 160;
 	};
-	return ($width, 32);
+	return ($width, ($self->{label} ? 49 : 32));
 };	
 	
 	
-	sub getStructure($) {
+sub getStructure($) {
 	# class method
 	# returns general structure of the view without instance values
 	my ($class) = @_;
@@ -53,7 +63,8 @@ sub dimensions($;$$){
 		{ id => "options", type => "setoptions", refset => "set" }, 	
 		{ id => "width", type => "text", options => [ "single", "double", "triple", "auto" ], 
 			default => { type => "const", value => "double" } }, 
-		{ id => "title", type => "text", default => { type => "field", value => "device"} }
+		{ id => "title", type => "text", default => { type => "field", value => "device"} },
+		{ id => "label", type => "text" }
 		];
 };
 
