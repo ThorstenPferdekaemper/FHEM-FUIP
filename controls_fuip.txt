@@ -6,7 +6,7 @@ DIR FHEM/lib/FUIP/js
 DIR FHEM/lib/FUIP/View
 DIR FHEM/lib/FUIP/jquery-ui
 DIR FHEM/lib/FUIP/jquery-ui/images
-UPD 2018-07-01_22:14:12 46830 FHEM/42_FUIP.pm
+UPD 2018-07-04_14:13:27 46830 FHEM/42_FUIP.pm
 UPD 2018-06-29_21:36:42 9844 FHEM/lib/FUIP/Model.pm
 UPD 2018-03-23_23:23:34 9048 FHEM/lib/FUIP/View.pm
 UPD 2018-03-23_23:32:09 3698 FHEM/lib/FUIP/View/Batteries.pm
@@ -43,6 +43,6 @@ UPD 2018-03-21_13:10:11 4632 FHEM/lib/FUIP/jquery-ui/images/ui-icons_cc0000_256x
 UPD 2018-03-21_13:10:11 6313 FHEM/lib/FUIP/jquery-ui/images/ui-icons_ffffff_256x240.png
 UPD 2018-03-21_13:10:11 37326 FHEM/lib/FUIP/jquery-ui/jquery-ui.css
 UPD 2017-12-18_22:55:39 253669 FHEM/lib/FUIP/jquery-ui/jquery-ui.min.js
-UPD 2018-06-28_21:17:20 42355 FHEM/lib/FUIP/js/fuip.js
+UPD 2018-07-04_14:06:55 42763 FHEM/lib/FUIP/js/fuip.js
 UPD 2018-03-17_23:57:55 106396 FHEM/lib/FUIP/js/jquery.tablesorter.js
 UPD 2018-03-17_23:57:55 125594 FHEM/lib/FUIP/js/jquery.tablesorter.widgets.js

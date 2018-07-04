@@ -1097,6 +1097,16 @@ function changeSettingsDialog(settingsJson,viewId) {
 					
 				
 function openSettingsDialog(name, pageId, viewId) {
+	// FTUI switches off text selection (which only seems to work in IE)
+	// The following switches it back on, so select,copy,cut,paste etc. can be used
+    $("body").each(function () {
+        this.onselectstart = function () {
+            return true;
+        };
+        this.unselectable = "off";
+        $(this).css('-moz-user-select', 'text');
+        $(this).css('-webkit-user-select', 'text');
+    });	
 	var settingsDialog = $( "#viewsettings" );
 	// XMLHTTP request to get config options with current values
 	var cmd = "get " + name + " cellsettings " + pageId + "_" + viewId;
