@@ -41,21 +41,21 @@ sub getHTML($){
 			$result .= '<div style="margin-top:-30px;margin-bottom:-30px;margin-right:-10px" data-type="symbol" 
 							data-device="'.$devKey.'" data-get="batteryLevel"
 							data-icons=\'["oa-measure_battery_0 fa-rotate-90","oa-measure_battery_25 fa-rotate-90","oa-measure_battery_50 fa-rotate-90","oa-measure_battery_75 fa-rotate-90","oa-measure_battery_100 fa-rotate-90"]\'
-							data-get-on=\'["0","2.1","2.4","2.7","3.0"]\'
-							data-on-colors=\'["red","yellow","green","green","green"]\'>
+							data-states=\'["0","2.1","2.4","2.7","3.0"]\'
+							data-colors=\'["red","yellow","green","green","green"]\'>
 						</div>';
 		}elsif(exists($device->{batVoltage})){
 			$result .= '<div style="margin-top:-30px;margin-bottom:-30px;margin-right:-10px" data-type="symbol" 
 							data-device="'.$devKey.'" data-get="batVoltage"
 							data-icons=\'["oa-measure_battery_0 fa-rotate-90","oa-measure_battery_25 fa-rotate-90","oa-measure_battery_50 fa-rotate-90","oa-measure_battery_75 fa-rotate-90","oa-measure_battery_100 fa-rotate-90"]\'
-							data-get-on=\'["0","2.1","2.4","2.7","3.0"]\'
-							data-on-colors=\'["red","yellow","green","green","green"]\'></div>';
+							data-states=\'["0","2.1","2.4","2.7","3.0"]\'
+							data-colors=\'["red","yellow","green","green","green"]\'></div>';
 		} elsif(exists($device->{battery})){
 			$result .= '<div style="margin-top:-30px;margin-bottom:-30px;margin-right:-10px" data-type="symbol" 
 							data-device="'.$devKey.'" data-get="battery"
 							data-icons=\'["oa-measure_battery_0 fa-rotate-90","oa-measure_battery_75 fa-rotate-90"]\'
 							data-states=\'["((?!ok).)*","ok"]\'
-							data-on-colors=\'["red","green"]\'></div>';
+							data-colors=\'["red","green"]\'></div>';
 		};
 		$result .= '</td><td>';
 		if(exists($device->{batteryLevel})){

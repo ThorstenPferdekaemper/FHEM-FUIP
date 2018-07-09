@@ -3,7 +3,8 @@ package FUIP::Model;
 use strict;
 use warnings;
 
-use JSON::Parse 'parse_json';
+#use JSON::Parse 'parse_json';
+use JSON 'from_json';
 
 my %buffer;
 # FUIP-name => {rooms => [<room>],
@@ -257,7 +258,10 @@ sub getDevice($$$) {
 		}else{
 			$jsonResult = main::fhem($cmd,1);
 		};
-		my $newDev = parse_json($jsonResult);
+		# the json "object" is always a proper object, but nevertheless some Perl JSON 
+		# implementations throw an error sometimes without allow_nonref
+		my $newDev = from_json($jsonResult, {allow_nonref => 1});
+		main::Log3('FUIP:'.$name, 3, "getDevice: NULL") unless $newDev;
 		for my $entry (@{$newDev->{Results}}) {
 			next unless $entry->{Name} eq $devName;
 			for my $key (keys %{$entry->{Internals}}) {

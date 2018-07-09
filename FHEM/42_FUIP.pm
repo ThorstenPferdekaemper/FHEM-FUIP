@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00022 2018-07-04 13:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00023 2018-07-09 14:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
@@ -32,7 +32,6 @@ use POSIX qw(ceil);
 use vars qw(%data);
 use HttpUtils;
 use Scalar::Util qw(blessed);
-use URI::Escape::XS;
 use File::Basename qw(basename);
 
 use lib::FUIP::Model;
@@ -800,7 +799,7 @@ sub settingsExport($$) {
 		$result = $hash->{pages}{$urlParams->{pageid}}->serialize(); 	
 		$filename = $hash->{NAME}."_".$urlParams->{pageid};
 	};	
-	$filename = encodeURIComponent($filename).".fuipexp";
+	$filename = main::urlEncode($filename).".fuipexp";
 	return("application/octet-stream; charset=utf-8\r\nContent-Disposition: attachment; filename=\"".$filename."\"",
 		$result); 
 };
@@ -815,7 +814,7 @@ sub settingsImport($$) {
 	return unless $urlParams->{content};
 	my $content = $urlParams->{content};
 	$content =~ s/\+/%20/g;
-	$content = decodeURIComponent($content);
+	$content = main::urlDecode($content);
 	my $confHash = eval($content);
 	# cell or page?
 	# TODO: Also maybe full FUIP instances?
@@ -1015,8 +1014,7 @@ sub setField($$$$$) {
 		$compName = $comp;
 		$nameInValues .= "-".$comp;
 	};
-	
-	$refIntoView->{$compName} = decodeURIComponent($values->{$nameInValues}) if(defined($values->{$nameInValues}));
+	$refIntoView->{$compName} = main::urlDecode($values->{$nameInValues}) if(defined($values->{$nameInValues}));
 	# if this has a default setting 
 	if(defined($refIntoField->{default}) and defined($values->{$nameInValues."-check"})) {
 		$refIntoDefaulted->{$compName} = ($values->{$nameInValues."-check"} eq "1" ? 0 : 1);
@@ -1329,8 +1327,7 @@ sub _toJson($){
         };
 		$result .= " ] ";
     }else{	
-		# $var =~ s/"/\\"/g;
-	    $result .= '"'.encodeURIComponent($var).'"';
+	    $result .= '"'.main::urlEncode($var).'"';
 	};	
     return $result;
 };

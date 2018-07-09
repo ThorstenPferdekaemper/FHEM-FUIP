@@ -301,6 +301,7 @@ sub applyDefaultToField($$$){
 		for my $field (@defValPath) {
 			$defaultValue = $defaultValue->{$field};
 		};	
+		$defaultValue = $defaultValue.$defaultDef->{suffix} if(defined($defaultDef->{suffix})); 
 	}else{
 		return; #something wrong
 	};
