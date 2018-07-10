@@ -10,7 +10,7 @@ use parent -norequire, 'FUIP::View';
 	sub getHTML($){
 		my ($self) = @_;
 		my $device = $self->{device};
-		return '
+		my $result = '
 			<div style="position:relative";>
 			<table>	
 				<tr>
@@ -46,7 +46,9 @@ use parent -norequire, 'FUIP::View';
 						</div>
 					</td>
 				</tr>	
-			</table>  		
+			</table>';
+		if($self->{timer}) {
+			$result .= '
 			<div style="position:absolute; top:92px; left:210px;"
 				data-type="wdtimer" 
 				data-device="'.$self->{timer}.'"    
@@ -58,8 +60,10 @@ use parent -norequire, 'FUIP::View';
 				<div data-type="button" class="cell small readonly" data-icon="oa-edit_settings" data-background-icon="fa-square-o" 
 						data-on-color="#505050" data-on-background-color="#505050">
 				</div>
-			</div> 	
 			</div>';
+		};
+		$result .= '</div>';
+		return $result;
 	};
 
 	

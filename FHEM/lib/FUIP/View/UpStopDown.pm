@@ -11,9 +11,9 @@ sub getHTML($){
 	my $left = "";
 	$left = 'left:24px;' if($self->{label}); 
 	my $result = '<div style="width:100px;height:140px;">
-					<div style="position:absolute;top:0px;'.$left.'" data-type="push" data-device="'.$self->{device}.'" data-icon="fa-chevron-up" data-background-icon="fa-square-o" data-set-on="up" class="readonly"> </div>
-					<div style="position:absolute;top:44px;'.$left.'" data-type="push" data-device="'.$self->{device}.'" data-icon="fa-minus" data-background-icon="fa-square-o" data-set-on="stop" class="readonly"> </div>
-					<div style="position:absolute;top:86px;'.$left.'" data-type="push" data-device="'.$self->{device}.'" data-icon="fa-chevron-down" data-background-icon="fa-square-o" data-set-on="down" class="readonly"> </div>
+					<div style="position:absolute;top:0px;'.$left.'" data-type="push" data-device="'.$self->{device}.'" data-icon="fa-chevron-up" data-background-icon="fa-square-o" data-set-on="'.$self->{setUp}.'" class="readonly"> </div>
+					<div style="position:absolute;top:44px;'.$left.'" data-type="push" data-device="'.$self->{device}.'" data-icon="fa-minus" data-background-icon="fa-square-o" data-set-on="'.$self->{setStop}.'" class="readonly"> </div>
+					<div style="position:absolute;top:86px;'.$left.'" data-type="push" data-device="'.$self->{device}.'" data-icon="fa-chevron-down" data-background-icon="fa-square-o" data-set-on="'.$self->{setDown}.'" class="readonly"> </div>
 					</div>';
 	if($self->{label}) {
 		$result .= '<div class="fuip-color">'.$self->{label}.'</div>';
@@ -41,6 +41,9 @@ sub getStructure($) {
 	return [
 		{ id => "class", type => "class", value => $class },
 		{ id => "device", type => "device" },
+		{ id => "setUp", type => "set", refdevice => "device", default => { type => "const", value => "up" } },
+		{ id => "setStop", type => "set", refdevice => "device", default => { type => "const", value => "stop" } },
+		{ id => "setDown", type => "set", refdevice => "device", default => { type => "const", value => "down" } },
 		{ id => "title", type => "text", default => { type => "field", value => "device"} },
 		{ id => "label", type => "text" }
 		];
