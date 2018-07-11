@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00024 2018-07-10 20:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00025 2018-07-11 13:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
@@ -956,7 +956,13 @@ sub save($) {
 	my $config = serialize($hash);   
 	my $filename = "FUIP_".$hash->{NAME}.".cfg";
     my @content = split(/\n/,$config);
-	return main::FileWrite($fuipPath."config/".$filename,@content);		
+	# make sure config directory exists
+	my $cfgPath = $fuipPath."config";
+	if(not(-d $cfgPath)) {
+		mkdir($cfgPath);
+		# we do not check for errors here as anyway the FileWrite will fail
+	};
+	return main::FileWrite($cfgPath."/".$filename,@content);		
 };
 
 
