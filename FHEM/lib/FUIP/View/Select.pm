@@ -21,14 +21,19 @@ sub getHTML($){
 		$widthclass = ' class="w'.$widthclass.'x"';
 	};
 	my (undef,$height) = $self->dimensions();
+	# if the set command is "state", then it needs to be blanked out
+	my $set = ($self->{set} eq "state" ? "" : $self->{set}); 
+	# data-list needs to be set "" explicitly as the default is setList, which would then fetch it
+	# again from the device, overriding our settings
 	my $result = '<table style="width:100%;height:'.$height.'px !important;border-collapse: collapse;">
 					<tr>
 					<td style="padding:0;">
 					<div data-type="select"'.$widthclass.'
 					data-device="'.$self->{device}.'"
+					data-list=""
 					data-items=\''.$self->{options}.'\'
 					data-get="'.$self->{reading}.'"
-					data-set="'.$self->{set}.'"></div>
+					data-set="'.$set.'"></div>
 					</td></tr>';
 	if($self->{label}) {
 		$result .= '<tr><td  style="padding:0;" class="fuip-color">'.$self->{label}.'</td></tr>';

@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00025 2018-07-11 13:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00026 2018-07-13 14:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
