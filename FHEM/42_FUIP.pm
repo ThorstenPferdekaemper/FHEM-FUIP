@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00026 2018-07-13 14:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00027 2018-07-14 20:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
@@ -48,20 +48,20 @@ sub loadViews() {
 	my $viewsPath = $fuipPath . "View/";
 
 	if(not opendir(DH, $viewsPath)) {
-		main::Log3('FUIP', 1, "ERROR: Cannot read view modules");
+		main::Log3(undef, 1, "FUIP ERROR: Cannot read view modules");
 		return;
 	};	
 	foreach my $m (sort readdir(DH)) {
 		next if($m !~ m/(.*)\.pm$/);
 		my $viewFile = $viewsPath . $m;
 		if(-r $viewFile) {
-			main::Log3("FUIP", 4, 'Loading view: ' .  $viewFile);
+			main::Log3(undef, 4, 'FUIP: Loading view: ' .  $viewFile);
 			my $includeResult = do $viewFile;
 			if(not $includeResult) {
-				main::Log3("FUIP", 1, 'Error in view module: ' . $viewFile . ":\n $@");
+				main::Log3(undef, 1, 'FUIP: Error in view module: ' . $viewFile . ":\n $@");
 			}
 		} else {
-			main::Log3("FUIP", 1, 'Error loading view module file: ' .  $viewFile);
+			main::Log3(undef, 1, 'FUIP: Error loading view module file: ' .  $viewFile);
 		}
 	}
 	closedir(DH);
@@ -89,7 +89,7 @@ sub addExtension($$$$) {
 		};	
 		return $msg;
 	};
-    main::Log3 $name, 3, "Registering FUIP $name for URL $url";
+    main::Log3($name, 3, "FUIP: Registering $name for URL $url");
     $main::data{FWEXT}{$url}{deviceName} = $name;
     $main::data{FWEXT}{$url}{FUNC} = $func;
     $main::data{FWEXT}{$url}{LINK} = $modlink;
@@ -536,7 +536,9 @@ sub getDeviceViewsForRoom($$$) {
 
 
 sub findPositions($$) {
-	my ($cells,$maxCols) = @_;
+	my ($hash,$pageId) = @_;
+	my $cells = $hash->{pages}{$pageId}{cells};
+	my $maxCols = determineMaxCols($hash);
 	# find positions for all views
 	# cells array:
     #   0 or undef means that the cell is free
@@ -587,7 +589,7 @@ sub findPositions($$) {
 	    };
 		# "not found" would be very weird here.
 		# TODO: What to do?
-		main::Log3('FUIP', 1, "No place found for cell") unless $found;
+		main::Log3($hash, 1, "FUIP: No place found for cell") unless $found;
 		# now occupy the place
 		for (my $yv = $y; $yv < $y + $dim[1]; $yv++) {
 			for (my $xv = $x; $xv < $x + $dim[0]; $xv++) {
@@ -602,11 +604,11 @@ sub findPositions($$) {
 
 sub renderCells($$$) {
 	my ($hash,$pageId,$locked) = @_;
-	my $cells = $hash->{pages}{$pageId}{cells};
-	findPositions($cells,determineMaxCols($hash));
+	findPositions($hash,$pageId);
 	# now try to render this
 	my $result;
 	my $i = 0;
+	my $cells = $hash->{pages}{$pageId}{cells};
 	for my $cell (@{$cells}) {
 		my ($col,$row) = $cell->position();
 		my ($sizeX, $sizeY) = $cell->dimensions();
@@ -635,7 +637,6 @@ sub renderCells($$$) {
 
 sub FW_setPositionsAndDimensions($$$) {
 	my ($name,$pageid,$cells) = @_;
-	main::Log3(undef,1,"FW_setPositionsAndDimensions ".$pageid);	
 	my $hash = $main::defs{$name};
 	return unless $hash;
 	return unless defined($hash->{pages}{$pageid});
@@ -653,8 +654,6 @@ sub FW_setPositionsAndDimensions($$$) {
 		$page->[$i]{width} = $cells->[$i]->{size_x};
 		$page->[$i]{height} = $cells->[$i]->{size_y};
 	};
-	
-	# main::Log3(undef,1,main::Dumper(@_));
 };
 
 
@@ -845,9 +844,6 @@ sub CGI() {
   my ($request) = @_;   # /$infix/filename
   
   # main::Log3(undef,1,"FUIP Request: ".$request);
-  
-#  Debug "request= $request";
-  
   # Match request first without trailing / in the link part 
   if($request =~ m,^(/[^/]+)(/(.*)?)?$,) {
     my $link= $1;
@@ -1198,6 +1194,8 @@ sub Set($$$)
 {
 	my ( $hash, $a, $h ) = @_;
 
+	main::Log3($hash, 4, 'FUIP: Set: ' . main::Dumper($a).'  '.main::Dumper($h));
+	
 	return "\"set ".$hash->{NAME}."\" needs at least one argument" unless(@$a > 1);
 	my $cmd = $a->[1];
 	if($cmd eq "save"){
