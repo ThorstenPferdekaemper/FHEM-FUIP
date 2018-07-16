@@ -63,12 +63,12 @@ function getLocalCSrf() {
         },
         'success': function (data, textStatus, jqXHR) {
             fuip.csrf = jqXHR.getResponseHeader('X-FHEM-csrfToken');
-            // ftui.log(1, 'Got csrf from FHEM:' + ftui.config.csrf);
-        }
-    }); //.fail(function (jqXHR, textStatus, errorThrown) {
-            //ftui.log(1, "Failed to get csrfToken: " + textStatus + ": " + errorThrown);
-            //ftui.config.shortPollDelay = 30000;
-        //});
+        },
+		error: function (jqXHR, textStatus, errorThrown) {
+			console.log("FUIP: Failed to get csrfToken: " + textStatus + ": " + errorThrown);
+			ftui.toast("FUIP: Failed to get csrfToken: " + textStatus + ": " + errorThrown,"error");
+		}
+    }); 
 };
 				
 				
@@ -98,14 +98,16 @@ function onDragStop(cell,ui) {
 		var newCellPos = cell.position();
 		cmd = cmd + " viewmove " + pageId + "_" + oldCellId + "_" + viewId + " " + cellId + " " + (ui.position.left + oldCellPos.left - newCellPos.left) + " " + (ui.position.top + oldCellPos.top - newCellPos.top - 22); 
 		// TODO: error handling when sending command
-		sendFhemCommandLocal(cmd);
-		location.reload(true);
+		sendFhemCommandLocal(cmd).done(function() { 
+			location.reload(true);
+		});	
 		return;
 	};	
 	cmd = cmd + " viewposition " + pageId + "_" + cellId + "_" + viewId + " " + ui.position.left + " " + (ui.position.top - 22); 
 	// TODO: error handling when sending command
-	sendFhemCommandLocal(cmd);
-	location.reload(true);
+	sendFhemCommandLocal(cmd).done(function() {
+		location.reload(true);
+	});	
 };
 							
 					
@@ -123,6 +125,11 @@ function sendFhemCommandLocal(cmdline) {
 			cmd: cmdline,
 			fwcsrf: fuip.csrf,
 			XHR: "1"
+		},
+		error: function (jqXHR, textStatus, errorThrown) {
+				console.log("FUIP command: " + cmdline);
+				console.log("FUIP: Local FHEM command failed: " + jqXHR.status + " " + textStatus + " " + errorThrown);
+				ftui.toast("FUIP: Local FHEM command failed: " + jqXHR.status + " " + textStatus + " " + errorThrown,"error");
 		}
 	});
 };
@@ -142,7 +149,11 @@ function postImportCommand(content,isCell,pageid) {
 		url: url,
 		// username: ftui.config.username,
 		// password: ftui.config.password,
-		data: 'content=' + data
+		data: 'content=' + data,
+		error: function (jqXHR, textStatus, errorThrown) {
+			console.log("FUIP: File import failed: " + textStatus + ": " + errorThrown);
+			ftui.toast("FUIP: File import failed: " + textStatus + ": " + errorThrown,"error");
+		}
 	});
 };
 					
@@ -153,8 +164,9 @@ function autoArrange() {
 	var viewId = $("#viewsettings").attr("data-viewid");	
 	var cmd = "set " + name + " autoarrange " + pageId + "_" + viewId; 
 	// TODO: error handling when sending command
-	sendFhemCommandLocal(cmd);
-	location.reload(true);
+	sendFhemCommandLocal(cmd).done(function() {
+		location.reload(true);
+	});	
 };
 					
 					
@@ -205,9 +217,10 @@ function acceptSettings() {
 	var viewId = $("#viewsettings").attr("data-viewid");	
 	cmd = "set " + name + " viewsettings " + pageId + "_" + viewId + cmd; 
 	// TODO: error handling when sending command
-	sendFhemCommandLocal(cmd);
-	$("#viewsettings").dialog( "close" );
-	location.reload(true);
+	sendFhemCommandLocal(cmd).done(function() {
+		$("#viewsettings").dialog( "close" );
+		location.reload(true);
+	});	
 };
 
 
@@ -229,9 +242,10 @@ function acceptPageSettings() {
 	var pageId = $("html").attr("data-pageid");
 	cmd = "set " + name + " pagesettings " + pageId + cmd; 
 	// TODO: error handling when sending command
-	sendFhemCommandLocal(cmd);
-	$("#viewsettings").dialog( "close" );
-	location.reload(true);
+	sendFhemCommandLocal(cmd).done(function () {
+		$("#viewsettings").dialog( "close" );
+		location.reload(true);
+	});	
 };
 
 
@@ -240,9 +254,10 @@ function viewAddNew() {
 	var pageId = $("html").attr("data-pageid");
 	cmd = "set " + name + " viewaddnew " + pageId; 
 	// TODO: error handling when sending command
-	sendFhemCommandLocal(cmd);
-	$("#viewsettings").dialog( "close" );
-	location.reload(true);
+	sendFhemCommandLocal(cmd).done(function () {
+		$("#viewsettings").dialog( "close" );
+		location.reload(true);
+	});	
 };
 					
 
@@ -318,9 +333,10 @@ function deleteView() {
 	var viewId = $("#viewsettings").attr("data-viewid");	
 	cmd = "set " + name + " viewdelete " + pageId + "_" + viewId; 
 	// TODO: error handling when sending command
-	sendFhemCommandLocal(cmd);
-	$("#viewsettings").dialog( "close" );
-	location.reload(true);
+	sendFhemCommandLocal(cmd).done(function () {
+		$("#viewsettings").dialog( "close" );
+		location.reload(true);
+	});	
 };
 					
 					
