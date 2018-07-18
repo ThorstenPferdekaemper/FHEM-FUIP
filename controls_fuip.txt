@@ -1,11 +1,12 @@
 DIR FHEM/lib
 DIR FHEM/lib/FUIP
 DIR FHEM/lib/FUIP/css
+DIR FHEM/lib/FUIP/images
 DIR FHEM/lib/FUIP/js
 DIR FHEM/lib/FUIP/View
 DIR FHEM/lib/FUIP/jquery-ui
 DIR FHEM/lib/FUIP/jquery-ui/images
-UPD 2018-07-16_14:48:03 46985 FHEM/42_FUIP.pm
+UPD 2018-07-18_15:36:53 48212 FHEM/42_FUIP.pm
 UPD 2018-07-09_15:46:16 10101 FHEM/lib/FUIP/Model.pm
 UPD 2018-06-27_15:20:58 9139 FHEM/lib/FUIP/View.pm
 UPD 2018-07-08_21:40:00 3689 FHEM/lib/FUIP/View/Batteries.pm
@@ -35,6 +36,9 @@ UPD 2018-03-23_23:30:51 1306 FHEM/lib/FUIP/View/Title.pm
 UPD 2018-07-10_21:16:48 2060 FHEM/lib/FUIP/View/UpStopDown.pm
 UPD 2018-03-17_23:57:54 7260 FHEM/lib/FUIP/css/theme.blue.css
 UPD 2018-03-17_23:57:55 5774 FHEM/lib/FUIP/css/theme.default.css
+UPD 2018-07-16_21:39:39 37 FHEM/lib/FUIP/images/lizenzen.txt
+UPD 2018-07-17_20:59:37 1224121 FHEM/lib/FUIP/images/pexels-gleitschirm.jpg
+UPD 2018-07-16_21:34:58 2605755 FHEM/lib/FUIP/images/pexels-milchstrasse.jpg
 UPD 2018-03-21_13:10:10 7006 FHEM/lib/FUIP/jquery-ui/images/ui-icons_444444_256x240.png
 UPD 2018-03-21_13:10:11 7074 FHEM/lib/FUIP/jquery-ui/images/ui-icons_555555_256x240.png
 UPD 2018-03-21_13:10:11 4676 FHEM/lib/FUIP/jquery-ui/images/ui-icons_777620_256x240.png

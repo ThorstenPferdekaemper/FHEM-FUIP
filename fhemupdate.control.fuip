@@ -1,6 +1,7 @@
 DIR FHEM/lib
 DIR FHEM/lib/FUIP
 DIR FHEM/lib/FUIP/css
+DIR FHEM/lib/FUIP/images
 DIR FHEM/lib/FUIP/js
 DIR FHEM/lib/FUIP/View
 DIR FHEM/lib/FUIP/jquery-ui

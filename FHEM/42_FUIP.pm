@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00028 2018-07-16 13:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00029 2018-07-18 14:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
@@ -17,7 +17,7 @@ FUIP_Initialize($) {
 	$hash->{SetFn}     = "FUIP::Set";
 	$hash->{GetFn}     = "FUIP::Get";
     $hash->{UndefFn}   = "FUIP::Undef";
-    $hash->{AttrList}  = "locked:0,1 fhemwebUrl baseWidth baseHeight pageWidth styleColor";
+	FUIP::setAttrList($hash);
 	$hash->{AttrFn}    = "FUIP::Attr";
 	$hash->{parseParams} = 1;	
     return undef;
@@ -43,6 +43,16 @@ my $selectableViews = \%FUIP::View::selectableViews;
 my $matchlink = "^\/?(([^\/]*(\/[^\/]+)*)\/?)\$";
 my $fuipPath = $main::attr{global}{modpath} . "/FHEM/lib/FUIP/";
 
+
+# possible values of attributes can change...
+sub setAttrList($) {
+	my ($hash) = @_;
+    $hash->{AttrList}  = "locked:0,1 fhemwebUrl baseWidth baseHeight pageWidth styleColor styleBackgroundImage:";
+	my $imageNames = getImageNames();
+	$hash->{AttrList} .= join(",",@$imageNames);
+}
+
+
 # load view modules
 sub loadViews() {
 	my $viewsPath = $fuipPath . "View/";
@@ -65,6 +75,23 @@ sub loadViews() {
 		}
 	}
 	closedir(DH);
+};
+
+
+# determine possible image names (for background)
+sub getImageNames() {
+	my $imagesPath = $fuipPath . "images/";
+	my @result;
+	if(not opendir(DH, $imagesPath)) {
+		main::Log3(undef, 1, "FUIP ERROR: Cannot read image directory");
+		return \@result;
+	};	
+	foreach my $m (sort readdir(DH)) {
+		next if($m !~ m/(.*)\.(jpg|png)$/);
+		push(@result,$m);
+	}
+	closedir(DH);
+	return \@result;
 };
 
 
@@ -279,10 +306,15 @@ sub renderPage($$$) {
 		                color: ".$styleColor.";
                     }
 					.gridster ul li {
-						border-radius:8px;
+						border-radius:8px;";
+	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
+	$result .= '		background: rgba(0, 0, 0, 0.7) !important;' if($backgroundImage);
+	$result .= "
 					}
 					.gridster ul li header {
-						border-radius:8px;
+						border-radius:8px;";
+	$result .= '		background: rgba(0, 0, 0, 0.7) !important;' if($backgroundImage);
+	$result .= "
 					}
 					.tablesorter-filter option {
 						background-color:#fff;
@@ -317,8 +349,18 @@ sub renderPage($$$) {
 				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
 				($locked ? '<meta name="gridster_disable" content="1">' : "").
             "</head>
-            <body>
-                <div class=\"gridster\"";
+            <body";
+	if($backgroundImage) {
+		$result .= ' style="background:#000000 url(/fhem/'.lc($hash->{NAME}).'/fuip/images/'.$backgroundImage.') 0 0/';
+		if($pageWidth) {
+			$result .= $pageWidth.'px';
+		}else{	
+			$result .= 'cover';
+		};
+		$result .= ' no-repeat"';
+	};
+	$result .= '>	
+                <div class="gridster"';
 	if($pageWidth) {
 		$result .= ' style="width:'.$pageWidth.'px"';
 	};
@@ -1291,6 +1333,8 @@ sub Set($$$)
 	}elsif($cmd eq "editOnly") {
 		$hash->{editOnly} = $a->[2];
 	}else{
+		# redetermine attribute values
+		setAttrList($main::modules{FUIP});
 		return "Unknown argument $cmd, choose one of save:noArg load:noArg viewsettings viewaddnew viewdelete viewposition autoarrange refreshBuffer pagedelete:".join(',',sort keys %{$hash->{pages}});
 	}
 	return undef;
