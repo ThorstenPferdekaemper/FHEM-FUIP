@@ -9,7 +9,7 @@ use warnings;
 sub getHTML($){
 	my ($self) = @_;
 	my $dev = $self->{device};
-	return '<table width="100%">
+	return '<table width="100%" class="fuip-color">
 				<tr>
 					<td><div data-type="label" class="left">Typ: </div></td>
 					<td><div data-type="label" data-device="'.$dev.'" data-get="cpu_model_name" class="left inline"></div></td>
