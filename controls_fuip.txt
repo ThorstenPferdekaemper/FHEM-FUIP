@@ -2,11 +2,12 @@ DIR FHEM/lib
 DIR FHEM/lib/FUIP
 DIR FHEM/lib/FUIP/css
 DIR FHEM/lib/FUIP/images
+DIR FHEM/lib/FUIP/view-images
 DIR FHEM/lib/FUIP/js
 DIR FHEM/lib/FUIP/View
 DIR FHEM/lib/FUIP/jquery-ui
 DIR FHEM/lib/FUIP/jquery-ui/images
-UPD 2018-07-21_21:06:15 48212 FHEM/42_FUIP.pm
+UPD 2018-08-05_17:47:20 48231 FHEM/42_FUIP.pm
 UPD 2018-07-09_15:46:16 10101 FHEM/lib/FUIP/Model.pm
 UPD 2018-06-27_15:20:58 9139 FHEM/lib/FUIP/View.pm
 UPD 2018-07-21_20:58:20 4329 FHEM/lib/FUIP/View/Batteries.pm
@@ -47,6 +48,28 @@ UPD 2018-03-21_13:10:11 4632 FHEM/lib/FUIP/jquery-ui/images/ui-icons_cc0000_256x
 UPD 2018-03-21_13:10:11 6313 FHEM/lib/FUIP/jquery-ui/images/ui-icons_ffffff_256x240.png
 UPD 2018-03-21_13:10:11 37326 FHEM/lib/FUIP/jquery-ui/jquery-ui.css
 UPD 2017-12-18_22:55:39 253669 FHEM/lib/FUIP/jquery-ui/jquery-ui.min.js
-UPD 2018-07-16_14:44:15 43451 FHEM/lib/FUIP/js/fuip.js
+UPD 2018-08-03_15:13:33 44182 FHEM/lib/FUIP/js/fuip.js
 UPD 2018-03-17_23:57:55 106396 FHEM/lib/FUIP/js/jquery.tablesorter.js
 UPD 2018-03-17_23:57:55 125594 FHEM/lib/FUIP/js/jquery.tablesorter.widgets.js
+UPD 2018-08-03_15:12:09 4468 FHEM/lib/FUIP/view-images/FUIP-View-Batteries.png
+UPD 2018-08-03_15:17:14 1830 FHEM/lib/FUIP/view-images/FUIP-View-Brightness.png
+UPD 2018-08-03_15:20:11 2046 FHEM/lib/FUIP/view-images/FUIP-View-Clock.png
+UPD 2018-08-03_15:24:41 2052 FHEM/lib/FUIP/view-images/FUIP-View-HomeButton.png
+UPD 2018-08-03_15:29:13 1320 FHEM/lib/FUIP/view-images/FUIP-View-Html.png
+UPD 2018-08-03_21:02:46 1720 FHEM/lib/FUIP/view-images/FUIP-View-LabelHumidity.png
+UPD 2018-08-03_21:12:37 1386 FHEM/lib/FUIP/view-images/FUIP-View-LabelReading.png
+UPD 2018-08-03_21:00:49 1714 FHEM/lib/FUIP/view-images/FUIP-View-LabelTemperature.png
+UPD 2018-08-03_21:15:52 1697 FHEM/lib/FUIP/view-images/FUIP-View-MenuItem.png
+UPD 2018-08-03_21:20:33 5877 FHEM/lib/FUIP/view-images/FUIP-View-ReadingsList.png
+UPD 2018-08-03_21:23:52 2049 FHEM/lib/FUIP/view-images/FUIP-View-STATE.png
+UPD 2018-08-03_21:28:02 1228 FHEM/lib/FUIP/view-images/FUIP-View-Select.png
+UPD 2018-08-03_21:55:51 2115 FHEM/lib/FUIP/view-images/FUIP-View-ShutterControl.png
+UPD 2018-08-03_21:58:17 1511 FHEM/lib/FUIP/view-images/FUIP-View-ShutterOverview.png
+UPD 2018-08-05_17:07:58 4856 FHEM/lib/FUIP/view-images/FUIP-View-ShutterTimer.png
+UPD 2018-08-02_21:37:14 2435 FHEM/lib/FUIP/view-images/FUIP-View-SimpleSwitch.png
+UPD 2018-08-05_17:14:24 1193 FHEM/lib/FUIP/view-images/FUIP-View-SpinDim.png
+UPD 2018-08-05_17:18:20 4062 FHEM/lib/FUIP/view-images/FUIP-View-Sysmon.png
+UPD 2018-08-05_17:21:56 3363 FHEM/lib/FUIP/view-images/FUIP-View-Thermostat.png
+UPD 2018-08-05_17:30:23 1475 FHEM/lib/FUIP/view-images/FUIP-View-Title.png
+UPD 2018-08-05_17:33:00 744 FHEM/lib/FUIP/view-images/FUIP-View-UpStopDown.png
+UPD 2018-08-03_15:05:38 1051 FHEM/lib/FUIP/view-images/FUIP-View.png
