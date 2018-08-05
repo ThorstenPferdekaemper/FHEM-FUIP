@@ -172,12 +172,6 @@ function autoArrange() {
 					
 function acceptSettings() {
 	var cmd = '';
-	// collect classes
-	$("#viewsettings .class-select").each(function() {
-		var value;
-		value = '"' + $(this).val() + '"';
-		cmd += " " + $(this).attr("id") + "=" + value;
-	});
 	// collect sort orders of viewarrays
 	$('.ui-accordion').each(function() {
 		cmd += ' ' + $(this).attr('id').slice(0,-10) + '=';
@@ -400,23 +394,16 @@ function getInfluencedParts(field,parentName,myName) {
 };
 					
 					
-function classChanged(event, data) {
-	var elemName = 'viewsettings';
-	if(event.target.id != 'class') {
-		elemName = event.target.id.slice(0,-6);
-	};
+// classField is the field (input) with the new class name
+function classChanged(classField) {
+	var elemName = classField.id.slice(0,-6);
 	var settingsDialog = $( '#' + elemName );
 	settingsDialog.html('Just a moment...');
 	var name = $("html").attr("data-name");
-	var cmd = "get " + name + " viewdefaults " + data.item.value;
+	var cmd = "get " + name + " viewdefaults " + classField.value;
 	sendFhemCommandLocal(cmd).done(function(settingsJson){
-		if(event.target.id == 'class') {
-			changeSettingsDialog(settingsJson, settingsDialog.attr("data-viewid"));
-			return;
-		};	
-		// sub-view e.g. in viewarray
 		var html = '<h3>';
-		var title = 'New ' + data.item.value;
+		var title = 'New ' + classField.value;
 		html += title + '</h3><div>' + createSettingsTable(json2object(settingsJson), elemName + '-') + '</div>';
 		settingsDialog.html(html);
 		var accordion = settingsDialog.parent();
@@ -426,40 +413,25 @@ function classChanged(event, data) {
 	});	
 };
 					
-
+					
 function createClassField(selectedClass,prefix) {
 	var fieldName = prefix + 'class';
+	// make the value help button a JQuery button
 	$(function() {
-		$("#" + fieldName).selectmenu({
-			change: classChanged 
-		});
-		var name = $("html").attr("data-name");
-		var cmd = "get " + name + " viewclasslist";
-		sendFhemCommandLocal(cmd).done(function(classListJson){
-			var classList = json2object(classListJson);
-			var html = "<select id='" + fieldName + "' name='" + fieldName + "' class='class-select'>";
-			var selectedExists = false;
-			for(var i = 0; i < classList.length; i++) {
-				if(classList[i].id == selectedClass) {
-					selectedExists = true;
-					html +=  "<option selected>" + classList[i].id + "</option>";
-				}else{
-					html +=  "<option>" + classList[i].id + "</option>";
-				};
-			};
-			// allow to "deprecate" old views
-			if(!selectedExists) {
-				html +=  "<option selected>" + selectedClass + "</option>";				
-			};	
-			html += "</select>";
-			$("#" + fieldName).html(html);
-		});
-	});
-	return "<label>View type " +  
-				"<select id='" + fieldName + "' name='" + fieldName + "' class='class-select'>" +
-						"<option selected>" + selectedClass + "</option>" +
-				"</select>" +
-			"</label>";		
+		$('#' + fieldName + '-value').button({
+			icon: 'ui-icon-triangle-1-s',
+			showLabel: false
+		});		
+	});		
+	return "<table><tr>" +
+			"<td><label for='" + fieldName + "'>View type</label></td>" +  
+			"<td><input type='text'" +
+			" name='" + fieldName + "' id='" + fieldName + "' " +
+			"style='width:185px;visibility:visible;background-color:#EBEBE4;' readonly " +
+			"value='" + selectedClass + "' " +
+			"oninput='classChanged(this)' > " +
+			"<button id='" + fieldName + "-value' onclick='valueHelp(\""+fieldName+"\",\"class\")' type='button' style='padding:1px 0px;'>Possible values</button></td>" +
+			"</tr></table>";		
 };
 	
 	
@@ -683,7 +655,47 @@ function valueHelp(fieldName,type) {
 				});
 				registerClicked();
 			});	
-		});	
+		});
+	}else if(type == "class") {
+		var cmd = "get " + name + " viewclasslist";
+		sendFhemCommandLocal(cmd).done(function(classListJson){
+			var classList = json2object(classListJson);
+			var valueDialog = $( "#valuehelp" );
+			var selectedClass = $('#'+fieldName).val();
+			var html = "<table id='valuehelptable' class='tablesorter' data-selected='";
+			for(var i = 0; i < classList.length; i++){
+				if(classList[i].id == selectedClass) {
+					html += 'valuehelp-row-'+i;
+					break;
+				};
+			};	
+			html += "'><thead><tr><th>Class</th><th>Title</th><th>Img</th></tr></thead>";
+			html += "<tbody>";
+			for(var i = 0; i < classList.length; i++){
+				var style = "";
+				if(classList[i].id == selectedClass) {
+					style = " style='background:#F39814;color:black;'";
+				};	
+				html += "<tr id='valuehelp-row-"+i+"' data-key='"+classList[i].id+"'><td"+style+">"+classList[i].id+"</td><td"+style+">"+classList[i].title+"</td><td"+style+">";
+				html += "<img height=48 src='/fhem/"+name+"/fuip/view-images/" 
+							+ classList[i].id.replace(/::/g,"-") + ".png'>";
+				html += "</td></tr>";
+			};
+			html += "</tbody></table>";
+			valueDialog.dialog("option","width",500);
+			valueDialog.dialog("option","height",400);			
+			valueDialog.html(html);
+			$(function() {
+				$(".tablesorter").tablesorter({
+					theme: "blue",
+					widgets: ["filter"],
+				    headers: {
+						2: { sorter: false, parser: false }
+					}
+				});
+				registerClicked();
+			});	
+		});			
 	}else{
 		valueDialog.html("No value help for this field.");
 	};

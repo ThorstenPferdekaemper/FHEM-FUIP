@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00030 2018-07-21 20:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00031 2018-08-05 16:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
@@ -1075,11 +1075,11 @@ sub setViewSettings($$$$;$) {
 	
 	# do we need to (re-)create the view?
 	my $newclass = undef;
+	$newclass = main::urlDecode($h->{$prefix."class"}) if(defined($h->{$prefix."class"}));
 	if(defined($viewlist->[$viewindex])) {
-		$newclass = $h->{$prefix."class"} if(defined($h->{$prefix."class"}) and ($h->{$prefix."class"} ne blessed($viewlist->[$viewindex])));
+		$newclass = undef if($newclass eq blessed($viewlist->[$viewindex]));  # already this class
 	}else{
-		$newclass = "FUIP::View";
-		$newclass = $h->{$prefix."class"} if(defined($h->{$prefix."class"}));		
+		$newclass = "FUIP::View" unless $newclass;  # new view, assign FUIP::View
 	};
 	# has the class changed?
 	if(defined($newclass)) {
