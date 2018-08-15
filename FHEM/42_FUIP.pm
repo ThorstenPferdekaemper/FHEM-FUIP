@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00031 2018-08-05 16:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00032 2018-08-15 14:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
@@ -1236,7 +1236,7 @@ sub Set($$$)
 {
 	my ( $hash, $a, $h ) = @_;
 
-	main::Log3($hash, 4, 'FUIP: Set: ' . main::Dumper($a).'  '.main::Dumper($h));
+	# main::Log3($hash, 4, 'FUIP: Set: ' . main::Dumper($a).'  '.main::Dumper($h));
 	
 	return "\"set ".$hash->{NAME}."\" needs at least one argument" unless(@$a > 1);
 	my $cmd = $a->[1];
