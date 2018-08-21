@@ -24,7 +24,7 @@ use warnings;
 			</div>
 			</td></tr>';
 		if($self->{label}) {
-			$result .= '<tr><td>'.$self->{label}.'</td></tr>';
+			$result .= '<tr><td class="fuip-color">'.$self->{label}.'</td></tr>';
 		};	
 		$result .= '</table>';	
 		return $result;
@@ -50,7 +50,8 @@ use warnings;
 		{ id => "title", type => "text", default => { type => "field", value => "device"} },
 		{ id => "label", type => "text", default => { type => "field", value => "title"} },
 		{ id => "width", type => "internal", value => 70 },
-		{ id => "height", type => "internal", value => 70 }
+		{ id => "height", type => "internal", value => 70 },
+		{ id => "popup", type => "dialog", default=> { type => "const", value => "inactive"} }	
 		];
 };
 

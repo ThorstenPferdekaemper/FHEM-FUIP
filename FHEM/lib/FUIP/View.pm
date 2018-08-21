@@ -194,6 +194,7 @@ sub getDefaultFields($;$) {
 	# $includes is a list of field types which are normally not visible
 	my ($class,$includesInternals) = @_;
 	my $result = $class->getStructure();  # without values
+	
 	if(not $includesInternals) {
 		my @withoutInternals = grep {$_->{type} ne "internal"} @$result;
 		$result = \@withoutInternals; 

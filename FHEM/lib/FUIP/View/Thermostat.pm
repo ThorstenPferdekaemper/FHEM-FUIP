@@ -35,7 +35,8 @@ sub getStructure($) {
 		{ id => "size", type => "text", options => [ "normal", "big" ], 
 			default => { type => "const", value => "normal" } }, 	
 		{ id => "readonly", type => "text", options => [ "on", "off" ], 
-			default => { type => "const", value => "off" } }	
+			default => { type => "const", value => "off" } },
+		{ id => "popup", type => "dialog", default=> { type => "const", value => "inactive"} }			
 		];
 };
 

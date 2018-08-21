@@ -37,7 +37,8 @@ use warnings;
 		{ id => "icon", type => "icon" },
 		{ id => "title", type => "text", default => { type => "field", value => "text"} },
 		{ id => "width", type => "internal", value => 500 },
-		{ id => "height", type => "internal", value => 86 }
+		{ id => "height", type => "internal", value => 86 },
+		{ id => "popup", type => "dialog", default=> { type => "const", value => "inactive"} }	
 		];
 };
 

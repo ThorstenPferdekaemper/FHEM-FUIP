@@ -47,7 +47,8 @@ sub dimensions($;$$){
 		{ id => "humidity", type => "device-reading",
 			device => { },
 			reading => { default => { type => "const", value => "humidity"} } },
-		{ id => "label", type => "text", default => { type => "field", value => "humidity-reading"} }			
+		{ id => "label", type => "text", default => { type => "field", value => "humidity-reading"} },
+		{ id => "popup", type => "dialog", default=> { type => "const", value => "inactive"} }			
 		];
 };
 

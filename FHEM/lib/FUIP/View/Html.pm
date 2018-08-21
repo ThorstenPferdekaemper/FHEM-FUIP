@@ -31,7 +31,8 @@ use warnings;
 		{ id => "title", type => "text" },
 		{ id => "html", type => "longtext" },
 		{ id => "width", type => "number", min => 5, max => 1000, step => 1, value => 50 },
-		{ id => "height", type => "number", min => 5, max => 1000, step => 1, value => 25 }	
+		{ id => "height", type => "number", min => 5, max => 1000, step => 1, value => 25 },
+		{ id => "popup", type => "dialog", default=> { type => "const", value => "inactive"} }			
 		];
 };
 

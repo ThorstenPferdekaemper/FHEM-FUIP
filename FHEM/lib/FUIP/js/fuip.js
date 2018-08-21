@@ -71,7 +71,6 @@ function getLocalCSrf() {
     }); 
 };
 				
-				
 
 // when cell move/resize stops
 function onGridsterChangeStop(e,ui,widget) {
@@ -81,11 +80,28 @@ function onGridsterChangeStop(e,ui,widget) {
 	var cmd = '{FUIP::FW_setPositionsAndDimensions("' + name + '","' + pageId + '",' + s + ')}';
 	sendFhemCommandLocal(cmd);		
 };	
-				
-				
+			
+
+// when in the dialog (popup) maintenance resizing was finished
+function onDialogResize(e,ui) { 
+	var name = $("html").attr("data-name");
+	var pageId = $("html").attr("data-pageid");
+	var cellId = $("html").attr("data-cellid");	
+	var fieldId = $("html").attr("data-fieldid");
+	var cmd = "set " + name + " dialogsize " + pageId + "_" + cellId + " " + fieldId + " " 
+				+ ui.size.width + " " + ui.size.height; 
+	sendFhemCommandLocal(cmd);					
+};			
+			
 							
 // when a view is dropped on a cell
 function onDragStop(cell,ui) {
+	// is this on the dialog maint?
+	var fieldid = $("html").attr("data-fieldid");
+	if(fieldid) {
+		onDragStopDialog(fieldid,ui);
+		return;
+	};	
 	var cellId = cell.attr("data-cellid");
 	var view = ui.draggable;
 	var viewId = view.attr("data-viewid");
@@ -110,7 +126,24 @@ function onDragStop(cell,ui) {
 	});	
 };
 							
-					
+
+// dialog (popup) maintenance: when a view stops moving
+function onDragStopDialog(fieldid,ui) {
+	var name = $("html").attr("data-name");
+	var pageid = $("html").attr("data-pageid");
+	var cellid = $("html").attr("data-cellid");
+	// the following is the view which moved
+	var view = ui.draggable;
+	var viewid = view.attr("data-viewid");
+	var cmd = "set " + name +
+				" viewposdialog " + pageid + "_" + cellid + " " + fieldid + " " + viewid + " " + ui.position.left + " " + (ui.position.top - 22); 
+	// TODO: error handling when sending command
+	sendFhemCommandLocal(cmd).done(function() {
+		location.reload(true);
+	});	
+};
+
+							
 function sendFhemCommandLocal(cmdline) {
 	cmdline = cmdline.replace('  ', ' ');
 	return $.ajax({
@@ -209,7 +242,13 @@ function acceptSettings() {
 	var name = $("html").attr("data-name");
 	var pageId = $("html").attr("data-pageid");
 	var viewId = $("#viewsettings").attr("data-viewid");	
-	cmd = "set " + name + " viewsettings " + pageId + "_" + viewId + cmd; 
+	var fieldId = $("#viewsettings").attr("data-fieldid");
+	if(fieldId) {
+		// dialog (popup) settings
+		cmd = "set " + name + " viewcomponent " + pageId + "_" + viewId + " " + fieldId + cmd; 
+	}else{	
+		cmd = "set " + name + " viewsettings " + pageId + "_" + viewId + cmd; 
+	};	
 	// TODO: error handling when sending command
 	sendFhemCommandLocal(cmd).done(function() {
 		$("#viewsettings").dialog( "close" );
@@ -344,15 +383,36 @@ function inputChanged(inputElem,influencedFields) {
 };
 					
 					
-function defaultCheckChanged(id,defaultDef) {
+function defaultCheckChanged(id,defaultDef,fieldType) {
 	var inputField = $("#" + id);
 	if($("#" + id + "-check").is(":checked")) {
+		if(fieldType == "dialog") {
+			$(function() {
+				$('#' + id).button({
+					icon: 'ui-icon-pencil',
+					showLabel: true
+				});		
+			});
+			inputField.replaceWith("<button id='" + id + "' type='button' " +
+				"onclick='callPopupMaint(\""+id+"\")'" +
+				">Configure popup</button>");
+			return;		
+		};	
 		inputField.attr("style", "visibility: visible;");
 		inputField.removeAttr("readonly");
 		inputField.removeAttr("disabled");
 		// value help visible
 		$('#'+id+'-value').attr("style","padding:1px 0px;");
 	}else{
+		if(fieldType == "dialog") {
+			inputField.replaceWith(
+				"<input type='text' name='" + id + "' id='" + id + "' " +
+				"value='" + defaultDef.value + "' " +
+				"style='visibility: visible;background-color:#EBEBE4;' " +
+				"readonly=readonly " + 
+				">");
+			return;	
+		};		
 		inputField.attr("style", "visibility: visible;background-color:#EBEBE4;");
 		inputField.attr("readonly", "readonly");
 		if(inputField.is("select")) {
@@ -833,6 +893,14 @@ function valueHelpForOptions(fieldName, callbackFunction) {
 };	
 
 
+function callPopupMaint(fieldName) {
+	var name = $("html").attr("data-name").toLowerCase();
+	var pageId = $("html").attr("data-pageid");
+	var viewId = $("#viewsettings").attr("data-viewid");		
+	window.location.href = location.origin + "/fhem/" + name + "/fuip/popup?pageid=" + pageId + "&cellid=" + viewId + "&fieldid=" + fieldName;
+};	
+
+
 function createField(settings, fieldNum, component,prefix) {
     var field = settings[fieldNum];
 	var fieldComp = field;
@@ -842,6 +910,7 @@ function createField(settings, fieldNum, component,prefix) {
 		fieldNameWoPrefix += "-" + component[i];
 	};
 	var fieldName = prefix + fieldNameWoPrefix;
+	
 	var fieldValue = (fieldComp.value + '').replace(/'/g, "&#39;");
 	var checkVisibility = "hidden";
 	var checkValue = "";
@@ -877,7 +946,22 @@ function createField(settings, fieldNum, component,prefix) {
 		});		
 	});		
 	var result = "<input type='checkbox' id='" + fieldName + "-check' style='visibility: " + checkVisibility + ";'" 
-			+ checkValue + " onchange='defaultCheckChanged(" + fieldNameInBrackets + "," + defaultDef + ")'>";
+			+ checkValue + " onchange='defaultCheckChanged(" + fieldNameInBrackets + "," + defaultDef + ",\"" + field.type + "\")'>";
+			
+	// popups are a bit special
+	if(field.type == "dialog" && (checkValue || !fieldComp.hasOwnProperty("default"))) {
+		$(function() {
+			$('#' + fieldName).button({
+				icon: 'ui-icon-pencil',
+				showLabel: true
+			});		
+		});		
+		result += "<button id='" + fieldName + "' type='button' " +
+				"onclick='callPopupMaint(\""+fieldName+"\")'" +
+				">Configure popup</button>";
+		return result;		
+	};
+
 	if(field.type == "longtext") {
 		result += "<textarea rows='5' cols='50' name='" + fieldName + "' id='" + fieldName + "' " 
 			+ fieldStyle + " oninput='inputChanged(this," + JSON.stringify(influencedFields) +")' >"
@@ -981,7 +1065,8 @@ function createSettingsTable(settings,prefix) {
 	var html = "";
 	for(var i = 0; i < settings.length; i++){
 		if(settings[i].type != 'class') { continue; }; 
-		if(settings[i].value == 'FUIP::Cell' || settings[i].value == 'FUIP::Page') { break; };
+		if(settings[i].value == 'FUIP::Cell' || settings[i].value == 'FUIP::Page' 
+			|| settings[i].value == 'FUIP::Dialog') { break; };
 		html += createClassField(settings[i].value,prefix);
 		break;
 	};
@@ -1050,7 +1135,8 @@ function json2object(json) {
 };	
 
 										
-function changeSettingsDialog(settingsJson,viewId) {
+function changeSettingsDialog(settingsJson,viewId,fieldId) {
+	// fieldId is set in the "popup maintenance mode"
 	var settingsDialog = $( "#viewsettings" );
 	var title = "Settings cell " + viewId;
 	var settings = json2object(settingsJson);
@@ -1124,7 +1210,8 @@ function changeSettingsDialog(settingsJson,viewId) {
 };
 					
 				
-function openSettingsDialog(name, pageId, viewId) {
+function openSettingsDialog(name, pageId, viewId, fieldId) {
+	// fieldId is "optional". If set, we are maintaining a popup.
 	// FTUI switches off text selection (which only seems to work in IE)
 	// The following switches it back on, so select,copy,cut,paste etc. can be used
     $("body").each(function () {
@@ -1137,11 +1224,21 @@ function openSettingsDialog(name, pageId, viewId) {
     });	
 	var settingsDialog = $( "#viewsettings" );
 	// XMLHTTP request to get config options with current values
-	var cmd = "get " + name + " cellsettings " + pageId + "_" + viewId;
+	var cmd = "get " + name + " ";
+	if(fieldId) {
+		// popup or so
+		cmd += "viewcomponent " + pageId + "_" + viewId + " " + fieldId;
+	}else{
+		cmd += "cellsettings " + pageId + "_" + viewId;
+	};	
 	sendFhemCommandLocal(cmd).done(function(settingsJson){
-		changeSettingsDialog(settingsJson,viewId);
+		changeSettingsDialog(settingsJson,viewId,fieldId);
 		settingsDialog.attr("data-mode","cell");
 		settingsDialog.attr("data-viewid",viewId);
+		// popup maint?
+		if(fieldId) {
+			settingsDialog.attr("data-fieldid",fieldId);
+		};	
 		settingsDialog.dialog("open");
 	});	
 };

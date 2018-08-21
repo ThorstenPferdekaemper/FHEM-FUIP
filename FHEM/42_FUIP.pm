@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00032 2018-08-15 14:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00033 2018-08-21 21:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
@@ -283,7 +283,13 @@ sub renderPage($$$) {
 	   "<!DOCTYPE html>
 		<html".($locked ? "" : " data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\"").">
 			<head>
-	            <title>".$title."</title>
+				<script type=\"text/javascript\">
+					// when using browser back or so, we should reload
+					if(performance.navigation.type == 2){
+						location.reload(true);
+					};	
+				</script>
+				<title>".$title."</title>
 				<link rel=\"shortcut icon\" href=\"/fhem/icons/favicon\" />
 				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/font-awesome.min.css\" />
 				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/nesges.css\">
@@ -383,6 +389,130 @@ sub renderPage($$$) {
 				<div data-type="symbol" data-icon="fs-ampel_aus" class="hide"></div>').	
 			'<div id="inputpopup01">
 			</div>	
+       </body>
+       </html>';
+    return ("text/html; charset=utf-8", $result);
+};
+
+
+sub renderPopupMaint($$) {
+	my ($hash,$request) = @_;
+	# get pageid, cellid and fieldid
+	my $urlParams = urlParamsGet($request);
+	$DB::single = 1;
+	# TODO: error management
+	return undef unless exists $urlParams->{pageid};
+	return undef unless exists $urlParams->{cellid};
+	return undef unless exists $urlParams->{fieldid};
+
+	my $title = "Maintain Popup Content";
+	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","#808080");
+  	my $result = 
+	   "<!DOCTYPE html>
+		<html data-name=\"".$hash->{NAME}."\" data-pageid=\"".$urlParams->{pageid}."\" 
+				data-cellid=\"".$urlParams->{cellid}."\" data-fieldid=\"".$urlParams->{fieldid}."\"
+				data-editonly=\"".$hash->{editOnly}."\">
+			<head>
+	            <title>".$title."</title>
+				<link rel=\"shortcut icon\" href=\"/fhem/icons/favicon\" />
+				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/font-awesome.min.css\" />
+				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/nesges.css\">
+				<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
+		        <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.min.js\"></script>".
+				"<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.css\">
+								<!-- tablesorter -->
+								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.js\"></script>
+								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.widgets.js\"></script>".
+				"<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.gridster.min.js\"></script>".
+                "<script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>".
+				"<script src=\"/fhem/".lc($hash->{NAME}).
+				"/fuip/js/fuip.js\"></script>
+  				    <script>
+						fuipInit(10,10,".determineMaxCols($hash,99).")
+					</script>
+								 <link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/css/theme.blue.css\">".
+                "<style type=\"text/css\">
+	                .fuip-color {
+		                color: ".$styleColor.";
+                    }
+					.gridster ul li {
+						border-radius:8px;";
+	$result .= "
+					}
+					.gridster ul li header {
+						border-radius:8px;";
+	$result .= "
+					}
+					.tablesorter-filter option {
+						background-color:#fff;
+					}
+					select.tablesorter-filter {
+						-moz-appearance: auto;
+						-webkit-appearance: menulist;
+						appearance: auto;
+						border-radius: 0;
+						padding: 4px !important;
+					}
+					select.fuip {
+						-moz-appearance: auto;
+						-webkit-appearance: menulist;
+						appearance: auto;
+						border-radius: 0;
+						padding: 1px 0px !important;	
+						border-style: inset;	
+						border-width: 2px;
+						border-color: initial;
+						border-image: initial;
+						width: initial;
+						color: initial;
+						background-color: initial;
+					}
+					option.fuip {
+						background-color: initial;
+					}	
+                </style>".
+				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
+				'<script>
+					$( function() {
+						$( "#popupcontent" ).resizable({
+							stop: onDialogResize
+						});
+					} );
+				</script>'.
+            "</head>
+            <body style='background-color:lightgrey;'";
+	# find the dialog and render it	
+	my $cell = $hash->{pages}{$urlParams->{pageid}}{cells}[$urlParams->{cellid}];
+	my @fieldIdSplit = split(/-/,$urlParams->{fieldid});
+	my $view = $cell->{$fieldIdSplit[0]}[$fieldIdSplit[1]];
+	my $dialog = $view->{$fieldIdSplit[2]};
+	# if the dialog maintenance is called, we can assume that the "popup"
+	# field is not defaulted (i.e. inactive) and that we need a dialog instance
+	if( not blessed($dialog) or not $dialog->isa("FUIP::Dialog")) {
+		$dialog = FUIP::Dialog->createDefaultInstance($hash);
+		$view->{$fieldIdSplit[2]} = $dialog;
+		$view->{defaulted}{$fieldIdSplit[2]} = 0;
+	};		
+	my ($width,$height) = $dialog->dimensions();	
+	$result .= '>	
+	<div id="popupcontent" class="fuip-droppable"
+		style="width:'.$width.'px;height:'.$height.'px;border:0;border-bottom:1px solid #aaa;
+									border-radius: 4px;box-shadow: 0 3px 9px rgba(0, 0, 0, 0.5);
+									border: 1px solid rgba(0, 0, 0, 0.1);
+									background-color: #2A2A2A;
+									margin:0;display:inline;position:absolute;top:0;left:0;">
+		<span style="position: absolute; right: 1px; top: 0;" class="fa-stack fa-lg"
+								onclick="openSettingsDialog(\''.$hash->{NAME}.'\',\''.$urlParams->{pageid}.'\',\''.$urlParams->{cellid}.'\',\''.$urlParams->{fieldid}.'\')">
+									<i class="fa fa-square-o fa-stack-2x"></i>
+									<i class="fa fa-cog fa-stack-1x"></i>
+							</span>							
+		<header>'.$dialog->{title}.'</header>';
+	$result .= $dialog->getHTML(0);  # this is maint, so never locked	
+	$result .= '</div>
+		<div id="viewsettings">
+		</div>
+		<div id="valuehelp">
+		</div>
        </body>
        </html>';
     return ("text/html; charset=utf-8", $result);
@@ -712,6 +842,7 @@ sub getFuipPage($$) {
 	if($pageid eq "") {
 		$pageid = "home";
 	};	
+	
 	# do we need to create the page?
 	if(not defined($hash->{pages}{$pageid})) {
 		return("text/plain; charset=utf-8", "FUIP page $pageid does not exist") if($locked);
@@ -921,7 +1052,10 @@ sub CGI() {
 			return settingsExport($hash,$request);
 		}elsif($path[1] =~ m/^import/) {
 			return settingsImport($hash,$request);
-		};
+		# popup maintenance
+		}elsif($path[1] =~ m/^popup/) { 
+			return renderPopupMaint($hash,$request);
+		}
 		# other built in fuip files
 		shift @path;
 		$filename = $main::attr{global}{modpath}."/FHEM/lib/FUIP/".join('/',@path);
@@ -1250,6 +1384,30 @@ sub Set($$$)
 		return $cellId unless(defined($pageId));
 		setViewSettings($hash, $hash->{pages}{$pageId}{cells}, $cellId, $h);
 		autoArrangeNewViews($hash->{pages}{$pageId}{cells}[$cellId]);
+	}elsif($cmd eq "viewcomponent") {	
+		# get cell id
+		my ($pageId,$cellId) = getPageAndCellId($hash,$a);
+		return $cellId unless(defined($pageId));
+		my $fieldid = $a->[3];
+		my @fieldIdSplit = split(/-/,$fieldid);
+		# find the view
+		my $cell = $hash->{pages}{$pageId}{cells}[$cellId];
+		my $view = $cell->{$fieldIdSplit[0]}[$fieldIdSplit[1]];
+		my $comps = [$view->{$fieldIdSplit[2]}];
+		setViewSettings($hash, $comps, 0, $h);
+		$view->{$fieldIdSplit[2]} = $comps->[0];
+		autoArrangeNewViews($view->{$fieldIdSplit[2]});	
+	}elsif($cmd eq "dialogsize") {	
+		# get cell id
+		my ($pageId,$cellId) = getPageAndCellId($hash,$a);
+		return $cellId unless(defined($pageId));
+		my $fieldid = $a->[3];
+		my @fieldIdSplit = split(/-/,$fieldid);
+		# find the view
+		my $cell = $hash->{pages}{$pageId}{cells}[$cellId];
+		my $view = $cell->{$fieldIdSplit[0]}[$fieldIdSplit[1]];
+		my $dialog = $view->{$fieldIdSplit[2]};
+		$dialog->dimensions($a->[4],$a->[5]);
 	}elsif($cmd eq "viewdelete") {
 		# get cell id
 		my ($pageId,$cellId) = getPageAndCellId($hash,$a);
@@ -1300,6 +1458,24 @@ sub Set($$$)
 		return "\"set viewposition\": view ".$viewId." not found in cell ".$pageId."_".$cellId unless(defined($cell->{views}[$viewId]));
 		# set position into view
 		$cell->{views}[$viewId]->position($a->[3],$a->[4]);
+	}elsif($cmd eq "viewposdialog") {
+		# set ... viewposdialog pageId_cellId fieldId viewId posX posY
+		# get cell
+		my @pageAndViewId = split(/_/,$a->[2]);
+		my $cellId = pop(@pageAndViewId);
+		my $pageId = join("_",@pageAndViewId);
+		# cell exists? 
+		return "\"set viewposdialog\": cell ".$pageId." ".$cellId." not found" unless(defined($hash->{pages}{$pageId}) and defined($hash->{pages}{$pageId}{cells}[$cellId]));
+		my $cell = $hash->{pages}{$pageId}{cells}[$cellId];
+		my $fieldid = $a->[3];
+		my @fieldIdSplit = split(/-/,$fieldid);
+		# find the view in the cell
+		my $viewInCell = $cell->{$fieldIdSplit[0]}[$fieldIdSplit[1]];
+		my $dialog = $viewInCell->{$fieldIdSplit[2]};
+		# find the view in the dialog
+		my $view = $dialog->{views}[$a->[4]];
+		# set position into view
+		$view->position($a->[5],$a->[6]);	
 	}elsif($cmd eq "viewmove") {
 		# set ... viewposition pageId_cellId_viewId posX posY
 		# get cell
@@ -1416,6 +1592,33 @@ sub Get($$$)
 		my $cell = $hash->{pages}{$pageId}{cells}[$cellId];
 		# return as to JSON
 		return _toJson($cell->getConfigFields());
+	}elsif($opt eq "viewcomponent"){  
+		# e.g. for popups: Get a component (field) of a view
+		# TODO: error handling
+		my @pageAndCellId = split(/_/,$a->[2]);
+		my $cellId = pop(@pageAndCellId);
+		my $pageId = join("_",@pageAndCellId);
+		# get field list and values from views 
+		my $cell = $hash->{pages}{$pageId}{cells}[$cellId];
+		# TODO: the following is not really elegant. Maybe the popup dialog should have
+		#       its own class.
+		# get field (component) id
+		my $fieldid = $a->[3];
+		# this should normally have the pattern "views-8-popup" or "views-<num>-<fieldname>"
+		my @fieldIdSplit = split(/-/,$fieldid);
+		# find the view
+		my $view = $cell->{$fieldIdSplit[0]}[$fieldIdSplit[1]];
+		# get this as config structure
+		my $confView = $view->getConfigFields();
+		# now find our field name
+		for my $field (@$confView) {
+			next unless $field->{id} eq $fieldIdSplit[2];
+			# return as to JSON
+			$field->{value} = FUIP::Dialog->createDefaultInstance($hash) unless $field->{value};
+			return _toJson($field->{value}->getConfigFields());
+		};	
+		# something went wrong
+		return "Something went wrong with get viewcomponent";
 	}elsif($opt eq "viewclasslist") {
 		my @result = map { { id => $_, title => $selectableViews->{$_}{title} } } sort keys(%$selectableViews);
 		return _toJson(\@result);

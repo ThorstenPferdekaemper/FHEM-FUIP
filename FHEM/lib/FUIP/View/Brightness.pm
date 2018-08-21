@@ -37,7 +37,8 @@ use warnings;
 			device => { },
 			reading => { default => { type => "const", value => "brightness" } } },	
 		{ id => "title", type => "text", default => { type => "field", value => "brightness-device"} },
-		{ id => "label", type => "text", default => { type => "field", value => "title"} }
+		{ id => "label", type => "text", default => { type => "field", value => "title"} },
+		{ id => "popup", type => "dialog", default=> { type => "const", value => "inactive"} }	
 		];
 };
 

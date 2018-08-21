@@ -53,7 +53,8 @@ sub getStructure($) {
 		{ id => "colors", type => "text", 
 				default => { type => "const", value => "air" },
 				options => ["air","boiler"] },
-		{ id => "label", type => "text", default => { type => "field", value => "temperature-reading"} }		
+		{ id => "label", type => "text", default => { type => "field", value => "temperature-reading"} },
+		{ id => "popup", type => "dialog", default=> { type => "const", value => "inactive"} }			
 		];
 };
 	

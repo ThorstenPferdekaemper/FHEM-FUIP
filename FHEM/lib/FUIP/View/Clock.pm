@@ -22,7 +22,8 @@ use parent -norequire, 'FUIP::View';
 		{ id => "class", type => "class", value => $class },
 		{ id => "title", type => "text", default => { type => "const", value => "Uhrzeit"} },
 		{ id => "width", type => "internal", value => 120 },
-		{ id => "height", type => "internal", value => 86 }
+		{ id => "height", type => "internal", value => 86 },
+		{ id => "popup", type => "dialog", default=> { type => "const", value => "inactive"} }	
 		];
 };
 

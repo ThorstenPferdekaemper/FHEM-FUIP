@@ -37,7 +37,8 @@ sub getStructure($) {
 			device => { },
 			reading => { } },	
 		{ id => "title", type => "text", default => { type => "field", value => "reading-reading"} },
-		{ id => "label", type => "text", default => { type => "field", value => "title"} }
+		{ id => "label", type => "text", default => { type => "field", value => "title"} },
+		{ id => "popup", type => "dialog", default=> { type => "const", value => "inactive"} }		
 		];
 };
 

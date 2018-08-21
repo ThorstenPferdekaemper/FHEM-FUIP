@@ -42,7 +42,7 @@ sub getStructure($) {
 		{ id => "icon", type => "icon" },
 		# TODO: proper "boolean" drop down
 		{ id => "active", type => "boolean", value => "0" },
-		{ id => "height", type => "internal", value => 42 }
+		{ id => "height", type => "internal", value => 42 }	
 		];
 };
 

@@ -47,7 +47,7 @@ sub getStructure($) {
 		{ id => "reading", type => "reading", refdevice => "device", default => { type => "field", value => "set"}},
 		{ id => "icon", type => "icon", default => { type => "const", value => "fa-lightbulb-o" } },
 		{ id => "width", type => "internal", value => 70 },
-		{ id => "height", type => "internal", value => 80 }
+		{ id => "height", type => "internal", value => 80 }	
 		];
 };
 
