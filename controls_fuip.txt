@@ -62,6 +62,7 @@ UPD 2018-08-03_21:02:46 1720 FHEM/lib/FUIP/view-images/FUIP-View-LabelHumidity.p
 UPD 2018-08-03_21:12:37 1386 FHEM/lib/FUIP/view-images/FUIP-View-LabelReading.png
 UPD 2018-08-03_21:00:49 1714 FHEM/lib/FUIP/view-images/FUIP-View-LabelTemperature.png
 UPD 2018-08-03_21:15:52 1697 FHEM/lib/FUIP/view-images/FUIP-View-MenuItem.png
+UPD 2018-08-22_14:42:21 4217 FHEM/lib/FUIP/view-images/FUIP-View-Popup.png
 UPD 2018-08-03_21:20:33 5877 FHEM/lib/FUIP/view-images/FUIP-View-ReadingsList.png
 UPD 2018-08-03_21:23:52 2049 FHEM/lib/FUIP/view-images/FUIP-View-STATE.png
 UPD 2018-08-03_21:28:02 1228 FHEM/lib/FUIP/view-images/FUIP-View-Select.png
