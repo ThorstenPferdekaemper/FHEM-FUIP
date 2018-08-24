@@ -784,14 +784,30 @@ function valueHelpForDevice(fieldTitle, callbackFunction, multiSelect) {
 	sendFhemCommandLocal(cmd).done(function(deviceListJson){
 		var deviceList = json2object(deviceListJson);
 		var valueDialog = $( "#valuehelp" );
-		var html = "<table id='valuehelptable' class='tablesorter'><thead><tr><th>Name</th><th class=\"filter-select filter-onlyAvail\">Type</th><th>Room(s)</th></tr></thead>";
+		// check whether alias is used at all
+		var aliasUsed = false;
+		for(var i = 0; i < deviceList.length; i++){
+			if(deviceList[i].alias) {
+				aliasUsed = true;
+				break;
+			};	
+		};
+		var html = "<table id='valuehelptable' class='tablesorter'><thead><tr><th>Name</th>";
+		if(aliasUsed) {
+			html += "<th>Alias</th>";
+		};
+		html += "<th class=\"filter-select filter-onlyAvail\">Type</th><th>Room(s)</th></tr></thead>";
 		html += "<tbody>";
 		var roomFilters = {};
 		for(var i = 0; i < deviceList.length; i++){
 			if(deviceList[i].room == "") {
 				deviceList[i].room = "unsorted";
 			};	
-			html += "<tr id='valuehelp-row-"+i+"' data-selected='' data-key='"+deviceList[i].NAME+"'><td>"+deviceList[i].NAME+"</td><td>"+deviceList[i].TYPE+"</td><td>"+deviceList[i].room+"</td></tr>";
+			html += "<tr id='valuehelp-row-"+i+"' data-selected='' data-key='"+deviceList[i].NAME+"'><td>"+deviceList[i].NAME+"</td>";
+			if(aliasUsed) {
+				html += "<td>"+deviceList[i].alias+"</td>";
+			};
+			html += "<td>"+deviceList[i].TYPE+"</td><td>"+deviceList[i].room+"</td></tr>";
 			var rooms = deviceList[i].room.split(",");
 			for(var j = 0; j < rooms.length; j++) {
 				roomFilters[rooms[j]] = valueHelpFilterRoom;

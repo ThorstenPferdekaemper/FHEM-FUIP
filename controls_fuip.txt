@@ -7,7 +7,7 @@ DIR FHEM/lib/FUIP/js
 DIR FHEM/lib/FUIP/View
 DIR FHEM/lib/FUIP/jquery-ui
 DIR FHEM/lib/FUIP/jquery-ui/images
-UPD 2018-08-21_22:05:16 56494 FHEM/42_FUIP.pm
+UPD 2018-08-24_15:48:08 56544 FHEM/42_FUIP.pm
 UPD 2018-07-09_15:46:16 10101 FHEM/lib/FUIP/Model.pm
 UPD 2018-08-20_15:55:02 9141 FHEM/lib/FUIP/View.pm
 UPD 2018-07-21_20:58:20 4329 FHEM/lib/FUIP/View/Batteries.pm
@@ -28,8 +28,8 @@ UPD 2018-08-21_21:19:57 1070 FHEM/lib/FUIP/View/Popup.pm
 UPD 2018-03-23_23:26:04 1478 FHEM/lib/FUIP/View/ReadingsList.pm
 UPD 2018-08-21_21:47:46 1185 FHEM/lib/FUIP/View/STATE.pm
 UPD 2018-07-13_14:52:17 2363 FHEM/lib/FUIP/View/Select.pm
-UPD 2018-07-10_21:24:13 3463 FHEM/lib/FUIP/View/ShutterControl.pm
-UPD 2018-08-21_21:46:39 2270 FHEM/lib/FUIP/View/ShutterOverview.pm
+UPD 2018-08-24_15:32:38 4500 FHEM/lib/FUIP/View/ShutterControl.pm
+UPD 2018-08-24_15:23:16 2616 FHEM/lib/FUIP/View/ShutterOverview.pm
 UPD 2018-07-01_22:12:48 1807 FHEM/lib/FUIP/View/ShutterTimer.pm
 UPD 2018-08-21_21:51:12 1674 FHEM/lib/FUIP/View/SimpleSwitch.pm
 UPD 2018-06-22_14:49:41 1576 FHEM/lib/FUIP/View/SpinDim.pm
@@ -50,7 +50,7 @@ UPD 2018-03-21_13:10:11 4632 FHEM/lib/FUIP/jquery-ui/images/ui-icons_cc0000_256x
 UPD 2018-03-21_13:10:11 6313 FHEM/lib/FUIP/jquery-ui/images/ui-icons_ffffff_256x240.png
 UPD 2018-03-21_13:10:11 37326 FHEM/lib/FUIP/jquery-ui/jquery-ui.css
 UPD 2017-12-18_22:55:39 253669 FHEM/lib/FUIP/jquery-ui/jquery-ui.min.js
-UPD 2018-08-21_21:39:28 47358 FHEM/lib/FUIP/js/fuip.js
+UPD 2018-08-24_15:42:31 47697 FHEM/lib/FUIP/js/fuip.js
 UPD 2018-03-17_23:57:55 106396 FHEM/lib/FUIP/js/jquery.tablesorter.js
 UPD 2018-03-17_23:57:55 125594 FHEM/lib/FUIP/js/jquery.tablesorter.widgets.js
 UPD 2018-08-03_15:12:09 4468 FHEM/lib/FUIP/view-images/FUIP-View-Batteries.png

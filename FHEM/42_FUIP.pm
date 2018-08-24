@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00033 2018-08-21 21:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00034 2018-08-24 14:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
@@ -1563,11 +1563,12 @@ sub _getDeviceList($) {
 	
 	my $keys = FUIP::Model::getDeviceKeys($name);
 	for my $key (sort { lc($a) cmp lc($b) } @$keys) {
-		my $device = FUIP::Model::getDevice($name,$key,["TYPE","room"]);
+		my $device = FUIP::Model::getDevice($name,$key,["TYPE","room","alias"]);
 		push(@$result, {
 			NAME => $key,
 			TYPE => $device->{Internals}{TYPE},
-			room => $device->{Attributes}{room}
+			room => $device->{Attributes}{room},
+			alias => $device->{Attributes}{alias}
 			});
 	};
 	return $result;
