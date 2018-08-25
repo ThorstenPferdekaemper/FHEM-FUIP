@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00036 2018-08-25 20:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00037 2018-08-25 21:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
@@ -1231,7 +1231,7 @@ sub setViewSettings($$$$;$) {
 	my $newclass = undef;
 	$newclass = main::urlDecode($h->{$prefix."class"}) if(defined($h->{$prefix."class"}));
 	if(defined($viewlist->[$viewindex])) {
-		$newclass = undef if($newclass eq blessed($viewlist->[$viewindex]));  # already this class
+		$newclass = undef if($newclass and $newclass eq blessed($viewlist->[$viewindex]));  # already this class
 	}else{
 		$newclass = "FUIP::View" unless $newclass;  # new view, assign FUIP::View
 	};
@@ -1242,8 +1242,6 @@ sub setViewSettings($$$$;$) {
 			my $oldView = $viewlist->[$viewindex];
 			$newView->{posX} = $oldView->{posX} if defined $oldView->{posX}; 
 			$newView->{posY} = $oldView->{posY} if defined $oldView->{posY};
-			$newView->{width} = $oldView->{width} unless($newView->{width} > $oldView->{width} and $prefix ne "");
-			$newView->{height} = $oldView->{height} unless($newView->{height} > $oldView->{height} and $prefix ne "");
 		};	
 		$viewlist->[$viewindex] = $newView;
 	};
@@ -1329,7 +1327,7 @@ sub autoArrangeNewViews($) {
 	if($cell->isa("FUIP::Dialog")) {
 		($width,$height) = $cell->dimensions();
 	}else{	
-		my ($cellWidth,$cellHeight) = $cell->dimensions();
+		($cellWidth,$cellHeight) = $cell->dimensions();
 		my $baseWidth = main::AttrVal($cell->{fuip}{NAME},"baseWidth",142);
 		$width = $cellWidth * ($baseWidth + 10) -10;
 	};	
