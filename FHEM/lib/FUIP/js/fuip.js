@@ -740,7 +740,7 @@ function valueHelp(fieldName,type) {
 					style = " style='background:#F39814;color:black;'";
 				};	
 				html += "<tr id='valuehelp-row-"+i+"' data-key='"+classList[i].id+"'><td"+style+">"+classList[i].id+"</td><td"+style+">"+classList[i].title+"</td><td"+style+">";
-				html += "<img height=48 src='/fhem/"+name+"/fuip/view-images/" 
+				html += "<img height=48 src='/fhem/"+name.toLowerCase()+"/fuip/view-images/" 
 							+ classList[i].id.replace(/::/g,"-") + ".png'>";
 				html += "</td></tr>";
 			};
