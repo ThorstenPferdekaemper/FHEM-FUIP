@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00034 2018-08-24 14:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00035 2018-08-25 15:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
@@ -395,6 +395,36 @@ sub renderPage($$$) {
 };
 
 
+sub findDialogFromFieldId($$$$) {
+	# gets the FUIP::Dialog instance at the "end" of the field id
+	# if this is not a dialog, it is created and assigned to the field of 
+	# the related view
+	my ($hash,$pageid,$cellid,$fieldid) = @_;
+	# find the dialog and render it	
+	my $cell = $hash->{pages}{$pageid}{cells}[$cellid];
+	my @fieldIdSplit = split(/-/,$fieldid);
+	# $fieldid should have the form like views-1-popup-views-4-popup-views...
+	# or in general
+	# <name>-<num>-<name>-<name>-<num>-<name>...
+	my $view;
+	my $dialog = $cell;
+	my $popupName;
+	while(@fieldIdSplit) {
+		$view = $dialog->{shift(@fieldIdSplit)}[shift(@fieldIdSplit)];
+		$popupName = shift(@fieldIdSplit);
+		$dialog = $view->{$popupName};
+	};	
+	# if the dialog maintenance is called, we can assume that the "popup"
+	# field is not defaulted (i.e. inactive) and that we need a dialog instance
+	if( not blessed($dialog) or not $dialog->isa("FUIP::Dialog")) {
+		$dialog = FUIP::Dialog->createDefaultInstance($hash);
+		$view->{$popupName} = $dialog;
+		$view->{defaulted}{$popupName} = 0;
+	};		
+	return $dialog;
+};
+
+
 sub renderPopupMaint($$) {
 	my ($hash,$request) = @_;
 	# get pageid, cellid and fieldid
@@ -482,17 +512,7 @@ sub renderPopupMaint($$) {
             "</head>
             <body style='background-color:lightgrey;'";
 	# find the dialog and render it	
-	my $cell = $hash->{pages}{$urlParams->{pageid}}{cells}[$urlParams->{cellid}];
-	my @fieldIdSplit = split(/-/,$urlParams->{fieldid});
-	my $view = $cell->{$fieldIdSplit[0]}[$fieldIdSplit[1]];
-	my $dialog = $view->{$fieldIdSplit[2]};
-	# if the dialog maintenance is called, we can assume that the "popup"
-	# field is not defaulted (i.e. inactive) and that we need a dialog instance
-	if( not blessed($dialog) or not $dialog->isa("FUIP::Dialog")) {
-		$dialog = FUIP::Dialog->createDefaultInstance($hash);
-		$view->{$fieldIdSplit[2]} = $dialog;
-		$view->{defaulted}{$fieldIdSplit[2]} = 0;
-	};		
+	my $dialog = findDialogFromFieldId($hash, $urlParams->{pageid}, $urlParams->{cellid}, $urlParams->{fieldid});
 	my ($width,$height) = $dialog->dimensions();	
 	$result .= '>	
 	<div id="popupcontent" class="fuip-droppable"
@@ -1271,13 +1291,18 @@ sub autoArrange($) {
 	my ($cell) = @_;
 	# get cell width
 	# (This assumes we already have a width.)
-	my ($w,$h) = $cell->dimensions();
-	my $baseWidth = main::AttrVal($cell->{fuip}{NAME},"baseWidth",142);
-	my $width = $w * ($baseWidth + 10) -10;
+	my $width;
+	if($cell->isa("FUIP::Dialog")) {
+		($width,undef) = $cell->dimensions();
+	}else{	
+		my ($w,$h) = $cell->dimensions();
+		my $baseWidth = main::AttrVal($cell->{fuip}{NAME},"baseWidth",142);
+		$width = $w * ($baseWidth + 10) -10;
+	};	
 	my ($posX,$posY) = (0,0);
 	my $nextPosY = 0;
 	for my $view (@{$cell->{views}}) {
-		($w,$h) = $view->dimensions();
+		my ($w,$h) = $view->dimensions();
 		if($posX) {
 			# i.e. there is already sth in the row, check whether we can fit more
 			if($posX + $w > $width) {
@@ -1297,9 +1322,17 @@ sub autoArrange($) {
 sub autoArrangeNewViews($) {
 	my ($cell) = @_;
 	# get cell's dimensions
-	my ($cellWidth,$cellHeight) = $cell->dimensions();
-	my $baseWidth = main::AttrVal($cell->{fuip}{NAME},"baseWidth",142);
-	my $width = $cellWidth * ($baseWidth + 10) -10;
+	my $width;
+	my $height;
+	my $cellWidth;
+	my $cellHeight;
+	if($cell->isa("FUIP::Dialog")) {
+		($width,$height) = $cell->dimensions();
+	}else{	
+		my ($cellWidth,$cellHeight) = $cell->dimensions();
+		my $baseWidth = main::AttrVal($cell->{fuip}{NAME},"baseWidth",142);
+		$width = $cellWidth * ($baseWidth + 10) -10;
+	};	
 	# get the lower right corner of what is already occupied
 	my ($occUntilX,$occUntilY) = (0,0);
 	for my $view (@{$cell->{views}}) {
@@ -1342,12 +1375,19 @@ sub autoArrangeNewViews($) {
 		$nextPosY = $posY + $h if($nextPosY < $posY + $h);
 	}		
 	# resize the cell itself in case we have added something "below", which does not anyway fit
-	my $baseHeight = main::AttrVal($cell->{fuip}{NAME},"baseHeight",108);
-	if($nextPosY > $cellHeight * $baseHeight) {
-		use integer;
-		$cellHeight = $nextPosY / $baseHeight + ($nextPosY % $baseHeight ? 1 : 0);
-		no integer;
-		$cell->dimensions($cellWidth,$cellHeight);
+	if($cell->isa("FUIP::Dialog")) {
+		if($nextPosY + 25 > $height) {
+			$height = $nextPosY + 25;
+			$cell->dimensions($width,$height);
+		};
+	}else{
+		my $baseHeight = main::AttrVal($cell->{fuip}{NAME},"baseHeight",108);
+		if($nextPosY > $cellHeight * $baseHeight) {
+			use integer;
+			$cellHeight = $nextPosY / $baseHeight + ($nextPosY % $baseHeight ? 1 : 0);
+			no integer;
+			$cell->dimensions($cellWidth,$cellHeight);
+		};
 	};
 };
 
@@ -1388,25 +1428,16 @@ sub Set($$$)
 		# get cell id
 		my ($pageId,$cellId) = getPageAndCellId($hash,$a);
 		return $cellId unless(defined($pageId));
-		my $fieldid = $a->[3];
-		my @fieldIdSplit = split(/-/,$fieldid);
-		# find the view
-		my $cell = $hash->{pages}{$pageId}{cells}[$cellId];
-		my $view = $cell->{$fieldIdSplit[0]}[$fieldIdSplit[1]];
-		my $comps = [$view->{$fieldIdSplit[2]}];
+		# get dialog
+		my $dialog = findDialogFromFieldId($hash,$pageId,$cellId,$a->[3]);
+		my $comps = [$dialog];
 		setViewSettings($hash, $comps, 0, $h);
-		$view->{$fieldIdSplit[2]} = $comps->[0];
-		autoArrangeNewViews($view->{$fieldIdSplit[2]});	
+		autoArrangeNewViews($dialog);	
 	}elsif($cmd eq "dialogsize") {	
 		# get cell id
 		my ($pageId,$cellId) = getPageAndCellId($hash,$a);
 		return $cellId unless(defined($pageId));
-		my $fieldid = $a->[3];
-		my @fieldIdSplit = split(/-/,$fieldid);
-		# find the view
-		my $cell = $hash->{pages}{$pageId}{cells}[$cellId];
-		my $view = $cell->{$fieldIdSplit[0]}[$fieldIdSplit[1]];
-		my $dialog = $view->{$fieldIdSplit[2]};
+		my $dialog = findDialogFromFieldId($hash,$pageId,$cellId,$a->[3]);
 		$dialog->dimensions($a->[4],$a->[5]);
 	}elsif($cmd eq "viewdelete") {
 		# get cell id
@@ -1466,12 +1497,7 @@ sub Set($$$)
 		my $pageId = join("_",@pageAndViewId);
 		# cell exists? 
 		return "\"set viewposdialog\": cell ".$pageId." ".$cellId." not found" unless(defined($hash->{pages}{$pageId}) and defined($hash->{pages}{$pageId}{cells}[$cellId]));
-		my $cell = $hash->{pages}{$pageId}{cells}[$cellId];
-		my $fieldid = $a->[3];
-		my @fieldIdSplit = split(/-/,$fieldid);
-		# find the view in the cell
-		my $viewInCell = $cell->{$fieldIdSplit[0]}[$fieldIdSplit[1]];
-		my $dialog = $viewInCell->{$fieldIdSplit[2]};
+		my $dialog = findDialogFromFieldId($hash,$pageId,$cellId,$a->[3]);
 		# find the view in the dialog
 		my $view = $dialog->{views}[$a->[4]];
 		# set position into view
@@ -1503,7 +1529,11 @@ sub Set($$$)
 		# get cell id
 		my ($pageId,$cellId) = getPageAndCellId($hash,$a);
 		return $cellId unless(defined($pageId));
-		autoArrange($hash->{pages}{$pageId}{cells}[$cellId]);
+		if(exists($a->[3])) {
+			autoArrange(findDialogFromFieldId($hash,$pageId,$cellId,$a->[3]));
+		}else{		
+			autoArrange($hash->{pages}{$pageId}{cells}[$cellId]);
+		};	
 	}elsif($cmd eq "refreshBuffer") {
 		FUIP::Model::refresh($hash->{NAME});
 	}elsif($cmd eq "editOnly") {
@@ -1599,26 +1629,9 @@ sub Get($$$)
 		my @pageAndCellId = split(/_/,$a->[2]);
 		my $cellId = pop(@pageAndCellId);
 		my $pageId = join("_",@pageAndCellId);
-		# get field list and values from views 
-		my $cell = $hash->{pages}{$pageId}{cells}[$cellId];
-		# TODO: the following is not really elegant. Maybe the popup dialog should have
-		#       its own class.
-		# get field (component) id
-		my $fieldid = $a->[3];
-		# this should normally have the pattern "views-8-popup" or "views-<num>-<fieldname>"
-		my @fieldIdSplit = split(/-/,$fieldid);
-		# find the view
-		my $view = $cell->{$fieldIdSplit[0]}[$fieldIdSplit[1]];
-		# get this as config structure
-		my $confView = $view->getConfigFields();
-		# now find our field name
-		for my $field (@$confView) {
-			next unless $field->{id} eq $fieldIdSplit[2];
-			# return as to JSON
-			$field->{value} = FUIP::Dialog->createDefaultInstance($hash) unless $field->{value};
-			return _toJson($field->{value}->getConfigFields());
-		};	
-		# something went wrong
+		# find the dialog
+		my $dialog = findDialogFromFieldId($hash,$pageId,$cellId,$a->[3]);
+		return _toJson($dialog->getConfigFields()) if($dialog);
 		return "Something went wrong with get viewcomponent";
 	}elsif($opt eq "viewclasslist") {
 		my @result = map { { id => $_, title => $selectableViews->{$_}{title} } } sort keys(%$selectableViews);

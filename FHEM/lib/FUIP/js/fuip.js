@@ -194,9 +194,12 @@ function postImportCommand(content,isCell,pageid) {
 function autoArrange() {
 	var name = $("html").attr("data-name");
 	var pageId = $("html").attr("data-pageid");
-	var viewId = $("#viewsettings").attr("data-viewid");	
-	var cmd = "set " + name + " autoarrange " + pageId + "_" + viewId; 
-	// TODO: error handling when sending command
+	var viewId = $("#viewsettings").attr("data-viewid");
+	var fieldid = $("html").attr("data-fieldid");	
+	var cmd = "set " + name + " autoarrange " + pageId + "_" + viewId;
+	if(fieldid) {
+		cmd += " " + fieldid;
+	};	
 	sendFhemCommandLocal(cmd).done(function() {
 		location.reload(true);
 	});	
@@ -912,8 +915,17 @@ function valueHelpForOptions(fieldName, callbackFunction) {
 function callPopupMaint(fieldName) {
 	var name = $("html").attr("data-name").toLowerCase();
 	var pageId = $("html").attr("data-pageid");
-	var viewId = $("#viewsettings").attr("data-viewid");		
-	window.location.href = location.origin + "/fhem/" + name + "/fuip/popup?pageid=" + pageId + "&cellid=" + viewId + "&fieldid=" + fieldName;
+	var viewId = $("#viewsettings").attr("data-viewid");
+	// if this is already the popup maintenance (popup in popup), then we need to concat
+    // the field names
+	var lowerFieldId = $("html").attr("data-fieldid");
+	var fullFieldName;
+	if(lowerFieldId) {
+		fullFieldName = lowerFieldId + "-" + fieldName; 
+	}else{
+		fullFieldName = fieldName;
+	};	
+	window.location.href = location.origin + "/fhem/" + name + "/fuip/popup?pageid=" + pageId + "&cellid=" + viewId + "&fieldid=" + fullFieldName;
 };	
 
 

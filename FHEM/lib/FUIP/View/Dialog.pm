@@ -18,6 +18,55 @@ sub dimensions($;$$){
 	return ($self->{width} ? $self->{width} : 400, $self->{height} ? $self->{height} : 300);
 };	
 	
+
+sub _getViewHTML($) {
+	my ($view) = @_;
+	# check whether the view has a popup, i.e. a component of type "dialog"
+	# which is actually switched on
+	my $viewStruc = $view->getStructure(); 
+	my $popupField;
+	for my $field (@$viewStruc) {
+		if($field->{type} eq "dialog") {
+			$popupField = $field;
+			last;
+		};	
+	};
+	# if we have a default as "no popup", then we might not want a popup
+	if($popupField and exists($popupField->{default})) {
+		unless(exists($view->{defaulted}) and exists($view->{defaulted}{$popupField->{id}})
+				and $view->{defaulted}{$popupField->{id}} == 0) {
+			$popupField = undef;
+		};	
+	};
+	# do we have a popup?
+	my $result = "";
+	my $dialog;
+	if($popupField) {
+		$dialog = $view->{$popupField->{id}};
+		if( not blessed($dialog) or not $dialog->isa("FUIP::Dialog")) {
+			$dialog = FUIP::Dialog->createDefaultInstance($view->{fuip});
+		};
+		my ($width,$height) = $dialog->dimensions();
+		$result .= '<div data-type="popup"
+						data-height="'.$height.'px"
+						data-width="'.$width.'px">
+					<div>';
+	};
+	# the normal HTML of the view
+	$result .= $view->getHTML(); 
+	# and again some popup stuff
+	if($popupField) {
+		# dialog->getHTML: always locked as we cannot configure the popup directly
+		$result .= '</div>
+					<div class="dialog">
+					<header>'.$dialog->{title}.'</header>	
+				'.$dialog->getHTML(1).' 
+					</div>
+				</div>';
+	};			
+	return $result;
+};		
+	
 	
 sub getHTML($$){
 	my ($self,$locked) = @_;
@@ -29,7 +78,7 @@ sub getHTML($$){
 		my ($left,$top) = $view->position();
 		my ($width,$height) = $view->dimensions();
 		# TODO: hardcode 22px headers?
-		$result .= '<div><div data-viewid="'.$i.'"'.($locked ? '' : ' class="fuip-draggable"').' style="position:absolute;left:'.$left.'px;top:'.($top+22).'px;width:'.$width.'px;height:'.$height.'px;z-index:10">'.$view->getHTML();
+		$result .= '<div><div data-viewid="'.$i.'"'.($locked ? '' : ' class="fuip-draggable"').' style="position:absolute;left:'.$left.'px;top:'.($top+22).'px;width:'.$width.'px;height:'.$height.'px;z-index:10">'._getViewHTML($view);
 		if($self->{fuip}{editOnly}) {
 			my $title = ($view->{title} ? $view->{title} : '');
 			$title .= ' ('.blessed($view).')';
