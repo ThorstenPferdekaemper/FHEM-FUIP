@@ -10,14 +10,23 @@ use parent -norequire, 'FUIP::View';
 sub getHTML($){
 	my ($self) = @_;
 	# show reading
-	return "<table width='100%' class=\"fuip-color\" style='border:1px solid; border-radius:8px;'>
-				<tr><td class=\"fuip-color\">".$self->{label}."</td></tr>
+	my $result = "<table width='100%' class=\"fuip-color\" style='border:1px solid; border-radius:8px;'>";
+	if($self->{icon}){
+		$result .= '<tr><td style="vertical-align:center">
+							<i class="fa '.$self->{icon}.' fuip-color" style="font-size:26px"></i>
+					</td><td><table>';
+	};
+	$result .= "<tr><td class=\"fuip-color\">".$self->{label}."</td></tr>
 				<tr><td><div data-type=\"label\" 
 							 class=\"fuip-color\"
 							 data-device=\"".$self->{reading}{device}."\"
 							 data-get=\"".$self->{reading}{reading}."\">
-				</div></td></tr>
-			</table>";
+				</div></td></tr>";
+	if($self->{icon}){
+		$result .= '</table></td></tr>';
+	};
+	$result .= "</table>";
+	return $result;
 };
 	
 	
@@ -38,6 +47,7 @@ sub getStructure($) {
 			reading => { } },	
 		{ id => "title", type => "text", default => { type => "field", value => "reading-reading"} },
 		{ id => "label", type => "text", default => { type => "field", value => "title"} },
+		{ id => "icon", type => "icon" },
 		{ id => "popup", type => "dialog", default=> { type => "const", value => "inactive"} }		
 		];
 };
