@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00037 2018-08-25 21:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00038 2018-08-27 13:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
@@ -870,9 +870,9 @@ sub getFuipPage($$) {
 			defaultPageIndex($hash);
 		}else{
 			my @path = split(/\//,$pageid);
-			if($path[0] eq "room") {
+			if($path[0] eq "room" and defined($path[1])) {
 				defaultPageRoom($hash,$path[1]);
-			}elsif($path[0] eq "device"){
+			}elsif($path[0] eq "device" and defined($path[1]) and defined($path[2])){
 				defaultPageDevice($hash,$path[1],$path[2]);
 			}else{		
 				defaultPage($hash,$pageid);

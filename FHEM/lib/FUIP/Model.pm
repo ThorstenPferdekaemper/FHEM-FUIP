@@ -141,7 +141,7 @@ sub getRooms($) {
 				my %rooms;;
 				foreach my $d (keys %defs ) {
 					foreach my $r (split(",", AttrVal($d, "room", "hidden"))) {
-						next if $r =~ /^(hidden|CUL_HM|HM485)$/;;
+						next if $r =~ /^(hidden|CUL_HM|HM485|)$/;;
 						$rooms{$r} = 1;;
 					}
 				};;
@@ -158,7 +158,8 @@ sub getRooms($) {
 			# we do not return "hidden" or "Unsorted"
 			foreach my $r (split(",", main::AttrVal($d, "room", "hidden"))) {
 				# TODO: Rooms to be ignored should be configurable
-				next if $r =~ /^(hidden|CUL_HM|HM485)$/;
+				# the following also ignores the "empty string" room
+				next if $r =~ /^(hidden|CUL_HM|HM485|)$/;
 				$rooms{$r} = 1;
 			}
 		};
