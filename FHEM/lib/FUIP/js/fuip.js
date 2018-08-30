@@ -143,6 +143,28 @@ function onDragStopDialog(fieldid,ui) {
 	});	
 };
 
+
+// show dialog with an error text 
+// text can be almost arbitrary html
+function popupError(title,text,onClose) {
+	var popup = $("<div>"+text+"</div>");
+	var buttons = [{
+			text: "Ok",
+			icon: "ui-icon-check",
+			click: function() { popup.dialog("close"); },
+			showLabel: false
+		}];
+	if(onClose) {
+		buttons[0].click = function() { popup.dialog("close"); onClose(); };
+	};	
+	popup.dialog({
+			title: title,
+			modal: true,
+			buttons: buttons,
+			classes: { "ui-dialog-titlebar": "ui-state-error" }
+		});
+};	
+
 							
 function sendFhemCommandLocal(cmdline) {
 	cmdline = cmdline.replace('  ', ' ');
@@ -173,6 +195,10 @@ function postImportCommand(content,isCell,pageid) {
 	var url = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() + '/fuip/import?pageid=' + pageid;
 	if(isCell) { 
 		url += '&cellid=' + $("#viewsettings").attr("data-viewid");
+	};	
+	var fieldid = $("#viewsettings").attr("data-fieldid");
+	if(fieldid) {
+		url += '&fieldid=' + fieldid;		
 	};	
 	return $.ajax({
 		async: true,
@@ -1177,7 +1203,7 @@ function changeSettingsDialog(settingsJson,viewId,fieldId) {
 	};
 	settingsDialog.dialog("option","title",title); 
 	settingsDialog.html(html);
-	settingsDialog.dialog("option","buttons",
+	var buttons = 
 		[{
 			text: 'Ok',
 			icon: 'ui-icon-check',
@@ -1186,39 +1212,60 @@ function changeSettingsDialog(settingsJson,viewId,fieldId) {
 		{   text: 'Arrange views (auto-layout)',
 			icon: 'ui-icon-calculator',
 			click: autoArrange,
-			showLabel: false },								
-		{   text: 'Add new cell',
-			icon: 'ui-icon-plus',
-			click: viewAddNew,
-			showLabel: false },
-		{	text: 'Copy cell',
-			icon: 'ui-icon-copy',
-			click: copyCurrentCell,
-			showLabel: false },
-		{	text: 'Export cell',
-			icon: ' ui-icon-arrowstop-1-s',
-			click: function() { location.href = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() + '/fuip/export?pageid=' + $("html").attr("data-pageid") 
-			          + '&cellid=' + $("#viewsettings").attr("data-viewid"); },
-			showLabel: false },	
-		{	text: 'Import cell',
-			icon: ' ui-icon-arrowstop-1-n',
-			click: function() { var input = $('<input type="file">');
-								input.on("change",function(evt){
-									var reader = new FileReader();
-									reader.onload = function(e) {
-										// TODO: error handling when sending command
-										postImportCommand(e.target.result,true,$("html").attr("data-pageid"))
-											.done(function(){location.reload(true)});	
-									};	
-									reader.readAsText(evt.target.files[0]);
-								});
-								input.click();
-			},
-			showLabel: false },
-		{   text: 'Delete cell',
-			icon: 'ui-icon-trash',
-			click: deleteView,
-			showLabel: false },	
+			showLabel: false }];
+	if(!fieldId) {
+		buttons.push(	
+			{   text: 'Add new cell',
+				icon: 'ui-icon-plus',
+				click: viewAddNew,
+				showLabel: false },
+			{	text: 'Copy cell',
+				icon: 'ui-icon-copy',
+				click: copyCurrentCell,
+				showLabel: false });
+	};
+	buttons.push(
+			{	text: 'Export ' + (fieldId ? 'dialog' : 'cell'),
+				icon: ' ui-icon-arrowstop-1-s',
+				click: function() { 
+							var downloadUrl = location.origin + '/fhem/' 
+									+ $("html").attr("data-name").toLowerCase() 
+									+ '/fuip/export?pageid=' + $("html").attr("data-pageid") 
+									+ '&cellid=' + $("#viewsettings").attr("data-viewid");
+							if(fieldId) {
+								downloadUrl += '&fieldid='+fieldId;
+							};	
+							location.href = downloadUrl;
+					  },
+				showLabel: false },
+			{	text: 'Import ' + (fieldId ? 'dialog' : 'cell'),
+				icon: ' ui-icon-arrowstop-1-n',
+			// the following attaches the input field for the file dialog to this function itself
+			// it seems that otherwise, it happens that the garbage collector deletes variable "input"
+				click: function() { changeSettingsDialog.input = $('<input type="file">');
+									changeSettingsDialog.input.on("change",function(evt){
+										changeSettingsDialog.input = undefined;  // not needed anymore
+										var reader = new FileReader();
+										reader.onload = function(e) {
+											// TODO: error handling when sending command
+											postImportCommand(e.target.result,true,$("html").attr("data-pageid"))
+												.done(function(msg) {
+													if(msg == "OK") {
+														location.reload(true);
+													}else{	
+														popupError("Import " + (fieldId ? 'dialog' : 'cell') + ": Error",msg);
+													};
+												});		
+										};	
+										reader.readAsText(evt.target.files[0]);
+									});
+									changeSettingsDialog.input.click();
+				},
+				showLabel: false },
+			{   text: 'Delete cell',
+				icon: 'ui-icon-trash',
+				click: deleteView,
+				showLabel: false },
 		{   text: 'Cancel',
 			icon: 'ui-icon-close',
 			click: function() {	settingsDialog.dialog( "close" ); },
@@ -1234,7 +1281,8 @@ function changeSettingsDialog(settingsJson,viewId,fieldId) {
 				sendFhemCommandLocal("set " + $("html").attr("data-name") + " editOnly " + easyDrag).
 					done(function(){ location.reload(true) });
 			} }
-		]);
+		);
+	settingsDialog.dialog("option","buttons",buttons);
 };
 					
 				
@@ -1330,8 +1378,12 @@ function importAsNewPage(content) {
 				if(!newname.length) { return; }; // page needs a name
 				// TODO: This allows overwriting any page. Is this good?
 				postImportCommand(content,false,newname)
-					.done(function() {
-						window.location = "/fhem/" + name.toLowerCase() + "/page/"+newname;
+					.done(function(msg) {
+						if(msg == "OK") {
+							window.location = "/fhem/" + name.toLowerCase() + "/page/"+newname;
+						}else{	
+							popupError("Import page: Error",msg, function() { popup.dialog("close"); } );
+						};
 					});	
 			},
 			showLabel: false },
@@ -1374,8 +1426,11 @@ function toggleCellPage() {
 				showLabel: false },	
 			{	text: 'Import page',
 				icon: ' ui-icon-arrowstop-1-n',
-				click: function() { var input = $('<input type="file">');
-									input.on("change",function(evt){
+				// the following attaches the input field for the file dialog to this function itself
+				// it seems that otherwise, it happens that the garbage collector deletes variable "input"
+				click: function() { toggleCellPage.input = $('<input type="file">');
+									toggleCellPage.input.on("change",function(evt){
+										toggleCellPage.input = undefined;  // not needed anymore
 										var reader = new FileReader();
 										reader.onload = function(e) {
 										//var	cmd = "set uilocal import bla_001 " + e.target.result; 
@@ -1384,7 +1439,7 @@ function toggleCellPage() {
 									};	
 									reader.readAsText(evt.target.files[0]);
 								});
-								input.click();
+								toggleCellPage.input.click();
 				},
 				showLabel: false },	
 			{   text: 'Cancel',

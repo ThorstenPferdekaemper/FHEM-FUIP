@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00039 2018-08-27 20:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00040 2018-08-30 21:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
@@ -982,7 +982,11 @@ sub settingsExport($$) {
 	return undef unless exists $urlParams->{pageid};
 	my $result = "";
 	my $filename = "";
-	if(exists $urlParams->{cellid}) {
+	if(exists $urlParams->{fieldid}) {
+		my $dialog = findDialogFromFieldId($hash,$urlParams->{pageid},$urlParams->{cellid},$urlParams->{fieldid});
+		$result = $dialog->serialize();
+		$filename = $hash->{NAME}."_".$urlParams->{pageid}."_".$urlParams->{cellid}."_".$urlParams->{fieldid};
+	}elsif(exists $urlParams->{cellid}) {
 		# export cell
 		$result = $hash->{pages}{$urlParams->{pageid}}{cells}[$urlParams->{cellid}]->serialize(); 	
 		$filename = $hash->{NAME}."_".$urlParams->{pageid}."_".$urlParams->{cellid};
@@ -1003,7 +1007,7 @@ sub settingsImport($$) {
 	my $urlParams = urlParamsGet($request);
 	# TODO: error management
 	# content is now in $urlParams->{content}, but URI-encoded
-	return unless $urlParams->{content};
+	return("text/plain; charset=utf-8", "Content missing (empty file?)") unless $urlParams->{content};
 	my $content = $urlParams->{content};
 	$content =~ s/\+/%20/g;
 	$content = main::urlDecode($content);
@@ -1014,17 +1018,68 @@ sub settingsImport($$) {
 	delete($confHash->{class});
 	# we only allow FUIP::Cell and FUIP::Page so far
 	# TODO: real error handling
-	return undef unless (exists($urlParams->{cellid}) and $class eq "FUIP::Cell" 
-						 or not exists($urlParams->{cellid}) and $class eq "FUIP::Page"); 
+	if($class eq "FUIP::Cell" or $class eq "FUIP::Dialog") {
+		return ("text/plain; charset=utf-8", 
+			"<b>Select a FUIP page export file</b><p>
+			You are probably trying to import a file as a FUIP <b>page</b>. However, the selected 
+			file looks like an exported <b>cell</b> or <b>dialog</b>. Either import the file as a new cell (or dialog) or select
+			a different file.") unless exists($urlParams->{cellid}); 
+	}elsif($class eq "FUIP::Page"){
+		return ("text/plain; charset=utf-8", 			
+			"<b>Select a FUIP cell or dialog export file</b><p>
+			You are probably trying to import a file as a FUIP <b>cell</b> or <b>dialog</b>. However, the selected 
+			file looks like an exported <b>page</b>. Either import the file as a new page or select
+			a different file.") if exists($urlParams->{cellid}); 	
+	}else{
+		return ("text/plain; charset=utf-8", 
+			"<b>Select a FUIP export file</b><p>
+			You are probably trying to import a file as a FUIP page, cell or dialog. However, the selected
+			file does not seem to be a FUIP export file at all."); 
+	};
 	my $newObject = $class->reconstruct($confHash,$hash);
-	if(exists($urlParams->{cellid})) {
-		delete $newObject->{posX};
-		delete $newObject->{posY};
+	if(exists($urlParams->{fieldid})) {
+		# importing (as) a dialog
+		# This means that what we import will replace the current one
+		my $dialog = findDialogFromFieldId($hash,$urlParams->{pageid},$urlParams->{cellid},$urlParams->{fieldid});
+		$dialog->{views} = $newObject->{views};
+		$dialog->{title} = $newObject->{title};
+		$dialog->{defaulted} = $newObject->{defaulted};
+		# If we import from a cell, remove position and convert size
+		if($class eq "FUIP::Cell") {
+			$dialog->{width} = 	$newObject->{width} * main::AttrVal($hash->{NAME},"baseWidth",142) + 2;
+			$dialog->{height} = $newObject->{height} * main::AttrVal($hash->{NAME},"baseHeight",108) + 25;	
+		}else{
+			# must be Dialog now
+			$dialog->{width} =  $newObject->{width};
+			$dialog->{height} =  $newObject->{height};
+		};
+	}elsif(exists($urlParams->{cellid})) {
+		# importing as a cell
+		# This always creates a new cell
+		# If we come from a dialog, we need to convert sizes
+		if($class eq "FUIP::Dialog") {
+			my $dialog = $newObject;
+			$newObject = FUIP::Cell->createDefaultInstance($hash);
+			$newObject->{views} = $dialog->{views};
+			$newObject->{title} = $dialog->{title};
+			$newObject->{defaulted} = $dialog->{defaulted};
+			my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
+			my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);
+			use integer;
+			$newObject->{width} = $dialog->{width} / $baseWidth + ($dialog->{width} % $baseWidth ? 1 : 0);
+			$newObject->{height} = $dialog->{height} / $baseHeight + ($dialog->{height} % $baseHeight ? 1 : 0);
+			no integer;
+			$newObject->{width} = 1 unless($newObject->{width} > 0);
+			$newObject->{height} = 1 unless($newObject->{height} > 0);
+		}else{
+			delete $newObject->{posX};
+			delete $newObject->{posY};
+		};
 		push(@{$hash->{pages}{$urlParams->{pageid}}{cells}},$newObject);
 	}else{
 		$hash->{pages}{$urlParams->{pageid}} = $newObject;
 	};	
-	return("text/plain; charset=utf-8", "File imported successfully");
+	return("text/plain; charset=utf-8", "OK");
 };
 
 
