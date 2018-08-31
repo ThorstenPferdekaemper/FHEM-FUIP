@@ -13,13 +13,17 @@ function fuipInit(baseWidth,baseHeight,maxCols) {
 			width: 675,
 			modal: true,
 		});
-		$(function() {
-			$('.ui-dialog-titlebar').append('<button id="togglecellpage" type="button" style="position:absolute;top:0px;left:0px;" onclick="toggleCellPage()">Cell/Page</button>');
-			$('#togglecellpage').button({
-				icon: 'ui-icon-transferthick-e-w',
-			});		
-		});
-		
+		// is this the dialog maintenance page?
+		var fieldid = $("html").attr("data-fieldid");
+		// switch to page settings does not make sense for dialog maintenance
+		if(!fieldid) {
+			$(function() {
+				$('.ui-dialog-titlebar').append('<button id="togglecellpage" type="button" style="position:absolute;top:0px;left:0px;" onclick="toggleCellPage()">Cell/Page</button>');
+				$('#togglecellpage').button({
+					icon: 'ui-icon-transferthick-e-w',
+				});		
+			});
+		};	
 		// every view is draggable					
 		$(".fuip-draggable").each(function() {
 			$(this).draggable({
@@ -232,7 +236,11 @@ function autoArrange() {
 };
 					
 					
-function acceptSettings() {
+function acceptSettings(doneFunc) {
+// accept changes on config popup 
+// doneFunc: this is called on (more or less) successful change
+//           This way, e.g. the settings can be "saved" before something else is done. 
+//           If this is not used, the page is reloaded.
 	var cmd = '';
 	// collect sort orders of viewarrays
 	$('.ui-accordion').each(function() {
@@ -280,13 +288,16 @@ function acceptSettings() {
 	};	
 	// TODO: error handling when sending command
 	sendFhemCommandLocal(cmd).done(function() {
-		$("#viewsettings").dialog( "close" );
-		location.reload(true);
+		if(doneFunc) {
+			doneFunc();
+		}else{	
+			location.reload(true);
+		};	
 	});	
 };
 
 
-function acceptPageSettings() {
+function acceptPageSettings(doneFunc) {
 	var cmd = '';
 	// collect inputs and checkboxes
 	$("#viewsettings input").each(function() {
@@ -305,8 +316,11 @@ function acceptPageSettings() {
 	cmd = "set " + name + " pagesettings " + pageId + cmd; 
 	// TODO: error handling when sending command
 	sendFhemCommandLocal(cmd).done(function () {
-		$("#viewsettings").dialog( "close" );
-		location.reload(true);
+		if(doneFunc) {
+			doneFunc();
+		}else{	
+			location.reload(true);
+		};	
 	});	
 };
 
@@ -423,7 +437,7 @@ function defaultCheckChanged(id,defaultDef,fieldType) {
 				});		
 			});
 			inputField.replaceWith("<button id='" + id + "' type='button' " +
-				"onclick='callPopupMaint(\""+id+"\")'" +
+				"onclick='acceptSettings(function() { callPopupMaint(\""+id+"\");})'" +
 				">Configure popup</button>");
 			return;		
 		};	
@@ -1011,7 +1025,7 @@ function createField(settings, fieldNum, component,prefix) {
 			});		
 		});		
 		result += "<button id='" + fieldName + "' type='button' " +
-				"onclick='callPopupMaint(\""+fieldName+"\")'" +
+				"onclick='acceptSettings(function() { callPopupMaint(\""+fieldName+"\");})'" +
 				">Configure popup</button>";
 		return result;		
 	};
@@ -1188,7 +1202,7 @@ function json2object(json) {
 	return o;
 };	
 
-										
+								
 function changeSettingsDialog(settingsJson,viewId,fieldId) {
 	// fieldId is set in the "popup maintenance mode"
 	var settingsDialog = $( "#viewsettings" );
@@ -1207,27 +1221,27 @@ function changeSettingsDialog(settingsJson,viewId,fieldId) {
 		[{
 			text: 'Ok',
 			icon: 'ui-icon-check',
-			click: acceptSettings,
+			click: function() { acceptSettings(); },
 			showLabel: false },
 		{   text: 'Arrange views (auto-layout)',
 			icon: 'ui-icon-calculator',
-			click: autoArrange,
+			click: function() { acceptSettings(autoArrange); } ,
 			showLabel: false }];
 	if(!fieldId) {
 		buttons.push(	
 			{   text: 'Add new cell',
 				icon: 'ui-icon-plus',
-				click: viewAddNew,
+				click: function() { acceptSettings(viewAddNew);},
 				showLabel: false },
 			{	text: 'Copy cell',
 				icon: 'ui-icon-copy',
-				click: copyCurrentCell,
+				click: function() { acceptSettings(copyCurrentCell);},
 				showLabel: false });
 	};
 	buttons.push(
 			{	text: 'Export ' + (fieldId ? 'dialog' : 'cell'),
 				icon: ' ui-icon-arrowstop-1-s',
-				click: function() { 
+				click: function() { acceptSettings( function() { 
 							var downloadUrl = location.origin + '/fhem/' 
 									+ $("html").attr("data-name").toLowerCase() 
 									+ '/fuip/export?pageid=' + $("html").attr("data-pageid") 
@@ -1236,15 +1250,15 @@ function changeSettingsDialog(settingsJson,viewId,fieldId) {
 								downloadUrl += '&fieldid='+fieldId;
 							};	
 							location.href = downloadUrl;
-					  },
+						});},
 				showLabel: false },
 			{	text: 'Import ' + (fieldId ? 'dialog' : 'cell'),
 				icon: ' ui-icon-arrowstop-1-n',
 			// the following attaches the input field for the file dialog to this function itself
 			// it seems that otherwise, it happens that the garbage collector deletes variable "input"
-				click: function() { changeSettingsDialog.input = $('<input type="file">');
-									changeSettingsDialog.input.on("change",function(evt){
-										changeSettingsDialog.input = undefined;  // not needed anymore
+				click: function() { fuip.fileInput = $('<input type="file">');
+									fuip.fileInput.on("change",function(evt){
+										fuip.fileInput = undefined;  // not needed anymore
 										var reader = new FileReader();
 										reader.onload = function(e) {
 											// TODO: error handling when sending command
@@ -1259,19 +1273,33 @@ function changeSettingsDialog(settingsJson,viewId,fieldId) {
 										};	
 										reader.readAsText(evt.target.files[0]);
 									});
-									changeSettingsDialog.input.click();
-				},
-				showLabel: false },
+									fuip.fileInput.click();
+									// for some (unknown to me) reason, this does not work with the usual construct
+									// however, the import of a cell does not change the cell or the content of the
+									// config popup anyway, so we can just do it "afterwards"
+									if(!fieldId){ // for dialog, we anyway overwrite the current state
+										acceptSettings( function() {} );  // avoid immediate reload
+									};	
+								},	
+				showLabel: false });
+	if(!fieldId) {
+		buttons.push(	
 			{   text: 'Delete cell',
 				icon: 'ui-icon-trash',
 				click: deleteView,
-				showLabel: false },
+				showLabel: false });
+	};
+	buttons.push(
 		{   text: 'Cancel',
 			icon: 'ui-icon-close',
-			click: function() {	settingsDialog.dialog( "close" ); },
+			click: function() {	settingsDialog.dialog( "close" ); 
+								// even here, we do a reload as other functions (like export) 
+								// could already have "saved" the changes
+								location.reload(true);
+							},
 			showLabel: false },
 		{	text: 'Toggle editOnly',
-			click: function() {
+			click: function() { acceptSettings( function() {
 				var easyDrag = $('html').attr('data-editonly');
 				if(easyDrag == "0") {
 					easyDrag = "1";
@@ -1280,7 +1308,8 @@ function changeSettingsDialog(settingsJson,viewId,fieldId) {
 				};
 				sendFhemCommandLocal("set " + $("html").attr("data-name") + " editOnly " + easyDrag).
 					done(function(){ location.reload(true) });
-			} }
+			});} 
+		}
 		);
 	settingsDialog.dialog("option","buttons",buttons);
 };
@@ -1414,15 +1443,15 @@ function toggleCellPage() {
 		settingsDialog.dialog("option","buttons",
 			[{	text: 'Ok',
 				icon: 'ui-icon-check',
-				click: acceptPageSettings,
+				click: function() { acceptPageSettings();},
 				showLabel: false },
 			{	text: 'Copy page',
 				icon: 'ui-icon-copy',
-				click: copyCurrentPage,
+				click: function() { acceptPageSettings(copyCurrentPage); },
 				showLabel: false },
 			{	text: 'Export page',
 				icon: ' ui-icon-arrowstop-1-s',
-				click: function() { location.href = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() + '/fuip/export?pageid=' + $("html").attr("data-pageid"); },
+				click: function() { acceptPageSettings( function() { location.href = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() + '/fuip/export?pageid=' + $("html").attr("data-pageid"); })},
 				showLabel: false },	
 			{	text: 'Import page',
 				icon: ' ui-icon-arrowstop-1-n',
@@ -1440,11 +1469,14 @@ function toggleCellPage() {
 									reader.readAsText(evt.target.files[0]);
 								});
 								toggleCellPage.input.click();
+								acceptPageSettings(function(){});  // avoid page reload
 				},
 				showLabel: false },	
 			{   text: 'Cancel',
 				icon: 'ui-icon-close',
-				click: function() {	settingsDialog.dialog( "close" ); },
+				click: function() {	settingsDialog.dialog( "close" ); 
+									location.reload(true);
+								},
 				showLabel: false }
 			]);
 		var cmd = "get " + $("html").attr("data-name") + " pagesettings " + $("html").attr("data-pageid");
