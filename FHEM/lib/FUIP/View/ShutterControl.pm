@@ -36,8 +36,13 @@ sub getHTML($){
 				data-colors=\'["#2A2A2A","#2A2A2A","#2A2A2A","#2A2A2A","#2A2A2A","#2A2A2A","#2A2A2A","#2A2A2A","#2A2A2A","#2A2A2A","#2A2A2A"]\' 
 				data-background-colors=\'["#aa6900","#aa6900","#aa6900","#aa6900","#aa6900","#aa6900","#aa6900","#aa6900","#aa6900","#aa6900","#aa6900"]\' 
 				data-background-icons=\'["fa-square","fa-square","fa-square","fa-square","fa-square","fa-square","fa-square","fa-square","fa-square","fa-square","fa-square"]\'>
-					</div>
-				</td>
+					</div>';
+	if($self->{label}) {
+		$result .= '<div class="fuip-color" style="position:absolute; top:122px;left:0px;width:126px;text-align:center">'
+						.$self->{label}
+					.'</div>';
+	};	
+	$result .= '</td>
 				<td width="60">  
 					<div class="triplebox-v left" >
 						<div data-type="push" data-device="'.$device.'" data-icon="fa-chevron-up" 
@@ -63,8 +68,8 @@ sub getHTML($){
 						data-get="'.$self->{readingLevel}.'" data-set="'.$self->{setLevel}.'" class="right">
 					</div>
 				</td>
-			</tr>	
-		</table>';
+			</tr>';
+	$result .= '</table>';
 	if($self->{timer}) {
 		$result .= '
 		<div style="position:absolute; top:92px; left:210px;"
@@ -90,7 +95,7 @@ sub getHTML($){
 
 
 sub dimensions($;$$){
-	return (260,140);
+	return (260,148);
 };	
 
 	
@@ -102,6 +107,7 @@ sub getStructure($) {
 		{ id => "class", type => "class", value => $class },
 		{ id => "device", type => "device" },
 		{ id => "title", type => "text", default => { type => "field", value => "device"} },
+		{ id => "label", type => "text" },		
 		{ id => "setUp", type => "set", refdevice => "device", default => { type => "const", value => "up" } },
 		{ id => "setStop", type => "set", refdevice => "device", default => { type => "const", value => "stop" } },
 		{ id => "setDown", type => "set", refdevice => "device", default => { type => "const", value => "down" } },
