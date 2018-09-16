@@ -37,7 +37,7 @@ UPD 2018-07-20_21:11:22 1906 FHEM/lib/FUIP/View/Sysmon.pm
 UPD 2018-08-21_21:48:11 4072 FHEM/lib/FUIP/View/Thermostat.pm
 UPD 2018-08-21_21:48:22 1397 FHEM/lib/FUIP/View/Title.pm
 UPD 2018-07-10_21:16:48 2060 FHEM/lib/FUIP/View/UpStopDown.pm
-UPD 2018-09-14_21:32:11 1840 FHEM/lib/FUIP/View/WeatherDetail.pm
+UPD 2018-09-16_22:03:40 1860 FHEM/lib/FUIP/View/WeatherDetail.pm
 UPD 2018-03-17_23:57:54 7260 FHEM/lib/FUIP/css/theme.blue.css
 UPD 2018-03-17_23:57:55 5774 FHEM/lib/FUIP/css/theme.default.css
 UPD 2018-09-15_21:48:46 797 FHEM/lib/FUIP/css/widget_weatherdetail.css

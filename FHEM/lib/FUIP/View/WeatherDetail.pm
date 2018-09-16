@@ -23,7 +23,7 @@ sub getHTML($){
 		$detail = '["'.join('","',@detailArr).'"]';
 	};
 	return '<div>
-			<link rel="stylesheet" href="/fhem/uilocal/fuip/css/widget_weatherdetail.css">
+			<link rel="stylesheet" href="/fhem/'.lc($self->{fuip}{NAME}).'/fuip/css/widget_weatherdetail.css">
 			<div class="cell" data-type="weatherdetail" 
 				data-device="'.$device.'" 
 				data-detail=\''.$detail.'\'
