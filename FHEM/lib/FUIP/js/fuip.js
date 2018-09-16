@@ -627,6 +627,7 @@ function valueHelpFilterRoom(e, n, f, i, $r, c, data) {
 // determine full reference field name (e.g. from refdevice for field type set)	
 function getFullRefName(fieldname,reftype) {	
 	var shortRefName = $('#'+fieldname).attr("data-"+reftype);  // this is the short name
+	if(!shortRefName) { return false; };
 	var nameArray = fieldname.split("-").slice(0,-1);
 	nameArray.push(shortRefName);
 	return nameArray.join("-");
@@ -647,8 +648,7 @@ function valueHelp(fieldName,type) {
 	if(type == "setoptions") {
 		valueHelpForOptions(fieldName,
 			function(selected) {
-				var value = JSON.stringify(selected);
-				$('#'+fieldName).val(value);
+				$('#'+fieldName).val(selected);
 				$('#'+fieldName).trigger("input");
 			});	
 		return;	
@@ -911,20 +911,17 @@ function valueHelpForOptions(fieldName, callbackFunction) {
 	valueDialog.dialog("option","title","Possible values for " + fieldName); 
 	valueDialog.html("Please wait...");
 	valueDialog.dialog("open");
-	// get set name and device name
-    var refSetFullName = getFullRefName(fieldName,"refset");
-    var refDeviceFullName = getFullRefName(refSetFullName, "refdevice");
-	var cmd = "get " + name + " sets " + $("#"+refDeviceFullName).val();
-	sendFhemCommandLocal(cmd).done(function(json){
-		var sets = json2object(json);
-		var options = sets[$("#"+refSetFullName).val()];
+	
+	var innerValueHelp = function(fName,options) {
 		var valueDialog = $( "#valuehelp" );
 		var html = "<table id='valuehelptable'><thead><tr><th>Name</th></tr></thead>";
 		html += "<tbody>";
 		// which of the options are set?
-		var selected = json2object($("#"+fieldName).val());
+		// the following is partially for compatibility with earlier versions
+		var selected = json2object($("#"+fName).val());
 		if(!(selected instanceof Array)) {
-			selected = [];
+			// new coding 
+			selected = $("#"+fName).val().split(",");
 		};	
 		for(var i = 0; i < options.length; i++){
 			var isSel = '';
@@ -947,8 +944,25 @@ function valueHelpForOptions(fieldName, callbackFunction) {
 				$(this).attr('data-selected','X');
 				$(this).children("td").attr("style", "background: #F39814;color:black;");
 			};				
+		});		
+	};	
+	
+	// get set name and device name
+    var refSetFullName = getFullRefName(fieldName,"refset");
+	if(refSetFullName) {  // i.e. we have a "refset"
+		var refDeviceFullName = getFullRefName(refSetFullName, "refdevice");
+		var cmd = "get " + name + " sets " + $("#"+refDeviceFullName).val();
+		sendFhemCommandLocal(cmd).done(function(json){
+			var sets = json2object(json);
+			innerValueHelp(fieldName,sets[$("#"+refSetFullName).val()]);
 		});
-	});	
+	}else{
+		// fixed list of options?
+		var opts = $('#'+fieldName).attr("data-options");
+		if(opts) {
+			innerValueHelp(fieldName,json2object(opts));
+		};		
+	};	
 };	
 
 
@@ -991,7 +1005,10 @@ function createField(settings, fieldNum, component,prefix) {
 		}else{
 			checkValue = " checked";
 		};	
-		var defaultVal = (fieldComp.default.type == 'const' ? '' : prefix) + fieldComp.default.value; 
+		var defaultVal = fieldComp.default.value;
+		if(fieldComp.default.type != 'const') {
+			defaultVal = prefix + defaultVal;
+		};	
 		defaultDef = '{type: "' + fieldComp.default.type + '", value: "' + defaultVal + '"';
 		if(fieldComp.default.hasOwnProperty("suffix")) {
 			defaultDef += ', suffix: "' + fieldComp.default.suffix + '"';
@@ -1035,7 +1052,7 @@ function createField(settings, fieldNum, component,prefix) {
 			+ fieldStyle + " oninput='inputChanged(this," + JSON.stringify(influencedFields) +")' >"
 			+ fieldValue + "</textarea>";
 	}else{
-		if(fieldComp.hasOwnProperty("options")){
+		if(fieldComp.hasOwnProperty("options") && field.type != "setoptions"){
 			result += "<select class='fuip'";
 			if(parseInt(fieldComp.default.used)) {
 				result += " disabled";
@@ -1050,10 +1067,13 @@ function createField(settings, fieldNum, component,prefix) {
 		if(fieldComp.hasOwnProperty("refset")){
 			result += "data-refset='" + fieldComp.refset + "' ";
 		};	
+		if(field.type == "setoptions" && fieldComp.hasOwnProperty("options")) {
+			result += "data-options='"+JSON.stringify(fieldComp.options)+"' ";
+		};	
 		result += "value='" + fieldValue + "' " 
 				+ fieldStyle + " oninput='inputChanged(this," + JSON.stringify(influencedFields) +")' >";
 		// are there options to show? (dropdown)
-		if(fieldComp.hasOwnProperty("options")){
+		if(fieldComp.hasOwnProperty("options") && field.type != "setoptions"){
 			for(var i = 0; i < fieldComp.options.length; i++) {
 				result += "<option ";
 				if(fieldComp.options[i] == fieldValue) {

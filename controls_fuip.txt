@@ -7,9 +7,9 @@ DIR FHEM/lib/FUIP/js
 DIR FHEM/lib/FUIP/View
 DIR FHEM/lib/FUIP/jquery-ui
 DIR FHEM/lib/FUIP/jquery-ui/images
-UPD 2018-09-11_16:47:25 59162 FHEM/42_FUIP.pm
-UPD 2018-08-27_14:31:02 10160 FHEM/lib/FUIP/Model.pm
-UPD 2018-08-20_15:55:02 9141 FHEM/lib/FUIP/View.pm
+UPD 2018-09-16_21:50:24 59528 FHEM/42_FUIP.pm
+UPD 2018-09-13_14:38:39 10160 FHEM/lib/FUIP/Model.pm
+UPD 2018-09-13_21:27:24 9141 FHEM/lib/FUIP/View.pm
 UPD 2018-07-21_20:58:20 4329 FHEM/lib/FUIP/View/Batteries.pm
 UPD 2018-08-21_21:44:45 1336 FHEM/lib/FUIP/View/Brightness.pm
 UPD 2018-08-21_21:27:43 4014 FHEM/lib/FUIP/View/Cell.pm
@@ -27,7 +27,7 @@ UPD 2018-03-17_23:57:52 389 FHEM/lib/FUIP/View/Page.pm
 UPD 2018-08-21_21:19:57 1070 FHEM/lib/FUIP/View/Popup.pm
 UPD 2018-03-23_23:26:04 1478 FHEM/lib/FUIP/View/ReadingsList.pm
 UPD 2018-08-27_21:32:01 1518 FHEM/lib/FUIP/View/STATE.pm
-UPD 2018-07-13_14:52:17 2363 FHEM/lib/FUIP/View/Select.pm
+UPD 2018-09-14_15:52:03 2589 FHEM/lib/FUIP/View/Select.pm
 UPD 2018-09-11_16:45:37 4743 FHEM/lib/FUIP/View/ShutterControl.pm
 UPD 2018-08-24_15:23:16 2616 FHEM/lib/FUIP/View/ShutterOverview.pm
 UPD 2018-07-01_22:12:48 1807 FHEM/lib/FUIP/View/ShutterTimer.pm
@@ -37,8 +37,10 @@ UPD 2018-07-20_21:11:22 1906 FHEM/lib/FUIP/View/Sysmon.pm
 UPD 2018-08-21_21:48:11 4072 FHEM/lib/FUIP/View/Thermostat.pm
 UPD 2018-08-21_21:48:22 1397 FHEM/lib/FUIP/View/Title.pm
 UPD 2018-07-10_21:16:48 2060 FHEM/lib/FUIP/View/UpStopDown.pm
+UPD 2018-09-14_21:32:11 1840 FHEM/lib/FUIP/View/WeatherDetail.pm
 UPD 2018-03-17_23:57:54 7260 FHEM/lib/FUIP/css/theme.blue.css
 UPD 2018-03-17_23:57:55 5774 FHEM/lib/FUIP/css/theme.default.css
+UPD 2018-09-15_21:48:46 797 FHEM/lib/FUIP/css/widget_weatherdetail.css
 UPD 2018-07-18_15:43:10 38 FHEM/lib/FUIP/images/lizenzen.txt
 UPD 2018-07-17_20:59:37 1224122 FHEM/lib/FUIP/images/pexels-gleitschirm.jpg
 UPD 2018-07-16_21:34:58 2605770 FHEM/lib/FUIP/images/pexels-milchstrasse.jpg
@@ -50,9 +52,10 @@ UPD 2018-03-21_13:10:11 4632 FHEM/lib/FUIP/jquery-ui/images/ui-icons_cc0000_256x
 UPD 2018-03-21_13:10:11 6313 FHEM/lib/FUIP/jquery-ui/images/ui-icons_ffffff_256x240.png
 UPD 2018-03-21_13:10:11 37326 FHEM/lib/FUIP/jquery-ui/jquery-ui.css
 UPD 2017-12-18_22:55:39 253669 FHEM/lib/FUIP/jquery-ui/jquery-ui.min.js
-UPD 2018-08-31_21:35:05 51379 FHEM/lib/FUIP/js/fuip.js
+UPD 2018-09-14_16:00:38 52017 FHEM/lib/FUIP/js/fuip.js
 UPD 2018-03-17_23:57:55 106396 FHEM/lib/FUIP/js/jquery.tablesorter.js
 UPD 2018-03-17_23:57:55 125594 FHEM/lib/FUIP/js/jquery.tablesorter.widgets.js
+UPD 2018-09-15_21:52:33 10832 FHEM/lib/FUIP/js/widget_weatherdetail.js
 UPD 2018-08-03_15:12:09 4468 FHEM/lib/FUIP/view-images/FUIP-View-Batteries.png
 UPD 2018-08-03_15:17:14 1830 FHEM/lib/FUIP/view-images/FUIP-View-Brightness.png
 UPD 2018-08-03_15:20:11 2046 FHEM/lib/FUIP/view-images/FUIP-View-Clock.png

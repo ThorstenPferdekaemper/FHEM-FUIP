@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00042 2018-09-11 15:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00043 2018-09-16 20:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
@@ -1120,6 +1120,11 @@ sub CGI() {
 		return getFuipPage($hash,join('/',@path));
 	};
 	
+	# special logic for weatherdetail
+	# add "fuip" in front of path to make sure to use the FUIP version
+	if($path[-1] eq "widget_weatherdetail.js" and $path[0] ne "fuip") {
+		unshift(@path,"fuip");
+	};
 	# fuip builtin stuff
 	if($path[0] eq "fuip") {
 		# export/import settings
@@ -1268,6 +1273,11 @@ sub setField($$$$$) {
 		$nameInValues .= "-".$comp;
 	};
 	$refIntoView->{$compName} = main::urlDecode($values->{$nameInValues}) if(defined($values->{$nameInValues}));
+	# should this be an array?
+	if($field->{type} eq "setoptions") {
+		my @options = split(/,/,$refIntoView->{$compName});
+		$refIntoView->{$compName} = \@options;
+	};
 	# if this has a default setting 
 	if(defined($refIntoField->{default}) and defined($values->{$nameInValues."-check"})) {
 		$refIntoDefaulted->{$compName} = ($values->{$nameInValues."-check"} eq "1" ? 0 : 1);

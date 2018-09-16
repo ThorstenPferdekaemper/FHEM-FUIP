@@ -25,13 +25,22 @@ sub getHTML($){
 	my $set = ($self->{set} eq "state" ? "" : $self->{set}); 
 	# data-list needs to be set "" explicitly as the default is setList, which would then fetch it
 	# again from the device, overriding our settings
+	my $options = '[]';
+	# compatibility with earlier versions
+	if(ref($self->{options}) eq "ARRAY") {
+		if(@{$self->{options}}) {
+			$options = '["'.join('","',@{$self->{options}}).'"]';
+		};
+	}else{
+		$options = $self->{options};
+	};	
 	my $result = '<table style="width:100%;height:'.$height.'px !important;border-collapse: collapse;">
 					<tr>
 					<td style="padding:0;">
 					<div data-type="select"'.$widthclass.'
 					data-device="'.$self->{device}.'"
 					data-list=""
-					data-items=\''.$self->{options}.'\'
+					data-items=\''.$options.'\'
 					data-get="'.$self->{reading}.'"
 					data-set="'.$set.'"></div>
 					</td></tr>';
