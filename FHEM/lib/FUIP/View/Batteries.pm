@@ -93,7 +93,7 @@ sub dimensions($;$$){
 	my $devices = _getDevices($self->{fuip}{NAME},$self->{deviceFilter});
 	use integer;
 	my $numDevs = keys %$devices;
-	return (650,19 * ($numDevs / 2 + $numDevs % 2) + 8);
+	return (($self->{width} eq "fixed") ? 650 : "auto", 19 * ($numDevs / 2 + $numDevs % 2) + 8);
 };	
 	
 	
@@ -106,6 +106,8 @@ sub getStructure($) {
 		{ id => "title", type => "text", default => { type => "const", value => "Batteries"} },
 		{ id => "deviceFilter", type => "text", options => [ "all", "battery"], 
 			default => { type => "const", value => "all" } }, 
+		{ id => "width", type => "text", options => [ "fixed", "auto" ],
+			default => { type => "const", value => "fixed" } }
 		];
 };
 

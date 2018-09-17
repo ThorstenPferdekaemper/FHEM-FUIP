@@ -44,7 +44,7 @@ sub getHTML($){
 				$height += 18;
 			};
 		};
-		return (598, $height);
+		return (($self->{width} eq "fixed") ? 598 : "auto", $height);
 	};	
 	
 	
@@ -60,7 +60,9 @@ sub getHTML($){
 				options => ["clock","weather","temp","chOfRain","rain","wind","windDir"], 
 				default => { type => "const", value => ["clock","weather","temp","chOfRain","rain","windDir"] } },
 		{ id => "icons", type => "text", options => [ "meteocons", "kleinklima" ], 
-			default => { type => "const", value => "kleinklima" } } 		
+			default => { type => "const", value => "kleinklima" } },
+		{ id => "width", type => "text", options => [ "fixed", "auto" ],
+			default => { type => "const", value => "fixed" } }			
 		];
 };
 
