@@ -33,15 +33,19 @@ sub _getDevices($$){
 	
 sub getHTML($){
 	my ($self) = @_;
-	my $result = '<table width="100%"><tr><td> 
-					<table>';
+	my $result = '<table width="100%"';
 	my $devices = _getDevices($self->{fuip}{NAME},$self->{deviceFilter});				
 	my $numDevs = keys %$devices;				
 	my $count = 0;
 	use integer;
+	my $perCol = $numDevs / $self->{columns} + ($numDevs % $self->{columns} ? 1 : 0);
+	my $colWidth = 100 / ($self->{columns} + 1);
+	$result .= '><tr><td style="width:'.$colWidth.'%;"></td><td> 
+					<table>';
 	for my $devKey (sort keys %$devices) {
-		if($count == $numDevs/2) {
-			$result .= '</table></td><td style="width:100%;"></td><td><table>';
+		if($count == $perCol) {
+			$result .= '</table></td><td style="width:'.$colWidth.'%;"></td><td><table>';
+			$count = 0;
 		}  
 		$count++;
 		$result.= '<tr><td>
@@ -82,7 +86,7 @@ sub getHTML($){
 		};
 		$result .= '</td></tr>';  
 	}
-	$result .= '</table></td></tr></table>'; 
+	$result .= '</table></td><td style="width:'.$colWidth.'%;"></td></tr></table>'; 
 	return $result;	
 };
 
@@ -107,7 +111,9 @@ sub getStructure($) {
 		{ id => "deviceFilter", type => "text", options => [ "all", "battery"], 
 			default => { type => "const", value => "all" } }, 
 		{ id => "width", type => "text", options => [ "fixed", "auto" ],
-			default => { type => "const", value => "fixed" } }
+			default => { type => "const", value => "fixed" } },
+		{ id => "columns", type => "text", options => [1,2,3,4], 
+			default => { type => "const", value => 2 } }
 		];
 };
 
