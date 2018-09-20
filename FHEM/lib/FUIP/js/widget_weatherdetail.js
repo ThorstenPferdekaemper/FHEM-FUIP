@@ -97,29 +97,33 @@ var Modul_weatherdetail = function() {
 			var elem = $(this);
 			elem.initData('device', "noWFineDeviceDefined");
 			elem.initData('detail', ["clock", "chOfRain", "rain", "wind", "windDir", "temp", "weather"]);
+			elem.initData('days', 4);
+			elem.initData('layout',"normal");
 			elem.initData('lastConnection', 'lastConnection');
 			me.addReading(elem, "lastConnection"); // if this value changes, update() is called.
 			// build a string with all keywords we want to receive from the fhem weather device
-			for (var day = 0; day < 4; day++) { // forecast: 4 days
+			for (var day = 0; day < elem.data("days"); day++) { // forecast: 4 days
 				strDaten += "fc" + day + "_date ";
 				strDaten += "fc" + day + "_weatherDayIcon ";
 				strDaten += "fc" + day + "_tempMin ";
 				strDaten += "fc" + day + "_tempMax ";
 				for (var hour = 0; hour < 24; hour += 3) { // resolution: 3h
 					strDaten += "fc" + day + "_weather" + toStr2(hour) + "Icon ";
-					if (elem.data('detail').includes('temp')) strDaten += "fc" + day + "_temp" + toStr2(hour) + " ";
-					if (elem.data('detail').includes('rain')) strDaten += "fc" + day + "_rain" + toStr2(hour) + " ";
-					if (elem.data('detail').includes('wind') || (elem.data('detail').includes('windDir'))) strDaten += "fc" + day + "_wind" + toStr2(hour) + " ";
-					if (elem.data('detail').includes('windDir')) strDaten += "fc" + day + "_windDir" + toStr2(hour) + " ";
-					if (elem.data('detail').includes('chOfRain')) strDaten += "fc" + day + "_chOfRain" + toStr2(hour) + " ";
+					if (elem.data('detail').indexOf('temp') >= 0) strDaten += "fc" + day + "_temp" + toStr2(hour) + " ";
+					if (elem.data('detail').indexOf('rain') >= 0) strDaten += "fc" + day + "_rain" + toStr2(hour) + " ";
+					if (elem.data('detail').indexOf('wind')  >= 0 || (elem.data('detail').indexOf('windDir')  >= 0 )) strDaten += "fc" + day + "_wind" + toStr2(hour) + " ";
+					if (elem.data('detail').indexOf('windDir') >= 0) strDaten += "fc" + day + "_windDir" + toStr2(hour) + " ";
+					if (elem.data('detail').indexOf('chOfRain') >= 0) strDaten += "fc" + day + "_chOfRain" + toStr2(hour) + " ";
 				}
 			}
 		});
 	}
 
-	function addTab(tabDay, res, pathImage) {
+	function addTab(tabDay, res, pathImage, days) {
+		var cellWidth = 100 / days;
+		
 		var datum = res.Readings['fc' + tabDay + '_date'].Value
-		var myHtml = "<button id='tabId" + tabDay + "' class='cell-25 white tablinks' onclick=\"wtabClicked('" + tabDay + "')\">"
+		var myHtml = "<button id='tabId" + tabDay + "' class='white tablinks' style='width:" + cellWidth+ "%;' onclick=\"wtabClicked('" + tabDay + "')\">"
 		myHtml += "<div class='big compressed'>" + datum + "</div>"
 		myHtml += "<div class='large gray'>" + (!tabDay ? 'Heute' : datum.toDate().ee()) + "</div>"
 		var imgFile = getImgFilename(res.Readings['fc' + tabDay + '_weatherDayIcon'].Value, true);
@@ -131,15 +135,53 @@ var Modul_weatherdetail = function() {
 		myHtml += "<div class='tiny'><br></div></button>"
 		return myHtml;
 	}
+	
+	
+	function addWithoutTab(tabDay, res, pathImage, elem) {
+		var days = elem.data("days");
+		var layout = elem.data("layout");
+		var cellWidth = 100 / days;
+		
+		var datum = res.Readings['fc' + tabDay + '_date'].Value;
+		var myHtml = "<div style='float:left;cursor:auto;width:" + cellWidth+ "%;'>";
+		if(layout != "small") {
+			myHtml += "<div class='big compressed'>" + datum + "</div>";
+		};
+		myHtml += "<div class='large gray'>" + (!tabDay ? 'Heute' : datum.toDate().ee()) + "</div>"
+		var imgFile = getImgFilename(res.Readings['fc' + tabDay + '_weatherDayIcon'].Value, true);
+		myHtml += "<img style='";
+		if(layout == "normal") {
+			myHtml += "width:100%";
+		}else{
+			myHtml += "width:50%";
+		};	
+		myHtml += ";' src='" + pathImage + imgFile + "'/>"
+		if(layout == "small") {
+			myHtml += "<div class='inline'><div>";
+			myHtml += "<div class='big inline blue weatherValue'>" + res.Readings['fc' + tabDay + '_tempMin'].Value + "</div>"
+			myHtml += "<div class='small inline blue weatherUnit'>&#x2103</div></div>"
+			myHtml += "<div><div class='big inline orange weatherValue'>" + res.Readings['fc' + tabDay + '_tempMax'].Value + "</div>"
+			myHtml += "<div class='small inline orange weatherUnit'>&#x2103</div></div>"
+			myHtml += "</div>";
+		}else{
+			myHtml += "<div class='bigger inline blue weatherValue'>" + res.Readings['fc' + tabDay + '_tempMin'].Value + "</div>"
+			myHtml += "<div class='normal inline blue weatherUnit'>&#x2103</div>"
+			myHtml += "<div class='bigger inline orange weatherValue'>" + res.Readings['fc' + tabDay + '_tempMax'].Value + "</div>"
+			myHtml += "<div class='normal inline orange weatherUnit'>&#x2103</div>"
+		};	
+		myHtml += "</div>"
+		return myHtml;
+	}
+	
 
 	function addWeatherRow(elem, res, token, name, icon, unit) {
 		const colsPerDay = 8;
-		if (!elem.data('detail').includes(name)) return "";
+		if (elem.data('detail').indexOf(name) == -1) return "";
 		var myHtml = "<div class='row'><div class='cell large gray " + icon + "'></div>"
 		for (var i = 0; i < colsPerDay; i++) {
 			myHtml += "<div class='cell-12'>"
 			if (name == 'weather') {
-				if (elem.data('detail').includes('icons')) {
+				if (elem.data('detail').indexOf('icons') >= 0) {
 					var icon = getImgFilename(res.Readings['fc' + token + '_weather' + toStr2(i * 3) + 'Icon'].Value, false);
 					myHtml += "<div class='weather'><div class='weather-icon meteocons' data-icon='" + icon + "'></div></div>"
 				} else {
@@ -168,12 +210,19 @@ var Modul_weatherdetail = function() {
 		me.elements.filter('div[data-device="' + device + '"]').each(function(index) {
 			const pathImage = ftui.config.fhemDir + "images/default/weather/";
 			var elem = $(this);
-			var myHtml = "<div class='tab'>";
+			var myHtml = elem.data('detail').length ? "<div class='tab'>" : "<div>";
 			var fhemJSON = ftui.sendFhemCommand("jsonlist2 WEB," + device + strDaten).done(function(fhemJSON) {
 				var res = fhemJSON.Results[1]; // 0 = Arg, 1 =Results
-				for (var i = 0; i < 4; i++) myHtml += addTab(i, res, pathImage);
+				for (var i = 0; i < elem.data("days"); i++) {
+					if(elem.data('detail').length) {
+						myHtml += addTab(i, res, pathImage, elem.data("days"));
+					}else{	
+						myHtml += addWithoutTab(i, res, pathImage, elem);
+					};
+				};	
 				myHtml += "</div>"; 
-				for (var day = 0; day < 4; day++) {
+				if(elem.data('detail').length) {
+				for (var day = 0; day < elem.data("days"); day++) {
 					myHtml += "<div id='conId" + day + "' class='sheet tabContent' style='display:none;'>";
 					myHtml += addWeatherRow(elem, res, '', 'clock', 'wi wi-time-4', 'Uhr');
 					myHtml += addWeatherRow(elem, res, day, 'weather', 'wi wi-cloud');
@@ -194,8 +243,10 @@ var Modul_weatherdetail = function() {
 				myHtml += "document.getElementById('tabId'+actTab).className+= ' active';"
 				myHtml += "document.getElementById('conId'+actTab).style.display='block';"
 				myHtml += "};"
-				myHtml += "document.getElementById('tabId0').click();" // default: weather of today is selected
+				myHtml += "$(function(){wtabClicked(0)});"
+				// myHtml += "document.getElementById('tabId0').click();" // default: weather of today is selected
 				myHtml += "</script>"
+				};
 				elem.html(myHtml);
 			});
 			//extra reading for hide

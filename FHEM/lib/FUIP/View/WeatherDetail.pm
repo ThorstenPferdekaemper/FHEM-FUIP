@@ -22,10 +22,13 @@ sub getHTML($){
 	if(@detailArr) {
 		$detail = '["'.join('","',@detailArr).'"]';
 	};
+	# avoid issues with "old" instance
+	$self->{days} = 4 unless $self->{days};
 	return '<div>
 			<link rel="stylesheet" href="/fhem/'.lc($self->{fuip}{NAME}).'/fuip/css/widget_weatherdetail.css">
 			<div class="cell" data-type="weatherdetail" 
 				data-device="'.$device.'" 
+				data-days='.$self->{days}.' 
 				data-detail=\''.$detail.'\'
 			</div>
 			</div>';
@@ -56,6 +59,9 @@ sub getHTML($){
 		{ id => "class", type => "class", value => $class },
 		{ id => "device", type => "device" },
 		{ id => "title", type => "text", default => { type => "field", value => "device"} },
+		{ id => "days", type => "text", 
+				options => [4,5,6,7],
+				default => { type => "const", value => 4 } },
 		{ id => "detail", type => "setoptions", 
 				options => ["clock","weather","temp","chOfRain","rain","wind","windDir"], 
 				default => { type => "const", value => ["clock","weather","temp","chOfRain","rain","windDir"] } },

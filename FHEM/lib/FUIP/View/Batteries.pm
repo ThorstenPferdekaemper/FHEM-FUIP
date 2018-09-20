@@ -38,6 +38,8 @@ sub getHTML($){
 	my $numDevs = keys %$devices;				
 	my $count = 0;
 	use integer;
+	# avoid division by zero error
+	$self->{columns} = 2 unless $self->{columns};
 	my $perCol = $numDevs / $self->{columns} + ($numDevs % $self->{columns} ? 1 : 0);
 	my $colWidth = 100 / ($self->{columns} + 1);
 	$result .= '><tr><td style="width:'.$colWidth.'%;"></td><td> 
