@@ -7,7 +7,7 @@ DIR FHEM/lib/FUIP/js
 DIR FHEM/lib/FUIP/View
 DIR FHEM/lib/FUIP/jquery-ui
 DIR FHEM/lib/FUIP/jquery-ui/images
-UPD 2018-09-20_20:46:02 59528 FHEM/42_FUIP.pm
+UPD 2018-09-23_21:00:30 59528 FHEM/42_FUIP.pm
 UPD 2018-09-13_14:38:39 10160 FHEM/lib/FUIP/Model.pm
 UPD 2018-09-13_21:27:24 9141 FHEM/lib/FUIP/View.pm
 UPD 2018-09-18_21:05:22 4923 FHEM/lib/FUIP/View/Batteries.pm
@@ -37,8 +37,8 @@ UPD 2018-07-20_21:11:22 1906 FHEM/lib/FUIP/View/Sysmon.pm
 UPD 2018-08-21_21:48:11 4072 FHEM/lib/FUIP/View/Thermostat.pm
 UPD 2018-08-21_21:48:22 1397 FHEM/lib/FUIP/View/Title.pm
 UPD 2018-07-10_21:16:48 2060 FHEM/lib/FUIP/View/UpStopDown.pm
-UPD 2018-09-18_21:22:24 2242 FHEM/lib/FUIP/View/WeatherDetail.pm
-UPD 2018-09-20_20:35:13 2039 FHEM/lib/FUIP/View/WeatherOverview.pm
+UPD 2018-09-22_21:21:19 2623 FHEM/lib/FUIP/View/WeatherDetail.pm
+UPD 2018-09-22_21:20:33 2418 FHEM/lib/FUIP/View/WeatherOverview.pm
 UPD 2018-03-17_23:57:54 7260 FHEM/lib/FUIP/css/theme.blue.css
 UPD 2018-03-17_23:57:55 5774 FHEM/lib/FUIP/css/theme.default.css
 UPD 2018-09-15_21:48:46 797 FHEM/lib/FUIP/css/widget_weatherdetail.css
@@ -56,7 +56,7 @@ UPD 2017-12-18_22:55:39 253669 FHEM/lib/FUIP/jquery-ui/jquery-ui.min.js
 UPD 2018-09-14_16:00:38 52017 FHEM/lib/FUIP/js/fuip.js
 UPD 2018-03-17_23:57:55 106396 FHEM/lib/FUIP/js/jquery.tablesorter.js
 UPD 2018-03-17_23:57:55 125594 FHEM/lib/FUIP/js/jquery.tablesorter.widgets.js
-UPD 2018-09-20_20:37:39 13028 FHEM/lib/FUIP/js/widget_weatherdetail.js
+UPD 2018-09-23_20:56:08 17612 FHEM/lib/FUIP/js/widget_weatherdetail.js
 UPD 2018-08-03_15:12:09 4468 FHEM/lib/FUIP/view-images/FUIP-View-Batteries.png
 UPD 2018-08-03_15:17:14 1830 FHEM/lib/FUIP/view-images/FUIP-View-Brightness.png
 UPD 2018-08-03_15:20:11 2046 FHEM/lib/FUIP/view-images/FUIP-View-Clock.png
@@ -79,4 +79,6 @@ UPD 2018-08-05_17:18:20 4062 FHEM/lib/FUIP/view-images/FUIP-View-Sysmon.png
 UPD 2018-08-05_17:21:56 3363 FHEM/lib/FUIP/view-images/FUIP-View-Thermostat.png
 UPD 2018-08-05_17:30:23 1475 FHEM/lib/FUIP/view-images/FUIP-View-Title.png
 UPD 2018-08-05_17:33:00 744 FHEM/lib/FUIP/view-images/FUIP-View-UpStopDown.png
+UPD 2018-09-20_20:43:29 7218 FHEM/lib/FUIP/view-images/FUIP-View-WeatherDetail.png
+UPD 2018-09-20_20:42:44 3406 FHEM/lib/FUIP/view-images/FUIP-View-WeatherOverview.png
 UPD 2018-08-03_15:05:38 1051 FHEM/lib/FUIP/view-images/FUIP-View.png

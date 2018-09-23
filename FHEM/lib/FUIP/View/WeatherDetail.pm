@@ -22,13 +22,24 @@ sub getHTML($){
 	if(@detailArr) {
 		$detail = '["'.join('","',@detailArr).'"]';
 	};
+
+	my @overviewArr;
+	if(ref($self->{overview}) eq "ARRAY") {
+		@overviewArr = @{$self->{overview}};
+	};
+	my $overview = '[]';
+	if(@overviewArr) {
+		$overview = '["'.join('","',@overviewArr).'"]';
+	};
+
 	# avoid issues with "old" instance
 	$self->{days} = 4 unless $self->{days};
 	return '<div>
 			<link rel="stylesheet" href="/fhem/'.lc($self->{fuip}{NAME}).'/fuip/css/widget_weatherdetail.css">
 			<div class="cell" data-type="weatherdetail" 
 				data-device="'.$device.'" 
-				data-days='.$self->{days}.' 
+				data-days='.$self->{days}.'
+				data-overview='.$overview.'	
 				data-detail=\''.$detail.'\'
 			</div>
 			</div>';
@@ -62,8 +73,11 @@ sub getHTML($){
 		{ id => "days", type => "text", 
 				options => [4,5,6,7],
 				default => { type => "const", value => 4 } },
+		{ id => "overview", type => "setoptions",
+				options => ["text","sun","uv","frost"], 
+				default => { type => "const", value => [] } },		
 		{ id => "detail", type => "setoptions", 
-				options => ["clock","weather","temp","chOfRain","rain","wind","windDir"], 
+				options => ["clock","weather","text","temp","chOfRain","rain","wind","windDir"], 
 				default => { type => "const", value => ["clock","weather","temp","chOfRain","rain","windDir"] } },
 		{ id => "icons", type => "text", options => [ "meteocons", "kleinklima" ], 
 			default => { type => "const", value => "kleinklima" } },

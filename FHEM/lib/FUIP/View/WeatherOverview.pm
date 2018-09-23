@@ -13,11 +13,20 @@ sub getHTML($){
 	my $device = $self->{device};
 	# avoid issues with broken instance
 	$self->{days} = 1 unless $self->{days};
+	my @overviewArr;
+	if(ref($self->{overview}) eq "ARRAY") {
+		@overviewArr = @{$self->{overview}};
+	};
+	my $overview = '[]';
+	if(@overviewArr) {
+		$overview = '["'.join('","',@overviewArr).'"]';
+	};
 	return '<div>
 			<link rel="stylesheet" href="/fhem/'.lc($self->{fuip}{NAME}).'/fuip/css/widget_weatherdetail.css">
 			<div data-type="weatherdetail" 
 				data-device="'.$device.'" 
 				data-days='.$self->{days}.' 
+				data-overview='.$overview.'					
 				data-detail=\'[]\'
 				data-layout="'.$self->{layout}.'">
 			</div>
@@ -56,6 +65,9 @@ sub getStructure($) {
 		{ id => "days", type => "text", 
 				options => [1,2,3,4,5,6,7],
 				default => { type => "const", value => 1 } },
+		{ id => "overview", type => "setoptions",
+				options => ["text","sun","uv","frost"], 
+				default => { type => "const", value => [] } },				
 		{ id => "width", type => "text", options => [ "fixed", "auto" ],
 			default => { type => "const", value => "fixed" } },
 		{ id => "layout", type => "text", options => [ "normal", "small" ], default => { type => "const", value => "normal" }},	
