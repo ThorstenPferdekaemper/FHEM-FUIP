@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00047 2018-09-23 20:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 00099 2018-09-24 15:00:00Z Thorsten Pferdekaemper $
 
 package main;
 
@@ -1275,8 +1275,15 @@ sub setField($$$$$) {
 	$refIntoView->{$compName} = main::urlDecode($values->{$nameInValues}) if(defined($values->{$nameInValues}));
 	# should this be an array?
 	if($field->{type} eq "setoptions") {
-		my @options = split(/,/,$refIntoView->{$compName});
-		$refIntoView->{$compName} = \@options;
+		# it is still "allowed" to have something which evaluates to an array
+		$DB::single = 1;
+		my $options = eval($refIntoView->{$compName});
+		if(ref($options) eq "ARRAY") {
+			$refIntoView->{$compName} = $options;
+		}else{
+			my @options = split(/,/,$refIntoView->{$compName});
+			$refIntoView->{$compName} = \@options;
+		};	
 	};
 	# if this has a default setting 
 	if(defined($refIntoField->{default}) and defined($values->{$nameInValues."-check"})) {
