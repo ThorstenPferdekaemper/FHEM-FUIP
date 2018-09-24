@@ -11,7 +11,7 @@ use lib::FUIP::Model;
 sub _getDevices($$){
 	my ($name,$deviceFilter) = @_;
 	my %devices;
-	my @readings = qw(battery batteryLevel batVoltage);
+	my @readings = qw(battery batteryLevel batVoltage batteryPercent);
 	push(@readings,"Activity") if($deviceFilter eq "all");
 	for my $reading (@readings) {
 		for my $dev (@{FUIP::Model::getDevicesForReading($name,$reading)}) {
@@ -67,6 +67,12 @@ sub getHTML($){
 							data-icons=\'["oa-measure_battery_0 fa-rotate-90","oa-measure_battery_25 fa-rotate-90","oa-measure_battery_50 fa-rotate-90","oa-measure_battery_75 fa-rotate-90","oa-measure_battery_100 fa-rotate-90"]\'
 							data-states=\'["0","2.1","2.4","2.7","3.0"]\'
 							data-colors=\'["red","yellow","green","green","green"]\'></div>';
+		}elsif(exists($device->{batteryPercent})){
+			$result .= '<div style="margin-top:-26px;margin-bottom:-30px;margin-right:-10px" data-type="symbol" 
+							data-device="'.$devKey.'" data-get="batteryPercent"
+							data-icons=\'["oa-measure_battery_0 fa-rotate-90","oa-measure_battery_25 fa-rotate-90","oa-measure_battery_50 fa-rotate-90","oa-measure_battery_75 fa-rotate-90","oa-measure_battery_100 fa-rotate-90"]\'
+							data-states=\'["0","10","35","60","90"]\'
+							data-colors=\'["red","yellow","green","green","green"]\'></div>';					
 		} elsif(exists($device->{battery})){
 			$result .= '<div style="margin-top:-26px;margin-bottom:-30px;margin-right:-10px" data-type="symbol" 
 							data-device="'.$devKey.'" data-get="battery"
@@ -77,6 +83,9 @@ sub getHTML($){
 		$result .= '</td><td>';
 		if(exists($device->{batteryLevel})){
 			$result .= '<div data-type="label" data-device="'.$devKey.'" data-get="batteryLevel" data-unit="V" class="fuip-color"></div>';
+		};
+		if(exists($device->{batteryPercent})){
+			$result .= '<div data-type="label" data-device="'.$devKey.'" data-get="batteryPercent" data-unit="%" class="fuip-color"></div>';
 		};
 		if(exists($device->{batVoltage})){
 			$result .= '<div data-type="label" data-device="'.$devKey.'" data-get="batVoltage" data-unit="V" class="fuip-color"></div>';
