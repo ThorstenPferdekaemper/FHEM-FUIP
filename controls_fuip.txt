@@ -31,7 +31,7 @@ UPD 2018-09-14_15:52:03 2589 FHEM/lib/FUIP/View/Select.pm
 UPD 2018-09-11_16:45:37 4743 FHEM/lib/FUIP/View/ShutterControl.pm
 UPD 2018-08-24_15:23:16 2616 FHEM/lib/FUIP/View/ShutterOverview.pm
 UPD 2018-07-01_22:12:48 1807 FHEM/lib/FUIP/View/ShutterTimer.pm
-UPD 2018-08-21_21:51:12 1674 FHEM/lib/FUIP/View/SimpleSwitch.pm
+UPD 2018-09-25_15:00:30 1713 FHEM/lib/FUIP/View/SimpleSwitch.pm
 UPD 2018-06-22_14:49:41 1576 FHEM/lib/FUIP/View/SpinDim.pm
 UPD 2018-07-20_21:11:22 1906 FHEM/lib/FUIP/View/Sysmon.pm
 UPD 2018-08-21_21:48:11 4072 FHEM/lib/FUIP/View/Thermostat.pm

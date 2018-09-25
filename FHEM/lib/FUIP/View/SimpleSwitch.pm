@@ -9,7 +9,7 @@ use warnings;
 	sub getHTML($){
 		my ($self) = @_;
 		my $result = 
-			'<table width="100%">
+			'<table cellpadding="0" width="100%">
 				<tr><td>
 					<div data-type="switch"   
 						data-device="'.$self->{device}.'" 
@@ -28,12 +28,18 @@ use warnings;
 						data-set-on="on"
 						data-set-off="off">
 					</div>
-				</td></tr>
-				<tr><td class="fuip-color">'.$self->{label}.'</td></tr>
-			</table>';	 
+				</td></tr>';
+		$result .= '<tr><td class="fuip-color">'.$self->{label}.'</td></tr>' if($self->{label});
+		$result .= '</table>';	 
 	};
 
 	
+sub dimensions($;$$){
+	my $self = shift;
+	return (70, ($self->{label} ? 78 : 56));
+};	
+
+
 sub getStructure($) {
 	# class method
 	# returns general structure of the view without instance values
@@ -45,9 +51,7 @@ sub getStructure($) {
 		{ id => "label", type => "text", default => { type => "field", value => "title"} },
 		{ id => "set", type => "set", refdevice => "device", default => { type => "const", value => "" } },
 		{ id => "reading", type => "reading", refdevice => "device", default => { type => "field", value => "set"}},
-		{ id => "icon", type => "icon", default => { type => "const", value => "fa-lightbulb-o" } },
-		{ id => "width", type => "internal", value => 70 },
-		{ id => "height", type => "internal", value => 80 }	
+		{ id => "icon", type => "icon", default => { type => "const", value => "fa-lightbulb-o" } }
 		];
 };
 
