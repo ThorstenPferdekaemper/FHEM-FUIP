@@ -350,6 +350,10 @@ sub renderPage($$$) {
 						background-color: initial;
 					}	
                 </style>
+				<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=yes\" />
+				<meta name=\"mobile-web-app-capable\" content=\"yes\">
+				<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">
+				<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
 				<meta name=\"widget_base_width\" content=\"".$baseWidth."\">
 				<meta name=\"widget_base_height\" content=\"".$baseHeight."\">".
 				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
