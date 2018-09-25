@@ -331,7 +331,9 @@ sub getDevicesForReading($$) {
 			'{  
 				return join(",", grep { defined $defs{$_}{READINGS}{"'.$reading.'"} } keys %defs) 
 			}');
-		@devices = split(/,/, $devicesStr);
+		# avoid stuff like [""]
+		$devicesStr =~ s/\s+$//;
+		@devices = split(/,/, $devicesStr) if($devicesStr);
 		# for some reason, this has trailing whitespaces
 		for(my $i = 0; $i < @devices; $i++) {
 			$devices[$i] =~ s/\s+$//;
