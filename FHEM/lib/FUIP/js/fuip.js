@@ -650,7 +650,16 @@ function valueHelp(fieldName,type) {
 			function(selected) {
 				$('#'+fieldName).val(selected);
 				$('#'+fieldName).trigger("input");
-			});	
+			},true);	
+		return;	
+	};	
+	// setoption (single)
+	if(type == "setoption") {
+		valueHelpForOptions(fieldName,
+			function(selected) {
+				$('#'+fieldName).val(selected);
+				$('#'+fieldName).trigger("input");
+			},false);	
 		return;	
 	};	
 	// all others
@@ -897,7 +906,7 @@ function valueHelpForDevice(fieldTitle, callbackFunction, multiSelect) {
 };	
 
 
-function valueHelpForOptions(fieldName, callbackFunction) {
+function valueHelpForOptions(fieldName, callbackFunction,multiSelect) {
 	var name = $("html").attr("data-name");
 	createValueHelpDialog(function(){
 		var resultArray = [];
@@ -905,7 +914,11 @@ function valueHelpForOptions(fieldName, callbackFunction) {
 			resultArray.push($(this).attr('data-key'));
 		});	
 		$( "#valuehelp" ).dialog("close");
-		callbackFunction(resultArray);
+		if(multiSelect) {
+			callbackFunction(resultArray);
+		}else if(resultArray.length) {
+			callbackFunction(resultArray[0]);
+		};
 	});
 	var valueDialog = $( "#valuehelp" );
 	valueDialog.dialog("option","title","Possible values for " + fieldName); 
@@ -920,7 +933,7 @@ function valueHelpForOptions(fieldName, callbackFunction) {
 		// the following is partially for compatibility with earlier versions
 		var selected = json2object($("#"+fName).val());
 		if(!(selected instanceof Array)) {
-			// new coding 
+			// new coding (also works for single selection)
 			selected = $("#"+fName).val().split(",");
 		};	
 		for(var i = 0; i < options.length; i++){
@@ -937,12 +950,21 @@ function valueHelpForOptions(fieldName, callbackFunction) {
 		valueDialog.dialog("option","height",300);			
 		valueDialog.html(html);
 		$( "#valuehelptable tbody tr" ).on( "click", function() {
-			if($(this).attr('data-selected') == 'X') {
-				$(this).attr('data-selected','');
-				$(this).children("td").removeAttr("style"); 	
-			}else{
-				$(this).attr('data-selected','X');
-				$(this).children("td").attr("style", "background: #F39814;color:black;");
+			if(multiSelect) {
+				if($(this).attr('data-selected') == 'X') {
+					$(this).attr('data-selected','');
+					$(this).children("td").removeAttr("style"); 	
+				}else{
+					$(this).attr('data-selected','X');
+					$(this).children("td").attr("style", "background: #F39814;color:black;");
+				};
+			}else{  // single select
+					$("tr[data-selected='X']").each(function(){
+						$(this).attr('data-selected','');
+						$(this).children("td").removeAttr("style"); 							
+					});
+					$(this).attr('data-selected','X');					
+					$(this).children("td").attr("style", "background: #F39814;color:black;");					
 			};				
 		});		
 	};	
@@ -1085,7 +1107,7 @@ function createField(settings, fieldNum, component,prefix) {
 		};	
 	};	
 	// do we have a value help?
-	if(field.type == "device" || field.type == "device-reading" || field.type == "reading" || field.type == "icon" || field.type == "set" || field.type == "setoptions") {
+	if(field.type == "device" || field.type == "device-reading" || field.type == "reading" || field.type == "icon" || field.type == "set" || field.type == "setoptions" || field.type == "setoption") {
 		result += "<button id='" + fieldName + "-value' onclick='valueHelp(\""+fieldName+"\",\""+field.type+"\")' type='button' style='padding:1px 0px;" 
 		// value help invisible?
 		if(checkVisibility == "visible" && checkValue != " checked") {

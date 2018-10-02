@@ -25,6 +25,7 @@ UPD 2018-08-21_21:46:01 1836 FHEM/lib/FUIP/View/LabelTemperature.pm
 UPD 2018-08-21_21:53:47 1481 FHEM/lib/FUIP/View/MenuItem.pm
 UPD 2018-03-17_23:57:52 389 FHEM/lib/FUIP/View/Page.pm
 UPD 2018-08-21_21:19:57 1070 FHEM/lib/FUIP/View/Popup.pm
+UPD 2018-10-02_14:46:23 1489 FHEM/lib/FUIP/View/Push.pm
 UPD 2018-03-23_23:26:04 1478 FHEM/lib/FUIP/View/ReadingsList.pm
 UPD 2018-08-27_21:32:01 1518 FHEM/lib/FUIP/View/STATE.pm
 UPD 2018-09-14_15:52:03 2589 FHEM/lib/FUIP/View/Select.pm
@@ -53,7 +54,7 @@ UPD 2018-03-21_13:10:11 4632 FHEM/lib/FUIP/jquery-ui/images/ui-icons_cc0000_256x
 UPD 2018-03-21_13:10:11 6313 FHEM/lib/FUIP/jquery-ui/images/ui-icons_ffffff_256x240.png
 UPD 2018-03-21_13:10:11 37326 FHEM/lib/FUIP/jquery-ui/jquery-ui.css
 UPD 2017-12-18_22:55:39 253669 FHEM/lib/FUIP/jquery-ui/jquery-ui.min.js
-UPD 2018-09-14_16:00:38 52017 FHEM/lib/FUIP/js/fuip.js
+UPD 2018-10-02_14:31:26 52751 FHEM/lib/FUIP/js/fuip.js
 UPD 2018-03-17_23:57:55 106396 FHEM/lib/FUIP/js/jquery.tablesorter.js
 UPD 2018-03-17_23:57:55 125594 FHEM/lib/FUIP/js/jquery.tablesorter.widgets.js
 UPD 2018-09-23_20:56:08 17612 FHEM/lib/FUIP/js/widget_weatherdetail.js
@@ -67,6 +68,7 @@ UPD 2018-08-03_21:12:37 1386 FHEM/lib/FUIP/view-images/FUIP-View-LabelReading.pn
 UPD 2018-08-03_21:00:49 1714 FHEM/lib/FUIP/view-images/FUIP-View-LabelTemperature.png
 UPD 2018-08-03_21:15:52 1697 FHEM/lib/FUIP/view-images/FUIP-View-MenuItem.png
 UPD 2018-08-22_14:42:21 4217 FHEM/lib/FUIP/view-images/FUIP-View-Popup.png
+UPD 2018-10-02_14:51:00 1024 FHEM/lib/FUIP/view-images/FUIP-View-Push.png
 UPD 2018-08-03_21:20:33 5877 FHEM/lib/FUIP/view-images/FUIP-View-ReadingsList.png
 UPD 2018-08-03_21:23:52 2049 FHEM/lib/FUIP/view-images/FUIP-View-STATE.png
 UPD 2018-08-03_21:28:02 1228 FHEM/lib/FUIP/view-images/FUIP-View-Select.png
