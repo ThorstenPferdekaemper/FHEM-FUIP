@@ -1,5 +1,6 @@
 /* FTUI Plugin
  * Copyright (c) 2018 by Bruchbude
+ * ...weiterentwickelt fuer FUIP by Thorsten Pferdekaemper
  * Under MIT License (http://www.opensource.org/licenses/mit.license.php)
  */
  
@@ -241,7 +242,7 @@ var Modul_weatherdetail = function() {
 	
 
 	function addWeatherRow(elem, res, token, name, icon, unit) {
-		const colsPerDay = 8;
+		var colsPerDay = 8;
 		if (elem.data('detail').indexOf(name) == -1) return "";
 		var myHtml = "<div class='row'><div class='cell large gray " + icon + "'></div>"
 		for (var i = 0; i < colsPerDay; i++) {
@@ -251,7 +252,7 @@ var Modul_weatherdetail = function() {
 					var icon = getImgFilename(res.Readings['fc' + token + '_weather' + toStr2(i * 3) + 'Icon'].Value, false);
 					myHtml += "<div class='weather'><div class='weather-icon meteocons' data-icon='" + icon + "'></div></div>"
 				} else {
-					const pathImage = ftui.config.fhemDir + "images/default/weather/";
+					var pathImage = ftui.config.fhemDir + "images/default/weather/";
 					var imgFile = pathImage + getImgFilename(res.Readings['fc' + token + '_weather' + toStr2(i * 3) + 'Icon'].Value, true);
 					myHtml += "<img style='width:100%' src='" + imgFile + "'/>"
 				}
@@ -276,7 +277,7 @@ var Modul_weatherdetail = function() {
 	function update(device, reading) {
 		// we need only updates for our device, so filter out all other widgets
 		me.elements.filter('div[data-device="' + device + '"]').each(function(index) {
-			const pathImage = ftui.config.fhemDir + "images/default/weather/";
+			var pathImage = ftui.config.fhemDir + "images/default/weather/";
 			var elem = $(this);
 			var myHtml = elem.data('detail').length ? "<div class='tab'>" : "<div>";
 			var fhemJSON = ftui.sendFhemCommand("jsonlist2 WEB," + device + strDaten).done(function(fhemJSON) {

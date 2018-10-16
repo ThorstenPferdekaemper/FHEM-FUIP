@@ -40,7 +40,7 @@ sub getHTML($){
 				data-device="'.$device.'" 
 				data-days='.$self->{days}.'
 				data-overview='.$overview.'	
-				data-detail=\''.$detail.'\'
+				data-detail=\''.$detail.'\'>
 			</div>
 			</div>';
 };

@@ -3,6 +3,8 @@ var fuipGridster;
 var fuip = {};
 
 function fuipInit(baseWidth,baseHeight,maxCols) {
+	fuip.baseWidth = baseWidth;
+	fuip.baseHeight = baseHeight;
 	$( function() {
 		// csrf token
 		getLocalCSrf();
@@ -39,20 +41,22 @@ function fuipInit(baseWidth,baseHeight,maxCols) {
 			});
 		});	
 		// configure gridster
-		fuipGridster =  $(".gridster ul").gridster({
-			widget_base_dimensions: [baseWidth,baseHeight],
-			widget_margins: [5, 5],
-			autogrow_cols: true,
-			max_cols: maxCols,
-			resize: {
-				enabled: true,
-				stop: onGridsterChangeStop	
-			},
-			draggable: {
-				handle: "header",
-				stop: onGridsterChangeStop	
-			}	
-		}).data('gridster');
+		if($("html").attr("data-layout") == "gridster") {
+			fuipGridster =  $(".gridster ul").gridster({
+				widget_base_dimensions: [baseWidth,baseHeight],
+				widget_margins: [5, 5],
+				autogrow_cols: true,
+				max_cols: maxCols,
+				resize: {
+					enabled: true,
+					stop: onGridsterChangeStop	
+				},
+				draggable: {
+					handle: "header",
+					stop: onGridsterChangeStop	
+				}	
+			}).data('gridster');
+		};
 	});
 };
 				
@@ -84,6 +88,40 @@ function onGridsterChangeStop(e,ui,widget) {
 	var cmd = '{FUIP::FW_setPositionsAndDimensions("' + name + '","' + pageId + '",' + s + ')}';
 	sendFhemCommandLocal(cmd);		
 };	
+
+
+// "serialize" the position and sizes 
+function flexMaintSerialize(id,region,sizes) {
+	var grid = $("#"+id);
+	grid.children('[id^=fuip-flex-fake-]').each(function() {
+		var area = flexMaintGetArea($(this));
+		var i = parseInt($(this).children(':first').attr('data-cellid'));
+		sizes[i] = {col: area.col_start,
+					row: area.row_start,
+					size_x: area.col_end - area.col_start,
+					size_y: area.row_end - area.row_start,
+					region: region};
+	});
+};
+	
+
+// the same for "flex"
+function onFlexChangeStop() {
+   /*#    'size_y' => 1,
+    #    'col' => 1,
+    #    'size_x' => 1,
+    #    'row' => 1 
+	region => menu/main */
+	var sizes = [];
+	flexMaintSerialize("fuip-flex-menu","menu",sizes);
+	flexMaintSerialize("fuip-flex-title","title",sizes);
+	flexMaintSerialize("fuip-flex-main","main",sizes);
+	var s = JSON.stringify(sizes).replace(/\:/g, " => ");
+	var name = $("html").attr("data-name");
+	var pageId = $("html").attr("data-pageid");
+	var cmd = '{FUIP::FW_setPositionsAndDimensions("' + name + '","' + pageId + '",' + s + ')}';
+	sendFhemCommandLocal(cmd);		
+};	
 			
 
 // when in the dialog (popup) maintenance resizing was finished
@@ -95,9 +133,314 @@ function onDialogResize(e,ui) {
 	var cmd = "set " + name + " dialogsize " + pageId + "_" + cellId + " " + fieldId + " " 
 				+ ui.size.width + " " + ui.size.height; 
 	sendFhemCommandLocal(cmd);					
-};			
+};		
+
+
+// determine position and dimension of a grid item
+function flexMaintGetArea(cell) {
+	var area = cell.css(["grid-column-start","grid-column-end","grid-row-start","grid-row-end"]);	
+	// convert to proper numbers (and convert to some nicer format
+	var result = {col_start:parseInt(area["grid-column-start"]),row_start:parseInt(area["grid-row-start"])};
+	// -end may come as "span x"
+	var help = area["grid-column-end"].split(" ");
+	if(help[0] == "span"){
+		result.col_end = result.col_start + parseInt(help[1]);
+	}else{
+		result.col_end = parseInt(area["grid-column-end"]);
+	};	
+	help = area["grid-row-end"].split(" ");
+	if(help[0] == "span"){
+		result.row_end = result.row_start + parseInt(help[1]);
+	}else{
+		result.row_end = parseInt(area["grid-row-end"]);
+	};	
+	return result;
+};	
+
+
+// fix overlaps caused by item "cell"
+// overlaps are fixed by moving down overlapping items
+// so far, this is only for resizing, i.e. overlaps only occur to the right and the bottom
+// TODO: make more general...
+function flexMaintSolveOverlaps(cell) {
+	// get position and size
+	var area1 = flexMaintGetArea(cell);
+	var id1 = cell.attr('id');
+	// for all items in the grid
+	cell.parent().children('[id^=fuip-flex-fake-]').each(function() {
+		// not for the cell itself
+		if($(this).attr('id') == id1) { return };
+		var area2 = flexMaintGetArea($(this));
+		// when we don't have an overlap...
+		if(area1.col_start >= area2.col_end || area1.row_start >= area2.row_end
+			|| area2.col_start >= area1.col_end || area2.row_start >= area1.row_end) {
+			return;
+		};
+		// now we know that there is an overlap
+		var moveDown = area1.row_end - area2.row_start;
+		$(this).css({"grid-row-start":(area2.row_start + moveDown).toString(), "grid-row-end":(area2.row_end+moveDown).toString()});
+		// now this might cause another overlap
+		flexMaintSolveOverlaps($(this));	
+	});	
+};
+
+
+// returns whether cell at (x,y) is free
+// TODO: this is probably slow...
+function flexMaintIsFree(grid,x,y) {
+	return !flexMaintGetCellAt(grid,x,y);
+};	
+
+
+function flexMaintGetCellAt(grid,x,y) {
+	var result;
+	grid.children('[id^=fuip-flex-fake-]').each(function() {
+		var area = flexMaintGetArea($(this));
+		if(area.col_start <= x && x < area.col_end && area.row_start <= y && y < area.row_end) {
+			result = $(this);
+			return false;
+		};	
+	});	
+	return result;
+};	
+
+
+function flexMaintMoveCellsUp(cell,includingMyself) {
+	// cell is the cell which became smaller or moved up itself
+	// we move all others, but not this one
+	var id1 = cell.attr('id');
+	var grid = cell.parent();
+	// for all items in the grid
+	grid.children('[id^=fuip-flex-fake-]').each(function() {
+		// not for the cell itself
+		if(!includingMyself && $(this).attr('id') == id1) { return };
+		var area = flexMaintGetArea($(this));
+		// we have a candidate now, but not clear yet whether we should move it up
+		var newRowStart;
+		for(newRowStart = area.row_start -1;newRowStart >= 1;newRowStart--){
+			var x;
+			for(x = area.col_start;x < area.col_end;x++) {
+				if(!flexMaintIsFree(grid,x,newRowStart)) break;	
+			};	
+			if(x < area.col_end) break;
+		};	
+		newRowStart++;
+		if(newRowStart == area.row_start) return;
+		// ok, need to move to newRowStart
+		$(this).css({"grid-row-start":newRowStart.toString(), 
+					 "grid-row-end":(area.row_end - area.row_start + newRowStart).toString()});
+		// and do the same recursively
+		flexMaintMoveCellsUp($(this));	
+	});
+};	
+
+
+// flex maint: resize cell
+function onFlexMaintResize(e,ui) {
+	// do "gridster effect"
+	// width = (baseWidth + 10) * sizeX - 10
+	// sizeX = (width + 10) / (baseWidth + 10) 
+	var width = ui.size.width;
+	var height = ui.size.height;
+	var sizeX = Math.floor((width + 10 + 0.9 * fuip.baseWidth) / (fuip.baseWidth +10));
+	var fakeWidth = sizeX * (fuip.baseWidth + 10) - 10;
+	var sizeY = Math.floor((height + 10 + 0.9 * fuip.baseHeight) / (fuip.baseHeight + 10));
+	var fakeHeight = sizeY * (fuip.baseHeight + 10) - 10;
+	var fakeElem = ui.element.parent();
+	fakeElem.width(fakeWidth).height(fakeHeight);
+	// set new grid element size
+	// ...but first store old size
+	var oldArea = flexMaintGetArea(fakeElem);
+	var oldSizeX = oldArea.col_end - oldArea.col_start;
+	var oldSizeY = oldArea.row_end - oldArea.row_start;
+	if(oldSizeY != sizeY || oldSizeX != sizeX) {	
+		fakeElem.css({"grid-column-end":"span "+sizeX, "grid-row-end":"span "+sizeY});
+		if(sizeY > oldSizeY  || sizeX > oldSizeX) {
+			// now care for overlaps  TODO: later this might happen due to resizing in the menu part as well
+			flexMaintSolveOverlaps(fakeElem);
+		};
+		// if (at least) one dimension became smaller, we might have to move up some cells
+		if(sizeY < oldSizeY || sizeX < oldSizeX) {
+			flexMaintMoveCellsUp(fakeElem);
+		};	
+	};
+};	
 			
-							
+
+function onFlexMaintResizeStop(e,ui) {
+	// correct size is the size of the preview
+	ui.element.height(ui.element.parent().height());
+	ui.element.width(ui.element.parent().width());
+	onFlexChangeStop();
+};	
+
+
+function onFlexMaintDragStart(e,ui) {
+	if($("#fuip-flex-maint-drag").length) {
+		$("#fuip-flex-maint-drag").css({top:ui.offset.top.toString()+'px', left:ui.offset.left.toString()+'px'});
+	}else{	
+		$("body").prepend('<div id="fuip-flex-maint-drag" style="position:absolute;top:'+ui.offset.top.toString()+'px;left:'+ui.offset.left.toString()+'px;"></div>');
+	};
+	$("#fuip-flex-maint-drag").prepend(ui.helper);
+	var id = ui.helper.attr("id");
+	id = id.replace("cell","fake"); 
+	var fakeElem = $("#"+id);
+	fuip.drag_start_area = flexMaintGetArea(fakeElem);
+	fuip.drag_start_region = fakeElem.parent().attr("id");
+	fuip.drag_colzero = 0;
+	fuip.drag_rowzero = 0;
+};	
+
+
+function flexMaintGetMaxCol(grid) {
+	var result = 0;
+	grid.children('[id^=fuip-flex-fake-]').each(function() {
+		var area = flexMaintGetArea($(this));
+		if(result < area.col_end-1) result = area.col_end-1;
+	});
+	return result;
+};	
+
+
+function flexMaintGetMaxRow(grid) {
+	var result = 0;
+	grid.children('[id^=fuip-flex-fake-]').each(function() {
+		var area = flexMaintGetArea($(this));
+		if(result < area.row_end-1) result = area.row_end-1;
+	});
+	return result;
+};	
+
+
+function onFlexMaintDrag(e,ui) {
+	// ui.position: relative to parent
+	// ui.offset: relative to page
+	var id = ui.helper.attr("id");
+	id = id.replace("cell","fake"); 
+	var fakeElem = $("#"+id);
+	var area = fuip.drag_start_area;
+	// move by 1 cell if moved by 50% of the baseWidth/Height
+	var moveX = Math.round(ui.position.left / (fuip.baseWidth + 10));
+	var moveY = Math.round(ui.position.top  / (fuip.baseHeight + 10));
+	var region = fakeElem.parent().attr("id");
+	if(region == "fuip-flex-main") {
+		if(area.col_start + moveX + fuip.drag_colzero < 1){
+			// "main" -> "menu"
+			// remember which column we came in
+			if(fuip.drag_start_region == "fuip-flex-menu") {
+				fuip.drag_colzero = 0;
+			}else{	
+				fuip.drag_colzero = flexMaintGetMaxCol($("#fuip-flex-menu"));
+			};
+			$("#fuip-flex-menu").append(fakeElem);
+			flexMaintMoveCellsUp($("#fuip-flex-main").children(":first"),true);
+		}else if(area.row_start + moveY + fuip.drag_rowzero < 1){
+			// "main" -> "title"
+			// remember which row we came in
+			if(fuip.drag_start_region == "fuip-flex-title") {
+				fuip.drag_rowzero = 0;
+			}else{
+				// +1 at the end to avoid that it immediately swaps places with the first row	
+				fuip.drag_rowzero = flexMaintGetMaxRow($("#fuip-flex-title")) +1;
+			};
+			$("#fuip-flex-title").append(fakeElem);
+			flexMaintMoveCellsUp($("#fuip-flex-main").children(":first"),true);
+		};	
+	};
+	if(region == "fuip-flex-menu") {
+		// care for "moving out to the right"
+		// we move out if otherwise, we'd have a completely free column 
+		var moveIt = false;
+		if(area.col_end + moveX + fuip.drag_colzero -1 > flexMaintGetMaxCol($("#fuip-flex-menu"))) {
+			moveIt = true;
+			var maxRow = flexMaintGetMaxRow($("#fuip-flex-menu"));		
+			for(var r = 1;r <= maxRow;r++) {
+				var cell = flexMaintGetCellAt($("#fuip-flex-menu"),area.col_start + moveX + fuip.drag_colzero -1,r);
+				if(!cell) continue;
+				if(cell.attr("id") == id) continue;
+				moveIt = false;
+				break;
+			};
+		};
+		if(moveIt) {
+			// if it starts in a "title row", then move to the title region, otherwise main
+			var maxTitleRow = flexMaintGetMaxRow($("#fuip-flex-title"));
+			if(area.row_start + moveY + fuip.drag_rowzero <= maxTitleRow) {
+				// menu -> title
+				$("#fuip-flex-title").append(fakeElem);		
+				if(fuip.drag_start_region == "fuip-flex-menu") {
+					fuip.drag_colzero = -1 - flexMaintGetMaxCol($("#fuip-flex-menu"));
+				}else{
+					fuip.drag_colzero = 0;
+				};
+			}else{			
+				// menu -> main
+				$("#fuip-flex-main").append(fakeElem);
+				if(fuip.drag_start_region == "fuip-flex-title") {
+					fuip.drag_colzero = 0;	
+					fuip.drag_rowzero = -1 - flexMaintGetMaxRow($("#fuip-flex-title"));
+				}else if(fuip.drag_start_region == "fuip-flex-main") {
+					fuip.drag_colzero = 0;
+					fuip.drag_rowzero = 0;	
+				}else{  // we came from menu
+					fuip.drag_colzero = -1 - flexMaintGetMaxCol($("#fuip-flex-menu"));
+					fuip.drag_rowzero = -1 - flexMaintGetMaxRow($("#fuip-flex-title"));
+				};
+			};	
+			flexMaintMoveCellsUp($("#fuip-flex-menu").children(":first"),true);
+		};			
+	};	
+	if(region == "fuip-flex-title") {
+		if(area.col_start + moveX + fuip.drag_colzero < 1){
+			// "title" -> "menu"
+			// remember which column we came in
+			if(fuip.drag_start_region == "fuip-flex-menu") {
+				fuip.drag_colzero = 0;
+			}else{	
+				fuip.drag_colzero = flexMaintGetMaxCol($("#fuip-flex-menu"));
+			};
+			$("#fuip-flex-menu").append(fakeElem);
+			flexMaintMoveCellsUp($("#fuip-flex-title").children(":first"),true);
+		}else if(area.row_start + moveY + fuip.drag_rowzero > flexMaintGetMaxRow($("#fuip-flex-title")) + 1){
+			// "title" -> "main"
+			// (we move out if otherwise, we'd have a completely free row) 
+			$("#fuip-flex-main").append(fakeElem);		
+			if(fuip.drag_start_region == "fuip-flex-main") {
+				fuip.drag_rowzero = 0;
+			}else{	
+				fuip.drag_rowzero = -1 - flexMaintGetMaxRow($("#fuip-flex-title"));
+			};	
+		};			
+	};	
+	if(area.col_start + moveX  + fuip.drag_colzero < 1){
+		moveX = 1 - area.col_start - fuip.drag_colzero;
+	};
+	if(area.row_start + moveY + fuip.drag_rowzero < 1){
+		moveY = 1 - area.row_start - fuip.drag_rowzero;  
+	};	
+	// if we started in "main", but current is "menu", fuip.drag_colzero needs to be added 
+	fakeElem.css({"grid-column-start":(area.col_start + moveX + fuip.drag_colzero).toString(),
+					"grid-column-end":(area.col_end + moveX + fuip.drag_colzero).toString(),
+					"grid-row-start":(area.row_start + moveY + fuip.drag_rowzero).toString(),
+					"grid-row-end":(area.row_end + moveY + fuip.drag_rowzero).toString()});
+	// now move overlapping cells out of the way	
+	flexMaintSolveOverlaps(fakeElem);
+	// and move others up again
+	flexMaintMoveCellsUp(fakeElem,true);
+};
+
+
+function onFlexMaintDragStop(e,ui) {
+	var id = ui.helper.attr("id");
+	id = id.replace("cell","fake"); 
+	var fakeElem = $("#"+id);
+	fakeElem.prepend(ui.helper);
+	ui.helper.css({top:0,left:0});
+	fuip.drag_colzero = 0;
+	onFlexChangeStop();
+};	
+
+			
 // when a view is dropped on a cell
 function onDragStop(cell,ui) {
 	// is this on the dialog maint?
@@ -112,10 +455,10 @@ function onDragStop(cell,ui) {
 	var name = $("html").attr("data-name");
 	var pageId = $("html").attr("data-pageid");
 	var cmd = "set " + name;
-	var oldCellId = view.closest("li").attr("data-cellid");
+	var oldCellId = view.closest("[data-cellid]").attr("data-cellid");
 	if(oldCellId != cellId) {
-		var oldCellPos = view.closest("li").position();
-		var newCellPos = cell.position();
+		var oldCellPos = view.closest("[data-cellid]").offset();
+		var newCellPos = cell.offset();
 		cmd = cmd + " viewmove " + pageId + "_" + oldCellId + "_" + viewId + " " + cellId + " " + (ui.position.left + oldCellPos.left - newCellPos.left) + " " + (ui.position.top + oldCellPos.top - newCellPos.top - 22); 
 		// TODO: error handling when sending command
 		sendFhemCommandLocal(cmd).done(function() { 
@@ -328,7 +671,13 @@ function acceptPageSettings(doneFunc) {
 function viewAddNew() {
 	var name = $("html").attr("data-name");
 	var pageId = $("html").attr("data-pageid");
-	cmd = "set " + name + " viewaddnew " + pageId; 
+	var viewId = $("#viewsettings").attr("data-viewid");	
+	var region = "";
+	if($("html").attr("data-layout") == "flex") {
+		region = $("#fuip-flex-fake-" + viewId).parent().attr("id");
+		region = region.replace("fuip-flex-","");
+	};	
+	cmd = "set " + name + " viewaddnew " + pageId + " " + region; 
 	// TODO: error handling when sending command
 	sendFhemCommandLocal(cmd).done(function () {
 		$("#viewsettings").dialog( "close" );

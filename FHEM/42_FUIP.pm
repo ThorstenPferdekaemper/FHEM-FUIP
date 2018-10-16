@@ -47,7 +47,7 @@ my $fuipPath = $main::attr{global}{modpath} . "/FHEM/lib/FUIP/";
 # possible values of attributes can change...
 sub setAttrList($) {
 	my ($hash) = @_;
-    $hash->{AttrList}  = "locked:0,1 fhemwebUrl baseWidth baseHeight pageWidth styleColor styleBackgroundImage:";
+    $hash->{AttrList}  = "layout:gridster,flex locked:0,1 fhemwebUrl baseWidth baseHeight pageWidth styleColor styleBackgroundImage:";
 	my $imageNames = getImageNames();
 	$hash->{AttrList} .= join(",",@$imageNames);
 }
@@ -167,6 +167,7 @@ sub Define($$$) {
   # set default base dimensions
   $main::attr{$name}{baseWidth} = 142;
   $main::attr{$name}{baseHeight} = 108;  
+  $main::attr{$name}{layout} = "gridster";
   # load old definition, if exists
   load($hash);
   return undef;
@@ -279,9 +280,10 @@ sub renderPage($$$) {
 	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
 	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","#808080");
 	my $pageWidth = main::AttrVal($hash->{NAME},"pageWidth",undef);
+	my $layout = main::AttrVal($hash->{NAME},"layout","gridster");
   	my $result = 
 	   "<!DOCTYPE html>
-		<html".($locked ? "" : " data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\"").">
+		<html".($locked ? "" : " data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"".$layout."\"").">
 			<head>
 				<script type=\"text/javascript\">
 					// when using browser back or so, we should reload
@@ -299,7 +301,7 @@ sub renderPage($$$) {
 								<!-- tablesorter -->
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.js\"></script>
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.widgets.js\"></script>").
-				"<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.gridster.min.js\"></script>
+				"<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.gridster.js\"></script>
                 <script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>".
 				($locked ? "" : "<script src=\"/fhem/".lc($hash->{NAME}).
 				"/fuip/js/fuip.js\"></script>
@@ -392,6 +394,270 @@ sub renderPage($$$) {
 				<div data-type="symbol" data-icon="wi-day-rain-mix" class="hide"></div>
 				<div data-type="symbol" data-icon="fs-ampel_aus" class="hide"></div>').	
 			'<div id="inputpopup01">
+			</div>	
+       </body>
+       </html>';
+    return ("text/html; charset=utf-8", $result);
+};
+
+
+sub renderPageFlex($$) {
+	my ($hash,$currentLocation) = @_;
+	# falls $locked, dann werden die Editierfunktionen nicht mit gerendert
+	my $title = $hash->{pages}{$currentLocation}{title};
+	$title = $currentLocation unless $title;
+	$title = "FHEM Tablet UI by FUIP" unless $title;
+	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
+	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
+	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","#808080");
+	my $pageWidth = main::AttrVal($hash->{NAME},"pageWidth",undef);
+  	my $result = 
+	   "<!DOCTYPE html>
+		<html>
+			<head>
+				<script type=\"text/javascript\">
+					// when using browser back or so, we should reload
+					if(performance.navigation.type == 2){
+						location.reload(true);
+					};	
+				</script>
+				<title>".$title."</title>
+				<link rel=\"shortcut icon\" href=\"/fhem/icons/favicon\" />
+				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/font-awesome.min.css\" />
+				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/nesges.css\">
+				<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
+		        <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.min.js\"></script>
+				<script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>
+                <style type=\"text/css\">
+	                .fuip-color {
+		                color: ".$styleColor.";
+                    }
+					.gridster ul li {
+						border-radius:8px;";
+	# TODO: change gridster stuff to flex					
+	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
+	$result .= '		background: rgba(0, 0, 0, 0.7) !important;' if($backgroundImage);
+	$result .= "
+					}
+					.gridster ul li header {
+						border-radius:8px;";
+	$result .= '		background: rgba(0, 0, 0, 0.7) !important;' if($backgroundImage);
+	$result .= '
+					}
+					.tablesorter-filter option {
+						background-color:#fff;
+					}
+					#fuip-flex-menu {
+						display:flex;
+						flex-direction:column;
+					}
+					#fuip-flex-menu-toggle {
+						display:none;
+					}
+					#fuip-flex-title {
+						display:flex;
+					}	
+					#fuip-flex-main {
+						display:flex;
+						flex-wrap:wrap;
+					}	
+					@media only screen and (max-width: 768px) {
+						#fuip-flex-menu {
+							display:none;
+						}
+						#fuip-flex-menu.fuip-flex-menu-show {
+							display:flex;
+						}
+						#fuip-flex-menu-toggle {
+							display:initial;
+						}
+					}
+					select.tablesorter-filter {
+						-moz-appearance: auto;
+						-webkit-appearance: menulist;
+						appearance: auto;
+						border-radius: 0;
+						padding: 4px !important;
+					}
+					select.fuip {
+						-moz-appearance: auto;
+						-webkit-appearance: menulist;
+						appearance: auto;
+						border-radius: 0;
+						padding: 1px 0px !important;	
+						border-style: inset;	
+						border-width: 2px;
+						border-color: initial;
+						border-image: initial;
+						width: initial;
+						color: initial;
+						background-color: initial;
+					}
+					option.fuip {
+						background-color: initial;
+					}	
+                </style>
+				<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+				<meta name="mobile-web-app-capable" content="yes">
+				<meta name="apple-mobile-web-app-capable" content="yes">
+				<meta http-equiv="X-UA-Compatible" content="IE=edge">
+				<meta name="widget_base_width" content="'.$baseWidth.'">
+				<meta name="widget_base_height" content="'.$baseHeight.'">'.
+				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
+				'<meta name="gridster_disable" content="1">'.
+            "</head>
+            <body";
+	# TODO: above there are widget_-metas, which probably do not make sense here		
+	if($backgroundImage) {
+		$result .= ' style="background:#000000 url(/fhem/'.lc($hash->{NAME}).'/fuip/images/'.$backgroundImage.') 0 0/';
+		if($pageWidth) {
+			$result .= $pageWidth.'px';
+		}else{	
+			$result .= 'cover';
+		};
+		$result .= ' no-repeat"';
+	};
+	$result .= '>	
+                <div style="margin:5px;display:flex;"';
+	# TODO: does the following make any sense?
+	#if($pageWidth) {
+	#	$result .= ' style="width:'.$pageWidth.'px"';
+	#};
+	$result .= '>';
+	# render Cells	
+	$result .= renderCellsFlex($hash,$currentLocation);
+	$result.= '</div>
+			<div id="inputpopup01">
+			</div>	
+       </body>
+       </html>';
+    return ("text/html; charset=utf-8", $result);
+};
+
+
+sub renderPageFlexMaint($$) {
+	my ($hash,$currentLocation) = @_;
+	my $title = $hash->{pages}{$currentLocation}{title};
+	$title = $currentLocation unless $title;
+	$title = "FHEM Tablet UI by FUIP" unless $title;
+	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
+	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
+	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","#808080");
+	my $pageWidth = main::AttrVal($hash->{NAME},"pageWidth",undef);
+  	my $result = 
+	   "<!DOCTYPE html>
+		<html data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"flex\">
+			<head>
+				<script type=\"text/javascript\">
+					// when using browser back or so, we should reload
+					if(performance.navigation.type == 2){
+						location.reload(true);
+					};	
+				</script>
+				<title>".$title."</title>
+				<link rel=\"shortcut icon\" href=\"/fhem/icons/favicon\" />
+				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/font-awesome.min.css\" />
+				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/nesges.css\">
+				<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
+		        <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.min.js\"></script>
+				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.css\">
+								<!-- tablesorter -->
+								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.js\"></script>
+								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.widgets.js\"></script>
+                <script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>
+				<script src=\"/fhem/".lc($hash->{NAME})."/fuip/js/fuip.js\"></script>
+  				    <script>
+						fuipInit(".$baseWidth.",".$baseHeight.",".determineMaxCols($hash,99).")
+					</script>
+								 <link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/css/theme.blue.css\">
+                <style type=\"text/css\">
+	                .fuip-color {
+		                color: ".$styleColor.";
+                    }
+					.fuip-flex-region {
+						margin:5px;
+						border:solid;
+						border-width:1px;
+						display:grid;
+						grid-auto-columns:".$baseWidth."px;
+						grid-auto-rows:".$baseHeight."px;
+						grid-gap:10px;
+						place-content:start;
+					}
+					.gridster ul li {
+						border-radius:8px;";
+	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
+	$result .= '		background: rgba(0, 0, 0, 0.7) !important;' if($backgroundImage);
+	$result .= "
+					}
+					.gridster ul li header {
+						border-radius:8px;";
+	$result .= '		background: rgba(0, 0, 0, 0.7) !important;' if($backgroundImage);
+	$result .= "
+					}
+					.tablesorter-filter option {
+						background-color:#fff;
+					}
+					select.tablesorter-filter {
+						-moz-appearance: auto;
+						-webkit-appearance: menulist;
+						appearance: auto;
+						border-radius: 0;
+						padding: 4px !important;
+					}
+					select.fuip {
+						-moz-appearance: auto;
+						-webkit-appearance: menulist;
+						appearance: auto;
+						border-radius: 0;
+						padding: 1px 0px !important;	
+						border-style: inset;	
+						border-width: 2px;
+						border-color: initial;
+						border-image: initial;
+						width: initial;
+						color: initial;
+						background-color: initial;
+					}
+					option.fuip {
+						background-color: initial;
+					}	
+                </style>
+				<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=yes\" />
+				<meta name=\"mobile-web-app-capable\" content=\"yes\">
+				<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">
+				<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">".
+				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
+            "</head>
+            <body";
+	if($backgroundImage) {
+		$result .= ' style="position:relative;background:#000000 url(/fhem/'.lc($hash->{NAME}).'/fuip/images/'.$backgroundImage.') 0 0/';
+		if($pageWidth) {
+			$result .= $pageWidth.'px';
+		}else{	
+			$result .= 'cover';
+		};
+		$result .= ' no-repeat"';
+	};
+	$result .= '>	
+		<div style="display:flex">
+			<div id="fuip-flex-menu" class="fuip-flex-region">'.renderCellsFlexMaint($hash,$currentLocation,"menu").'</div>
+			<div style="display:flex;flex-direction:column;">
+				<div id="fuip-flex-title" class="fuip-flex-region">'.renderCellsFlexMaint($hash,$currentLocation,"title").'</div>
+				<div id="fuip-flex-main" class="fuip-flex-region">'.renderCellsFlexMaint($hash,$currentLocation,"main").'</div>
+			</div>				
+ 		</div>
+			   <div id="viewsettings">
+			   </div>
+			   <div id="valuehelp">
+			   </div>
+				<div data-type="symbol" data-icon="ftui-door" class="hide"></div>
+				<div data-type="symbol" data-icon="fa-volume-up" class="hide"></div>
+				<div data-type="symbol" data-icon="mi-local_gas_station" class="hide"></div>
+				<div data-type="symbol" data-icon="oa-secur_locked" class="hide"></div>
+				<div data-type="symbol" data-icon="wi-day-rain-mix" class="hide"></div>
+				<div data-type="symbol" data-icon="fs-ampel_aus" class="hide"></div>	
+			<div id="inputpopup01">
 			</div>	
        </body>
        </html>';
@@ -731,10 +997,27 @@ sub getDeviceViewsForRoom($$$) {
 };
 
 
-sub findPositions($$) {
-	my ($hash,$pageId) = @_;
+sub findPositions($$;$) {
+	my ($hash,$pageId,$region) = @_;
+	# if there is no $region, but we are using flex layout,
+	# this needs to be called for menu,title and main
+	if(not $region) {
+		my $layout = main::AttrVal($hash->{NAME},"layout","gridster");
+		if($layout eq "flex") {
+			findPositions($hash,$pageId,"menu");
+			findPositions($hash,$pageId,"title");
+			findPositions($hash,$pageId,"main");
+			return;
+		};	
+	};
 	my $cells = $hash->{pages}{$pageId}{cells};
+	# TODO: max cols might make some sense for flex, but not 100%
 	my $maxCols = determineMaxCols($hash);
+	if($region eq "menu") {
+		$maxCols = 1;
+	}elsif($region) {
+		$maxCols--;
+	};	
 	# find positions for all views
 	# cells array:
     #   0 or undef means that the cell is free
@@ -746,6 +1029,19 @@ sub findPositions($$) {
 	for my $cell (@{$cells}) {
 		my ($x,$y) = $cell->position();
 		next unless(defined($x) and defined($y));
+		if($region) {  # flex
+			# cells without region yet
+			if(not $cell->{region}) {
+				if($x and $y) {
+					$cell->{region} = "main";
+				}elsif($x) {
+					$cell->{region} = "title";
+				}else{
+					$cell->{region} = "menu";
+				};	
+			};
+			next if $region ne $cell->{region};
+		};
 		# get dimensions
 		my @dim = $cell->dimensions();
 		for (my $yv = $y; $yv < $y + $dim[1]; $yv++) {
@@ -759,6 +1055,12 @@ sub findPositions($$) {
 		my ($x,$y) = $cell->position();
 		# ignore if already positioned
 		next if(defined($x) and defined($y));
+		# flex
+		if($region) {
+			# unpositioned cells without a region are assigned to main
+			$cell->{region} = "main" unless $cell->{region};
+			next if $region ne $cell->{region};
+		};
 		# get dimensions
 		my @dim = $cell->dimensions();
 		# find a nice free spot
@@ -831,6 +1133,190 @@ sub renderCells($$$) {
 };
 
 
+sub flexMaintMoveLeftAndUp($$) {
+	my ($cells,$region) = @_;
+	my $moveLeft = 9999;  #sth big. inf does not seem to be safe
+	my $moveUp = 9999;
+	for my $cell (@{$cells}) {
+		next unless $cell->{region} eq $region;
+		my ($col,$row) = $cell->position();
+		$moveLeft = $col if $col < $moveLeft;
+		$moveUp = $row if $row < $moveUp;
+	};
+	for my $cell (@{$cells}) {
+		next unless $cell->{region} eq $region;
+		my ($col,$row) = $cell->position();
+		$cell->position($col-$moveLeft,$row-$moveUp);
+	};
+}
+
+
+# determine region in case not determined so far
+# this also corrects the column and row if at 
+# least one cell without region found
+# TODO: can anything here lead to overlaps?
+sub flexMaintFindRegion($$) {
+	my ($hash,$pageId) = @_;
+	my $cells = $hash->{pages}{$pageId}{cells};
+	my $cellWithoutRegionFound;
+	for my $cell (@{$cells}) {
+		next if defined $cell->{region}; # already there
+		$cellWithoutRegionFound = 1;
+		my ($col,$row) = $cell->position();
+		$cell->{region} = ($col ? ($row ? "main":"title"):"menu");	
+	};
+	return unless $cellWithoutRegionFound;
+	# move everything to the left and up in all regions 
+	flexMaintMoveLeftAndUp($cells,"menu");
+	flexMaintMoveLeftAndUp($cells,"main");
+	flexMaintMoveLeftAndUp($cells,"title");
+};
+
+
+sub renderCellsFlexMaint($$$) {
+	my ($hash,$pageId,$region) = @_;
+	findPositions($hash,$pageId);
+	# no region set yet? => determine
+	flexMaintFindRegion($hash,$pageId);
+	# now try to render this
+	my $result;
+	my $i = -1;
+	my $cells = $hash->{pages}{$pageId}{cells};
+	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
+	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
+	for my $cell (@{$cells}) {
+		$i++;
+		my ($col,$row) = $cell->position();
+		next unless $cell->{region} eq $region;
+		my ($sizeX, $sizeY) = $cell->dimensions();
+		$sizeX = ceil($sizeX);
+		$sizeY = ceil($sizeY);
+		my $width = $sizeX * ($baseWidth + 10) - 10; 
+		my $height = $sizeY * ($baseHeight + 10) - 10; 
+		$result .= "<div id='fuip-flex-fake-".$i."' style=\"grid-area:".($row+1)." / ".($col+1)." / ".($row+$sizeY+1)." / ".($col+$sizeX+1).";border:0;border-radius: 8px;background-color: #6A6A6A;position:relative;width:".$width."px;height:".$height."px;px;\">
+					<div id='fuip-flex-cell-".$i."' data-cellid=\"".$i."\" class=\"fuip-droppable\" style=\"position:absolute;width:".$width."px;height:".$height."px;
+									border:0;
+									border-radius: 8px;
+									background-color: #2A2A2A;\">";
+		$cell->applyDefaults();
+		# TODO: find better handle for dragging
+		$result .= "<header style='border-radius:8px;background: #262626;color: #8c8c8c;display: block;
+										font-size: 0.85em;font-weight: bold;line-height: 2em;
+										text-align: center;width: 100%;'>".($cell->{title} ? $cell->{title} : "").$i."
+						<span style=\"position: absolute; right: 1px; top: 0;\" class=\"fa-stack fa-lg\"
+							onclick=\"openSettingsDialog('".$hash->{NAME}."','".$pageId."','".$i."')\">
+								<i class=\"fa fa-square-o fa-stack-2x\"></i>
+								<i class=\"fa fa-cog fa-stack-1x\"></i>
+						</span>
+					</header>";
+
+		$result .= $cell->getHTML(0);
+		$result .= "</div></div>";
+		$result .= '<script>
+					$( function() {
+						$( "#fuip-flex-cell-'.$i.'" ).resizable({
+							stop: onFlexMaintResizeStop,
+							resize: onFlexMaintResize
+						});
+						$("#fuip-flex-cell-'.$i.'" ).draggable({
+							stack: "[id^=fuip-flex-cell-]",
+							start: onFlexMaintDragStart,
+							drag: onFlexMaintDrag,
+							stop: onFlexMaintDragStop
+						}); 
+					} );
+				</script>';	
+	};
+	return $result;
+};
+
+
+sub renderCellsFlex($$) {
+	my ($hash,$pageId) = @_;
+	# TODO: next line does not make that much sense here
+	findPositions($hash,$pageId);
+	# no region set yet? => determine
+	flexMaintFindRegion($hash,$pageId);	
+	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
+	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
+	# now try to render this
+	my $menu = '<div id="fuip-flex-menu">';
+	my $titlebar = '<div id="fuip-flex-title">';
+	my $main = '<div id="fuip-flex-main">';
+	my $i = 0;
+	my $cells = $hash->{pages}{$pageId}{cells};
+	
+	# The "title cell" is the first of the title area
+	my $lastMenuRow = 0;
+	for my $cl (@{$cells}) {
+		my ($c,$r) = $cl->position();
+		$lastMenuRow = $r if($cl->{region} eq "menu" and $lastMenuRow < $r);
+	};
+					
+	for my $cell (@{$cells}) {
+		my ($col,$row) = $cell->position();
+		my ($sizeX, $sizeY) = $cell->dimensions();
+		$sizeX = ceil($sizeX);
+		# TODO: determine title sizes properly
+		$sizeX = 2 if($cell->{region} eq "title" and $col == 0);
+		$sizeY = ceil($sizeY);
+		my $width = $sizeX * ($baseWidth + 10) - 10;
+		my $height = $sizeY * ($baseHeight + 10) - 10;  # -10 + 22
+		# TODO: col, row, sizex, sizey ?
+		my $cellHtml = "<div data-cellid=\"".$i."\" data-row=\"".($row+1)."\" data-col=\"".($col+1)."\" data-sizex=\"".$sizeX."\" data-sizey=\"".$sizeY."\" class=\"fuip-droppable\" style=\"width:";
+		#if($col == 1 and $row == 0) {
+		#	$cellHtml .= '100%';
+		#}else{
+			$cellHtml .= $width.'px';
+		#};
+		$cellHtml .= ";height:".$height."px;position:relative;border:0;
+									border-radius: 8px;
+									background-color: #2A2A2A;
+									order:".($row*100+$col).";";
+		$cellHtml .= '				flex:auto;' if($cell->{region} eq "menu" and $row == $lastMenuRow or $cell->{region} eq "main" or $cell->{region} eq "title" and $col == 0);
+		$cellHtml .= '				margin:5px;">';
+		$cell->applyDefaults();
+		# if there is no title and it is locked, we do not display a header
+		# TODO: find better handle for dragging
+		$i++;
+		$cellHtml .= '<div style="margin-left:';
+		
+		if($col == 0 and $cell->{region} eq "title") {
+			$cellHtml .= '0px';
+		}else{
+			$cellHtml .= 'auto';
+		};	
+		$cellHtml .= ';margin-right:auto;position:relative;width:'.$width.'px;height:'.$height.'px;">';
+		if($cell->{title}) {
+			$cellHtml .= "<header style='border-radius:8px;background: #262626;color: #8c8c8c;display: block;
+										font-size: 0.85em;font-weight: bold;line-height: 2em;
+										text-align: center;width: 100%;'>".$cell->{title}."
+						</header>";
+		};				
+		if($col == 0 and $cell->{region} eq "title") {
+			$cellHtml .= '<div id="fuip-flex-menu-toggle" class="fa-lg"
+							style="position:absolute;left:5px;top:5px;"
+							onclick="$(\'#fuip-flex-menu\').toggleClass(\'fuip-flex-menu-show\')">
+							<i title="Toggle menu" class="fa fa-bars big"></i>
+						</div>';
+		};
+		$cellHtml .= $cell->getHTML(1).'</div>';
+		$cellHtml .= "</div>";
+		if($cell->{region} eq "menu") {  
+			$menu .= $cellHtml;
+		}elsif($cell->{region} eq "title"){  
+			$titlebar .= $cellHtml;
+		}else{	           # everything else is "content"
+			$main .= $cellHtml;
+		};
+	};
+	$menu .= '</div>';
+	$main .= '</div>';	
+	$titlebar .= '</div>';	
+	return $menu.'<div style="display:flex;flex-direction:column;">'.$titlebar.$main.'</div>';
+};
+
+
 sub FW_setPositionsAndDimensions($$$) {
 	my ($name,$pageid,$cells) = @_;
 	my $hash = $main::defs{$name};
@@ -849,14 +1335,21 @@ sub FW_setPositionsAndDimensions($$$) {
 		$page->[$i]{posY} = $cells->[$i]->{row} -1; 
 		$page->[$i]{width} = $cells->[$i]->{size_x};
 		$page->[$i]{height} = $cells->[$i]->{size_y};
+		# flex layout?
+		$page->[$i]{region} = $cells->[$i]->{region} if defined $cells->[$i]->{region}; 
 	};
 };
 
 
 sub getFuipPage($$) {
-	my ($hash,$pageid) = @_;
+	my ($hash,$path) = @_;
 	
 	my $locked = main::AttrVal($hash->{NAME},"locked",0);
+	my ($pageid,$preview) = split(/\?/,$path);
+	# preview?
+	if($preview eq "preview") {
+		$locked = 1;	
+	};
 	
 	# refresh Model buffer if locked
 	# if not locked, this would mean very bad performance for e.g. value help for devices
@@ -884,7 +1377,12 @@ sub getFuipPage($$) {
 		}		
 	};
 	# ok, we can render this	
-    return renderPage($hash, $pageid, $locked);
+	if(main::AttrVal($hash->{NAME},"layout","gridster") eq "flex") {
+		return renderPageFlex($hash, $pageid) if($locked);
+		return renderPageFlexMaint($hash,$pageid);
+	}else{
+		return renderPage($hash, $pageid, $locked);
+	};
 };
 
 
@@ -1523,7 +2021,9 @@ sub Set($$$)
 		#get page id
 		my $pageId = (exists($a->[2]) ? $a->[2] : "");
 		return "\"set viewaddnew\": page ".$pageId." does not exist" unless defined $hash->{pages}{$pageId};
-		push(@{$hash->{pages}{$pageId}{cells}},FUIP::Cell->createDefaultInstance($hash));
+		my $newCell = FUIP::Cell->createDefaultInstance($hash);
+		$newCell->{region} = $a->[3] if($a->[3]);	
+		push(@{$hash->{pages}{$pageId}{cells}},$newCell);
 	}elsif($cmd eq "pagedelete") {
 		#get page id
 		my $pageId = (exists($a->[2]) ? $a->[2] : "");
