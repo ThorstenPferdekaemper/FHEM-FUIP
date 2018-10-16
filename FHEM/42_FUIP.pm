@@ -301,7 +301,7 @@ sub renderPage($$$) {
 								<!-- tablesorter -->
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.js\"></script>
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.widgets.js\"></script>").
-				"<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.gridster.js\"></script>
+				"<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.gridster.min.js\"></script>  
                 <script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>".
 				($locked ? "" : "<script src=\"/fhem/".lc($hash->{NAME}).
 				"/fuip/js/fuip.js\"></script>
