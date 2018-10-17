@@ -996,6 +996,7 @@ sub getDeviceViewsForRoom($$$) {
 	return \@views;
 };
 
+sub findPositions($$;$); # forward declaration as it calls itself
 
 sub findPositions($$;$) {
 	my ($hash,$pageId,$region) = @_;
@@ -1013,7 +1014,7 @@ sub findPositions($$;$) {
 	my $cells = $hash->{pages}{$pageId}{cells};
 	# TODO: max cols might make some sense for flex, but not 100%
 	my $maxCols = determineMaxCols($hash);
-	if($region eq "menu") {
+	if($region and $region eq "menu") {
 		$maxCols = 1;
 	}elsif($region) {
 		$maxCols--;
@@ -1029,19 +1030,7 @@ sub findPositions($$;$) {
 	for my $cell (@{$cells}) {
 		my ($x,$y) = $cell->position();
 		next unless(defined($x) and defined($y));
-		if($region) {  # flex
-			# cells without region yet
-			if(not $cell->{region}) {
-				if($x and $y) {
-					$cell->{region} = "main";
-				}elsif($x) {
-					$cell->{region} = "title";
-				}else{
-					$cell->{region} = "menu";
-				};	
-			};
-			next if $region ne $cell->{region};
-		};
+		next if($region and $region ne $cell->{region}); # flex
 		# get dimensions
 		my @dim = $cell->dimensions();
 		for (my $yv = $y; $yv < $y + $dim[1]; $yv++) {
@@ -1056,11 +1045,7 @@ sub findPositions($$;$) {
 		# ignore if already positioned
 		next if(defined($x) and defined($y));
 		# flex
-		if($region) {
-			# unpositioned cells without a region are assigned to main
-			$cell->{region} = "main" unless $cell->{region};
-			next if $region ne $cell->{region};
-		};
+		next if($region and $region ne $cell->{region});
 		# get dimensions
 		my @dim = $cell->dimensions();
 		# find a nice free spot
@@ -1140,12 +1125,15 @@ sub flexMaintMoveLeftAndUp($$) {
 	for my $cell (@{$cells}) {
 		next unless $cell->{region} eq $region;
 		my ($col,$row) = $cell->position();
+		# not yet positioned cells are not moved
+		next unless(defined($col) and defined($row));
 		$moveLeft = $col if $col < $moveLeft;
 		$moveUp = $row if $row < $moveUp;
 	};
 	for my $cell (@{$cells}) {
 		next unless $cell->{region} eq $region;
 		my ($col,$row) = $cell->position();
+		next unless(defined($col) and defined($row));
 		$cell->position($col-$moveLeft,$row-$moveUp);
 	};
 }
@@ -1163,7 +1151,11 @@ sub flexMaintFindRegion($$) {
 		next if defined $cell->{region}; # already there
 		$cellWithoutRegionFound = 1;
 		my ($col,$row) = $cell->position();
-		$cell->{region} = ($col ? ($row ? "main":"title"):"menu");	
+		if(defined($col) and defined($row)) {
+			$cell->{region} = ($col ? ($row ? "main":"title"):"menu");	
+		}else{
+			$cell->{region} = "main"; # cells without position are assigned to "main"
+		};	
 	};
 	return unless $cellWithoutRegionFound;
 	# move everything to the left and up in all regions 
@@ -1175,9 +1167,9 @@ sub flexMaintFindRegion($$) {
 
 sub renderCellsFlexMaint($$$) {
 	my ($hash,$pageId,$region) = @_;
-	findPositions($hash,$pageId);
 	# no region set yet? => determine
-	flexMaintFindRegion($hash,$pageId);
+	flexMaintFindRegion($hash,$pageId);	
+	findPositions($hash,$pageId);
 	# now try to render this
 	my $result;
 	my $i = -1;
@@ -1233,10 +1225,9 @@ sub renderCellsFlexMaint($$$) {
 
 sub renderCellsFlex($$) {
 	my ($hash,$pageId) = @_;
-	# TODO: next line does not make that much sense here
-	findPositions($hash,$pageId);
 	# no region set yet? => determine
 	flexMaintFindRegion($hash,$pageId);	
+	findPositions($hash,$pageId);
 	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
 	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
 	# now try to render this
@@ -1347,7 +1338,7 @@ sub getFuipPage($$) {
 	my $locked = main::AttrVal($hash->{NAME},"locked",0);
 	my ($pageid,$preview) = split(/\?/,$path);
 	# preview?
-	if($preview eq "preview") {
+	if($preview and $preview eq "preview") {
 		$locked = 1;	
 	};
 	
@@ -1356,7 +1347,7 @@ sub getFuipPage($$) {
 	FUIP::Model::refresh($hash->{NAME}) if($locked);
 	
 	# "" goes to "home" 
-	if($pageid eq "") {
+	if(not defined($pageid) or $pageid eq "") {
 		$pageid = "home";
 	};	
 	
