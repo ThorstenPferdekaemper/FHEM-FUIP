@@ -9,7 +9,16 @@ use warnings;
 	
 	sub getHTML($){
 		my ($self) = @_;
-		return $self->{html};
+		my $html = $self->{html};
+		$html =~ s/\\/\\\\/g;  	# \ -> \\
+		$html =~ s/\r//g;		# remove lf
+		$html =~ s/\n/\\n/g;	# replace new line by \n
+		$html =~ s/\"/\\\"/g;	# " -> \"
+		return '<script type="text/javascript">
+						var elem = document.createElement("div");
+						elem.innerHTML = "'.$html.'";
+						document.write(elem.innerHTML);
+					</script>';	
 	};
 
 	
