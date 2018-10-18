@@ -285,7 +285,16 @@ sub renderPage($$$) {
 	   "<!DOCTYPE html>
 		<html".($locked ? "" : " data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"".$layout."\"").">
 			<head>
-				<script type=\"text/javascript\">
+				<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
+				<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=yes\" />
+				<meta name=\"mobile-web-app-capable\" content=\"yes\">
+				<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">
+				<meta name=\"widget_base_width\" content=\"".$baseWidth."\">
+				<meta name=\"widget_base_height\" content=\"".$baseHeight."\">".
+				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
+				($locked ? '<meta name="gridster_disable" content="1">' : "").
+            "
+			<script type=\"text/javascript\">
 					// when using browser back or so, we should reload
 					if(performance.navigation.type == 2){
 						location.reload(true);
@@ -293,6 +302,7 @@ sub renderPage($$$) {
 				</script>
 				<title>".$title."</title>
 				<link rel=\"shortcut icon\" href=\"/fhem/icons/favicon\" />
+				<link href=\"/fhem/".lc($hash->{NAME})."/css/fhem-tablet-ui.css\" rel=\"stylesheet\" type=\"text/css\">
 				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/font-awesome.min.css\" />
 				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/nesges.css\">
 				<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
@@ -352,15 +362,7 @@ sub renderPage($$$) {
 						background-color: initial;
 					}	
                 </style>
-				<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=yes\" />
-				<meta name=\"mobile-web-app-capable\" content=\"yes\">
-				<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">
-				<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
-				<meta name=\"widget_base_width\" content=\"".$baseWidth."\">
-				<meta name=\"widget_base_height\" content=\"".$baseHeight."\">".
-				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
-				($locked ? '<meta name="gridster_disable" content="1">' : "").
-            "</head>
+			</head>
             <body";
 	if($backgroundImage) {
 		$result .= ' style="background:#000000 url(/fhem/'.lc($hash->{NAME}).'/fuip/images/'.$backgroundImage.') 0 0/';
@@ -412,9 +414,18 @@ sub renderPageFlex($$) {
 	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","#808080");
 	my $pageWidth = main::AttrVal($hash->{NAME},"pageWidth",undef);
   	my $result = 
-	   "<!DOCTYPE html>
+	   '<!DOCTYPE html>
 		<html>
 			<head>
+				<meta http-equiv="X-UA-Compatible" content="IE=edge">
+				<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+				<meta name="mobile-web-app-capable" content="yes">
+				<meta name="apple-mobile-web-app-capable" content="yes">
+				<meta name="widget_base_width" content="'.$baseWidth.'">
+				<meta name="widget_base_height" content="'.$baseHeight.'">'.
+				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
+				'<meta name="gridster_disable" content="1">'.
+            "
 				<script type=\"text/javascript\">
 					// when using browser back or so, we should reload
 					if(performance.navigation.type == 2){
@@ -423,6 +434,7 @@ sub renderPageFlex($$) {
 				</script>
 				<title>".$title."</title>
 				<link rel=\"shortcut icon\" href=\"/fhem/icons/favicon\" />
+				<link href=\"/fhem/".lc($hash->{NAME})."/css/fhem-tablet-ui.css\" rel=\"stylesheet\" type=\"text/css\">
 				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/font-awesome.min.css\" />
 				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/nesges.css\">
 				<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
@@ -497,16 +509,8 @@ sub renderPageFlex($$) {
 						background-color: initial;
 					}	
                 </style>
-				<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-				<meta name="mobile-web-app-capable" content="yes">
-				<meta name="apple-mobile-web-app-capable" content="yes">
-				<meta http-equiv="X-UA-Compatible" content="IE=edge">
-				<meta name="widget_base_width" content="'.$baseWidth.'">
-				<meta name="widget_base_height" content="'.$baseHeight.'">'.
-				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
-				'<meta name="gridster_disable" content="1">'.
-            "</head>
-            <body";
+			</head>
+            <body';
 	# TODO: above there are widget_-metas, which probably do not make sense here		
 	if($backgroundImage) {
 		$result .= ' style="background:#000000 url(/fhem/'.lc($hash->{NAME}).'/fuip/images/'.$backgroundImage.') 0 0/';
@@ -548,6 +552,12 @@ sub renderPageFlexMaint($$) {
 	   "<!DOCTYPE html>
 		<html data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"flex\">
 			<head>
+				<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
+				<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=yes\" />
+				<meta name=\"mobile-web-app-capable\" content=\"yes\">
+				<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">".
+				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
+            "
 				<script type=\"text/javascript\">
 					// when using browser back or so, we should reload
 					if(performance.navigation.type == 2){
@@ -556,6 +566,7 @@ sub renderPageFlexMaint($$) {
 				</script>
 				<title>".$title."</title>
 				<link rel=\"shortcut icon\" href=\"/fhem/icons/favicon\" />
+				<link href=\"/fhem/".lc($hash->{NAME})."/css/fhem-tablet-ui.css\" rel=\"stylesheet\" type=\"text/css\">
 				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/font-awesome.min.css\" />
 				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/nesges.css\">
 				<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
@@ -623,12 +634,7 @@ sub renderPageFlexMaint($$) {
 						background-color: initial;
 					}	
                 </style>
-				<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=yes\" />
-				<meta name=\"mobile-web-app-capable\" content=\"yes\">
-				<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">
-				<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">".
-				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
-            "</head>
+</head>
             <body";
 	if($backgroundImage) {
 		$result .= ' style="position:relative;background:#000000 url(/fhem/'.lc($hash->{NAME}).'/fuip/images/'.$backgroundImage.') 0 0/';
