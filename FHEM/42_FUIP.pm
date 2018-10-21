@@ -312,12 +312,13 @@ sub renderPage($$$) {
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.js\"></script>
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.widgets.js\"></script>").
 				"<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.gridster.min.js\"></script>  
-                <script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>".
+                ".
 				($locked ? "" : "<script src=\"/fhem/".lc($hash->{NAME}).
 				"/fuip/js/fuip.js\"></script>
   				    <script>
 						fuipInit(".$baseWidth.",".$baseHeight.",".determineMaxCols($hash,99).")
 					</script>
+					<script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>
 								 <link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/css/theme.blue.css\">").
                 "<style type=\"text/css\">
 	                .fuip-color {
@@ -1593,8 +1594,8 @@ sub CGI() {
   # main::Log3(undef,1,"FUIP Request: ".$request);
   # Match request first without trailing / in the link part 
   if($request =~ m,^(/[^/]+)(/(.*)?)?$,) {
-    my $link= $1;
-    my $filename= $3;
+    my $link = $1;
+    my $filename = ($3 ? $3 : "");  # $3 is undef if the "/" at the end is missing
     my $name;
  
     # If FWEXT not found for this make a second try with a trailing slash in the link part
