@@ -14,6 +14,7 @@ use warnings;
 		$html =~ s/\r//g;		# remove lf
 		$html =~ s/\n/\\n/g;	# replace new line by \n
 		$html =~ s/\"/\\\"/g;	# " -> \"
+		$html =~ s|<\/script>|<\\/script>|g; # </script> => <\/scipt>
 		return '<script type="text/javascript">
 						var elem = document.createElement("div");
 						elem.innerHTML = "'.$html.'";

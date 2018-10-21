@@ -1596,7 +1596,7 @@ sub CGI() {
     my $link= $1;
     my $filename= $3;
     my $name;
-
+ 
     # If FWEXT not found for this make a second try with a trailing slash in the link part
     if(! $main::data{FWEXT}{$link}) {
       $link = $link."/";
@@ -1612,7 +1612,6 @@ sub CGI() {
     return("text/plain; charset=utf-8", "No FUIP device for $link") unless($hash);
 	
 	# main::Log3(undef,1,"FUIP Link: ".$link." File: ".$filename);
-	
 	my @path = split(/\//, $filename);
 	if(@path == 0 or $path[0] eq "page") {
 		if(@path > 0){ shift @path };
