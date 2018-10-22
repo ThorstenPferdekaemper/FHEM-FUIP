@@ -47,7 +47,7 @@ my $fuipPath = $main::attr{global}{modpath} . "/FHEM/lib/FUIP/";
 # possible values of attributes can change...
 sub setAttrList($) {
 	my ($hash) = @_;
-    $hash->{AttrList}  = "layout:gridster,flex locked:0,1 fhemwebUrl baseWidth baseHeight pageWidth styleColor styleBackgroundImage:";
+    $hash->{AttrList}  = "layout:gridster,flex locked:0,1 fhemwebUrl baseWidth baseHeight pageWidth styleColor viewportUserScalable:yes,no viewportInitialScale styleBackgroundImage:";
 	my $imageNames = getImageNames();
 	$hash->{AttrList} .= join(",",@$imageNames);
 }
@@ -281,12 +281,14 @@ sub renderPage($$$) {
 	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","#808080");
 	my $pageWidth = main::AttrVal($hash->{NAME},"pageWidth",undef);
 	my $layout = main::AttrVal($hash->{NAME},"layout","gridster");
+	my $initialScale = main::AttrVal($hash->{NAME},"viewportInitialScale","1.0");
+	my $userScalable = main::AttrVal($hash->{NAME},"viewportUserScalable","yes");
   	my $result = 
 	   "<!DOCTYPE html>
 		<html".($locked ? "" : " data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"".$layout."\"").">
 			<head>
 				<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
-				<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=yes\" />
+				<meta name=\"viewport\" content=\"width=device-width, initial-scale=".$initialScale.", user-scalable=".$userScalable."\" />
 				<meta name=\"mobile-web-app-capable\" content=\"yes\">
 				<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">
 				<meta name=\"widget_base_width\" content=\"".$baseWidth."\">
@@ -414,13 +416,15 @@ sub renderPageFlex($$) {
 	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
 	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","#808080");
 	my $pageWidth = main::AttrVal($hash->{NAME},"pageWidth",undef);
+	my $initialScale = main::AttrVal($hash->{NAME},"viewportInitialScale","1.0");
+	my $userScalable = main::AttrVal($hash->{NAME},"viewportUserScalable","no");
   	my $result = 
 	   '<!DOCTYPE html>
 		<html>
 			<head>
-				<meta http-equiv="X-UA-Compatible" content="IE=edge">
-				<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-				<meta name="mobile-web-app-capable" content="yes">
+				<meta http-equiv="X-UA-Compatible" content="IE=edge">'.
+				'<meta name="viewport" content="width=device-width, initial-scale='.$initialScale.', user-scalable='.$userScalable.'" />'.
+				'<meta name="mobile-web-app-capable" content="yes">
 				<meta name="apple-mobile-web-app-capable" content="yes">
 				<meta name="widget_base_width" content="'.$baseWidth.'">
 				<meta name="widget_base_height" content="'.$baseHeight.'">'.
@@ -549,12 +553,14 @@ sub renderPageFlexMaint($$) {
 	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
 	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","#808080");
 	my $pageWidth = main::AttrVal($hash->{NAME},"pageWidth",undef);
+	my $initialScale = main::AttrVal($hash->{NAME},"viewportInitialScale","1.0");
+	my $userScalable = main::AttrVal($hash->{NAME},"viewportUserScalable","no");
   	my $result = 
 	   "<!DOCTYPE html>
 		<html data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"flex\">
 			<head>
 				<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
-				<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=yes\" />
+				<meta name=\"viewport\" content=\"width=device-width, initial-scale=".$initialScale.", user-scalable=".$userScalable."\" />
 				<meta name=\"mobile-web-app-capable\" content=\"yes\">
 				<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">".
 				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
