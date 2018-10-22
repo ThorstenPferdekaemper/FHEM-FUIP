@@ -1366,9 +1366,14 @@ sub getFuipPage($$) {
 		}else{
 			my @path = split(/\//,$pageid);
 			if($path[0] eq "room" and defined($path[1])) {
-				defaultPageRoom($hash,$path[1]);
+				shift(@path);
+				defaultPageRoom($hash,join("/",@path));
 			}elsif($path[0] eq "device" and defined($path[1]) and defined($path[2])){
-				defaultPageDevice($hash,$path[1],$path[2]);
+				shift(@path);
+				my $room = shift(@path);
+				# we need to put the paths together again in case there are further "/"
+				# this is in principle rubbish but we need to avoid crashes
+				defaultPageDevice($hash,$room,join("/",@path));
 			}else{		
 				defaultPage($hash,$pageid);
 			};
