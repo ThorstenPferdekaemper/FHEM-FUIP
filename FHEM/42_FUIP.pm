@@ -320,9 +320,9 @@ sub renderPage($$$) {
   				    <script>
 						fuipInit(".$baseWidth.",".$baseHeight.",".determineMaxCols($hash,99).")
 					</script>
-					<script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>
-								 <link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/css/theme.blue.css\">").
-                "<style type=\"text/css\">
+					<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/css/theme.blue.css\">").
+                "<script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>
+					<style type=\"text/css\">
 	                .fuip-color {
 		                color: ".$styleColor.";
                     }
