@@ -7,6 +7,14 @@ use lib::FUIP::View;
 use parent -norequire, 'FUIP::View';
 
 
+# fix startday and days in case of wrong user choice
+# ...or "old" instances
+sub _fixDays($) {
+	my ($self) = @_;
+	$self->{startday} = 0 unless $self->{startday};
+	$self->{days} = 14 - $self->{startday} if $self->{startday} + $self->{days} > 14;
+};
+
 	
 sub getHTML($){
 	my ($self) = @_;
@@ -21,10 +29,12 @@ sub getHTML($){
 	if(@overviewArr) {
 		$overview = '["'.join('","',@overviewArr).'"]';
 	};
+	$self->_fixDays();
 	return '<div>
 			<link rel="stylesheet" href="/fhem/'.lc($self->{fuip}{NAME}).'/fuip/css/widget_weatherdetail.css">
 			<div data-type="weatherdetail" 
 				data-device="'.$device.'" 
+				data-startday='.$self->{startday}.'
 				data-days='.$self->{days}.' 
 				data-overview='.$overview.'					
 				data-detail=\'[]\'
@@ -43,6 +53,7 @@ sub dimensions($;$$){
 		$height = main::AttrVal($self->{fuip}{NAME},"baseHeight",108);
 	};
 	# width "fixed" and "normal" => 149 * days, "small" => depends on baseWidth
+	$self->_fixDays();
 	if($self->{width} eq "fixed") {
 		if($self->{layout} eq "small") {
 			$width = (main::AttrVal($self->{fuip}{NAME},"baseWidth",142) + 10) * $self->{days} - 10;
@@ -62,8 +73,11 @@ sub getStructure($) {
 		{ id => "class", type => "class", value => $class },
 		{ id => "device", type => "device" },
 		{ id => "title", type => "text", default => { type => "field", value => "device"} },
+		{ id => "startday", type => "text", 
+				options => [0,1,2,3,4,5,6,7,8,9,10,11,12,13],
+				default => { type => "const", value => 0 } },
 		{ id => "days", type => "text", 
-				options => [1,2,3,4,5,6,7],
+				options => [1,2,3,4,5,6,7,8,9,10,11,12,13,14],
 				default => { type => "const", value => 1 } },
 		{ id => "overview", type => "setoptions",
 				options => ["text","sun","uv","frost"], 

@@ -7,6 +7,15 @@ use lib::FUIP::View;
 use parent -norequire, 'FUIP::View';
 
 
+# fix startday and days in case of wrong user choice
+# ...or "old" instances
+sub _fixDays($) {
+	my ($self) = @_;
+	$self->{days} = 4 unless $self->{days};
+	$self->{startday} = 0 unless $self->{startday};
+	$self->{days} = 7 - $self->{startday} if $self->{startday} + $self->{days} > 7;
+};
+
 	
 sub getHTML($){
 	my ($self) = @_;
@@ -33,11 +42,12 @@ sub getHTML($){
 	};
 
 	# avoid issues with "old" instance
-	$self->{days} = 4 unless $self->{days};
+	$self->_fixDays();
 	return '<div>
 			<link rel="stylesheet" href="/fhem/'.lc($self->{fuip}{NAME}).'/fuip/css/widget_weatherdetail.css">
 			<div class="cell" data-type="weatherdetail" 
 				data-device="'.$device.'" 
+				data-startday='.$self->{startday}.'
 				data-days='.$self->{days}.'
 				data-overview='.$overview.'	
 				data-detail=\''.$detail.'\'>
@@ -70,6 +80,9 @@ sub getHTML($){
 		{ id => "class", type => "class", value => $class },
 		{ id => "device", type => "device" },
 		{ id => "title", type => "text", default => { type => "field", value => "device"} },
+		{ id => "startday", type => "text", 
+				options => [0,1,2,3],
+				default => { type => "const", value => 0 } },
 		{ id => "days", type => "text", 
 				options => [4,5,6,7],
 				default => { type => "const", value => 4 } },

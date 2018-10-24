@@ -38,8 +38,8 @@ UPD 2018-07-20_21:11:22 1906 FHEM/lib/FUIP/View/Sysmon.pm
 UPD 2018-08-21_21:48:11 4072 FHEM/lib/FUIP/View/Thermostat.pm
 UPD 2018-08-21_21:48:22 1397 FHEM/lib/FUIP/View/Title.pm
 UPD 2018-07-10_21:16:48 2060 FHEM/lib/FUIP/View/UpStopDown.pm
-UPD 2018-10-02_21:34:34 2624 FHEM/lib/FUIP/View/WeatherDetail.pm
-UPD 2018-09-22_21:20:33 2418 FHEM/lib/FUIP/View/WeatherOverview.pm
+UPD 2018-10-24_21:02:52 3046 FHEM/lib/FUIP/View/WeatherDetail.pm
+UPD 2018-10-24_21:01:52 2905 FHEM/lib/FUIP/View/WeatherOverview.pm
 UPD 2018-03-17_23:57:54 7260 FHEM/lib/FUIP/css/theme.blue.css
 UPD 2018-03-17_23:57:55 5774 FHEM/lib/FUIP/css/theme.default.css
 UPD 2018-09-15_21:48:46 797 FHEM/lib/FUIP/css/widget_weatherdetail.css
@@ -57,7 +57,7 @@ UPD 2017-12-18_22:55:39 253669 FHEM/lib/FUIP/jquery-ui/jquery-ui.min.js
 UPD 2018-10-15_15:50:33 65190 FHEM/lib/FUIP/js/fuip.js
 UPD 2018-03-17_23:57:55 106396 FHEM/lib/FUIP/js/jquery.tablesorter.js
 UPD 2018-03-17_23:57:55 125594 FHEM/lib/FUIP/js/jquery.tablesorter.widgets.js
-UPD 2018-10-14_21:32:58 17665 FHEM/lib/FUIP/js/widget_weatherdetail.js
+UPD 2018-10-24_20:50:43 18246 FHEM/lib/FUIP/js/widget_weatherdetail.js
 UPD 2018-08-03_15:12:09 4468 FHEM/lib/FUIP/view-images/FUIP-View-Batteries.png
 UPD 2018-08-03_15:17:14 1830 FHEM/lib/FUIP/view-images/FUIP-View-Brightness.png
 UPD 2018-08-03_15:20:11 2046 FHEM/lib/FUIP/view-images/FUIP-View-Clock.png
