@@ -47,7 +47,7 @@ my $fuipPath = $main::attr{global}{modpath} . "/FHEM/lib/FUIP/";
 # possible values of attributes can change...
 sub setAttrList($) {
 	my ($hash) = @_;
-    $hash->{AttrList}  = "layout:gridster,flex locked:0,1 fhemwebUrl baseWidth baseHeight pageWidth styleColor viewportUserScalable:yes,no viewportInitialScale styleBackgroundImage:";
+    $hash->{AttrList}  = "layout:gridster,flex locked:0,1 fhemwebUrl baseWidth baseHeight pageWidth styleColor viewportUserScalable:yes,no viewportInitialScale gridlines:show,hide snapTo:gridlines,nothing styleBackgroundImage:";
 	my $imageNames = getImageNames();
 	$hash->{AttrList} .= join(",",@$imageNames);
 }
@@ -270,6 +270,25 @@ sub determineMaxCols($;$) {
 };
 
 
+sub renderFuipInit($) {
+	# include fuip.js, call fuipInit and include proper JQueryUI style sheet
+	my ($hash) = @_;
+	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
+	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
+	my $gridlines = main::AttrVal($hash->{NAME},"gridlines","hide");	
+	my $snapto = main::AttrVal($hash->{NAME},"snapTo","nothing");
+	return "<script src=\"/fhem/".lc($hash->{NAME})."/fuip/js/fuip.js\"></script>
+  			<script>
+				fuipInit({	baseWidth:".$baseWidth.",
+							baseHeight:".$baseHeight.",
+							maxCols:".determineMaxCols($hash,99).",
+							gridlines:\"".$gridlines."\",
+							snapTo:\"".$snapto."\" })
+			</script>
+			<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/css/theme.blue.css\">";
+};
+
+
 sub renderPage($$$) {
 	my ($hash,$currentLocation,$locked) = @_;
 	# falls $locked, dann werden die Editierfunktionen nicht mit gerendert
@@ -315,13 +334,8 @@ sub renderPage($$$) {
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.widgets.js\"></script>").
 				"<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.gridster.min.js\"></script>  
                 ".
-				($locked ? "" : "<script src=\"/fhem/".lc($hash->{NAME}).
-				"/fuip/js/fuip.js\"></script>
-  				    <script>
-						fuipInit(".$baseWidth.",".$baseHeight.",".determineMaxCols($hash,99).")
-					</script>
-					<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/css/theme.blue.css\">").
-                "<script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>
+				($locked ? "" : renderFuipInit($hash)).
+				"<script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>
 					<style type=\"text/css\">
 	                .fuip-color {
 		                color: ".$styleColor.";
@@ -582,18 +596,14 @@ sub renderPageFlexMaint($$) {
 								<!-- tablesorter -->
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.js\"></script>
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.widgets.js\"></script>
-                <script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>
-				<script src=\"/fhem/".lc($hash->{NAME})."/fuip/js/fuip.js\"></script>
-  				    <script>
-						fuipInit(".$baseWidth.",".$baseHeight.",".determineMaxCols($hash,99).")
-					</script>
-								 <link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/css/theme.blue.css\">
-                <style type=\"text/css\">
+                <script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>".
+				renderFuipInit($hash).
+				"<style type=\"text/css\">
 	                .fuip-color {
 		                color: ".$styleColor.";
                     }
 					.fuip-flex-region {
-						margin:5px;
+						margin:4px;
 						border:solid;
 						border-width:1px;
 						display:grid;
@@ -738,13 +748,8 @@ sub renderPopupMaint($$) {
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.widgets.js\"></script>".
 				"<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.gridster.min.js\"></script>".
                 "<script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>".
-				"<script src=\"/fhem/".lc($hash->{NAME}).
-				"/fuip/js/fuip.js\"></script>
-  				    <script>
-						fuipInit(10,10,".determineMaxCols($hash,99).")
-					</script>
-								 <link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/css/theme.blue.css\">".
-                "<style type=\"text/css\">
+				renderFuipInit($hash).
+				"<style type=\"text/css\">
 	                .fuip-color {
 		                color: ".$styleColor.";
                     }

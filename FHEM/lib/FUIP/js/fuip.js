@@ -2,9 +2,10 @@
 var fuipGridster;
 var fuip = {};
 
-function fuipInit(baseWidth,baseHeight,maxCols) {
-	fuip.baseWidth = baseWidth;
-	fuip.baseHeight = baseHeight;
+function fuipInit(conf) { //baseWidth, baseHeight, maxCols, gridlines, snapTo
+	fuip.baseWidth = conf.baseWidth;
+	fuip.baseHeight = conf.baseHeight;
+	fuip.snapTo = conf.snapTo;
 	$( function() {
 		// csrf token
 		getLocalCSrf();
@@ -30,7 +31,24 @@ function fuipInit(baseWidth,baseHeight,maxCols) {
 		$(".fuip-draggable").each(function() {
 			$(this).draggable({
 				revert: "invalid",
-				stack: ".fuip-draggable"
+				stack: ".fuip-draggable",
+				start: function(e,ui) {
+					fuip.drag_start_left = ui.offset.left - ui.position.left;
+					fuip.drag_start_top = ui.offset.top - ui.position.top;
+				},	
+				drag: function(e,ui) {
+					if(fuip.snapTo == "nothing") return;
+					if(e.altKey) return;
+					var dim = gridDimensions();
+					var n = (ui.position.left + fuip.drag_start_left - 5) / dim.gridWidth;
+					if(n - Math.floor(n) > 0.5) n++;
+					var snapped = 5 + Math.floor(n) * dim.gridWidth;  // offset	
+					ui.position.left = snapped - fuip.drag_start_left;
+					n = (ui.position.top + fuip.drag_start_top - 27) / dim.gridHeight;
+					if(n - Math.floor(n) > 0.5) n++;
+					snapped = 27 + Math.floor(n) * dim.gridHeight;  // offset	
+					ui.position.top = snapped - fuip.drag_start_top;
+				}	
 			});
 		});
 		// every cell is droppable
@@ -40,26 +58,62 @@ function fuipInit(baseWidth,baseHeight,maxCols) {
 				drop: function(event,ui) { onDragStop($(this),ui); }
 			});
 		});	
-		// configure gridster
-		if($("html").attr("data-layout") == "gridster") {
-			fuipGridster =  $(".gridster ul").gridster({
-				widget_base_dimensions: [baseWidth,baseHeight],
-				widget_margins: [5, 5],
-				autogrow_cols: true,
-				max_cols: maxCols,
-				resize: {
-					enabled: true,
-					stop: onGridsterChangeStop	
-				},
-				draggable: {
-					handle: "header",
-					stop: onGridsterChangeStop	
-				}	
-			}).data('gridster');
-		};
-	});
+	// configure gridster
+	if($("html").attr("data-layout") == "gridster") {
+		fuipGridster =  $(".gridster ul").gridster({
+			widget_base_dimensions: [conf.baseWidth,conf.baseHeight],
+			widget_margins: [5, 5],
+			autogrow_cols: true,
+			max_cols: conf.maxCols,
+			resize: {
+				enabled: true,
+				stop: onGridsterChangeStop	
+			},
+			draggable: {
+				handle: "header",
+				stop: onGridsterChangeStop	
+			}	
+		}).data('gridster');
+	};
+	if(conf.gridlines == "show") drawGrid();   
+	});	
 };
-				
+		
+
+function gridDimensions() {
+	// try to determine "smart" dimensions to have gridlines
+	// with about 30 px distance, but have a gridline at the 
+	// left border of each cell and at the lower border of the header
+	// of each cell
+	var nH = Math.round((fuip.baseHeight + 10) / 30.0);
+	var nW = Math.round((fuip.baseWidth + 10) / 30.0);
+	return { 
+		gridHeight: (fuip.baseHeight + 10) / nH,
+		gridWidth : (fuip.baseWidth + 10) / nW };
+};	
+		
+		
+function drawGrid() {
+	// determine grid width
+	var dim = gridDimensions();
+	// create canvas to draw on
+	$("body").append('<canvas id="gridCanvas" width=' + $(document).width() + ' height=' + $(document).height() + ' style="position:absolute;top:0;left:0;z-index:99;pointer-events:none;"></canvas>');
+	var canvas = document.getElementById("gridCanvas");
+	var c = canvas.getContext("2d");
+	c.setLineDash([1,4]);
+	for(var x = 5; x < $(document).width(); x += dim.gridWidth) {
+		c.moveTo(x,0);
+		c.lineTo(x,$(document).height() -1);
+	};	
+	for(var y = 27; y < $(document).height(); y += dim.gridHeight) {
+		c.moveTo(0,y);
+		c.lineTo($(document).width() -1,y);
+	};	
+	c.strokeStyle = "LightGrey";
+	c.lineWidth = 1;
+	c.stroke();
+};	
+		
 
 function getLocalCSrf() {
     $.ajax({
