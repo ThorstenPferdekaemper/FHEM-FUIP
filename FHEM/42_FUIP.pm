@@ -1273,11 +1273,7 @@ sub renderCellsFlex($$) {
 		my $height = $sizeY * ($baseHeight + 10) - 10;  # -10 + 22
 		# TODO: col, row, sizex, sizey ?
 		my $cellHtml = "<div data-cellid=\"".$i."\" data-row=\"".($row+1)."\" data-col=\"".($col+1)."\" data-sizex=\"".$sizeX."\" data-sizey=\"".$sizeY."\" class=\"fuip-droppable\" style=\"width:";
-		#if($col == 1 and $row == 0) {
-		#	$cellHtml .= '100%';
-		#}else{
-			$cellHtml .= $width.'px';
-		#};
+		$cellHtml .= $width.'px';
 		$cellHtml .= ";height:".$height."px;position:relative;border:0;
 									border-radius: 8px;
 									background-color: #2A2A2A;
@@ -1295,7 +1291,13 @@ sub renderCellsFlex($$) {
 		}else{
 			$cellHtml .= 'auto';
 		};	
-		$cellHtml .= ';margin-right:auto;position:relative;width:'.$width.'px;height:'.$height.'px;">';
+		$cellHtml .= ';margin-right:auto;position:relative;width:';
+		if($col == 0 and $cell->{region} eq "title") {
+			$cellHtml .= '100%';
+		}else{
+			$cellHtml .= $width.'px';
+		};
+		$cellHtml .= ';height:'.$height.'px;">';
 		if($cell->{title}) {
 			$cellHtml .= "<header style='border-radius:8px;background: #262626;color: #8c8c8c;display: block;
 										font-size: 0.85em;font-weight: bold;line-height: 2em;
