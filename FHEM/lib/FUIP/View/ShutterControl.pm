@@ -21,7 +21,7 @@ sub getHTML($){
 		push(@levels,$self->{minLevel} + ($self->{maxLevel} - $self->{minLevel}) * $i / 10);
 	};
 	my @iconLevels = @levels;
-	# for "reverse" shutters, we need to reverse the icon listen
+	# for "reverse" shutters, we need to reverse the icon list
 	if($self->{minLevel} > $self->{maxLevel}) {
 		@icons = reverse(@icons);
 		@iconLevels = reverse(@iconLevels);
@@ -58,8 +58,8 @@ sub getHTML($){
 				</td>
 				<td>
 					<div data-type="select" data-device="'.$device.'" 
-						data-items=\'["'.join('","',@levels).'"]\' 
-						data-alias=\'["Zu","10%","20%","30%","40%","50%","60%","70%","80%","90%","Auf"]\' 
+						data-items=\'["'.join('","',reverse(@levels)).'"]\' 
+						data-alias=\'["Auf","90%","80%","70%","60%","50%","40%","30%","20%","10%","Zu"]\' 
 						data-get="'.$self->{readingLevel}.'" data-set="'.$self->{setLevel}.'" class="right">
 					</div>
 				</td>
@@ -74,10 +74,11 @@ sub getHTML($){
 			data-theme="dark" 
 			data-title="'.$device.'"  
 			data-sortcmdlist="MANUELL"
-			data-cmdlist=\'{"Zu":"'.$levels[0].'","Auf":"'.$levels[10].'"';		
-	for (my $i=1; $i <= 9; $i++) {
+			data-cmdlist=\'{"Auf":"'.$levels[10].'"'; 		
+	for (my $i=9; $i <= 1; $i--) {
 		$result .= ',"'.($i*10).'%":"'.$levels[$i].'"';
 	};
+	$result .= ',"Zu":"'.$levels[0].'"';
 	$result .= '}\'>
 			<div data-type="button" class="cell small readonly" data-icon="oa-edit_settings" data-background-icon="fa-square-o" 
 					data-on-color="#505050" data-on-background-color="#505050">
