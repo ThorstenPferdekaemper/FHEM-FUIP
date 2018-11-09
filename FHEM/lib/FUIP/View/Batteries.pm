@@ -19,12 +19,17 @@ sub _getDevices($$){
 		};	
 	};
 	# only devices with battery, but we want the Activity reading nevertheless, if it exists
+	my $fields = ["alias"];
 	if($deviceFilter ne "all") {
-		for my $dev (keys(%devices)) {
-			my $device = FUIP::Model::getDevice($name,$dev,["Activity"]);
-			if(exists($device->{Readings}{Activity})) {
-				$devices{$dev}{Activity} = 1;
-			};
+		push(@$fields,"Activity");
+	};	
+	for my $dev (keys(%devices)) {
+		my $device = FUIP::Model::getDevice($name,$dev,$fields);
+		if(exists($device->{Readings}{Activity})) {
+			$devices{$dev}{Activity} = 1;
+		};
+		if($device->{Attributes}{alias}) {
+			$devices{$dev}{alias} = $device->{Attributes}{alias};
 		};
 	};
 	return \%devices;
@@ -50,10 +55,10 @@ sub getHTML($){
 			$count = 0;
 		}  
 		$count++;
-		$result.= '<tr><td>
-					<div data-type="label" class="left fuip-color">'.$devKey.'</div>
-					</td><td>';
 		my $device = $devices->{$devKey};			
+		$result.= '<tr><td>
+					<div data-type="label" class="left fuip-color">'.($device->{alias} ? $device->{alias} :$devKey).'</div>
+					</td><td>';
 		if(exists($device->{batteryLevel})){
 			$result .= '<div style="margin-top:-26px;margin-bottom:-30px;margin-right:-10px" data-type="symbol" 
 							data-device="'.$devKey.'" data-get="batteryLevel"
