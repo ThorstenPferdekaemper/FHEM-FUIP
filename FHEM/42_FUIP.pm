@@ -1292,11 +1292,7 @@ sub renderCellsFlex($$) {
 			$cellHtml .= 'auto';
 		};	
 		$cellHtml .= ';margin-right:auto;position:relative;width:';
-		if($col == 0 and $cell->{region} eq "title") {
-			$cellHtml .= '100%';
-		}else{
-			$cellHtml .= $width.'px';
-		};
+		$cellHtml .= '100%';
 		$cellHtml .= ';height:'.$height.'px;">';
 		if($cell->{title}) {
 			$cellHtml .= "<header style='border-radius:8px;background: #262626;color: #8c8c8c;display: block;

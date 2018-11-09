@@ -76,7 +76,7 @@ function fuipInit(conf) { //baseWidth, baseHeight, maxCols, gridlines, snapTo
 		}).data('gridster');
 	};
 	if(conf.gridlines == "show") drawGrid();   
-	});	
+	});
 };
 		
 
@@ -325,6 +325,9 @@ function onFlexMaintResizeStop(e,ui) {
 	// correct size is the size of the preview
 	ui.element.height(ui.element.parent().height());
 	ui.element.width(ui.element.parent().width());
+	// TODO: The following can be optimized by only calling resize() for the views where 
+	// this makes sense. However, this is effort...
+	$(window).trigger("resize");
 	onFlexChangeStop();
 };	
 

@@ -72,6 +72,7 @@ sub _getViewHTML($) {
 		};
 		my ($width,$height) = $dialog->dimensions();
 		$result .= '<div data-type="popup"
+						data-mode="fade"
 						data-height="'.$height.'px"
 						data-width="'.$width.'px">
 					<div>';
@@ -105,6 +106,7 @@ sub getHTML($$){
 		$result .= '<div><div data-viewid="'.$i.'"'.($locked ? '' : ' class="fuip-draggable"').' style="position:absolute;left:'.$left.'px;top:'.($top+22).'px;';
 		if($width eq "auto") {
 			$result .= 'width:calc(100% - '.$left.'px);';
+			$result .= 'height:calc(100% - '.($top+22).'px);'; 
 		}else{
 			$result .= 'width:'.$width.'px;';
 			$result .= 'height:'.$height.'px;';

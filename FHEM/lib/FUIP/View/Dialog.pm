@@ -48,6 +48,7 @@ sub _getViewHTML($) {
 		};
 		my ($width,$height) = $dialog->dimensions();
 		$result .= '<div data-type="popup"
+						data-mode="fade"
 						data-height="'.$height.'px"
 						data-width="'.$width.'px">
 					<div>';
@@ -72,15 +73,18 @@ sub getHTML($$){
 	my ($self,$locked) = @_;
 	my $views = $self->{views};
 	my $result = '';
-
 	my $i = 0;
 	for my $view (@$views) {
 		my ($left,$top) = $view->position();
 		my ($width,$height) = $view->dimensions();
 		# TODO: hardcode 22px headers?
 		$result .= '<div><div data-viewid="'.$i.'"'.($locked ? '' : ' class="fuip-draggable"').' style="position:absolute;left:'.$left.'px;top:'.($top+22).'px;';
-		if($width ne "auto") {
-			$result .= 'width:'.$width.'px;height:'.$height.'px;';
+		if($width eq "auto") {
+			$result .= 'width:calc(100% - '.$left.'px);';
+			$result .= 'height:calc(100% - '.($top+22).'px);'; 
+		}else{
+			$result .= 'width:'.$width.'px;';
+			$result .= 'height:'.$height.'px;';
 		};
 		$result .= 'z-index:10">'._getViewHTML($view);
 		if($self->{fuip}{editOnly}) {
