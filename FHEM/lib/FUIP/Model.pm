@@ -346,4 +346,31 @@ sub getDevicesForReading($$) {
 	return \@devices;
 };	
 	
+	
+sub getGplot($$) {
+	my ($name,$device) = @_;
+	my $url = getFhemwebUrl($name);
+	if($url) {
+		my $resultStr = _sendRemoteCommand($name,$url,
+			'{	my $filename = $main::defs{"'.$device.'"}{GPLOTFILE};; 
+				return undef unless $filename;;
+				$filename = $main::FW_gplotdir."/".$filename.".gplot";;  
+				my ($err, $cfg, $plot, $srcDesc) = main::SVG_readgplotfile("'.$device.'",$filename,"SVG");; 
+				my %conf = main::SVG_digestConf($cfg,$plot);;  
+				return Dumper({ srcDesc => $srcDesc, conf => \%conf });;
+			}');
+			main::Log3(undef,1,"getGplot remote: ".($resultStr ? $resultStr : "error"));
+			return eval(substr($resultStr,8));
+	}else{
+		my $filename = $main::defs{$device}{GPLOTFILE}; 
+		return undef unless $filename;
+		$filename = $main::FW_gplotdir."/".$filename.".gplot";  
+		my ($err, $cfg, $plot, $srcDesc) = main::SVG_readgplotfile($device,$filename,"SVG"); 
+		my %conf = main::SVG_digestConf($cfg,$plot);  
+		return { srcDesc => $srcDesc, conf => \%conf };
+	};
+
+}	
+	
+	
 1;
