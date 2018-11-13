@@ -1279,14 +1279,18 @@ function valueHelpForDevice(fieldTitle, callbackFunction, multiSelect) {
 		Object.keys(roomFilters).sort().forEach(function(key) {
 			orderedRoomFilters[key] = roomFilters[key];
 		});
+		var roomFilterFunctions;
+		if(aliasUsed) {
+			roomFilterFunctions = { 3 : orderedRoomFilters };
+		}else{
+			roomFilterFunctions = { 2 : orderedRoomFilters };
+		};		
 		$(function() {
 			$(".tablesorter").tablesorter({
 				theme: "blue",
 				widgets: ["filter"],
 				widgetOptions: {
-					filter_functions: {
-						2 : orderedRoomFilters
-					}
+					filter_functions: roomFilterFunctions
 				}	
 			});
 			$( "#valuehelptable tbody tr" ).on( "click", function() {

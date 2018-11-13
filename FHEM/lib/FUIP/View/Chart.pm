@@ -27,15 +27,22 @@ sub getHTML($){
 	my @colspecs;
 	my @svgidx;
 	for my $logdevice (@{$gplot->{srcDesc}{order}}) {  #FileLog_HM_21F923
+		# DbLog? - need type of logdevice
+		my $ldev = FUIP::Model::getDevice($self->{fuip}{NAME},$logdevice,["TYPE"]);
 		my @lspecs = split(/ /,$gplot->{srcDesc}{src}{$logdevice}{arg}); 
 		# (4:HM_21F923.measured-temp\\x3a::, 4:HM_21F923.desired-temp\\x3a::, 4:HM_21F923.actuator\\x3a::')
 		my $i = 0;
 		for my $lspec (@lspecs) {
 			main::Log3(undef,1,$lspec);	
-			my ($col,$rest) = split(/:/,$lspec,2);
-			my ($dev,$rest) = split(/\./,$rest,2);
-			# my ($reading,undef) = split(/\\/,$rest,2);
-			# main::Log3(undef,1,$col." ".$dev." ".$reading);	
+			my $dev = "";
+			if($ldev->{Internals}{TYPE} eq "DbLog") {
+				($dev,undef) = split(/:/,$lspec,2);
+			}elsif($ldev->{Internals}{TYPE} eq "logProxy") {
+				$dev = "";  # TODO: can we determine anything at all here?
+			}else{	
+				my ($col,$rest) = split(/:/,$lspec,2);
+				($dev,undef) = split(/\./,$rest,2);
+			};	
 			push(@devices,$dev);
 			push(@logdevices,$logdevice);
 			$lspec =~ s/\\/\\\\/g;  	# \ -> \\
@@ -52,6 +59,9 @@ sub getHTML($){
 	for my $idx (@svgidx) {
 		my $style = (split(/"/,$gplot->{conf}{lStyle}[$idx]))[1];
 		$style =~ s/SVGplot/fuipchart/g;
+		if($gplot->{conf}{lType}[$idx] eq "points") {
+			$style .= " ".$gplot->{conf}{lType}[$idx];
+		};
 		push(@styles, $style);  #'class="SVGplot l1"' => SVGplot l1	
 		push(@uaxis, $gplot->{conf}{lAxis}[$idx] eq "x1y1" ? "primary" : "secondary");
 		push(@legend, $gplot->{conf}{lTitle}[$idx]);
