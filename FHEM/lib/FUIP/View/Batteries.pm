@@ -56,9 +56,9 @@ sub getHTML($){
 		}  
 		$count++;
 		my $device = $devices->{$devKey};			
-		$result.= '<tr><td>
-					<div data-type="label" class="left fuip-color">'.($device->{alias} ? $device->{alias} :$devKey).'</div>
-					</td><td>';
+		$result.= '<tr><td style="text-align:left;" class="fuip-color">'
+							.($device->{alias} ? $device->{alias} :$devKey)
+						.'</td><td>';
 		if(exists($device->{batteryLevel})){
 			$result .= '<div style="margin-top:-26px;margin-bottom:-30px;margin-right:-10px" data-type="symbol" 
 							data-device="'.$devKey.'" data-get="batteryLevel"
