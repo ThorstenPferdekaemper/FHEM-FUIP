@@ -96,6 +96,7 @@ sub getHTML($){
 	my @uaxis;
 	my @legend;
 	my @ptype;
+	my $primaryExists;
 	for my $idx (@svgidx) {
 		my $style = (split(/"/,$gplot->{conf}{lStyle}[$idx]))[1];
 		$style =~ s/SVGplot/fuipchart/g;
@@ -103,7 +104,12 @@ sub getHTML($){
 			$style .= " ".$gplot->{conf}{lType}[$idx];
 		};
 		push(@styles, $style);  #'class="SVGplot l1"' => SVGplot l1	
-		push(@uaxis, $gplot->{conf}{lAxis}[$idx] eq "x1y1" ? "primary" : "secondary");
+		if($gplot->{conf}{lAxis}[$idx] eq "x1y1") {
+			$primaryExists = 1;
+			push(@uaxis, "primary");
+		}else{
+			push(@uaxis, "secondary");
+		};
 		push(@legend, $gplot->{conf}{lTitle}[$idx]);
 		push(@ptype, $gplot->{conf}{lType}[$idx]);
 	};
@@ -183,9 +189,14 @@ sub getHTML($){
 			$daysago_start = $fixedrange[0];
 			$daysago_end = $fixedrange[1];
 		};
-		
 	};
 	
+	# if only "secondary" axis, we need to add a dummy primary. Otherwise, the chart widget is empty...
+	# TODO: eki?
+	if(not $primaryExists) {
+		push(@uaxis,"primary");
+	};
+
 	my $result = '<link rel="stylesheet" href="/fhem/'.lc($self->{fuip}{NAME}).'/fuip/css/fuipchart.css">
 				<div data-type="chart"
 					data-device=\'["'.join('","',@devices).'"]\'
