@@ -14,6 +14,19 @@ sub dimensions($;$$){
 };	
 
 
+my @possibleTimeranges =
+	(
+		["Today",'["Heute","0D","-1D"]'],
+		["Yesterday",'["Gestern","1D","0D"]'],
+		["CurrentWeek",'["Aktuelle Woche","0W","-1W"]'],
+		["LastWeek",'["Vorherige Woche","1W","0W"]'],
+		["CurrentMonth",'["Aktueller Monat","0M","-1M"]'],
+		["LastMonth",'["Vorheriger Monat","1M","0M"]'],
+		["CurrentYear",'["Aktuelles Jahr","0Y","-1Y"]'],
+		["LastYear",'["Vorheriges Jahr","1Y","0Y"]']
+	);	
+
+
 sub getHTML($){
 	my ($self) = @_; 
 	
@@ -84,13 +97,74 @@ sub getHTML($){
 		@minmax_sec = split(/:/,$gplot->{conf}{y2range});
 	}else{
 		@minmax_sec = ("auto","auto");
-	};	
+	};
+	
+	# data-timeranges
+	my %timerangeKeys;
+	if(ref($self->{timeranges}) eq "ARRAY") {
+		%timerangeKeys = map {$_ => 1} @{$self->{timeranges}};
+	};
+	my $timeranges;
+	if(%timerangeKeys) {
+		my @selectedTimeranges = map { $timerangeKeys{$_->[0]} ? $_->[1] : () } @possibleTimeranges; 
+		$timeranges = '['.join(',',@selectedTimeranges).']';
+	};
+	
+	# fixedrange -> data-daysago_start, data-daysago_end
+	my $svgDevice = FUIP::Model::getDevice($self->{fuip}{NAME},$self->{device},
+						["fixedrange","endPlotNow","endPlotToday"]);
+	my $daysago_start;
+	my $daysago_end;
+	my $nofulldays = "false";
+	if($svgDevice->{Attributes}{fixedrange}) {
+		# YYYY-MM-DD YYYY-MM-DD
+		# hour, <N>hours, day, <N>days, week, month, year, <N>years [offset]
+		# TODO: offset is not considered
+		my @fixedrange = split(/ /,$svgDevice->{Attributes}{fixedrange});
+		if($fixedrange[0] =~ /(.*)(hour|hours|day|days|week|month|year|years)$/) {
+			my $unit = substr($2,0,1);
+			if($unit eq "h"){
+				$nofulldays = "true";
+				$daysago_end = "now"; # seems this is the same as "0h"
+			}elsif($unit eq "d") {
+				if($svgDevice->{Attributes}{endPlotNow}) {
+					$nofulldays = "true";
+					$daysago_end = "now"; 
+				}else{
+					$unit = "D";
+					$daysago_end = "-1D"; 
+				};
+			}else{		
+				if(not $svgDevice->{Attributes}{endPlotToday}) {
+					$unit = uc($unit);
+				};
+				$daysago_end = "-1".$unit; 
+			}	
+			if($nofulldays eq "false") {
+				$daysago_start = ($1 ? ($1-1) : 0).$unit;
+			}else{
+				$daysago_start = ($1 ? ($1) : 1).$unit;
+			};
+		}else{
+			# YYYY-MM-DD YYYY-MM-DD
+			$daysago_start = $fixedrange[0];
+			$daysago_end = $fixedrange[1];
+		};
+		
+	};
+	
 	my $result = '<link rel="stylesheet" href="/fhem/'.lc($self->{fuip}{NAME}).'/fuip/css/fuipchart.css">
 				<div data-type="chart"
 					data-device=\'["'.join('","',@devices).'"]\'
 					data-logdevice=\'["'.join('","',@logdevices).'"]\'
-					data-columnspec=\'["'.join('","',@colspecs).'"]\'
-					data-style=\'["'.join('","',@styles).'"]\'
+					data-columnspec=\'["'.join('","',@colspecs).'"]\'';
+	if($timeranges) {
+		$result .= ' data-timeranges=\''.$timeranges.'\' ';
+	};	
+	$result .= ' data-daysago_start="'.$daysago_start.'" ' if defined $daysago_start;
+	$result .= ' data-daysago_end="'.$daysago_end.'" ' if defined $daysago_end;
+	$result .= ' data-nofulldays="'.$nofulldays.'" ';
+	$result .= 	'	data-style=\'["'.join('","',@styles).'"]\'
 					data-ptype=\'["'.join('","',@ptype).'"]\'
 					data-uaxis=\'["'.join('","',@uaxis).'"]\'
 					data-legend=\'["'.join('","',@legend).'"]\';
@@ -104,13 +178,6 @@ sub getHTML($){
 					data-width="100%" data-height="100%"
 					style="width:100%;height:100%;">
 				</div>';
-
-	# my $result = '<div data-type="svgplot"
-					# data-device="'.$self->{device}.'"
-					# data-gplotfile="'.$device->{Internals}{GPLOTFILE}.'"
-					# data-logdevice="'.$logdevices[0].'"
-					# data-logfile="CURRENT"
-					# data-refresh="300"></div>';
 	return $result;				
 };
 	
@@ -119,10 +186,14 @@ sub getStructure($) {
 # class method
 # returns general structure of the view without instance values
 	my ($class) = @_;
+	my @timeranges = map {$_->[0]} @possibleTimeranges;
 	return [
 		{ id => "class", type => "class", value => $class },
 		{ id => "device", type => "device" },
 		{ id => "title", type => "text", default => { type => "field", value => "device"} },
+		{ id => "timeranges", type => "setoptions", 
+				options => \@timeranges, 
+				default => { type => "const", value => \@timeranges } },
 		{ id => "popup", type => "dialog", default=> { type => "const", value => "inactive"} }	
 		];
 };
