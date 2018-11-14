@@ -359,7 +359,7 @@ sub getGplot($$) {
 				my %conf = main::SVG_digestConf($cfg,$plot);;  
 				return Dumper({ srcDesc => $srcDesc, conf => \%conf });;
 			}');
-			main::Log3(undef,1,"getGplot remote: ".($resultStr ? $resultStr : "error"));
+			# main::Log3(undef,1,"getGplot remote: ".($resultStr ? $resultStr : "error"));
 			return eval(substr($resultStr,8));
 	}else{
 		my $filename = $main::defs{$device}{GPLOTFILE}; 

@@ -27,13 +27,36 @@ my @possibleTimeranges =
 	);	
 
 
+# ticks 
+# 'y2tics' => '"Nice" 22, "Ok" 20, "Cool" 18, "Cold" 16',	
+# data-yticks='[[0,"open"],[1,"closed"]]'
+sub _convertTicks($) {
+	my ($svgTicks) = @_;
+	return undef unless $svgTicks;
+	my @resultArray;
+	my @lines = split(/,/,$svgTicks);
+	# it seems that this needs at least two lines in order not to create issues
+	return undef if(0+@lines < 2); 
+	for my $line (@lines) {
+		$line =~ s/^\s+//;  #remove leading blank
+		my ($text,$num) = split(/ /,$line);
+		return undef unless defined $num;
+		push(@resultArray, [$num,$text]);
+	};
+	# sort is needed as the chart widget otherwise creates an endless loop 
+	@resultArray = sort { $a->[0] <=> $b->[0] } @resultArray;
+	@resultArray = map { '['.$_->[0].','.$_->[1].']' } @resultArray;
+	return '['.join(',',@resultArray).']';
+};
+	
+	
 sub getHTML($){
 	my ($self) = @_; 
 	
 	my $gplot = FUIP::Model::getGplot($self->{fuip}{NAME},$self->{device});
 	return "Error getting gplot information" unless $gplot;
 	# my $device = FUIP::Model::getDevice($self->{fuip}{NAME},$self->{device},["GPLOTFILE"]);
-	main::Log3(undef,1,main::Dumper($gplot));
+	# main::Log3(undef,1,main::Dumper($gplot));
 
 	my @devices;
 	my @logdevices;
@@ -46,7 +69,7 @@ sub getHTML($){
 		# (4:HM_21F923.measured-temp\\x3a::, 4:HM_21F923.desired-temp\\x3a::, 4:HM_21F923.actuator\\x3a::')
 		my $i = 0;
 		for my $lspec (@lspecs) {
-			main::Log3(undef,1,$lspec);	
+			# main::Log3(undef,1,$lspec);	
 			my $dev = "";
 			if($ldev->{Internals}{TYPE} eq "DbLog") {
 				($dev,undef) = split(/:/,$lspec,2);
@@ -110,6 +133,12 @@ sub getHTML($){
 		$timeranges = '['.join(',',@selectedTimeranges).']';
 	};
 	
+	# ticks (
+	# 'y2tics' => '"Nice" 22, "Ok" 20, "Cool" 18, "Cold" 16',	
+	# data-yticks='[[0,"open"],[1,"closed"]]'
+	my $yticks = _convertTicks($gplot->{conf}{ytics});
+	my $y2ticks = _convertTicks($gplot->{conf}{y2tics});
+	
 	# fixedrange -> data-daysago_start, data-daysago_end
 	my $svgDevice = FUIP::Model::getDevice($self->{fuip}{NAME},$self->{device},
 						["fixedrange","endPlotNow","endPlotToday"]);
@@ -164,6 +193,8 @@ sub getHTML($){
 	$result .= ' data-daysago_start="'.$daysago_start.'" ' if defined $daysago_start;
 	$result .= ' data-daysago_end="'.$daysago_end.'" ' if defined $daysago_end;
 	$result .= ' data-nofulldays="'.$nofulldays.'" ';
+	$result .= ' data-yticks=\''.$yticks.'\' ' if $yticks;
+	$result .= ' data-yticks_sec=\''.$y2ticks.'\' ' if $y2ticks;
 	$result .= 	'	data-style=\'["'.join('","',@styles).'"]\'
 					data-ptype=\'["'.join('","',@ptype).'"]\'
 					data-uaxis=\'["'.join('","',@uaxis).'"]\'
@@ -178,6 +209,7 @@ sub getHTML($){
 					data-width="100%" data-height="100%"
 					style="width:100%;height:100%;">
 				</div>';
+	# main::Log3(undef,1,$result);	
 	return $result;				
 };
 	
