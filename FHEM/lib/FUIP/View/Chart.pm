@@ -15,7 +15,11 @@ sub dimensions($;$$){
 
 
 my @possibleTimeranges =
-	(
+	(	["LastHour",'["Letzte Stunde","1h","0h"]'],
+		["Last3Hours",'["3 Stunden","3h","0h"]'],
+		["Last6Hours",'["6 Stunden","6h","0h"]'],
+		["Last12Hours",'["12 Stunden","12h","0h"]'],
+		["Last24Hours",'["24 Stunden","24h","0h"]'],
 		["Today",'["Heute","0D","-1D"]'],
 		["Yesterday",'["Gestern","1D","0D"]'],
 		["CurrentWeek",'["Aktuelle Woche","0W","-1W"]'],
