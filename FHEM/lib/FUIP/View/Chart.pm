@@ -6,9 +6,6 @@ use warnings;
 use lib::FUIP::View;
 use parent -norequire, 'FUIP::View';
 
-use DateTime;
-use DateTime::Duration;
-
 sub dimensions($;$$){
 	return ("auto","auto");
 };	
