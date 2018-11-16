@@ -140,7 +140,10 @@ function onGridsterChangeStop(e,ui,widget) {
 	var name = $("html").attr("data-name");
 	var pageId = $("html").attr("data-pageid");
 	var cmd = '{FUIP::FW_setPositionsAndDimensions("' + name + '","' + pageId + '",' + s + ')}';
-	sendFhemCommandLocal(cmd);		
+	sendFhemCommandLocal(cmd);
+	// TODO: The following can be optimized by only calling resize() for the views where 
+	// this makes sense. However, this is effort...
+	$(window).trigger("resize");	
 };	
 
 
