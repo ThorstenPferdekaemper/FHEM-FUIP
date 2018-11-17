@@ -7,6 +7,12 @@ use lib::FUIP::View;
 use parent -norequire, 'FUIP::View';
 use lib::FUIP::Model;
 	
+	
+sub getHeaderHTML($$) {
+	my ($class,$fuip) = @_;
+	return '<script src="/fhem/'.lc($fuip->{NAME}).'/fuip/js/fuip_batteries.js"></script>';
+};
+	
 
 sub _getDevices($$){
 	my ($name,$deviceFilter) = @_;
@@ -113,8 +119,7 @@ sub _getHtmlActivity($) {
 sub getHTML($){
 	my ($self) = @_;
 	# TODO: general mechanism to include view specific scripts
-	my $result = '<script src="/fhem/'.lc($self->{fuip}{NAME}).'/fuip/js/fuip_batteries.js"></script>
-				<div  data-fuip-type="fuip-batteries" style="overflow:auto;width:100%;height:100%;">
+	my $result = '<div  data-fuip-type="fuip-batteries" style="overflow:auto;width:100%;height:100%;">
 				<table style="border-spacing:0px;"><tr><td style="padding:0;">';
 	my $devices = _getDevices($self->{fuip}{NAME},$self->{deviceFilter});				
 	my $numDevs = keys %$devices;				

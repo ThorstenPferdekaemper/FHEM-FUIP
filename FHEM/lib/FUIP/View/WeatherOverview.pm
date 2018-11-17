@@ -7,6 +7,12 @@ use lib::FUIP::View;
 use parent -norequire, 'FUIP::View';
 
 
+sub getHeaderHTML($$) {
+	my ($class,$fuip) = @_;
+	return '<link rel="stylesheet" href="/fhem/'.lc($fuip->{NAME}).'/fuip/css/widget_weatherdetail.css">';
+};
+
+
 # fix startday and days in case of wrong user choice
 # ...or "old" instances
 sub _fixDays($) {
@@ -31,7 +37,6 @@ sub getHTML($){
 	};
 	$self->_fixDays();
 	return '<div style="width:100%;height:100%;overflow:hidden;">
-			<link rel="stylesheet" href="/fhem/'.lc($self->{fuip}{NAME}).'/fuip/css/widget_weatherdetail.css">
 			<div style="width:100%;height:100%;"
 				data-type="weatherdetail" 
 				data-device="'.$device.'" 

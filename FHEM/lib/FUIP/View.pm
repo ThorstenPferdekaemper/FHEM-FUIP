@@ -6,21 +6,30 @@ use Scalar::Util qw(blessed weaken);
 
 my %selectableViews;
 	
-	sub dimensions($;$$){
-		my $self = shift;
-		if (@_) {
-			$self->{width} = shift;
-			$self->{height} = shift;
-		}	
-		return ($self->{width}, $self->{height});
-	};	
+sub dimensions($;$$){
+	my $self = shift;
+	if (@_) {
+		$self->{width} = shift;
+		$self->{height} = shift;
+	}	
+	return ($self->{width}, $self->{height});
+};	
+
+
+sub getHeaderHTML($$) {
+	# Parameters: class, fuip hash
+	# class method to return view specific HTML (like CSS links)
+	# to be put into HTML header
+	return ""; # nothing by default
+};
+
 
 	
-	sub getHTML($$){
-		my ($self,$locked) = @_;
-		# This is just empty, but can be filled with some text
-		return "<div>".$self->{content}."</div>";
-	};
+sub getHTML($$){
+	my ($self,$locked) = @_;
+	# This is just empty, but can be filled with some text
+	return "<div>".$self->{content}."</div>";
+};
 	
 	
 	sub position($;$$) {

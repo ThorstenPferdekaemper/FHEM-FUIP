@@ -10,6 +10,10 @@ sub dimensions($;$$){
 	return ("auto","auto");
 };	
 
+sub getHeaderHTML($$) {
+	my ($class,$fuip) = @_;
+	return '<link rel="stylesheet" href="/fhem/'.lc($fuip->{NAME}).'/fuip/css/fuipchart.css">';
+};
 
 my @possibleTimeranges =
 	(	["LastHour",'["Letzte Stunde","1h","0h"]'],
@@ -194,8 +198,7 @@ sub getHTML($){
 		push(@uaxis,"primary");
 	};
 
-	my $result = '<link rel="stylesheet" href="/fhem/'.lc($self->{fuip}{NAME}).'/fuip/css/fuipchart.css">
-				<div data-type="chart"
+	my $result = '<div data-type="chart"
 					data-device=\'["'.join('","',@devices).'"]\'
 					data-logdevice=\'["'.join('","',@logdevices).'"]\'
 					data-columnspec=\'["'.join('","',@colspecs).'"]\'';

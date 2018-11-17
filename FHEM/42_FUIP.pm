@@ -50,6 +50,14 @@ sub setAttrList($) {
     $hash->{AttrList}  = "layout:gridster,flex locked:0,1 fhemwebUrl baseWidth baseHeight pageWidth styleColor viewportUserScalable:yes,no viewportInitialScale gridlines:show,hide snapTo:gridlines,nothing styleBackgroundImage:";
 	my $imageNames = getImageNames();
 	$hash->{AttrList} .= join(",",@$imageNames);
+	my $cssNames = getUserCssFileNames();
+	if(@$cssNames) {
+		$hash->{AttrList} .= " userCss:".join(",",@$cssNames);
+	};	
+	my $htmlNames = getUserHtmlFileNames();
+	if(@$htmlNames) {
+		$hash->{AttrList} .= " userHtmlBodyStart:".join(",",@$htmlNames);
+	};	
 }
 
 
@@ -92,6 +100,41 @@ sub getImageNames() {
 	}
 	closedir(DH);
 	return \@result;
+};
+
+
+sub getUserFileNames($) {
+	my ($suffix) = @_;
+	my $pattern = '(.*)\.('.$suffix.')$';
+	my $rex = qr/$pattern/;
+	my @result;
+	my $cfgPath = $fuipPath."config";
+	# create directory if it does not exist
+	if(not(-d $cfgPath)) {
+		mkdir($cfgPath);
+	};
+	if(not opendir(DH, $cfgPath."/")) {
+		main::Log3(undef, 1, "FUIP ERROR: Cannot read config directory");
+		return \@result;
+	};	
+	foreach my $m (sort readdir(DH)) {
+		next if($m !~ m/$rex/);
+		push(@result,$m);
+	}
+	closedir(DH);
+	return \@result;
+};
+
+
+# determine names of user css files
+sub getUserCssFileNames() {
+	return getUserFileNames("css");
+};
+
+
+# determine names of user html files
+sub getUserHtmlFileNames() {
+	return getUserFileNames("html");
 };
 
 
@@ -289,6 +332,45 @@ sub renderFuipInit($) {
 };
 
 
+sub renderHeaderHTML($$) {
+	my ($hash,$pageId) = @_;
+	$DB::single = 1;
+	my $cells = $hash->{pages}{$pageId}{cells};
+	my %viewClasses;
+	for my $cell (@{$cells}) {
+		for my $view (@{$cell->{views}}) {
+			$viewClasses{blessed($view)} = 1;
+		};
+	};
+	my $result = "";
+	for my $class (keys %viewClasses) {
+		my $html = $class->getHeaderHTML($hash);
+		$result .= $html."\n" if $html;
+	};
+	return $result;
+};
+
+
+sub renderUserCss($) {
+	my ($hash) = @_;
+	my $userCss = main::AttrVal($hash->{NAME},"userCss", undef);
+	return "" unless $userCss;
+	return '<link rel="stylesheet" href="/fhem/'.lc($hash->{NAME}).'/fuip/config/'.$userCss.'">'."\n";	
+};
+
+
+sub renderUserHtmlBodyStart($) {
+	my ($hash) = @_;
+	my $userHtml = main::AttrVal($hash->{NAME},"userHtmlBodyStart", undef);
+	return "" unless $userHtml;
+	my $filename = $fuipPath."config/".$userHtml;
+    open(FILE, $filename) or return "";
+	my @result = <FILE>;
+    close(FILE);
+	return join("",@result);
+};	
+
+
 sub renderPage($$$) {
 	my ($hash,$currentLocation,$locked) = @_;
 	# falls $locked, dann werden die Editierfunktionen nicht mit gerendert
@@ -378,9 +460,11 @@ sub renderPage($$$) {
 					option.fuip {
 						background-color: initial;
 					}	
-                </style>
-			</head>
-            <body";
+                </style>\n"
+				.renderHeaderHTML($hash,$currentLocation)
+				.renderUserCss($hash)	
+				.'</head>
+            <body';
 	if($backgroundImage) {
 		$result .= ' style="background:#000000 url(/fhem/'.lc($hash->{NAME}).'/fuip/images/'.$backgroundImage.') 0 0/';
 		if($pageWidth) {
@@ -390,8 +474,9 @@ sub renderPage($$$) {
 		};
 		$result .= ' no-repeat"';
 	};
-	$result .= '>	
-                <div class="gridster"';
+	$result .= '>'
+				.renderUserHtmlBodyStart($hash)."\n"
+                .'<div class="gridster"';
 	if($pageWidth) {
 		$result .= ' style="width:'.$pageWidth.'px"';
 	};
@@ -527,8 +612,10 @@ sub renderPageFlex($$) {
 					option.fuip {
 						background-color: initial;
 					}	
-                </style>
-			</head>
+                </style>'
+				.renderHeaderHTML($hash,$currentLocation)
+				.renderUserCss($hash)				
+				.'</head>
             <body';
 	# TODO: above there are widget_-metas, which probably do not make sense here		
 	if($backgroundImage) {
@@ -540,8 +627,9 @@ sub renderPageFlex($$) {
 		};
 		$result .= ' no-repeat"';
 	};
-	$result .= '>	
-                <div style="margin:5px;display:flex;"';
+	$result .= '>'
+				.renderUserHtmlBodyStart($hash)."\n"	
+                .'<div style="margin:5px;display:flex;"';
 	# TODO: does the following make any sense?
 	#if($pageWidth) {
 	#	$result .= ' style="width:'.$pageWidth.'px"';
@@ -650,8 +738,10 @@ sub renderPageFlexMaint($$) {
 					option.fuip {
 						background-color: initial;
 					}	
-                </style>
-</head>
+                </style>"
+				.renderHeaderHTML($hash,$currentLocation)
+				.renderUserCss($hash)					
+				."</head>
             <body";
 	if($backgroundImage) {
 		$result .= ' style="position:relative;background:#000000 url(/fhem/'.lc($hash->{NAME}).'/fuip/images/'.$backgroundImage.') 0 0/';
@@ -662,8 +752,9 @@ sub renderPageFlexMaint($$) {
 		};
 		$result .= ' no-repeat"';
 	};
-	$result .= '>	
-		<div style="display:flex">
+	$result .= '>'
+				.renderUserHtmlBodyStart($hash)."\n"	
+		.'<div style="display:flex">
 			<div id="fuip-flex-menu" class="fuip-flex-region">'.renderCellsFlexMaint($hash,$currentLocation,"menu").'</div>
 			<div style="display:flex;flex-direction:column;">
 				<div id="fuip-flex-title" class="fuip-flex-region">'.renderCellsFlexMaint($hash,$currentLocation,"title").'</div>
@@ -796,14 +887,17 @@ sub renderPopupMaint($$) {
 							stop: onDialogResize
 						});
 					} );
-				</script>'.
-            "</head>
+				</script>'."\n"
+				# .renderHeaderHTML($hash,$currentLocation) TODO
+			.renderUserCss($hash)				
+            ."</head>
             <body style='background-color:lightgrey;'";
 	# find the dialog and render it	
 	my $dialog = findDialogFromFieldId($hash, $urlParams->{pageid}, $urlParams->{cellid}, $urlParams->{fieldid});
 	my ($width,$height) = $dialog->dimensions();	
-	$result .= '>	
-	<div id="popupcontent" class="fuip-droppable"
+	$result .= '>'
+				.renderUserHtmlBodyStart($hash)."\n"	
+	.'<div id="popupcontent" class="fuip-droppable"
 		style="width:'.$width.'px;height:'.$height.'px;border:0;border-bottom:1px solid #aaa;
 									border-radius: 4px;box-shadow: 0 3px 9px rgba(0, 0, 0, 0.5);
 									border: 1px solid rgba(0, 0, 0, 0.1);
