@@ -8,9 +8,8 @@ use parent -norequire, 'FUIP::View';
 use lib::FUIP::Model;
 	
 	
-sub getHeaderHTML($$) {
-	my ($class,$fuip) = @_;
-	return '<script src="/fhem/'.lc($fuip->{NAME}).'/fuip/js/fuip_batteries.js"></script>';
+sub getDependencies($) {
+	return ['js/fuip_batteries.js'];
 };
 	
 

@@ -16,11 +16,13 @@ sub dimensions($;$$){
 };	
 
 
-sub getHeaderHTML($$) {
-	# Parameters: class, fuip hash
-	# class method to return view specific HTML (like CSS links)
-	# to be put into HTML header
-	return ""; # nothing by default
+sub getDependencies($) {
+	# Parameters: class
+	# class method to return list of dependencies relative to the FUIP directory
+	# currently supported: css and js files
+	# css will be "copied" into fhem-tablet-ui-user.css
+	# js will be "linked" in header
+	return []; # nothing by default
 };
 
 

@@ -7,9 +7,8 @@ use lib::FUIP::View;
 use parent -norequire, 'FUIP::View';
 
 
-sub getHeaderHTML($$) {
-	my ($class,$fuip) = @_;
-	return '<link rel="stylesheet" href="/fhem/'.lc($fuip->{NAME}).'/fuip/css/widget_weatherdetail.css">';
+sub getDependencies($) {
+	return ['css/widget_weatherdetail.css'];
 };
 
 

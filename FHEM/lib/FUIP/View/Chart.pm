@@ -10,9 +10,14 @@ sub dimensions($;$$){
 	return ("auto","auto");
 };	
 
-sub getHeaderHTML($$) {
-	my ($class,$fuip) = @_;
-	return '<link rel="stylesheet" href="/fhem/'.lc($fuip->{NAME}).'/fuip/css/fuipchart.css">';
+sub getDependencies($) {
+	my $stylesheetPrefix = "";
+	if($main::FW_wname) {
+		$stylesheetPrefix = main::AttrVal($main::FW_wname,"stylesheetPrefix", "default");
+		$stylesheetPrefix = "" if $stylesheetPrefix eq "default";
+	};			
+	return ['../../../www/pgm2/'.$stylesheetPrefix.'svg_defs.svg',
+			'css/fuipchart.css'];
 };
 
 my @possibleTimeranges =
@@ -100,7 +105,7 @@ sub getHTML($){
 	my $primaryExists;
 	for my $idx (@svgidx) {
 		my $style = (split(/"/,$gplot->{conf}{lStyle}[$idx]))[1];
-		$style =~ s/SVGplot/fuipchart/g;
+		$style =~ s/SVGplot/SVGplot fuipchart/g;
 		if($gplot->{conf}{lType}[$idx] eq "points") {
 			$style .= " ".$gplot->{conf}{lType}[$idx];
 		};

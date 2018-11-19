@@ -43,6 +43,7 @@ my $selectableViews = \%FUIP::View::selectableViews;
 my $matchlink = "^\/?(([^\/]*(\/[^\/]+)*)\/?)\$";
 my $fuipPath = $main::attr{global}{modpath} . "/FHEM/lib/FUIP/";
 
+my $currentPage = "";
 
 # possible values of attributes can change...
 sub setAttrList($) {
@@ -332,9 +333,10 @@ sub renderFuipInit($) {
 };
 
 
-sub renderHeaderHTML($$) {
-	my ($hash,$pageId) = @_;
-	$DB::single = 1;
+sub getViewDependencies($$$) {
+	my ($hash,$pageId,$suffix) = @_;
+	my $pattern = '(.*)\.('.$suffix.')$';
+	my $rex = qr/$pattern/;
 	my $cells = $hash->{pages}{$pageId}{cells};
 	my %viewClasses;
 	for my $cell (@{$cells}) {
@@ -342,33 +344,82 @@ sub renderHeaderHTML($$) {
 			$viewClasses{blessed($view)} = 1;
 		};
 	};
-	my $result = "";
+	my %dependencies;
 	for my $class (keys %viewClasses) {
-		my $html = $class->getHeaderHTML($hash);
-		$result .= $html."\n" if $html;
+		my $deps = $class->getDependencies();
+		for my $dep (@$deps) {
+			next unless $dep =~ m/$rex/;
+			$dependencies{$dep} = 1;
+		};
 	};
+	my @result = sort keys %dependencies;
+	return \@result;
+};
+
+
+sub renderHeaderHTML($$) {
+	my ($hash,$pageId) = @_;
+	my $dependencies = getViewDependencies($hash,$pageId,"js");
+	my $result = "";
+	for my $dep (@$dependencies) {
+		$result .= '<script src="/fhem/'.lc($hash->{NAME}).'/fuip/'.$dep.'"></script>'."\n";
+	};
+	$result .= 	'<link href="/fhem/'.lc($hash->{NAME}).'/css/fhem-tablet-ui-user.css" rel="stylesheet" type="text/css">'."\n";
 	return $result;
 };
 
 
-sub renderUserCss($) {
-	my ($hash) = @_;
-	my $userCss = main::AttrVal($hash->{NAME},"userCss", undef);
-	return "" unless $userCss;
-	return '<link rel="stylesheet" href="/fhem/'.lc($hash->{NAME}).'/fuip/config/'.$userCss.'">'."\n";	
-};
-
-
-sub renderUserHtmlBodyStart($) {
-	my ($hash) = @_;
-	my $userHtml = main::AttrVal($hash->{NAME},"userHtmlBodyStart", undef);
-	return "" unless $userHtml;
-	my $filename = $fuipPath."config/".$userHtml;
+sub readTextFile($) {
+	my ($filename) = @_;
     open(FILE, $filename) or return "";
 	my @result = <FILE>;
     close(FILE);
 	return join("",@result);
+};
+
+
+sub renderUserHtmlBodyStart($$) {
+	my ($hash,$pageId) = @_;
+	# get SVG defs
+	my $dependencies = getViewDependencies($hash,$pageId,"svg");
+	my $result = "";
+	if($dependencies) {
+		$result .= '<svg style="position:absolute;height:0px;">'."\n";
+		for my $dep (@$dependencies) {
+			my $part = readTextFile($fuipPath.$dep);
+			$result .= $part."\n" if $part;
+		};
+		$result .= '</svg>';
+	};
+	# user HTML
+	my $userHtml = main::AttrVal($hash->{NAME},"userHtmlBodyStart", undef);
+	if($userHtml) {
+		my $part = readTextFile($fuipPath."config/".$userHtml);
+		$result .= $part."\n" if $part;	
+	};
+	return $result;
 };	
+
+
+# TODO...
+# answers "GET fhem-tablet-ui-user.css"
+sub getFtuiUserCss($$) {
+	my ($hash,$pageId) = @_;
+	# get contents of fuipchart.css and other view specific css files
+	my $cssList = getViewDependencies($hash,$pageId,"css");
+	# get contents of userCss (if Attribute userCss is set)
+	my $userCss = main::AttrVal($hash->{NAME},"userCss", undef);
+	push(@$cssList, 'css/'.$userCss) if $userCss;
+	@$cssList = map { $fuipPath.$_ } @$cssList;	
+	# get contents of original fhem-tablet-ui-user.css (if exists)
+	push(@$cssList, $main::attr{global}{modpath}.'/www/tablet/css/fhem-tablet-ui-user.css');
+	# concatenate everything and return text...
+	my $result = "";
+	for my $css (@$cssList) {
+		$result .= readTextFile($css)."\n";
+	};
+	return ("text/css; charset=utf-8", $result);
+};
 
 
 sub renderPage($$$) {
@@ -462,7 +513,6 @@ sub renderPage($$$) {
 					}	
                 </style>\n"
 				.renderHeaderHTML($hash,$currentLocation)
-				.renderUserCss($hash)	
 				.'</head>
             <body';
 	if($backgroundImage) {
@@ -475,7 +525,7 @@ sub renderPage($$$) {
 		$result .= ' no-repeat"';
 	};
 	$result .= '>'
-				.renderUserHtmlBodyStart($hash)."\n"
+				.renderUserHtmlBodyStart($hash,$currentLocation)."\n"
                 .'<div class="gridster"';
 	if($pageWidth) {
 		$result .= ' style="width:'.$pageWidth.'px"';
@@ -614,7 +664,6 @@ sub renderPageFlex($$) {
 					}	
                 </style>'
 				.renderHeaderHTML($hash,$currentLocation)
-				.renderUserCss($hash)				
 				.'</head>
             <body';
 	# TODO: above there are widget_-metas, which probably do not make sense here		
@@ -628,7 +677,7 @@ sub renderPageFlex($$) {
 		$result .= ' no-repeat"';
 	};
 	$result .= '>'
-				.renderUserHtmlBodyStart($hash)."\n"	
+				.renderUserHtmlBodyStart($hash,$currentLocation)."\n"	
                 .'<div style="margin:5px;display:flex;"';
 	# TODO: does the following make any sense?
 	#if($pageWidth) {
@@ -740,7 +789,6 @@ sub renderPageFlexMaint($$) {
 					}	
                 </style>"
 				.renderHeaderHTML($hash,$currentLocation)
-				.renderUserCss($hash)					
 				."</head>
             <body";
 	if($backgroundImage) {
@@ -753,7 +801,7 @@ sub renderPageFlexMaint($$) {
 		$result .= ' no-repeat"';
 	};
 	$result .= '>'
-				.renderUserHtmlBodyStart($hash)."\n"	
+				.renderUserHtmlBodyStart($hash,$currentLocation)."\n"	
 		.'<div style="display:flex">
 			<div id="fuip-flex-menu" class="fuip-flex-region">'.renderCellsFlexMaint($hash,$currentLocation,"menu").'</div>
 			<div style="display:flex;flex-direction:column;">
@@ -889,14 +937,13 @@ sub renderPopupMaint($$) {
 					} );
 				</script>'."\n"
 				# .renderHeaderHTML($hash,$currentLocation) TODO
-			.renderUserCss($hash)				
             ."</head>
             <body style='background-color:lightgrey;'";
 	# find the dialog and render it	
 	my $dialog = findDialogFromFieldId($hash, $urlParams->{pageid}, $urlParams->{cellid}, $urlParams->{fieldid});
 	my ($width,$height) = $dialog->dimensions();	
 	$result .= '>'
-				.renderUserHtmlBodyStart($hash)."\n"	
+				#.renderUserHtmlBodyStart($hash)."\n"	TODO (current location missing)
 	.'<div id="popupcontent" class="fuip-droppable"
 		style="width:'.$width.'px;height:'.$height.'px;border:0;border-bottom:1px solid #aaa;
 									border-radius: 4px;box-shadow: 0 3px 9px rgba(0, 0, 0, 0.5);
@@ -1447,6 +1494,7 @@ sub getFuipPage($$) {
 	
 	my $locked = main::AttrVal($hash->{NAME},"locked",0);
 	my ($pageid,$preview) = split(/\?/,$path);
+	$currentPage = $pageid;  # might be needed for subsequent GET requests
 	# preview?
 	if($preview and $preview eq "preview") {
 		$locked = 1;	
@@ -1732,6 +1780,10 @@ sub CGI() {
 	if($path[-1] eq "widget_weatherdetail.js" and $path[0] ne "fuip") {
 		unshift(@path,"fuip");
 	};
+	# special logic for css/fhem-tablet-ui-user.css
+	if($path[-1] eq "fhem-tablet-ui-user.css" and $path[-2] eq "css" and $path[0] ne "fuip") {
+		return getFtuiUserCss($hash,$currentPage); 	
+	};	
 	# fuip builtin stuff
 	if($path[0] eq "fuip") {
 		# export/import settings
