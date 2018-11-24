@@ -16,8 +16,8 @@ sub dimensions($;$$){
 };	
 
 
-sub getDependencies($) {
-	# Parameters: class
+sub getDependencies($$) {
+	# Parameters: class, fuip object
 	# class method to return list of dependencies relative to the FUIP directory
 	# currently supported: css and js files
 	# css will be "copied" into fhem-tablet-ui-user.css

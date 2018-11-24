@@ -8,7 +8,7 @@ use parent -norequire, 'FUIP::View';
 use lib::FUIP::Model;
 	
 	
-sub getDependencies($) {
+sub getDependencies($$) {
 	return ['js/fuip_batteries.js'];
 };
 	

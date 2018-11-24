@@ -7,8 +7,8 @@ use lib::FUIP::View;
 use parent -norequire, 'FUIP::View';
 
 
-sub getDependencies($) {
-	return ['css/widget_weatherdetail.css'];
+sub getDependencies($$) {
+	return ['FHEM/lib/FUIP/css/widget_weatherdetail.css'];
 };
 
 

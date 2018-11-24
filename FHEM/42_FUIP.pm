@@ -333,20 +333,70 @@ sub renderFuipInit($) {
 };
 
 
+sub getViewClassesSingle($$) {
+	# get classes of one view. This might be a dialog, so recursive
+	my ($view,$viewClasses) = @_;
+	# first the view itself
+	$viewClasses->{blessed($view)} = 1;
+	# check whether the view has a popup, i.e. a component of type "dialog"
+	# which is actually switched on
+	my $viewStruc = $view->getStructure(); 
+	my $popupField;
+	for my $field (@$viewStruc) {
+		if($field->{type} eq "dialog") {
+			$popupField = $field;
+			last;
+		};	
+	};
+	return unless $popupField;
+	# if we have a default as "no popup", then we might not want a popup
+	if($popupField and exists($popupField->{default})) {
+		unless(exists($view->{defaulted}) and exists($view->{defaulted}{$popupField->{id}})
+				and $view->{defaulted}{$popupField->{id}} == 0) {
+			return;
+		};	
+	};
+	# now we know that there is a popup field 
+	# do we have a popup?
+	my $dialog = $view->{$popupField->{id}};
+	return if( not blessed($dialog) or not $dialog->isa("FUIP::Dialog"));
+	# ok, we have a dialog, get the classes of the views of the dialog
+	for my $subview (@{$dialog->{views}}) {
+		getViewClassesSingle($subview,$viewClasses);
+	};
+};
+
+
 sub getViewDependencies($$$) {
 	my ($hash,$pageId,$suffix) = @_;
+	
+	# pageId might also be a dialog instance
+	
+	# if($pageId) {
+		# main::Log3(undef,1,"getViewDependencies page: ".$pageId);
+	# }else{
+		# main::Log3(undef,1,"getViewDependencies without pageId");
+	# };
+	
 	my $pattern = '(.*)\.('.$suffix.')$';
 	my $rex = qr/$pattern/;
-	my $cells = $hash->{pages}{$pageId}{cells};
+	
 	my %viewClasses;
-	for my $cell (@{$cells}) {
-		for my $view (@{$cell->{views}}) {
-			$viewClasses{blessed($view)} = 1;
+	if(blessed($pageId) and $pageId->isa("FUIP::Dialog")){
+		for my $view (@{$pageId->{views}}) {
+			getViewClassesSingle($view,\%viewClasses);		
+		};
+	}else{
+		my $cells = $hash->{pages}{$pageId}{cells};
+		for my $cell (@{$cells}) {
+			for my $view (@{$cell->{views}}) {
+				getViewClassesSingle($view,\%viewClasses);
+			};
 		};
 	};
 	my %dependencies;
 	for my $class (keys %viewClasses) {
-		my $deps = $class->getDependencies();
+		my $deps = $class->getDependencies($hash);
 		for my $dep (@$deps) {
 			next unless $dep =~ m/$rex/;
 			$dependencies{$dep} = 1;
@@ -369,12 +419,14 @@ sub renderHeaderHTML($$) {
 };
 
 
-sub readTextFile($) {
-	my ($filename) = @_;
-    open(FILE, $filename) or return "";
-	my @result = <FILE>;
-    close(FILE);
-	return join("",@result);
+sub readTextFile($$) {
+	my ($hash,$filename) = @_;
+	my $forceLocal = 1;
+	if($filename =~ m/^remote:/) {
+		$forceLocal = 0;
+		$filename = substr($filename,7);
+	};
+	return FUIP::Model::readTextFile($hash->{NAME},$filename,$forceLocal);
 };
 
 
@@ -384,9 +436,9 @@ sub renderUserHtmlBodyStart($$) {
 	my $dependencies = getViewDependencies($hash,$pageId,"svg");
 	my $result = "";
 	if($dependencies) {
-		$result .= '<svg style="position:absolute;height:0px;">'."\n";
+		$result .= '<svg id="fuipsvg" class="basicdefs" style="position:absolute;height:0px;">'."\n";
 		for my $dep (@$dependencies) {
-			my $part = readTextFile($fuipPath.$dep);
+			my $part = readTextFile($hash,$dep);
 			$result .= $part."\n" if $part;
 		};
 		$result .= '</svg>';
@@ -394,7 +446,7 @@ sub renderUserHtmlBodyStart($$) {
 	# user HTML
 	my $userHtml = main::AttrVal($hash->{NAME},"userHtmlBodyStart", undef);
 	if($userHtml) {
-		my $part = readTextFile($fuipPath."config/".$userHtml);
+		my $part = readTextFile($hash,"FHEM/lib/FUIP/config/".$userHtml);
 		$result .= $part."\n" if $part;	
 	};
 	return $result;
@@ -409,14 +461,13 @@ sub getFtuiUserCss($$) {
 	my $cssList = getViewDependencies($hash,$pageId,"css");
 	# get contents of userCss (if Attribute userCss is set)
 	my $userCss = main::AttrVal($hash->{NAME},"userCss", undef);
-	push(@$cssList, 'css/'.$userCss) if $userCss;
-	@$cssList = map { $fuipPath.$_ } @$cssList;	
+	push(@$cssList, 'FHEM/lib/FUIP/css/'.$userCss) if $userCss;
 	# get contents of original fhem-tablet-ui-user.css (if exists)
-	push(@$cssList, $main::attr{global}{modpath}.'/www/tablet/css/fhem-tablet-ui-user.css');
+	push(@$cssList, 'www/tablet/css/fhem-tablet-ui-user.css');
 	# concatenate everything and return text...
 	my $result = "";
 	for my $css (@$cssList) {
-		$result .= readTextFile($css)."\n";
+		$result .= readTextFile($hash,$css)."\n";
 	};
 	return ("text/css; charset=utf-8", $result);
 };
@@ -861,12 +912,15 @@ sub renderPopupMaint($$) {
 	my ($hash,$request) = @_;
 	# get pageid, cellid and fieldid
 	my $urlParams = urlParamsGet($request);
-	$DB::single = 1;
 	# TODO: error management
 	return undef unless exists $urlParams->{pageid};
 	return undef unless exists $urlParams->{cellid};
 	return undef unless exists $urlParams->{fieldid};
 
+	# find the dialog and render it	
+	my $dialog = findDialogFromFieldId($hash, $urlParams->{pageid}, $urlParams->{cellid}, $urlParams->{fieldid});
+	$currentPage = $dialog;
+	
 	my $title = "Maintain Popup Content";
 	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","#808080");
   	my $result = 
@@ -936,14 +990,12 @@ sub renderPopupMaint($$) {
 						});
 					} );
 				</script>'."\n"
-				# .renderHeaderHTML($hash,$currentLocation) TODO
+				.renderHeaderHTML($hash,$dialog)
             ."</head>
             <body style='background-color:lightgrey;'";
-	# find the dialog and render it	
-	my $dialog = findDialogFromFieldId($hash, $urlParams->{pageid}, $urlParams->{cellid}, $urlParams->{fieldid});
 	my ($width,$height) = $dialog->dimensions();	
-	$result .= '>'
-				#.renderUserHtmlBodyStart($hash)."\n"	TODO (current location missing)
+	$result .= '>'."\n"
+				.renderUserHtmlBodyStart($hash,$dialog)
 	.'<div id="popupcontent" class="fuip-droppable"
 		style="width:'.$width.'px;height:'.$height.'px;border:0;border-bottom:1px solid #aaa;
 									border-radius: 4px;box-shadow: 0 3px 9px rgba(0, 0, 0, 0.5);
@@ -1494,7 +1546,6 @@ sub getFuipPage($$) {
 	
 	my $locked = main::AttrVal($hash->{NAME},"locked",0);
 	my ($pageid,$preview) = split(/\?/,$path);
-	$currentPage = $pageid;  # might be needed for subsequent GET requests
 	# preview?
 	if($preview and $preview eq "preview") {
 		$locked = 1;	
@@ -1508,6 +1559,7 @@ sub getFuipPage($$) {
 	if(not defined($pageid) or $pageid eq "") {
 		$pageid = "home";
 	};	
+	$currentPage = $pageid;  # might be needed for subsequent GET requests
 	
 	# do we need to create the page?
 	if(not defined($hash->{pages}{$pageid})) {
@@ -2408,6 +2460,13 @@ sub Get($$$)
 		# get all possible cells
 		my @cells;
 		for my $pKey (@pages) {
+			# it seems that there is a crash here sometimes as some pages are lacking
+			# the cells array
+			# TODO: find out why 
+			if(not defined $hash->{pages}{$pKey}{cells}) {
+				main::Log3($hash,1,"FUIP: Internal error, no cells for page ".$pKey);
+				next;
+			};
 			for(my $cKey = 0; $cKey < @{$hash->{pages}{$pKey}{cells}}; $cKey++) {
 				push(@cells,$pKey."_".$cKey);
 			};

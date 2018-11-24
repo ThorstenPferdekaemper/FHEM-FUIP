@@ -10,14 +10,12 @@ sub dimensions($;$$){
 	return ("auto","auto");
 };	
 
-sub getDependencies($) {
-	my $stylesheetPrefix = "";
-	if($main::FW_wname) {
-		$stylesheetPrefix = main::AttrVal($main::FW_wname,"stylesheetPrefix", "default");
-		$stylesheetPrefix = "" if $stylesheetPrefix eq "default";
-	};			
-	return ['../../../www/pgm2/'.$stylesheetPrefix.'svg_defs.svg',
-			'css/fuipchart.css'];
+sub getDependencies($$) {
+	my (undef,$fuip) = @_;
+	my $stylesheetPrefix = FUIP::Model::getStylesheetPrefix($fuip->{NAME});
+	return ['remote:www/pgm2/'.$stylesheetPrefix.'svg_defs.svg',
+			'remote:www/pgm2/'.$stylesheetPrefix.'svg_style.css',
+			'FHEM/lib/FUIP/css/fuipchart.css'];
 };
 
 my @possibleTimeranges =
@@ -102,10 +100,17 @@ sub getHTML($){
 	my @uaxis;
 	my @legend;
 	my @ptype;
+	my @lwidth;
 	my $primaryExists;
 	for my $idx (@svgidx) {
 		my $style = (split(/"/,$gplot->{conf}{lStyle}[$idx]))[1];
 		$style =~ s/SVGplot/SVGplot fuipchart/g;
+		# line width
+		my $lwidth = $gplot->{conf}{lWidth}[$idx];
+		$lwidth = (split(/:/,$lwidth))[1];
+		$lwidth =~ s/"//g;   # remove "
+		$lwidth =~ s/\./p/;  # . => p
+		$style .= " lwidth".$lwidth;
 		if($gplot->{conf}{lType}[$idx] eq "points") {
 			$style .= " ".$gplot->{conf}{lType}[$idx];
 		};
@@ -227,7 +232,7 @@ sub getHTML($){
 					data-ytext_sec='.$gplot->{conf}{y2label}.'
 					data-legendpos=\'["left","top"]\'
 					data-width="100%" data-height="100%"
-					style="width:100%;height:100%;">
+					style="width:100%;height:calc(100% - 4px);">
 				</div>';
 	# main::Log3(undef,1,$result);	
 	return $result;				

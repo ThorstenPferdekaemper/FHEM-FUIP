@@ -370,7 +370,46 @@ sub getGplot($$) {
 		return { srcDesc => $srcDesc, conf => \%conf };
 	};
 
-}	
+};	
 	
+	
+sub readTextFile($$;$) {
+	my ($name,$filename,$forceLocal) = @_;
+	my $url = $forceLocal ? undef : getFhemwebUrl($name);
+	if($url) {
+		return _sendRemoteCommand($name,$url,
+			'{  main::Log3(undef,1,$main::attr{global}{modpath}."/'.$filename.'");;
+				open(FILE, $main::attr{global}{modpath}."/'.$filename.'") or return "";;
+				my @result = <FILE>;;
+				close(FILE);;
+				return join("",@result);;
+			}');
+	}else{
+		open(FILE, $main::attr{global}{modpath}.'/'.$filename) or return "";
+		my @result = <FILE>;
+		close(FILE);
+		return join("",@result);
+	};
+};	
+
+
+sub getStylesheetPrefix($) {
+	my ($name) = @_;
+	my $url = getFhemwebUrl($name);
+	my $stylesheetPrefix;
+	if($url) {
+		$stylesheetPrefix = _sendRemoteCommand($name,$url,
+			'{  return "" unless $main::FW_wname;; 
+				return main::AttrVal($main::FW_wname,"stylesheetPrefix", "");;
+			}');	
+		# for some reason, this has trailing whitespaces
+		$stylesheetPrefix =~ s/\s+$//;	
+	}else{
+		return "" unless $main::FW_wname;  #this should in principle not happen...
+		$stylesheetPrefix = main::AttrVal($main::FW_wname,"stylesheetPrefix", "");
+	};	
+	$stylesheetPrefix = "" if $stylesheetPrefix eq "default";
+	return $stylesheetPrefix;
+};
 	
 1;

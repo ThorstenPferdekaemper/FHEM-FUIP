@@ -1,20 +1,25 @@
 
 text.fuipchart.title { font-size:16px; fill:#808080; }
 
-.SVGplot.fuipchart { stroke-width:2px;}
-.SVGplot.fuipchart.l2     { stroke:#3333CC; }  /* blue in original */ 
-.SVGplot.fuipchart.l5 { stroke:lightgrey; }   /* black in original */
-.SVGplot.fuipchart.l5fill { stroke:lightgrey; fill:url(#gr_5); }  /* 0ff in original */
-text.SVGplot.fuipchart.l2 { fill:#3333CC; }  /* 00f in original */
-text.SVGplot.fuipchart.l2fill { fill:#3333CC; }  /* 00f in original */
-text.SVGplot.fuipchart.l5 { fill:lightgrey; }   /* black in original */
-.fuipchart.points { stroke-width:6px; }
-
 /* all normal lines should have no fill */
 .fuipchart:not([class*="fill"]):not([class*=dot]):not(text) { fill:none; } 
 
+/* stroke-width classes 
+	0.2 0.5 1 1.5 2 3 4 8 12 16 24 */
+.fuipchart.lwidth0p2 { stroke-width:0.2px; }
+.fuipchart.lwidth0p5 { stroke-width:0.5px; }
+.fuipchart.lwidth1 { stroke-width:1px; }
+.fuipchart.lwidth1p5 { stroke-width:1.5px; }
+.fuipchart.lwidth2 { stroke-width:2px; }
+.fuipchart.lwidth3 { stroke-width:3px; }
+.fuipchart.lwidth4 { stroke-width:4px; }
+.fuipchart.lwidth8 { stroke-width:8px; }
+.fuipchart.lwidth12 { stroke-width:12px; }
+.fuipchart.lwidth16 { stroke-width:16px; }
+.fuipchart.lwidth24 { stroke-width:24px; }
+	
 /* Definition for legend window */
 .legend.lback {
 	fill: #111;
 	fill-opacity: 0.7; 
-}
+} 
