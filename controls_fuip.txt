@@ -21,7 +21,7 @@ UPD 2018-04-14_20:19:11 4330 FHEM/lib/FUIP/View/HeatingOverview.pm
 UPD 2018-03-23_22:14:57 838 FHEM/lib/FUIP/View/HomeButton.pm
 UPD 2018-10-21_11:32:02 1449 FHEM/lib/FUIP/View/Html.pm
 UPD 2018-08-21_20:45:49 1589 FHEM/lib/FUIP/View/LabelHumidity.pm
-UPD 2018-08-27_20:33:11 1664 FHEM/lib/FUIP/View/LabelReading.pm
+UPD 2018-11-24_17:06:30 2392 FHEM/lib/FUIP/View/LabelReading.pm
 UPD 2018-08-21_20:46:01 1836 FHEM/lib/FUIP/View/LabelTemperature.pm
 UPD 2018-08-21_20:53:47 1481 FHEM/lib/FUIP/View/MenuItem.pm
 UPD 2018-03-17_22:57:52 389 FHEM/lib/FUIP/View/Page.pm
