@@ -166,40 +166,40 @@ sub getHTML($){
 	my $daysago_start;
 	my $daysago_end;
 	my $nofulldays = "false";
-	if($svgDevice->{Attributes}{fixedrange}) {
-		# YYYY-MM-DD YYYY-MM-DD
-		# hour, <N>hours, day, <N>days, week, month, year, <N>years [offset]
-		# TODO: offset is not considered
-		my @fixedrange = split(/ /,$svgDevice->{Attributes}{fixedrange});
-		if($fixedrange[0] =~ /(.*)(hour|hours|day|days|week|month|year|years)$/) {
-			my $unit = substr($2,0,1);
-			if($unit eq "h"){
+	# looks like "day" range is the default
+	$svgDevice->{Attributes}{fixedrange} = "day" unless $svgDevice->{Attributes}{fixedrange};
+	# YYYY-MM-DD YYYY-MM-DD
+	# hour, <N>hours, day, <N>days, week, month, year, <N>years [offset]
+	# TODO: offset is not considered
+	my @fixedrange = split(/ /,$svgDevice->{Attributes}{fixedrange});
+	if($fixedrange[0] =~ /(.*)(hour|hours|day|days|week|month|year|years)$/) {
+		my $unit = substr($2,0,1);
+		if($unit eq "h"){
+			$nofulldays = "true";
+			$daysago_end = "now"; # seems this is the same as "0h"
+		}elsif($unit eq "d") {
+			if($svgDevice->{Attributes}{endPlotNow}) {
 				$nofulldays = "true";
-				$daysago_end = "now"; # seems this is the same as "0h"
-			}elsif($unit eq "d") {
-				if($svgDevice->{Attributes}{endPlotNow}) {
-					$nofulldays = "true";
-					$daysago_end = "now"; 
-				}else{
-					$unit = "D";
-					$daysago_end = "-1D"; 
-				};
-			}else{		
-				if(not $svgDevice->{Attributes}{endPlotToday}) {
-					$unit = uc($unit);
-				};
-				$daysago_end = "-1".$unit; 
-			}	
-			if($nofulldays eq "false") {
-				$daysago_start = ($1 ? ($1-1) : 0).$unit;
+				$daysago_end = "now"; 
 			}else{
-				$daysago_start = ($1 ? ($1) : 1).$unit;
+				$unit = "D";
+				$daysago_end = "-1D"; 
 			};
+		}else{		
+			if(not $svgDevice->{Attributes}{endPlotToday}) {
+				$unit = uc($unit);
+			};
+			$daysago_end = "-1".$unit; 
+		}	
+		if($nofulldays eq "false") {
+			$daysago_start = ($1 ? ($1-1) : 0).$unit;
 		}else{
-			# YYYY-MM-DD YYYY-MM-DD
-			$daysago_start = $fixedrange[0];
-			$daysago_end = $fixedrange[1];
+			$daysago_start = ($1 ? ($1) : 1).$unit;
 		};
+	}else{
+		# YYYY-MM-DD YYYY-MM-DD
+		$daysago_start = $fixedrange[0];
+		$daysago_end = $fixedrange[1];
 	};
 	
 	# if only "secondary" axis, we need to add a dummy primary. Otherwise, the chart widget is empty...
@@ -257,6 +257,6 @@ sub getStructure($) {
 
 
 # register me as selectable
-$FUIP::View::selectableViews{"FUIP::View::Chart"}{title} = "Chart (experimental)"; 
+$FUIP::View::selectableViews{"FUIP::View::Chart"}{title} = "Chart from SVG"; 
 	
 1;	

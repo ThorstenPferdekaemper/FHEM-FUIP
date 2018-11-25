@@ -13,7 +13,7 @@ UPD 2018-11-21_12:05:16 9432 FHEM/lib/FUIP/View.pm
 UPD 2018-11-21_12:05:31 5766 FHEM/lib/FUIP/View/Batteries.pm
 UPD 2018-08-21_20:44:45 1336 FHEM/lib/FUIP/View/Brightness.pm
 UPD 2018-11-16_12:41:42 4233 FHEM/lib/FUIP/View/Cell.pm
-UPD 2018-11-23_20:58:52 8682 FHEM/lib/FUIP/View/Chart.pm
+UPD 2018-11-25_17:12:25 8727 FHEM/lib/FUIP/View/Chart.pm
 UPD 2018-08-21_20:44:55 943 FHEM/lib/FUIP/View/Clock.pm
 UPD 2018-11-09_15:24:51 3105 FHEM/lib/FUIP/View/Dialog.pm
 UPD 2018-04-14_20:19:01 3795 FHEM/lib/FUIP/View/HeatingControl.pm
@@ -63,6 +63,7 @@ UPD 2018-03-17_22:57:55 125594 FHEM/lib/FUIP/js/jquery.tablesorter.widgets.js
 UPD 2018-11-09_15:00:32 25083 FHEM/lib/FUIP/js/widget_weatherdetail.js
 UPD 2018-08-03_14:12:09 4468 FHEM/lib/FUIP/view-images/FUIP-View-Batteries.png
 UPD 2018-08-03_14:17:14 1830 FHEM/lib/FUIP/view-images/FUIP-View-Brightness.png
+UPD 2018-11-25_17:04:03 2518 FHEM/lib/FUIP/view-images/FUIP-View-Chart.png
 UPD 2018-08-03_14:20:11 2046 FHEM/lib/FUIP/view-images/FUIP-View-Clock.png
 UPD 2018-08-03_14:24:41 2052 FHEM/lib/FUIP/view-images/FUIP-View-HomeButton.png
 UPD 2018-08-03_14:29:13 1320 FHEM/lib/FUIP/view-images/FUIP-View-Html.png
