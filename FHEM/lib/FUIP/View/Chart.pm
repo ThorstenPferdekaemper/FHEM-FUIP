@@ -6,9 +6,17 @@ use warnings;
 use lib::FUIP::View;
 use parent -norequire, 'FUIP::View';
 
+
 sub dimensions($;$$){
-	return ("auto","auto");
+	my ($self,$width,$height) = @_;
+	if($self->{sizing} eq "resizable") {
+		$self->{width} = $width if $width;
+		$self->{height} = $height if $height;
+	};
+	return ("auto","auto") if($self->{sizing} eq "auto");
+	return ($self->{width},$self->{height});
 };	
+
 
 sub getDependencies($$) {
 	my (undef,$fuip) = @_;
@@ -211,31 +219,34 @@ sub getHTML($){
 	my $result = '<div data-type="chart"
 					data-device=\'["'.join('","',@devices).'"]\'
 					data-logdevice=\'["'.join('","',@logdevices).'"]\'
-					data-columnspec=\'["'.join('","',@colspecs).'"]\'';
+					data-columnspec=\'["'.join('","',@colspecs).'"]\''."\n";
 	if($timeranges) {
-		$result .= ' data-timeranges=\''.$timeranges.'\' ';
+		$result .= 'data-timeranges=\''.$timeranges.'\''."\n";
 	};	
-	$result .= ' data-daysago_start="'.$daysago_start.'" ' if defined $daysago_start;
-	$result .= ' data-daysago_end="'.$daysago_end.'" ' if defined $daysago_end;
-	$result .= ' data-nofulldays="'.$nofulldays.'" ';
-	$result .= ' data-yticks=\''.$yticks.'\' ' if $yticks;
-	$result .= ' data-yticks_sec=\''.$y2ticks.'\' ' if $y2ticks;
+	$result .= 'data-daysago_start="'.$daysago_start.'" '."\n" if defined $daysago_start;
+	$result .= 'data-daysago_end="'.$daysago_end.'" '."\n" if defined $daysago_end;
+	$result .= 'data-nofulldays="'.$nofulldays.'" '."\n";
+	$result .= 'data-yticks=\''.$yticks.'\' '."\n" if $yticks;
+	$result .= 'data-yticks_sec=\''.$y2ticks.'\' '."\n" if $y2ticks;
 	$result .= 	'	data-style=\'["'.join('","',@styles).'"]\'
 					data-ptype=\'["'.join('","',@ptype).'"]\'
 					data-uaxis=\'["'.join('","',@uaxis).'"]\'
-					data-legend=\'["'.join('","',@legend).'"]\';
-					data-minvalue="'.$minmax[0].'" data-maxvalue="'.$minmax[1].'"
-					data-minvalue_sec="'.$minmax_sec[0].'" data-maxvalue_sec="'.$minmax_sec[1].'"
+					data-legend=\'["'.join('","',@legend).'"]\'
+					data-minvalue="'.$minmax[0].'" 
+					data-maxvalue="'.$minmax[1].'"
+					data-minvalue_sec="'.$minmax_sec[0].'" 
+					data-maxvalue_sec="'.$minmax_sec[1].'"
 					data-title="'.$gplot->{conf}{title}.'"
 					data-title_class="fuipchart title"
 					data-ytext='.$gplot->{conf}{ylabel}.'
 					data-ytext_sec='.$gplot->{conf}{y2label}.'
 					data-legendpos=\'["left","top"]\'
 					data-width="100%" data-height="100%"
-					style="width:100%;height:calc(100% - 4px);">
-				</div>';
+					style="width:100%;height:calc(100% - 4px);">	
+				</div>'."\n";
 	# main::Log3(undef,1,$result);	
-	return $result;				
+	return $result;		
+
 };
 	
 	
@@ -248,9 +259,13 @@ sub getStructure($) {
 		{ id => "class", type => "class", value => $class },
 		{ id => "device", type => "device" },
 		{ id => "title", type => "text", default => { type => "field", value => "device"} },
+		{ id => "width", type => "dimension", value => 200},
+		{ id => "height", type => "dimension", value => 100 },
+		{ id => "sizing", type => "sizing", options => [ "resizable", "auto" ],
+			default => { type => "const", value => "auto" } },
 		{ id => "timeranges", type => "setoptions", 
 				options => \@timeranges, 
-				default => { type => "const", value => \@timeranges } },
+				default => { type => "const", value => \@timeranges } },		
 		{ id => "popup", type => "dialog", default=> { type => "const", value => "inactive"} }	
 		];
 };

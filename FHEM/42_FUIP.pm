@@ -473,6 +473,43 @@ sub getFtuiUserCss($$) {
 };
 
 
+sub renderCommonEditStyles($) {
+	# returns style (css) definitions for all "edit" pages
+	my $hash = shift;
+	return 
+		'.tablesorter-filter option {
+			background-color:#fff;
+		}
+		select.tablesorter-filter {
+			-moz-appearance: auto;
+			-webkit-appearance: menulist;
+			appearance: auto;
+			border-radius: 0;
+			padding: 4px !important;
+		}
+		select.fuip {
+			-moz-appearance: auto;
+			-webkit-appearance: menulist;
+			appearance: auto;
+			border-radius: 0;
+			padding: 1px 0px !important;	
+			border-style: inset;	
+			border-width: 2px;
+			border-color: initial;
+			border-image: initial;
+			width: initial;
+			color: initial;
+			background-color: initial;
+		}
+		option.fuip {
+			background-color: initial;
+		}
+		.fuip-ui-icon-bright {
+			background-image: url(/fhem/'.lc($hash->{NAME}).'/fuip/jquery-ui/images/ui-icons_ffffff_256x240.png);
+		}'."\n";	
+};
+
+
 sub renderPage($$$) {
 	my ($hash,$currentLocation,$locked) = @_;
 	# falls $locked, dann werden die Editierfunktionen nicht mit gerendert
@@ -534,35 +571,9 @@ sub renderPage($$$) {
 						border-radius:8px;";
 	$result .= '		background: rgba(0, 0, 0, 0.7) !important;' if($backgroundImage);
 	$result .= "
-					}
-					.tablesorter-filter option {
-						background-color:#fff;
-					}
-					select.tablesorter-filter {
-						-moz-appearance: auto;
-						-webkit-appearance: menulist;
-						appearance: auto;
-						border-radius: 0;
-						padding: 4px !important;
-					}
-					select.fuip {
-						-moz-appearance: auto;
-						-webkit-appearance: menulist;
-						appearance: auto;
-						border-radius: 0;
-						padding: 1px 0px !important;	
-						border-style: inset;	
-						border-width: 2px;
-						border-color: initial;
-						border-image: initial;
-						width: initial;
-						color: initial;
-						background-color: initial;
-					}
-					option.fuip {
-						background-color: initial;
-					}	
-                </style>\n"
+					}\n";
+	$result .= renderCommonEditStyles($hash) unless $locked;				
+	$result .= "</style>\n"
 				.renderHeaderHTML($hash,$currentLocation)
 				.'</head>
             <body';
@@ -661,9 +672,6 @@ sub renderPageFlex($$) {
 	$result .= '		background: rgba(0, 0, 0, 0.7) !important;' if($backgroundImage);
 	$result .= '
 					}
-					.tablesorter-filter option {
-						background-color:#fff;
-					}
 					#fuip-flex-menu {
 						display:flex;
 						flex-direction:column;
@@ -689,30 +697,6 @@ sub renderPageFlex($$) {
 							display:initial;
 						}
 					}
-					select.tablesorter-filter {
-						-moz-appearance: auto;
-						-webkit-appearance: menulist;
-						appearance: auto;
-						border-radius: 0;
-						padding: 4px !important;
-					}
-					select.fuip {
-						-moz-appearance: auto;
-						-webkit-appearance: menulist;
-						appearance: auto;
-						border-radius: 0;
-						padding: 1px 0px !important;	
-						border-style: inset;	
-						border-width: 2px;
-						border-color: initial;
-						border-image: initial;
-						width: initial;
-						color: initial;
-						background-color: initial;
-					}
-					option.fuip {
-						background-color: initial;
-					}	
                 </style>'
 				.renderHeaderHTML($hash,$currentLocation)
 				.'</head>
@@ -811,34 +795,8 @@ sub renderPageFlexMaint($$) {
 	$result .= '		background: rgba(0, 0, 0, 0.7) !important;' if($backgroundImage);
 	$result .= "
 					}
-					.tablesorter-filter option {
-						background-color:#fff;
-					}
-					select.tablesorter-filter {
-						-moz-appearance: auto;
-						-webkit-appearance: menulist;
-						appearance: auto;
-						border-radius: 0;
-						padding: 4px !important;
-					}
-					select.fuip {
-						-moz-appearance: auto;
-						-webkit-appearance: menulist;
-						appearance: auto;
-						border-radius: 0;
-						padding: 1px 0px !important;	
-						border-style: inset;	
-						border-width: 2px;
-						border-color: initial;
-						border-image: initial;
-						width: initial;
-						color: initial;
-						background-color: initial;
-					}
-					option.fuip {
-						background-color: initial;
-					}	
-                </style>"
+					".renderCommonEditStyles($hash).	
+                "</style>"
 				.renderHeaderHTML($hash,$currentLocation)
 				."</head>
             <body";
@@ -954,34 +912,8 @@ sub renderPopupMaint($$) {
 						border-radius:8px;";
 	$result .= "
 					}
-					.tablesorter-filter option {
-						background-color:#fff;
-					}
-					select.tablesorter-filter {
-						-moz-appearance: auto;
-						-webkit-appearance: menulist;
-						appearance: auto;
-						border-radius: 0;
-						padding: 4px !important;
-					}
-					select.fuip {
-						-moz-appearance: auto;
-						-webkit-appearance: menulist;
-						appearance: auto;
-						border-radius: 0;
-						padding: 1px 0px !important;	
-						border-style: inset;	
-						border-width: 2px;
-						border-color: initial;
-						border-image: initial;
-						width: initial;
-						color: initial;
-						background-color: initial;
-					}
-					option.fuip {
-						background-color: initial;
-					}	
-                </style>".
+					".renderCommonEditStyles($hash).
+                "</style>".
 				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
 				'<script>
 					$( function() {
@@ -1001,13 +933,8 @@ sub renderPopupMaint($$) {
 									border-radius: 4px;box-shadow: 0 3px 9px rgba(0, 0, 0, 0.5);
 									border: 1px solid rgba(0, 0, 0, 0.1);
 									background-color: #2A2A2A;
-									margin:0;display:inline;position:absolute;top:0;left:0;">
-		<span style="position: absolute; right: 1px; top: 0;" class="fa-stack fa-lg"
-								onclick="openSettingsDialog(\''.$hash->{NAME}.'\',\''.$urlParams->{pageid}.'\',\''.$urlParams->{cellid}.'\',\''.$urlParams->{fieldid}.'\')">
-									<i class="fa fa-square-o fa-stack-2x"></i>
-									<i class="fa fa-cog fa-stack-1x"></i>
-							</span>							
-		<header>'.$dialog->{title}.'</header>';
+									margin:0;display:inline;position:absolute;top:0;left:0;">'
+				.renderGears($hash->{NAME},$urlParams->{pageid},$urlParams->{cellid},$urlParams->{fieldid}).'<header>'.$dialog->{title}.'</header>';
 	$result .= $dialog->getHTML(0);  # this is maint, so never locked	
 	$result .= '</div>
 		<div id="viewsettings">
@@ -1296,6 +1223,17 @@ sub findPositions($$;$) {
 };
 
 
+sub renderGears(@) {
+	# returns the "gears" to open the config popup
+	my @settingsDialogParams = @_;
+	return '<span style="position:absolute;right:1px;top:0;z-index:12;" class="fa-stack fa-lg"
+				onclick="openSettingsDialog(\''.join("','",@settingsDialogParams).'\')">
+				<i class="fa fa-square-o fa-stack-2x"></i>
+				<i class="fa fa-cog fa-stack-1x"></i>
+			</span>'."\n";
+};
+
+
 sub renderCells($$$) {
 	my ($hash,$pageId,$locked) = @_;
 	findPositions($hash,$pageId);
@@ -1313,12 +1251,8 @@ sub renderCells($$$) {
 		# if there is no title and it is locked, we do not display a header
 		# TODO: find better handle for dragging
 		if(not $locked or $cell->{title}) {
-			$result .= "<header>".($cell->{title} ? $cell->{title} : "").($locked ? "" : " ".$i."
-							<span style=\"position: absolute; right: 1px; top: 0;\" class=\"fa-stack fa-lg\"
-								onclick=\"openSettingsDialog('".$hash->{NAME}."','".$pageId."','".$i."')\">
-									<i class=\"fa fa-square-o fa-stack-2x\"></i>
-									<i class=\"fa fa-cog fa-stack-1x\"></i>
-							</span>").
+			$result .= "<header>".($cell->{title} ? $cell->{title} : "").($locked ? "" : " ".$i."\n"
+							.renderGears($hash->{NAME},$pageId,$i)).
 						"</header>";
 		};				
 		$i++;
@@ -1405,13 +1339,9 @@ sub renderCellsFlexMaint($$$) {
 		# TODO: find better handle for dragging
 		$result .= "<header style='border-radius:8px;background: #262626;color: #8c8c8c;display: block;
 										font-size: 0.85em;font-weight: bold;line-height: 2em;
-										text-align: center;width: 100%;'>".($cell->{title} ? $cell->{title} : "").$i."
-						<span style=\"position: absolute; right: 1px; top: 0;\" class=\"fa-stack fa-lg\"
-							onclick=\"openSettingsDialog('".$hash->{NAME}."','".$pageId."','".$i."')\">
-								<i class=\"fa fa-square-o fa-stack-2x\"></i>
-								<i class=\"fa fa-cog fa-stack-1x\"></i>
-						</span>
-					</header>";
+										text-align: center;width: 100%;'>".($cell->{title} ? $cell->{title} : "").$i."\n"
+						.renderGears($hash->{NAME},$pageId,$i)				
+						."</header>";
 
 		$result .= $cell->getHTML(0);
 		$result .= "</div></div>";
@@ -2272,6 +2202,33 @@ sub Set($$$)
 		return "\"set viewposition\": view ".$viewId." not found in cell ".$pageId."_".$cellId unless(defined($cell->{views}[$viewId]));
 		# set position into view
 		$cell->{views}[$viewId]->position($a->[3],$a->[4]);
+	}elsif($cmd eq "viewresize") {
+		# set ... viewresize pageId_cellId_viewId width height
+		# or (for dialog/popup maintenance):
+		# set ... viewresize pageId_cellId fieldId viewId width height
+		if(@$a == 5) {
+			# normal case
+			# get cell
+			my @pageAndViewId = split(/_/,$a->[2]);
+			return "\"set viewresize\" needs a page id, a cell id and a view id" unless(@pageAndViewId > 2);
+			my $viewId = pop(@pageAndViewId);
+			my $cellId = pop(@pageAndViewId);
+			my $pageId = join("_",@pageAndViewId);
+			# cell exists? 
+			return "\"set viewresize\": cell ".$pageId." ".$cellId." not found" unless(defined($hash->{pages}{$pageId}) and defined($hash->{pages}{$pageId}{cells}[$cellId]));
+			my $cell = $hash->{pages}{$pageId}{cells}[$cellId];
+			return "\"set viewresize\": view ".$viewId." not found in cell ".$pageId."_".$cellId unless(defined($cell->{views}[$viewId]));
+			# set size into view
+			$cell->{views}[$viewId]->dimensions($a->[3],$a->[4]);
+		}else{
+			# dialog maintenance
+			my ($pageId, $cellId) = getPageAndCellId($hash, $a);
+			return $cellId unless(defined($pageId));
+			my $dialog = findDialogFromFieldId($hash,$pageId,$cellId,$a->[3]);
+			# find the view in the dialog
+			my $view = $dialog->{views}[$a->[4]];
+			$view->dimensions($a->[5],$a->[6]);
+		};	
 	}elsif($cmd eq "viewposdialog") {
 		# set ... viewposdialog pageId_cellId fieldId viewId posX posY
 		# get cell
@@ -2475,10 +2432,5 @@ sub Get($$$)
 		return "Unknown argument $opt, choose one of cellsettings:".join(",",@cells)." viewclasslist:noArg viewdefaults:".join(",",@$viewclasses)." pagelist:noArg pagesettings:".join(",",@pages)." devicelist:noArg readingslist sets";
 	}
 }
-
-
-
    
-####
-
 1;

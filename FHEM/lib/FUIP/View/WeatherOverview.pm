@@ -50,24 +50,52 @@ sub getHTML($){
 
 	
 sub dimensions($;$$){
-	my $self = shift;
-	my $height = 205;
-	my $width = "auto";
-	# if layout is "small", height is always base height
-	if($self->{layout} eq "small") {
-		$height = main::AttrVal($self->{fuip}{NAME},"baseHeight",108);
+	my ($self,$width,$height) = @_;
+	if($self->{sizing} eq "resizable") {
+		$self->{width} = $width if $width;
+		$self->{height} = $height if $height;
 	};
-	# width "fixed" and "normal" => 149 * days, "small" => depends on baseWidth
-	$self->_fixDays();
-	if($self->{width} eq "fixed") {
+	
+	# do we have to determine the size?
+	# even if sizing is "auto", we at least determine an initial size
+	# either resizable and no size yet
+	# or fixed
+	if(not $self->{height} or $self->{sizing} eq "fixed") {
+		# if layout is "small", height is always base height
 		if($self->{layout} eq "small") {
-			$width = (main::AttrVal($self->{fuip}{NAME},"baseWidth",142) + 10) * $self->{days} - 10;
+			$self->{height} = main::AttrVal($self->{fuip}{NAME},"baseHeight",108);
 		}else{
-			$width = 149 * $self->{days};
+			$self->{height} = 205;
+		};	
+	};	
+	if(not $self->{width} or $self->{sizing} eq "fixed") {
+		# width "fixed" and "normal" => 149 * days, "small" => depends on baseWidth
+		$self->_fixDays();
+		if($self->{layout} eq "small") {
+			$self->{width} = (main::AttrVal($self->{fuip}{NAME},"baseWidth",142) + 10) * $self->{days} - 10;
+		}else{
+			$self->{width} = 149 * $self->{days};
 		};
 	};	
-	return ($width,$height);
+	return ("auto","auto") if($self->{sizing} eq "auto");
+	return ($self->{width},$self->{height});
 };	
+	
+	
+sub reconstruct($$$) {
+	my ($class,$conf,$fuip) = @_;
+	my $self = FUIP::View::reconstruct($class,$conf,$fuip);
+	# downward compatibility: automatically convert width to resizable
+	return $self unless defined($self->{width});
+	return $self unless $self->{width} =~ m/^(fixed|auto)$/;
+	$self->{sizing} = $self->{width};
+	delete $self->{width};
+	if(defined($self->{defaulted}{width})) {
+		$self->{defaulted}{sizing} = $self->{defaulted}{width};
+		delete $self->{defaulted}{width};
+	};	
+	return $self;
+};
 	
 	
 sub getStructure($) {
@@ -87,7 +115,9 @@ sub getStructure($) {
 		{ id => "overview", type => "setoptions",
 				options => ["text","sun","uv","frost"], 
 				default => { type => "const", value => [] } },				
-		{ id => "width", type => "text", options => [ "fixed", "auto" ],
+		{ id => "width", type => "dimension" },
+		{ id => "height", type => "dimension" },
+		{ id => "sizing", type => "sizing", options => [ "fixed", "auto", "resizable" ],
 			default => { type => "const", value => "fixed" } },
 		{ id => "layout", type => "text", options => [ "normal", "small" ], default => { type => "const", value => "normal" }},	
 		{ id => "popup", type => "dialog", default=> { type => "const", value => "inactive"} }				

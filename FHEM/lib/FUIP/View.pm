@@ -16,6 +16,13 @@ sub dimensions($;$$){
 };	
 
 
+sub isResizable($) {
+	my $self = shift;
+	return 0 unless defined $self->{sizing};
+	return ($self->{sizing} eq "resizable");
+};	
+
+
 sub getDependencies($$) {
 	# Parameters: class, fuip object
 	# class method to return list of dependencies relative to the FUIP directory

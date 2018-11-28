@@ -163,8 +163,11 @@ var Modul_weatherdetail = function() {
  		var elem = $("#"+id);
 		var days = elem.data("days");			
 		// determine how big one element should be
-		var targetWidth = elem.width() / days;
-		var targetHeight = elem.height();
+		// var targetWidth = elem.width() / days;
+		// var targetHeight = elem.height();
+		var view = elem.closest("[data-viewid]");
+		var targetWidth = view.width() / days;
+		var targetHeight = view.height();
 		// are there detail graphics?
 		var detailSymbols = elem.find(".ftuiWeatherdetailSymbolDetail");
 		var maxDetSymHeight = Math.floor(((elem.width() - 20) / 8) * 120 / 175);	

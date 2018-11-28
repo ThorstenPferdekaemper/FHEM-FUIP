@@ -51,6 +51,26 @@ function fuipInit(conf) { //baseWidth, baseHeight, maxCols, gridlines, snapTo
 				}	
 			});
 		});
+		$(".fuip-resizable").each(function() {
+			$(this).resizable({
+				stop: onViewResizeStop,
+				classes: { "ui-resizable-se" : "ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se fuip-ui-icon-bright" },
+				resize: function(e,ui) {
+					if(fuip.snapTo == "nothing") return;
+					if(e.altKey) return;
+					var dim = gridDimensions();
+					var n = (ui.position.left + ui.size.width) / dim.gridWidth;
+					if(n - Math.floor(n) > 0.5) n++;
+					var snapped = Math.floor(n) * dim.gridWidth;  // offset	
+					ui.size.width = snapped - ui.position.left;
+					n = (ui.position.top - 22 + ui.size.height) / dim.gridHeight;
+					if(n - Math.floor(n) > 0.5) n++;
+					snapped = 22 + Math.floor(n) * dim.gridHeight;  // offset	
+					ui.size.height = snapped - ui.position.top;					
+				}				
+			});
+		});		
+		
 		// every cell is droppable
 		$(".fuip-droppable").each(function() {
 			$(this).droppable({
@@ -551,6 +571,31 @@ function onDragStopDialog(fieldid,ui) {
 };
 
 
+// when a view resize finished
+function onViewResizeStop(event,ui) {
+	// is this on the dialog maint? TODO
+	var name = $("html").attr("data-name");
+	var pageId = $("html").attr("data-pageid");
+	var view = ui.originalElement;
+	var viewId = view.attr("data-viewid");
+	var cmd = "set " + name + " viewresize " + pageId + "_";
+	var fieldid = $("html").attr("data-fieldid");
+	var cellId;
+	if(fieldid) {
+		// dialog maintenance	
+		cellId = $("html").attr("data-cellid");
+		cmd += cellId + " " + fieldid + " "; 
+	}else{
+		// normal cell
+		var cell = view.closest("[data-cellid]");
+		cellId = cell.attr("data-cellid");
+		cmd += cellId + "_";
+	};	
+	cmd += viewId + " " + ui.size.width + " " + ui.size.height; 
+	sendFhemCommandLocal(cmd);
+};
+
+
 // show dialog with an error text 
 // text can be almost arbitrary html
 function popupError(title,text,onClose) {
@@ -664,6 +709,9 @@ function acceptSettings(doneFunc) {
 	});
 	// collect inputs and checkboxes
 	$("#viewsettings input, #viewsettings textarea, #viewsettings select.fuip").each(function() {
+		// do not process hidden elements
+		if($(this).css("visibility") == "hidden") 
+			return true;
 		var value;
 		if($(this).attr("type") == "checkbox") {
 			value = ($(this).is(":checked") ? 1 : 0);
@@ -875,6 +923,7 @@ function defaultCheckChanged(id,defaultDef,fieldType) {
 		switch(defaultDef.type) {
 			case 'const':
 				inputField.val(defaultDef.value);
+				inputField.trigger("input");
 				break;
 			case 'field':
 				var value = $("#" + defaultDef.value).val();
@@ -882,13 +931,27 @@ function defaultCheckChanged(id,defaultDef,fieldType) {
 					value += defaultDef.suffix;
 				};	
 				inputField.val(value);
+				inputField.trigger("input");
 				break;
 			default:
 				break;
 		};
 	};
 }
-					
+
+
+function sizingChanged(id,widthId,heightId) {
+	if($("#" + id).val() == 'resizable') {
+		$("#" + widthId).css("visibility","visible");
+		$("#" + heightId).css("visibility","visible");
+		$("#" + id + "-x").css("visibility","visible");
+	}else{
+		$("#" + widthId).css("visibility","hidden");
+		$("#" + heightId).css("visibility","hidden");
+		$("#" + id + "-x").css("visibility","hidden");
+	};	
+}
+
 					
 function getInfluencedParts(field,parentName,myName) {
 	// returns the influenced parts of field
@@ -1528,6 +1591,31 @@ function createField(settings, fieldNum, component,prefix) {
 		};	
 		result += "'>Possible values</button>";
 	};	
+	// for sizing fields, add width and height (if resizable)
+	// TODO: do we need proper default values?
+	if(field.type == "sizing") {
+		var width = 0;
+		var height = 0;
+		for(var i = 0; i < settings.length; i++) {
+			if(settings[i].id == "width" && settings[i].type == "dimension") {
+				width = settings[i].value;
+			};
+			if(settings[i].id == "height" && settings[i].type == "dimension") {
+				height = settings[i].value;
+			};	
+		};
+		result += "<input type='text' style='margin-left:5px;width:35px;' name='" + prefix + "width' id='" + prefix + "width' ";
+		result += "value='" + width + "'>";
+		result += "<span id='"+fieldName+"-x'>x</span>";
+		result += "<input type='text' style='width:35px;' name='" + prefix + "height' id='" + prefix + "height' ";
+		result += "value='" + height + "'>";
+		$(function() {
+			$("#"+fieldName).on("input",function() {
+				sizingChanged(fieldName,prefix+"width",prefix+"height");
+			});
+			sizingChanged(fieldName,prefix+"width",prefix+"height");
+		});	
+	};	
 	return result;
 };
 
@@ -1596,6 +1684,7 @@ function createSettingsTable(settings,prefix) {
 	html += '<table style="border-style: solid;">';
 	for(var i = 0; i < settings.length; i++){
 		if(settings[i].type == 'class') { continue; };
+		if(settings[i].type == 'dimension') { continue; };
 		var fieldName = prefix + settings[i].id;		
 		switch(settings[i].type) {
 			case 'device-reading':

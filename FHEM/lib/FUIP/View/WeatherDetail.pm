@@ -61,23 +61,52 @@ sub getHTML($){
 };
 
 	
-	sub dimensions($;$$){
-		my $self = shift;
-		# we ignore any settings
-		my $height = 205 + @{$self->{detail}} * 23;
+sub dimensions($;$$){
+	my ($self,$width,$height) = @_;
+	if($self->{sizing} eq "resizable") {
+		$self->{width} = $width if $width;
+		$self->{height} = $height if $height;
+	};
+	# do we have to determine the size?
+	# even if sizing is "auto", we at least determine an initial size
+	# either resizable and no size yet
+	# or fixed
+	if(not $self->{height} or $self->{sizing} eq "fixed") {
+		$self->{height} = 205 + @{$self->{detail}} * 23;
 		# normal lines: 23
 		# weather line: 33 if icons, 51 otherwise
 		if(grep( /^weather$/, @{$self->{detail}} )) {
-			$height += 10;
+			$self->{height} += 10;
 			if($self->{icons} eq "kleinklima") {
-				$height += 18;
+				$self->{height} += 18;
 			};
 		};
-		return (($self->{width} eq "fixed") ? 598 : "auto", $height);
+	};
+	if(not $self->{width} or $self->{sizing} eq "fixed") {
+		$self->{width} = 598;
 	};	
+	return ("auto","auto") if($self->{sizing} eq "auto");
+	return ($self->{width},$self->{height});
+};	
 	
 	
-	sub getStructure($) {
+sub reconstruct($$$) {
+	my ($class,$conf,$fuip) = @_;
+	my $self = FUIP::View::reconstruct($class,$conf,$fuip);
+	# downward compatibility: automatically convert width to resizable
+	return $self unless defined($self->{width});
+	return $self unless $self->{width} =~ m/^(fixed|auto)$/;
+	$self->{sizing} = $self->{width};
+	delete $self->{width};
+	if(defined($self->{defaulted}{width})) {
+		$self->{defaulted}{sizing} = $self->{defaulted}{width};
+		delete $self->{defaulted}{width};
+	};	
+	return $self;
+};
+	
+	
+sub getStructure($) {
 	# class method
 	# returns general structure of the view without instance values
 	my ($class) = @_;
@@ -99,9 +128,11 @@ sub getHTML($){
 				default => { type => "const", value => ["clock","weather","temp","chOfRain","rain","windDir"] } },
 		{ id => "icons", type => "text", options => [ "meteocons", "kleinklima" ], 
 			default => { type => "const", value => "kleinklima" } },
-		{ id => "width", type => "text", options => [ "fixed", "auto" ],
-			default => { type => "const", value => "fixed" } }			
-		];
+		{ id => "width", type => "dimension" },
+		{ id => "height", type => "dimension" },
+		{ id => "sizing", type => "sizing", options => [ "fixed", "auto", "resizable" ],
+			default => { type => "const", value => "fixed" } },
+	];
 };
 
 # register me as selectable

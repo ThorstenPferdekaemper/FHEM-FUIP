@@ -150,13 +150,44 @@ sub getHTML($){
 
 	
 sub dimensions($;$$){
-	my $self = shift;
-	# we ignore any settings
-	my $devices = _getDevices($self->{fuip}{NAME},$self->{deviceFilter});
-	use integer;
-	my $numDevs = keys %$devices;
-	return (($self->{width} eq "fixed") ? 650 : "auto", 19 * ($numDevs / 2 + $numDevs % 2) + 8);
-};	
+	my ($self,$width,$height) = @_;
+	if($self->{sizing} eq "resizable") {
+		$self->{width} = $width if $width;
+		$self->{height} = $height if $height;
+	};
+	
+	# do we have to determine the size?
+	# even if sizing is "auto", we at least determine an initial size
+	# either resizable and no size yet
+	# or fixed
+	if(not $self->{height} or $self->{sizing} eq "fixed") {
+		my $devices = _getDevices($self->{fuip}{NAME},$self->{deviceFilter});
+		use integer;
+		my $numDevs = keys %$devices;
+		$self->{height} = 19 * ($numDevs / 2 + $numDevs % 2) + 8;
+	};	
+	if(not $self->{width} or $self->{sizing} eq "fixed") {
+			$self->{width} = 650;
+	};	
+	return ("auto","auto") if($self->{sizing} eq "auto");
+	return ($self->{width},$self->{height});
+};		
+	
+	
+sub reconstruct($$$) {
+	my ($class,$conf,$fuip) = @_;
+	my $self = FUIP::View::reconstruct($class,$conf,$fuip);
+	# downward compatibility: automatically convert width to resizable
+	return $self unless defined($self->{width});
+	return $self unless $self->{width} =~ m/^(fixed|auto)$/;
+	$self->{sizing} = $self->{width};
+	delete $self->{width};
+	if(defined($self->{defaulted}{width})) {
+		$self->{defaulted}{sizing} = $self->{defaulted}{width};
+		delete $self->{defaulted}{width};
+	};	
+	return $self;
+};
 	
 	
 sub getStructure($) {
@@ -168,7 +199,9 @@ sub getStructure($) {
 		{ id => "title", type => "text", default => { type => "const", value => "Batteries"} },
 		{ id => "deviceFilter", type => "text", options => [ "all", "battery"], 
 			default => { type => "const", value => "all" } }, 
-		{ id => "width", type => "text", options => [ "fixed", "auto" ],
+		{ id => "width", type => "dimension" },
+		{ id => "height", type => "dimension" },
+		{ id => "sizing", type => "sizing", options => [ "fixed", "auto", "resizable" ],
 			default => { type => "const", value => "auto" } },
 		{ id => "columns", type => "text", options => [1,2,3,4], 
 			default => { type => "const", value => 2 } }
