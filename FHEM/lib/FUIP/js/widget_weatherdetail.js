@@ -147,10 +147,10 @@ var Modul_weatherdetail = function() {
 	
 	function getElemDims(elem) {
 		var w = elem.find(".ftuiWeatherDetailOverviewColumn").outerWidth();
-		if(!w) w = elem.find(".tablinks").outerWidth();
+		if(!w) w = elem.find(".ftuiWeatherdetailTablinks").outerWidth();
 		if(!w) w = 0;
 		var h = elem.find(".ftuiWeatherDetailOverviewColumn").outerHeight();
-		if(!h) h = elem.find(".tablinks").outerHeight() + elem.find(".tabContent").outerHeight();
+		if(!h) h = elem.find(".ftuiWeatherdetailTablinks").outerHeight() + elem.find(".ftuiWeatherdetailTabcontent").outerHeight();
 		if(!h) h = 0;
 		return {width: w, height: h};
 	};	
@@ -217,29 +217,14 @@ var Modul_weatherdetail = function() {
 			console.log(id + " resize iteration " + iterations.toString() + " picHeight " + picHeight.toString());
 		};	
 		// line to "close" the tabs
-		var h = elem.find(".tablinks").outerHeight();
+		var h = elem.find(".ftuiWeatherdetailTablinks").outerHeight();
 		if(h) {  // otherwise this is "overview" and not "detail" and there are no tabs
-			var w = elem.width() - elem.find(".tablinks").outerWidth();
+			var w = elem.width() - elem.find(".ftuiWeatherdetailTablinks").outerWidth();
 			if(w < 0) w = 0;
 			elem.find(".ftuiWeatherDetailSpacerLine").height(h).width(w);
 		};	
 		console.log( id + " resize iterations " + iterations.toString());
-		
-		// keep old version
-/* 		var elem = $("#"+id);
-		var days = elem.data("days");	
-		var diffW = elem.find(".ftuiWeatherDetailOverviewColumn").width() - elem.find(".ftuiWeatherdetailSymbolOverview").width();
-		var w = elem.width() / days - diffW;
-		// determine height of the fields without the symbol
-		var diffH = elem.find(".ftuiWeatherDetailOverviewColumn").height() - elem.find(".ftuiWeatherdetailSymbolOverview").height();
-		var h = elem.height() - diffH;
-		if(w * 120 < h * 175) {
-			h = Math.round(w * 120 / 175);
-		}else{
-			w = Math.round(h * 175 / 120);
-		};
-		elem.find(".ftuiWeatherdetailSymbolOverview").height(h).width(w);	
- */	};	
+	};	
 
 	
 	function addSunUvFrost(weatherHtml,tabDay,res,elem) {
@@ -254,16 +239,16 @@ var Modul_weatherdetail = function() {
 		if(sunUvFrost) myHtml += "<table cellspacing='0' cellpadding='0'>";
 		if(sun) {
 			myHtml += "<tr><td><div class='cell large gray wi wi-day-sunny' style='margin:0 !important;'></div></td>"
-			myHtml += "<td><div style='width:40px;'><div class='large inline weatherValue' style='margin:0 !important;'>" + res.Readings['fc' + tabDay + '_sun'].Value + "</div>"
-			myHtml += "<div class='inline small weatherValue' style='margin:0 !important;'>%</div></div></td></tr>";
+			myHtml += "<td><div style='width:40px;'><div class='large inline ftuiWeatherdetailWeatherValue' style='margin:0 !important;'>" + res.Readings['fc' + tabDay + '_sun'].Value + "</div>"
+			myHtml += "<div class='inline small ftuiWeatherdetailWeatherValue' style='margin:0 !important;'>%</div></div></td></tr>";
 		};
 		if(uv) {	
 			myHtml += "<tr><td><div class='cell gray' style='margin:0 !important;'>UV</div></td>";
-			myHtml += "<td><div style='width:40px;'><div class='large weatherValue' style='margin:0 !important;'>" + res.Readings['fc' + tabDay + '_uv'].Value + "</div></div></td></tr>";
+			myHtml += "<td><div style='width:40px;'><div class='large ftuiWeatherdetailWeatherValue' style='margin:0 !important;'>" + res.Readings['fc' + tabDay + '_uv'].Value + "</div></div></td></tr>";
 		};
 		if(frost) {	
 			myHtml += "<tr><td><div class='cell large gray wi wi-snowflake-cold' style='margin:0 !important;'></div></td>";
-			myHtml += "<td><div style='width:40px;'><div class='large weatherValue' style='margin:0 !important;'>" + res.Readings['fc' + tabDay + '_frost'].Value + "</div></div></td></tr>"
+			myHtml += "<td><div style='width:40px;'><div class='large ftuiWeatherdetailWeatherValue' style='margin:0 !important;'>" + res.Readings['fc' + tabDay + '_frost'].Value + "</div></div></td></tr>"
 		};	
 		if(sunUvFrost) myHtml += "</table></td></tr></table>";
 		return myHtml;
@@ -280,16 +265,16 @@ var Modul_weatherdetail = function() {
 		myHtml += "<table cellspacing='0' cellpadding='0'>";
 		if(sun) {
 			myHtml += "<tr><td><div class='cell large gray wi wi-day-sunny' style='margin:0 !important;'></div></td>"
-			myHtml += "<td><div style='width:40px;'><div class='large inline weatherValue' style='margin:0 !important;'>" + res.Readings['fc' + tabDay + '_sun'].Value + "</div>"
-			myHtml += "<div class='inline small weatherValue' style='margin:0 !important;'>%</div></div></td></tr>";
+			myHtml += "<td><div style='width:40px;'><div class='large inline ftuiWeatherdetailWeatherValue' style='margin:0 !important;'>" + res.Readings['fc' + tabDay + '_sun'].Value + "</div>"
+			myHtml += "<div class='inline small ftuiWeatherdetailWeatherValue' style='margin:0 !important;'>%</div></div></td></tr>";
 		};
 		if(uv) {	
 			myHtml += "<tr><td><div class='cell gray' style='margin:0 !important;'>UV</div></td>";
-			myHtml += "<td><div style='width:40px;'><div class='large weatherValue' style='margin:0 !important;'>" + res.Readings['fc' + tabDay + '_uv'].Value + "</div></div></td></tr>";
+			myHtml += "<td><div style='width:40px;'><div class='large ftuiWeatherdetailWeatherValue' style='margin:0 !important;'>" + res.Readings['fc' + tabDay + '_uv'].Value + "</div></div></td></tr>";
 		};
 		if(frost) {	
 			myHtml += "<tr><td><div class='cell large gray wi wi-snowflake-cold' style='margin:0 !important;'></div></td>";
-			myHtml += "<td><div style='width:40px;'><div class='large weatherValue' style='margin:0 !important;'>" + res.Readings['fc' + tabDay + '_frost'].Value + "</div></div></td></tr>"
+			myHtml += "<td><div style='width:40px;'><div class='large ftuiWeatherdetailWeatherValue' style='margin:0 !important;'>" + res.Readings['fc' + tabDay + '_frost'].Value + "</div></div></td></tr>"
 		};	
 		myHtml += "</table></div>";
 		return myHtml;
@@ -298,21 +283,21 @@ var Modul_weatherdetail = function() {
 
 	function addTab(tabDay, res, pathImage, elem) {
 		var datum = res.Readings['fc' + tabDay + '_date'].Value
-		var myHtml = "<button id='tabId" + tabDay + "' class='white tablinks' onclick=\"wtabClicked('" + elem.attr("id") + "','" + tabDay + "')\">"
+		var myHtml = "<button id='tabId" + tabDay + "' class='white ftuiWeatherdetailTablinks' onclick=\"wtabClicked('" + elem.attr("id") + "','" + tabDay + "')\">"
 		myHtml += "<div class='big compressed'>" + datum + "</div>"
 		myHtml += "<div class='large gray'>" + (!tabDay ? 'Heute' : datum.toDate().ee()) + "</div>"
 		var imgFile = getImgFilename(res.Readings['fc' + tabDay + '_weatherDayIcon'].Value, true);
 		var weatherHtml = "<img class='ftuiWeatherdetailSymbolOverview' width=105 height=72 src='" + pathImage + imgFile + "'/>";	
 		if(elem.data('overview').indexOf('text') >= 0) {
 			weatherHtml = "<table cellpadding='0'><tr><td>"+weatherHtml+"</td></tr>" +
-							"<tr><td><div class='large weatherValue' style='white-space:nowrap;margin:0 !important;'>" + res.Readings['fc' + tabDay + '_weatherDay'].Value + "</div></td></tr></table>";
+							"<tr><td><div class='large ftuiWeatherdetailWeatherValue' style='white-space:nowrap;margin:0 !important;'>" + res.Readings['fc' + tabDay + '_weatherDay'].Value + "</div></td></tr></table>";
 		};		
 		myHtml += addSunUvFrost(weatherHtml,tabDay,res,elem);
 		myHtml += "<div style='white-space:nowrap;'>";
-		myHtml += "<div class='bigger inline blue weatherValue'>" + res.Readings['fc' + tabDay + '_tempMin'].Value + "</div>"
-		myHtml += "<div class='normal inline blue weatherUnit'>&#x2103</div>"
-		myHtml += "<div class='bigger inline orange weatherValue'>" + res.Readings['fc' + tabDay + '_tempMax'].Value + "</div>"
-		myHtml += "<div class='normal inline orange weatherUnit'>&#x2103</div>"
+		myHtml += "<div class='bigger inline blue ftuiWeatherdetailWeatherValue'>" + res.Readings['fc' + tabDay + '_tempMin'].Value + "</div>"
+		myHtml += "<div class='normal inline blue ftuiWeatherdetailWeatherUnit'>&#x2103</div>"
+		myHtml += "<div class='bigger inline orange ftuiWeatherdetailWeatherValue'>" + res.Readings['fc' + tabDay + '_tempMax'].Value + "</div>"
+		myHtml += "<div class='normal inline orange ftuiWeatherdetailWeatherUnit'>&#x2103</div>"
 		myHtml += "</div>";
 		myHtml += "<div class='tiny'><br></div></button>"
 		return myHtml;
@@ -330,26 +315,26 @@ var Modul_weatherdetail = function() {
 			if((elem.data('overview').indexOf('sun') >= 0) || (elem.data('overview').indexOf('uv') >= 0) || (elem.data('overview').indexOf('frost') >= 0)) {
 				var picAndTemp = "<img class='ftuiWeatherdetailSymbolOverview'  width=70 height=48 src='" + pathImage + imgFile + "'/>";	
 				if(elem.data('overview').indexOf('text') >= 0) {
-					picAndTemp += "<div class='normal weatherValue' style='margin:0 !important;'>" + res.Readings['fc' + tabDay + '_weatherDay'].Value + "</div>";
+					picAndTemp += "<div class='normal ftuiWeatherdetailWeatherValue' style='margin:0 !important;'>" + res.Readings['fc' + tabDay + '_weatherDay'].Value + "</div>";
 				};		
-				picAndTemp += "<div><div class='big inline blue weatherValue'>" + res.Readings['fc' + tabDay + '_tempMin'].Value + "</div>";
-				picAndTemp += "<div class='small inline blue weatherUnit'>&#x2103</div>";
-				picAndTemp += "<div class='big inline orange weatherValue'>" + res.Readings['fc' + tabDay + '_tempMax'].Value + "</div>";
-				picAndTemp += "<div class='small inline orange weatherUnit'>&#x2103</div></div>";
+				picAndTemp += "<div><div class='big inline blue ftuiWeatherdetailWeatherValue'>" + res.Readings['fc' + tabDay + '_tempMin'].Value + "</div>";
+				picAndTemp += "<div class='small inline blue ftuiWeatherdetailWeatherUnit'>&#x2103</div>";
+				picAndTemp += "<div class='big inline orange ftuiWeatherdetailWeatherValue'>" + res.Readings['fc' + tabDay + '_tempMax'].Value + "</div>";
+				picAndTemp += "<div class='small inline orange ftuiWeatherdetailWeatherUnit'>&#x2103</div></div>";
 				myHtml += addSunUvFrostFlex(picAndTemp,tabDay,res,elem);
 			}else{	
 				myHtml += "<div style='display:flex;align-items:center;'>";
 				myHtml += '<div>';
 				myHtml += "<img class='ftuiWeatherdetailSymbolOverview'  width=70 height=48 src='" + pathImage + imgFile + "'/>";	
 				if(elem.data('overview').indexOf('text') >= 0) {
-					myHtml += "<div class='normal weatherValue' style='margin:0 !important;'>" + res.Readings['fc' + tabDay + '_weatherDay'].Value + "</div>";
+					myHtml += "<div class='normal ftuiWeatherdetailWeatherValue' style='margin:0 !important;'>" + res.Readings['fc' + tabDay + '_weatherDay'].Value + "</div>";
 				};		
 				myHtml += "</div>";
 				myHtml += "<div><div>";
-				myHtml += "<div class='big inline blue weatherValue'>" + res.Readings['fc' + tabDay + '_tempMin'].Value + "</div>"
-				myHtml += "<div class='small inline blue weatherUnit'>&#x2103</div></div>"
-				myHtml += "<div><div class='big inline orange weatherValue'>" + res.Readings['fc' + tabDay + '_tempMax'].Value + "</div>"
-				myHtml += "<div class='small inline orange weatherUnit'>&#x2103</div></div>"
+				myHtml += "<div class='big inline blue ftuiWeatherdetailWeatherValue'>" + res.Readings['fc' + tabDay + '_tempMin'].Value + "</div>"
+				myHtml += "<div class='small inline blue ftuiWeatherdetailWeatherUnit'>&#x2103</div></div>"
+				myHtml += "<div><div class='big inline orange ftuiWeatherdetailWeatherValue'>" + res.Readings['fc' + tabDay + '_tempMax'].Value + "</div>"
+				myHtml += "<div class='small inline orange ftuiWeatherdetailWeatherUnit'>&#x2103</div></div>"
 				myHtml += "</div>";
 				myHtml += "</div>";
 			};	
@@ -359,13 +344,13 @@ var Modul_weatherdetail = function() {
 			myHtml += "<div class='large gray'>" + (!tabDay ? 'Heute' : datum.toDate().ee()) + "</div>";
 			var weatherHtml = "<img class='ftuiWeatherdetailSymbolOverview'  width=105 height=72 src='" + pathImage + imgFile + "'/>";	
 			if(elem.data('overview').indexOf('text') >= 0) {
-				weatherHtml += "<div class='large weatherValue' style='margin:0 !important;'>" + res.Readings['fc' + tabDay + '_weatherDay'].Value + "</div>";
+				weatherHtml += "<div class='large ftuiWeatherdetailWeatherValue' style='margin:0 !important;'>" + res.Readings['fc' + tabDay + '_weatherDay'].Value + "</div>";
 			};		
 			myHtml += addSunUvFrostFlex(weatherHtml,tabDay,res,elem);
-			myHtml += "<div><div class='bigger inline blue weatherValue'>" + res.Readings['fc' + tabDay + '_tempMin'].Value + "</div>"
-			myHtml += "<div class='normal inline blue weatherUnit'>&#x2103</div>"
-			myHtml += "<div class='bigger inline orange weatherValue'>" + res.Readings['fc' + tabDay + '_tempMax'].Value + "</div>"
-			myHtml += "<div class='normal inline orange weatherUnit'>&#x2103</div></div>"
+			myHtml += "<div><div class='bigger inline blue ftuiWeatherdetailWeatherValue'>" + res.Readings['fc' + tabDay + '_tempMin'].Value + "</div>"
+			myHtml += "<div class='normal inline blue ftuiWeatherdetailWeatherUnit'>&#x2103</div>"
+			myHtml += "<div class='bigger inline orange ftuiWeatherdetailWeatherValue'>" + res.Readings['fc' + tabDay + '_tempMax'].Value + "</div>"
+			myHtml += "<div class='normal inline orange ftuiWeatherdetailWeatherUnit'>&#x2103</div></div>"
 		};	
 		myHtml += "</div>"
 		return myHtml;
@@ -394,9 +379,9 @@ var Modul_weatherdetail = function() {
 				myHtml += "<div class='inline "  + (val.length > 4 ? 'normal' : 'big') + "'>" + val+ "</div>" ;
 			} else {
 				var val = (token == '' ? toStr2(i * 3) : res.Readings[token + toStr2(i * 3)].Value);
-				myHtml += "<div class='inline " + (val.length > 4 ? 'normal' : 'big') + " weatherValue'>" + val + "</div>";
+				myHtml += "<div class='inline " + (val.length > 4 ? 'normal' : 'big') + " ftuiWeatherdetailWeatherValue'>" + val + "</div>";
 				if(unit) {
-					myHtml += "<div class='inline small weatherValue'>" + unit + "</div>";
+					myHtml += "<div class='inline small ftuiWeatherdetailWeatherValue'>" + unit + "</div>";
 				};
 			}
 			myHtml += "</div>"
@@ -410,7 +395,7 @@ var Modul_weatherdetail = function() {
 		me.elements.filter('div[data-device="' + device + '"]').each(function(index) {
 			var pathImage = ftui.config.fhemDir + "images/default/weather/";
 			var elem = $(this);
-			var myHtml = elem.data('detail').length ? "<div class='tab' style='white-space:nowrap;text-align:left;'>" : "<div style='white-space:nowrap;height:100%;float:left'>";
+			var myHtml = elem.data('detail').length ? "<div class='ftuiWeatherdetailTab' style='white-space:nowrap;text-align:left;'>" : "<div style='white-space:nowrap;height:100%;float:left'>";
 			var fhemJSON = ftui.sendFhemCommand("jsonlist2 WEB," + device + strDaten).done(function(fhemJSON) {
 				var res = fhemJSON.Results[1]; // 0 = Arg, 1 =Results
 				for (var i = elem.data("startday"); i < elem.data("startday") + elem.data("days"); i++) {
@@ -425,7 +410,7 @@ var Modul_weatherdetail = function() {
 				myHtml += "</div>"; 
 				if(elem.data('detail').length) {
 				for (var day = elem.data("startday"); day < elem.data("startday") + elem.data("days"); day++) {
-					myHtml += "<div id='conId" + day + "' class='sheet tabContent' style='width:auto;height:auto;display:none;'>";
+					myHtml += "<div id='conId" + day + "' class='ftuiWeatherdetailSheet ftuiWeatherdetailTabcontent' style='width:auto;height:auto;display:none;'>";
 					myHtml += addWeatherRow(elem, res, '', 'clock', 'wi wi-time-4', 'Uhr');
 					myHtml += addWeatherRow(elem, res, day, 'weather', 'wi wi-cloud');
 					myHtml += addWeatherRow(elem, res, 'fc' + day + '_weather', 'text', 'wi wi-cloud');
@@ -438,8 +423,8 @@ var Modul_weatherdetail = function() {
 				}
 				myHtml += "<script>"
 				myHtml += "function wtabClicked(id,actTab){"
-				myHtml += "$(\"#\"+id).find('.tablinks').removeClass('active');"
-				myHtml += "$(\"#\"+id).find('.tabContent').css('display','none');"
+				myHtml += "$(\"#\"+id).find('.ftuiWeatherdetailTablinks').removeClass('active');"
+				myHtml += "$(\"#\"+id).find('.ftuiWeatherdetailTabcontent').css('display','none');"
 				myHtml += "$(\"#\"+id).find('#tabId'+actTab).addClass('active');"
 				myHtml += "$(\"#\"+id).find('#conId'+actTab).css('display', 'block');"
 				myHtml += "};"
