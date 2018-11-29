@@ -23,8 +23,8 @@ use warnings;
 						data-get="'.$self->{reading}.'"';
 		};
 		$result .= '
-						data-get-on="on.*|[1-9][0-9]*"
-						data-get-off="off|0"
+						data-get-on="on.*|ON.*|[1-9][0-9]*"
+						data-get-off="off|OFF|0"
 						data-set-on="on"
 						data-set-off="off">
 					</div>
