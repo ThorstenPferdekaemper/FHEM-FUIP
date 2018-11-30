@@ -60,7 +60,7 @@ UPD 2018-11-28_11:37:22 70845 FHEM/lib/FUIP/js/fuip.js
 UPD 2018-11-16_15:34:16 1586 FHEM/lib/FUIP/js/fuip_batteries.js
 UPD 2018-03-17_22:57:55 106396 FHEM/lib/FUIP/js/jquery.tablesorter.js
 UPD 2018-03-17_22:57:55 125594 FHEM/lib/FUIP/js/jquery.tablesorter.widgets.js
-UPD 2018-11-29_14:35:42 25263 FHEM/lib/FUIP/js/widget_weatherdetail.js
+UPD 2018-11-29_22:34:42 25565 FHEM/lib/FUIP/js/widget_weatherdetail.js
 UPD 2018-08-03_14:12:09 4468 FHEM/lib/FUIP/view-images/FUIP-View-Batteries.png
 UPD 2018-08-03_14:17:14 1830 FHEM/lib/FUIP/view-images/FUIP-View-Brightness.png
 UPD 2018-11-25_17:04:03 2518 FHEM/lib/FUIP/view-images/FUIP-View-Chart.png
