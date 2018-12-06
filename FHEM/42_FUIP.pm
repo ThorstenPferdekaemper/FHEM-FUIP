@@ -1234,8 +1234,48 @@ sub renderGears(@) {
 };
 
 
+sub positionsFlexToGridster($$) {
+	# correct positions after changing from flex to gridster layout
+	my ($hash,$pageId) = @_;
+	my $cells = $hash->{pages}{$pageId}{cells};
+	my $firstMainCol = 0;  # i.e. right of menu
+	my $firstMainRow = 0;  # i.e. under title
+	my $regionFound = 0;
+	for my $cell (@{$cells}) {
+		next unless $cell->{region}; # should be fast if empty
+		$regionFound = 1;
+		next if $cell->{region} eq "main";	
+		my ($col,$row) = $cell->position();
+		next unless defined($col) and defined($row);
+		my ($sizeX, $sizeY) = $cell->dimensions();
+		$sizeX = ceil($sizeX);
+		$sizeY = ceil($sizeY);
+		if($cell->{region} eq "menu") {
+			$firstMainCol = $col + $sizeX if($firstMainCol < $col + $sizeX);
+		}else{  # title
+			$firstMainRow = $row + $sizeY if($firstMainRow < $row + $sizeY);
+		};
+	};
+	return unless $regionFound;  # everything without region
+	for my $cell (@{$cells}) {
+		next unless $cell->{region}; # should be fast if empty	
+		my ($col,$row) = $cell->position();
+		if(defined($col) and defined($row)) {
+			if($cell->{region} eq 'title') {
+				$cell->position($col + $firstMainCol, $row);
+			};
+			if($cell->{region} eq 'main') {
+				$cell->position($col + $firstMainCol, $row + $firstMainRow);
+			};
+		};
+		delete $cell->{region};	
+	};	
+};
+
+
 sub renderCells($$$) {
 	my ($hash,$pageId,$locked) = @_;
+	positionsFlexToGridster($hash,$pageId);
 	findPositions($hash,$pageId);
 	# now try to render this
 	my $result;
