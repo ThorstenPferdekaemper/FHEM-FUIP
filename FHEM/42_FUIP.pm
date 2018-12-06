@@ -48,7 +48,7 @@ my $currentPage = "";
 # possible values of attributes can change...
 sub setAttrList($) {
 	my ($hash) = @_;
-    $hash->{AttrList}  = "layout:gridster,flex locked:0,1 fhemwebUrl baseWidth baseHeight pageWidth styleColor viewportUserScalable:yes,no viewportInitialScale gridlines:show,hide snapTo:gridlines,nothing styleBackgroundImage:";
+    $hash->{AttrList}  = "layout:gridster,flex locked:0,1 fhemwebUrl baseWidth baseHeight pageWidth styleSchema:default,blue,green,mobil,darkblue,darkgreen,bright-mint styleColor viewportUserScalable:yes,no viewportInitialScale gridlines:show,hide snapTo:gridlines,nothing styleBackgroundImage:";
 	my $imageNames = getImageNames();
 	$hash->{AttrList} .= join(",",@$imageNames);
 	my $cssNames = getUserCssFileNames();
@@ -510,6 +510,20 @@ sub renderCommonEditStyles($) {
 };
 
 
+sub renderCommonCss($) {
+	my $name = shift;
+	my $lcName = lc($name);
+	my $styleSchema = main::AttrVal($name,"styleSchema","default");
+	my $styleSchemaLine = "";	
+	$styleSchemaLine = '<link rel="stylesheet" href="/fhem/'.$lcName.'/fuip/css/fuip-'.$styleSchema.'-ui.css" type="text/css" />'."\n"; 
+	return '<link rel="shortcut icon" href="/fhem/icons/favicon" />
+			<link rel="stylesheet" href="/fhem/'.$lcName.'/css/fhem-tablet-ui.css"  type="text/css" />'."\n"
+			.$styleSchemaLine
+			.'<link rel="stylesheet" href="/fhem/'.$lcName.'/lib/font-awesome.min.css"   type="text/css" />
+			<link rel="stylesheet" href="/fhem/'.$lcName.'/lib/nesges.css" type="text/css" />'."\n";
+};
+
+
 sub renderPage($$$) {
 	my ($hash,$currentLocation,$locked) = @_;
 	# falls $locked, dann werden die Editierfunktionen nicht mit gerendert
@@ -518,7 +532,7 @@ sub renderPage($$$) {
 	$title = "FHEM Tablet UI by FUIP" unless $title;
 	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
 	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
-	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","#808080");
+	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","var(--fuip-color-foreground,#808080)");
 	my $pageWidth = main::AttrVal($hash->{NAME},"pageWidth",undef);
 	my $layout = main::AttrVal($hash->{NAME},"layout","gridster");
 	my $initialScale = main::AttrVal($hash->{NAME},"viewportInitialScale","1.0");
@@ -542,12 +556,9 @@ sub renderPage($$$) {
 						location.reload(true);
 					};	
 				</script>
-				<title>".$title."</title>
-				<link rel=\"shortcut icon\" href=\"/fhem/icons/favicon\" />
-				<link href=\"/fhem/".lc($hash->{NAME})."/css/fhem-tablet-ui.css\" rel=\"stylesheet\" type=\"text/css\">
-				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/font-awesome.min.css\" />
-				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/nesges.css\">
-				<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
+				<title>".$title."</title>"
+				.renderCommonCss($hash->{NAME})
+				."<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
 		        <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.min.js\"></script>".
 				($locked ? "" : "<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.css\">
 								<!-- tablesorter -->
@@ -561,14 +572,12 @@ sub renderPage($$$) {
 	                .fuip-color {
 		                color: ".$styleColor.";
                     }
-					.gridster ul li {
-						border-radius:8px;";
+					.gridster ul li {";
 	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
 	$result .= '		background: rgba(0, 0, 0, 0.7) !important;' if($backgroundImage);
 	$result .= "
 					}
-					.gridster ul li header {
-						border-radius:8px;";
+					.gridster ul li header { ";
 	$result .= '		background: rgba(0, 0, 0, 0.7) !important;' if($backgroundImage);
 	$result .= "
 					}\n";
@@ -625,7 +634,7 @@ sub renderPageFlex($$) {
 	$title = "FHEM Tablet UI by FUIP" unless $title;
 	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
 	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
-	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","#808080");
+	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","var(--fuip-color-foreground,#808080)");
 	my $pageWidth = main::AttrVal($hash->{NAME},"pageWidth",undef);
 	my $initialScale = main::AttrVal($hash->{NAME},"viewportInitialScale","1.0");
 	my $userScalable = main::AttrVal($hash->{NAME},"viewportUserScalable","no");
@@ -648,12 +657,9 @@ sub renderPageFlex($$) {
 						location.reload(true);
 					};	
 				</script>
-				<title>".$title."</title>
-				<link rel=\"shortcut icon\" href=\"/fhem/icons/favicon\" />
-				<link href=\"/fhem/".lc($hash->{NAME})."/css/fhem-tablet-ui.css\" rel=\"stylesheet\" type=\"text/css\">
-				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/font-awesome.min.css\" />
-				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/nesges.css\">
-				<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
+				<title>".$title."</title>"
+				.renderCommonCss($hash->{NAME})
+				."<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
 		        <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.min.js\"></script>
 				<script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>
                 <style type=\"text/css\">
@@ -667,8 +673,7 @@ sub renderPageFlex($$) {
 	$result .= '		background: rgba(0, 0, 0, 0.7) !important;' if($backgroundImage);
 	$result .= "
 					}
-					.gridster ul li header {
-						border-radius:8px;";
+					.gridster ul li header { ";
 	$result .= '		background: rgba(0, 0, 0, 0.7) !important;' if($backgroundImage);
 	$result .= '
 					}
@@ -737,7 +742,7 @@ sub renderPageFlexMaint($$) {
 	$title = "FHEM Tablet UI by FUIP" unless $title;
 	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
 	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
-	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","#808080");
+	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","var(--fuip-color-foreground,#808080)");
 	my $pageWidth = main::AttrVal($hash->{NAME},"pageWidth",undef);
 	my $initialScale = main::AttrVal($hash->{NAME},"viewportInitialScale","1.0");
 	my $userScalable = main::AttrVal($hash->{NAME},"viewportUserScalable","no");
@@ -757,12 +762,9 @@ sub renderPageFlexMaint($$) {
 						location.reload(true);
 					};	
 				</script>
-				<title>".$title."</title>
-				<link rel=\"shortcut icon\" href=\"/fhem/icons/favicon\" />
-				<link href=\"/fhem/".lc($hash->{NAME})."/css/fhem-tablet-ui.css\" rel=\"stylesheet\" type=\"text/css\">
-				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/font-awesome.min.css\" />
-				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/nesges.css\">
-				<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
+				<title>".$title."</title>"
+				.renderCommonCss($hash->{NAME})
+				."<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
 		        <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.min.js\"></script>
 				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.css\">
 								<!-- tablesorter -->
@@ -790,8 +792,7 @@ sub renderPageFlexMaint($$) {
 	$result .= '		background: rgba(0, 0, 0, 0.7) !important;' if($backgroundImage);
 	$result .= "
 					}
-					.gridster ul li header {
-						border-radius:8px;";
+					.gridster ul li header { ";
 	$result .= '		background: rgba(0, 0, 0, 0.7) !important;' if($backgroundImage);
 	$result .= "
 					}
@@ -880,17 +881,16 @@ sub renderPopupMaint($$) {
 	$currentPage = $dialog;
 	
 	my $title = "Maintain Popup Content";
-	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","#808080");
+	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","var(--fuip-color-foreground,#808080)");
   	my $result = 
 	   "<!DOCTYPE html>
 		<html data-name=\"".$hash->{NAME}."\" data-pageid=\"".$urlParams->{pageid}."\" 
 				data-cellid=\"".$urlParams->{cellid}."\" data-fieldid=\"".$urlParams->{fieldid}."\"
 				data-editonly=\"".$hash->{editOnly}."\">
 			<head>
-	            <title>".$title."</title>
-				<link rel=\"shortcut icon\" href=\"/fhem/icons/favicon\" />
-				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/font-awesome.min.css\" />
-				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/lib/nesges.css\">
+	            <title>".$title."</title>"
+				.renderCommonCss($hash->{NAME})
+				."
 				<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
 		        <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.min.js\"></script>".
 				"<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.css\">
@@ -924,17 +924,17 @@ sub renderPopupMaint($$) {
 				</script>'."\n"
 				.renderHeaderHTML($hash,$dialog)
             ."</head>
-            <body style='background-color:lightgrey;'";
+            <body";
 	my ($width,$height) = $dialog->dimensions();	
 	$result .= '>'."\n"
 				.renderUserHtmlBodyStart($hash,$dialog)
-	.'<div id="popupcontent" class="fuip-droppable"
+	.'<div id="popupcontent" class="fuip-droppable fuip-cell"
 		style="width:'.$width.'px;height:'.$height.'px;border:0;border-bottom:1px solid #aaa;
-									border-radius: 4px;box-shadow: 0 3px 9px rgba(0, 0, 0, 0.5);
+									box-shadow: 0 3px 9px rgba(0, 0, 0, 0.5);
 									border: 1px solid rgba(0, 0, 0, 0.1);
-									background-color: #2A2A2A;
 									margin:0;display:inline;position:absolute;top:0;left:0;">'
-				.renderGears($hash->{NAME},$urlParams->{pageid},$urlParams->{cellid},$urlParams->{fieldid}).'<header>'.$dialog->{title}.'</header>';
+				.renderGears($hash->{NAME},$urlParams->{pageid},$urlParams->{cellid},$urlParams->{fieldid}).'
+				<header class="fuip-cell-header">'.$dialog->{title}.'</header>';
 	$result .= $dialog->getHTML(0);  # this is maint, so never locked	
 	$result .= '</div>
 		<div id="viewsettings">
@@ -1246,12 +1246,12 @@ sub renderCells($$$) {
 		my ($sizeX, $sizeY) = $cell->dimensions();
 		$sizeX = ceil($sizeX);
 		$sizeY = ceil($sizeY);
-		$result .= "<li data-cellid=\"".$i."\" data-row=\"".($row+1)."\" data-col=\"".($col+1)."\" data-sizex=\"".$sizeX."\" data-sizey=\"".$sizeY."\" class=\"fuip-droppable\">";
+		$result .= "<li data-cellid=\"".$i."\" data-row=\"".($row+1)."\" data-col=\"".($col+1)."\" data-sizex=\"".$sizeX."\" data-sizey=\"".$sizeY."\" class=\"fuip-droppable fuip-cell\">";
 		$cell->applyDefaults();
 		# if there is no title and it is locked, we do not display a header
 		# TODO: find better handle for dragging
 		if(not $locked or $cell->{title}) {
-			$result .= "<header>".($cell->{title} ? $cell->{title} : "").($locked ? "" : " ".$i."\n"
+			$result .= "<header class='fuip-cell-header'>".($cell->{title} ? $cell->{title} : "").($locked ? "" : " ".$i."\n"
 							.renderGears($hash->{NAME},$pageId,$i)).
 						"</header>";
 		};				
@@ -1330,16 +1330,15 @@ sub renderCellsFlexMaint($$$) {
 		$sizeY = ceil($sizeY);
 		my $width = $sizeX * ($baseWidth + 10) - 10; 
 		my $height = $sizeY * ($baseHeight + 10) - 10; 
-		$result .= "<div id='fuip-flex-fake-".$i."' style=\"grid-area:".($row+1)." / ".($col+1)." / ".($row+$sizeY+1)." / ".($col+$sizeX+1).";border:0;border-radius: 8px;background-color: #6A6A6A;position:relative;width:".$width."px;height:".$height."px;px;\">
-					<div id='fuip-flex-cell-".$i."' data-cellid=\"".$i."\" class=\"fuip-droppable\" style=\"position:absolute;width:".$width."px;height:".$height."px;
-									border:0;
-									border-radius: 8px;
-									background-color: #2A2A2A;\">";
+		$result .= "<div id='fuip-flex-fake-".$i."' style=\"grid-area:".($row+1)." / ".($col+1)." / ".($row+$sizeY+1)." / ".($col+$sizeX+1).";border:0;border-radius: 8px;position:relative;width:".$width."px;height:".$height."px;px;\">
+					<div id='fuip-flex-cell-".$i."' data-cellid=\"".$i."\" class=\"fuip-droppable fuip-cell\" style=\"position:absolute;width:".$width."px;height:".$height."px;
+									border:0;\">";
 		$cell->applyDefaults();
 		# TODO: find better handle for dragging
-		$result .= "<header style='border-radius:8px;background: #262626;color: #8c8c8c;display: block;
-										font-size: 0.85em;font-weight: bold;line-height: 2em;
-										text-align: center;width: 100%;'>".($cell->{title} ? $cell->{title} : "").$i."\n"
+		$result .= "<header class='fuip-cell-header'
+							style='display: block;
+							font-size: 0.85em;font-weight: bold;line-height: 2em;
+							text-align: center;width: 100%;'>".($cell->{title} ? $cell->{title} : "").$i."\n"
 						.renderGears($hash->{NAME},$pageId,$i)				
 						."</header>";
 
@@ -1395,11 +1394,9 @@ sub renderCellsFlex($$) {
 		my $width = $sizeX * ($baseWidth + 10) - 10;
 		my $height = $sizeY * ($baseHeight + 10) - 10;  # -10 + 22
 		# TODO: col, row, sizex, sizey ?
-		my $cellHtml = "<div data-cellid=\"".$i."\" data-row=\"".($row+1)."\" data-col=\"".($col+1)."\" data-sizex=\"".$sizeX."\" data-sizey=\"".$sizeY."\" class=\"fuip-droppable\" style=\"width:";
+		my $cellHtml = "<div data-cellid=\"".$i."\" data-row=\"".($row+1)."\" data-col=\"".($col+1)."\" data-sizex=\"".$sizeX."\" data-sizey=\"".$sizeY."\" class=\"fuip-droppable fuip-cell\" style=\"width:";
 		$cellHtml .= $width.'px';
 		$cellHtml .= ";height:".$height."px;position:relative;border:0;
-									border-radius: 8px;
-									background-color: #2A2A2A;
 									order:".($row*100+$col).";";
 		$cellHtml .= '				flex:auto;' if($cell->{region} eq "menu" and $row == $lastMenuRow or $cell->{region} eq "main" or $cell->{region} eq "title" and $col == 0);
 		$cellHtml .= '				margin:5px;">';
@@ -1418,9 +1415,10 @@ sub renderCellsFlex($$) {
 		$cellHtml .= '100%';
 		$cellHtml .= ';height:'.$height.'px;">';
 		if($cell->{title}) {
-			$cellHtml .= "<header style='border-radius:8px;background: #262626;color: #8c8c8c;display: block;
-										font-size: 0.85em;font-weight: bold;line-height: 2em;
-										text-align: center;width: 100%;'>".$cell->{title}."
+			$cellHtml .= "<header class='fuip-cell-header' 
+								style='display: block;
+								font-size: 0.85em;font-weight: bold;line-height: 2em;
+								text-align: center;width: 100%;'>".$cell->{title}."
 						</header>";
 		};				
 		if($col == 0 and $cell->{region} eq "title") {

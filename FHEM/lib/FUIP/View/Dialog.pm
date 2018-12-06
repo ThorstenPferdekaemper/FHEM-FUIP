@@ -59,8 +59,8 @@ sub _getViewHTML($) {
 	if($popupField) {
 		# dialog->getHTML: always locked as we cannot configure the popup directly
 		$result .= '</div>
-					<div class="dialog">
-					<header>'.$dialog->{title}.'</header>	
+					<div class="dialog fuip-cell">
+					<header class="fuip-cell-header">'.$dialog->{title}.'</header>	
 				'.$dialog->getHTML(1).' 
 					</div>
 				</div>';

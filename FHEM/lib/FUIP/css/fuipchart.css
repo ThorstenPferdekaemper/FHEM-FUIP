@@ -1,5 +1,5 @@
 
-text.fuipchart.title { font-size:16px; fill:#808080; }
+text.fuipchart.title { font-size:16px; }
 
 /* all normal lines should have no fill */
 .fuipchart:not([class*="fill"]):not([class*=dot]):not(text) { fill:none; } 

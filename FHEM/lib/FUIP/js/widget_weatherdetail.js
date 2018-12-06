@@ -290,7 +290,7 @@ var Modul_weatherdetail = function() {
 
 	function addTab(tabDay, res, pathImage, elem) {
 		var datum = res.Readings['fc' + tabDay + '_date'].Value
-		var myHtml = "<button id='tabId" + tabDay + "' class='white ftuiWeatherdetailTablinks' onclick=\"wtabClicked('" + elem.attr("id") + "','" + tabDay + "')\">"
+		var myHtml = "<button id='tabId" + tabDay + "' class='ftuiWeatherdetailTablinks' onclick=\"wtabClicked('" + elem.attr("id") + "','" + tabDay + "')\">"
 		myHtml += "<div class='big compressed'>" + datum + "</div>"
 		myHtml += "<div class='large gray'>" + (!tabDay ? 'Heute' : datum.toDate().ee()) + "</div>"
 		var imgFile = getImgFilename(res.Readings['fc' + tabDay + '_weatherDayIcon'].Value, true);
@@ -413,7 +413,7 @@ var Modul_weatherdetail = function() {
 					};
 				};	
 				if(elem.data('detail').length)
-					myHtml += '<div class="ftuiWeatherDetailSpacerLine" style="vertical-align:top;display:inline-block;height:100px;width:100px;border-color:#eee;border-width:1px;border-style:none none solid none;"></div>';
+					myHtml += '<div class="ftuiWeatherDetailSpacerLine" style="vertical-align:top;display:inline-block;height:100px;width:100px;border-width:1px;border-style:none none solid none;"></div>';
 				myHtml += "</div>"; 
 				if(elem.data('detail').length) {
 				for (var day = elem.data("startday"); day < elem.data("startday") + elem.data("days"); day++) {

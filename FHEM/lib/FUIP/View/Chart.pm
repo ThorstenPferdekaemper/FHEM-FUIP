@@ -237,7 +237,7 @@ sub getHTML($){
 					data-minvalue_sec="'.$minmax_sec[0].'" 
 					data-maxvalue_sec="'.$minmax_sec[1].'"
 					data-title="'.$gplot->{conf}{title}.'"
-					data-title_class="fuipchart title"
+					data-title_class="fuipchart title fuip-color-foreground"
 					data-ytext='.$gplot->{conf}{ylabel}.'
 					data-ytext_sec='.$gplot->{conf}{y2label}.'
 					data-legendpos=\'["left","top"]\'
@@ -246,7 +246,6 @@ sub getHTML($){
 				</div>'."\n";
 	# main::Log3(undef,1,$result);	
 	return $result;		
-
 };
 	
 	

@@ -10,12 +10,16 @@ use warnings;
 	sub getHTML($){
 		my ($self) = @_;
 		# show Reading state, if it exists
-		my $color = "grey";
-		if($self->{active}) {$color = "#aa6900";};
+		my $class = "fuip-menu-item";
+		my $color = "fuip-color-menuitem";
+		if($self->{active}) {
+			$class = "fuip-menu-item-active";
+			$color = "fuip-color-menuitem-active";
+		};
 		my $link = (substr($self->{link},0,1) eq "/" ? $self->{link} : "/fhem/".lc($self->{fuip}{NAME})."/page/".$self->{link});
 		return '	
-			<div data-type="link" data-color="'.$color.'" data-border-color="'.$color.'" data-url="'.$link.'" 
-				data-icon="'.$self->{icon}.'" class="round">'.$self->{text}.'</div>';		
+			<div data-type="link" data-color="'.$color.'" data-height="36px" data-url="'.$link.'" 
+				data-icon="'.$self->{icon}.'" class="'.$class.'">'.$self->{text}.'</div>';		
 	};
 
 	

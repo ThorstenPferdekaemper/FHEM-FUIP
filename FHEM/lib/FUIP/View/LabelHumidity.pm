@@ -23,7 +23,7 @@ sub getHTML($){
 						 data-get=\"".$self->{humidity}{reading}."\"
 						 data-unit=\" %\"
 						 data-limits=\"[-1,20,39,59,65,79]\"
-						 data-colors='[\"#ffffff\",\"#6699ff\",\"#AA6900\",\"FFCC80\",\"#AD3333\",\"#FF0000\"]'
+						 data-colors='[\"#ffffff\",\"#6699ff\",\"#AA6900\",\"#AB4E19\",\"#AD3333\",\"#FF0000\"]'
 						 class=\"big\">
 					</div>";
 	return $result;	

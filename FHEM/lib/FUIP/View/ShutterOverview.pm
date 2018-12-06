@@ -29,11 +29,12 @@ use warnings;
 		my $result = '
 			<table style="width:100%;height:'.$height.'px !important;"><tr><td>
 			<div data-type="symbol" data-device="'.$device.'" data-get="'.$self->{readingLevel}.'"
-                    data-icons=\'["'.join('","',@icons).'"]\'
+                    class="cold"
+					data-icons=\'["'.join('","',@icons).'"]\'
 					data-states=\'["'.join('","',@levels).'"]\' 
-					data-colors=\'["#2A2A2A","#2A2A2A","#2A2A2A","#2A2A2A","#2A2A2A","#2A2A2A","#2A2A2A","#2A2A2A","#2A2A2A","#2A2A2A","#2A2A2A"]\' 
-					data-background-colors=\'["#aa6900","#aa6900","#aa6900","#aa6900","#aa6900","#aa6900","#aa6900","#aa6900","#aa6900","#aa6900","#aa6900"]\' 
-					data-background-icons=\'["fa-square","fa-square","fa-square","fa-square","fa-square","fa-square","fa-square","fa-square","fa-square","fa-square","fa-square"]\'>
+					data-background-colors=\'['.('"fuip-color-symbol-active",' x 10).'"fuip-color-symbol-active"]\' 
+					data-colors=\'['.('"fuip-color-symbol-foreground",' x 10).'"fuip-color-symbol-foreground"]\' '
+					.'data-background-icons=\'["fa-square","fa-square","fa-square","fa-square","fa-square","fa-square","fa-square","fa-square","fa-square","fa-square","fa-square"]\'>
 			</div>
 			</td></tr>';
 		if($self->{label}) {

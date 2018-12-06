@@ -11,7 +11,7 @@ sub getHTML($){
 	my ($self) = @_;
 	my $result = $self->{text};
 	if($self->{icon}){
-		$result = '<div data-type="link" data-color="grey" data-text-align="left" data-icon="'.$self->{icon}.'">'.$result.'</div>';	
+		$result = '<div data-type="link" data-color="fuip-color-foreground" data-text-align="left" data-icon="'.$self->{icon}.'">'.$result.'</div>';	
 	};
 	return $result;
 };

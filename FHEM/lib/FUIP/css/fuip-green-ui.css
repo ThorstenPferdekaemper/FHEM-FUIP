@@ -1,0 +1,179 @@
+/*  color theme style addon for FTUI
+    Copyright (c) 2018 Mario Stephan <mstephan@shared-files.de>
+*/
+
+
+/* colors */
+
+.warm {
+    color: #32a054;
+}
+
+/* Slider colors */
+.range-handle {
+  background-color: #bcbcbc !important;
+}
+[data-type="slider"]:not([data-background-color]) .range-bar {
+  background-color: #404040;
+}
+[data-type="slider"]:not([data-color]) .range-quantity {
+    background-color: #32a054 !important;
+}
+
+polyline {
+    stroke: #32a054 !important;
+}
+
+
+/* spinner colors */
+[data-type="spinner"]:not([data-color]) .spinner {
+  color: #337ab7;
+}
+[data-type="spinner"]:not([data-background-color]) .spinner {
+  background-color: #404040  !important;
+}
+[data-type="spinner"]:not([data-background-color]) .spinner .levelRange {
+  background-color: #32a054 !important;
+}
+
+/* color theme classes for widgets */
+
+/* label widget */
+[data-type="label"].active {
+  color: #32a054 !important;
+}
+
+/* symbol  widget */
+/* foreground on */
+[data-type="symbol"]:not([data-colors]):not([data-on-color]):not([data-color]) .active i#fg {
+    color: #32a054 !important;
+}
+
+/* switch  widget */
+/* background on */
+[data-type="switch"]:not([data-background-colors]):not([data-on-background-color]):not([data-background-color]) .active i#bg,
+[data-type="dimmer"]:not([data-background-colors]):not([data-on-background-color]):not([data-background-color]) .active i#bg,
+[data-type="button"]:not([data-background-colors]):not([data-on-background-color]):not([data-background-color]) .active i#bg {
+    color: #32a054 !important;
+}
+
+/* switch  widget invert */
+/* foreground on */
+[data-type="switch"]:not([data-colors]):not([data-on-color]):not([data-color]).invert .active i#fg,
+[data-type="dimmer"]:not([data-colors]):not([data-on-color]):not([data-color]).invert .active i#fg,
+[data-type="button"]:not([data-colors]):not([data-on-color]):not([data-color]).invert .active i#fg{
+    color: #32a054 !important;
+}
+
+/* push  widget */
+/* foreground on */
+    color: #32a054 !important;
+}
+/* background on */
+[data-type="push"]:not([data-background-colors]):not([data-on-background-color]):not([data-background-color]) .active i#bg {
+    color: #32a054 !important;
+}
+
+/* pseudo classes for canvas painted widgets
+   read by ftui.getStyle() in init and reinit function  */
+
+.checkbox.on{color:#bfbfbf; background-color:#32a054; }
+.checkbox.off{color:#bfbfbf; background-color:#505050; }
+
+.volume.handle{color:#32a054;}
+.wind_direction.handle{color:#32a054;}
+
+.homestatus{background-color:#666;color:#32a054;}
+.homestatus.icon{background-color:#777;color:#222;}
+
+.thermostat{background-color:#222;color:#7a7a7a;}
+
+
+/* CSS classes for FUIP styles */
+/* Thorsten Pferdekaemper */
+/* "green" style */
+
+/* main cell background color */
+.fuip-color-background {
+    background-color:#2A2A2A;
+}
+:root{
+	--fuip-color-background: #2A2A2A;
+}
+
+/* main theme color */
+.fuip-color-symbol-active {
+    color: #32a054;
+}
+:root {
+	--fuip-color-symbol-active: #32a054;
+}
+
+
+/* color for inactive switches/symbols */
+.fuip-color-symbol-inactive {
+    color: #505050;
+}
+
+/* color for symbol foreground */
+.fuip-color-symbol-foreground {
+	color: #2A2A2A;
+}
+:root {
+	--fuip-color-symbol-foreground: #2A2A2A;
+}
+
+
+/* color for "inactive" menu items or other texts etc 
+	TODO: Attribute styleColor? */
+.fuip-color-foreground, text.title.fuip-color-foreground  {
+	color: #EEE;
+	fill: #EEE;
+}	
+:root {
+	--fuip-color-foreground: #EEE;
+}
+
+
+/* cell */
+.fuip-cell {
+	border-radius:8px;
+	background-color: var(--fuip-color-background);
+	color: var(--fuip-color-foreground);
+}
+
+
+/* cell headers */
+.fuip-cell-header {
+	border-radius:8px 8px 0px 0px;
+	background-color: #262626;
+	color: #8c8c8c;			
+}
+
+
+/* menu item */
+div[data-type="link"].fuip-menu-item,
+.fuip-menu-item,
+div[data-type="link"].fuip-menu-item-active,
+.fuip-menu-item-active {
+	margin: 3px 4px;
+	text-align: center;
+	border-style: solid;
+	border-radius: 17px;
+	border-width:2px;
+	display:flex;
+	align-items:center;
+} 
+
+
+.fuip-color-menuitem {
+	color: var(--fuip-color-foreground);
+}
+
+.fuip-color-menuitem-active {
+	color: var(--fuip-color-symbol-active);
+}
+
+
+
+

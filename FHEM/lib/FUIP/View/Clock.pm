@@ -1,4 +1,3 @@
-# class FUIP::View
 package FUIP::View::Clock;
 
 use strict;
@@ -8,13 +7,13 @@ use lib::FUIP::View;
 use parent -norequire, 'FUIP::View';
 
 
-	sub getHTML($){
-		return "<div data-type=\"clock\" data-format=\"H:i\" class=\"container bigger\"></div> 
-                <div data-type=\"clock\" data-format=\"d.M Y\" class=\"cell\"></div>"; 			
- 	};
+sub getHTML($){
+	return '<div data-type="clock" data-format="H:i" class="container bigger fuip-color-foreground"></div> 
+            <div data-type="clock" data-format="d.M Y" class="cell fuip-color-foreground"></div>'; 			
+};
 	
 	
-	sub getStructure($) {
+sub getStructure($) {
 	# class method
 	# returns general structure of the view without instance values
 	my ($class) = @_;

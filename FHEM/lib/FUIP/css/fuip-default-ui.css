@@ -1,0 +1,90 @@
+/* CSS classes for FUIP styles */
+/* Thorsten Pferdekaemper */
+/* "default" style */
+
+.thermostat.actual{ color:#888; }
+
+/* main cell background color */
+.fuip-color-background {
+    background-color:#2A2A2A;
+}
+:root {
+	--fuip-color-background: #2A2A2A;
+}
+
+/* main theme color */
+.fuip-color-symbol-active {
+    color: #AA6900;
+}
+:root {
+	--fuip-color-symbol-active: #AA6900;
+}
+
+
+/* color for inactive switches/symbols */
+.fuip-color-symbol-inactive {
+    color: #505050;
+}
+:root {
+	--fuip-color-symbol-inactive: #505050;
+}
+
+
+/* color for symbol foreground */
+.fuip-color-symbol-foreground {
+	color: #2A2A2A;
+}
+
+
+/* color for "inactive" menu items or other texts etc 
+	TODO: Attribute styleColor? */
+.fuip-color-foreground, text.title.fuip-color-foreground {
+	color: #808080;
+	fill: #808080;
+}	
+:root {
+	--fuip-color-foreground: #808080;
+}
+
+
+/* cell */
+.fuip-cell {
+	border-radius:8px;
+	background-color: var(--fuip-color-background);
+	color: var(--fuip-color-foreground);
+}
+
+
+/* cell headers */
+.fuip-cell-header {
+	border-radius:8px 8px 0px 0px;
+	background-color: #262626;
+	color: #8c8c8c;			
+}
+
+
+/* menu item */
+div[data-type="link"].fuip-menu-item,
+.fuip-menu-item,
+div[data-type="link"].fuip-menu-item-active,
+.fuip-menu-item-active {
+	margin: 3px 4px;
+	text-align: center;
+	border-style: solid;
+	border-radius: 17px;
+	border-width:2px;
+	display:flex;
+	align-items:center;
+} 
+
+
+.fuip-color-menuitem {
+	color: var(--fuip-color-foreground);
+}
+
+.fuip-color-menuitem-active {
+	color: var(--fuip-color-symbol-active);
+}
+
+
+

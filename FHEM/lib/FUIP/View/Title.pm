@@ -11,9 +11,10 @@ sub getHTML($){
 	my ($self) = @_;
 	return '<div style="display:flex;justify-content:flex-start;align-items:center;">
 				<div data-type="button" data-icon="'.$self->{icon}.'" 
-		             data-on-color="#2A2A2A" data-on-background-color="#aa6900" data-off-color="#2A2A2A" data-off-background-color="#aa6900" 
+		             data-on-color="fuip-color-symbol-foreground" data-on-background-color="fuip-color-symbol-active"
+					 data-off-color="fuip-color-symbol-foreground" data-off-background-color="fuip-color-symbol-active" 
 		             class="cell small readonly"></div>
-		        <div style="color:#808080;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" class="bigger">'.uc($self->{text}).'</div>
+		        <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" class="bigger fuip-color-foreground">'.uc($self->{text}).'</div>
 		      </div>';
 };
 
