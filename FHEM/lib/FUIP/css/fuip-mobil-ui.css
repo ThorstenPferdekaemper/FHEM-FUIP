@@ -1,6 +1,26 @@
 /*  color theme style addon for FTUI
-    Copyright (c) 2018 Mario Stephan <mstephan@shared-files.de>
+    Started 2018 by Mario Stephan <mstephan@shared-files.de>
+	Thorsten Pferdekaemper (mit Marios Genehmigung)
 */
+
+/* ---- color variables ---- */
+:root{
+/* main cell background color */
+	--fuip-color-background: #fff;
+/* background when mouse hovers over, used in weatherdetail, defaults to #444 */
+	--fuip-color-background-hover: #eee;
+/* main theme color */
+	--fuip-color-symbol-active: #0088CC;
+/* color for inactive switches/symbols */
+	--fuip-color-symbol-inactive: rgba(153, 153, 153, 0.6);
+/* color for symbol foreground */
+	--fuip-color-symbol-foreground: #eee;
+/* color for "inactive" menu items or other texts etc 
+	might be overwritten by attribute styleColor */
+	--fuip-color-foreground: #555;
+/* color for overlay of "edit only" mode. Defaults to rgba(255,255,255,.1) */
+	--fuip-color-editonly: rgba(255,255,255,.1);		
+}
 
 
 /* colors */
@@ -235,52 +255,35 @@ option {background-color: #ffffff;}
 
 
 /* CSS classes for FUIP styles */
-/* Thorsten Pferdekaemper */
 /* "mobil" style */
 
 /* main cell background color */
 .fuip-color-background {
-    background-color:#fff;
-}
-:root{
-	--fuip-color-background: #fff;
-	--fuip-color-background-hover: #eee;
+    background-color: var(--fuip-color-background);
 }
 
 /* main theme color */
 .fuip-color-symbol-active {
-    color: #0088CC;
-}
-:root {
-	--fuip-color-symbol-active: #0088CC;
+    color: var(--fuip-color-symbol-active);
 }
 
 /* color for inactive switches/symbols */
 .fuip-color-symbol-inactive {
-    color: rgba(153, 153, 153, 0.6);
-}
-:root {
-	--fuip-color-symbol-inactive: rgba(153, 153, 153, 0.6);
+    color: var(--fuip-color-symbol-inactive);
 }	
 
 /* color for symbol foreground */
 .fuip-color-symbol-foreground {
-	color: #eee;
-}
-:root {
-	--fuip-color-symbol-foreground: #eee;
+	color: var(--fuip-color-symbol-foreground);
 }
 
 
 /* color for "inactive" menu items or other texts etc 
 	TODO: Attribute styleColor? */
 .fuip-color-foreground, text.title.fuip-color-foreground {
-	color: #555;
-	fill: #555;
+	color: var(--fuip-color-foreground);
+	fill: var(--fuip-color-foreground);
 }	
-:root {
-	--fuip-color-foreground: #555;
-}
 
 
 /* cell headers */
@@ -320,6 +323,12 @@ div[data-type="link"].fuip-menu-item-active,
 	align-items:center;
 } 
 
+div[data-type="link"].fuip-menu-item > .linklefticon,
+.fuip-menu-item > .linklefticon,
+div[data-type="link"].fuip-menu-item-active > .linklefticon,
+.fuip-menu-item-active > .linklefticon {
+	padding-left: 2px;
+} 
 
 div[data-type="link"].fuip-menu-item,
 .fuip-menu-item {
@@ -331,8 +340,17 @@ div[data-type="link"].fuip-menu-item-active,
 	background-color: var(--fuip-color-symbol-active);
 }
 
+:root {
+	--fuip-color-editonly: rgba(96,96,96,0.1);
+}	
 
+.gridster .preview-holder {
+  background-color: lightblue;
+}
 
-
-
-
+.fuip-flex-fake {
+	background-color: lightblue;
+	transition: width 0.5s, height 0.5s;
+	border-radius:0;
+	border: 0;
+}

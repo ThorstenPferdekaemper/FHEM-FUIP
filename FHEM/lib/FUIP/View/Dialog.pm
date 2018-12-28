@@ -89,10 +89,10 @@ sub getHTML($$){
 			$result .= 'height:'.$height.'px;';
 		};
 		$result .= 'z-index:10">'._getViewHTML($view);
-		if($self->{fuip}{editOnly}) {
+		if(not $locked and $self->{fuip}{editOnly}) {
 			my $title = ($view->{title} ? $view->{title} : '');
 			$title .= ' ('.blessed($view).')';
-			$result .= '<div title="'.$title.'" style="position:absolute;left:0;top:0;width:100%;height:100%;z-index:11;background:rgba(255,255,255,.1);"></div>';
+			$result .= '<div title="'.$title.'" style="position:absolute;left:0;top:0;width:100%;height:100%;z-index:11;background:var(--fuip-color-editonly,rgba(255,255,255,.1));"></div>';
 		};
 		$result .= '</div></div>';
 		$i++;

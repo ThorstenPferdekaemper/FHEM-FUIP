@@ -18,13 +18,13 @@ function fuipInit(conf) { //baseWidth, baseHeight, maxCols, gridlines, snapTo
 		});
 		// is this the dialog maintenance page?
 		var fieldid = $("html").attr("data-fieldid");
+		var templateid = $("html").attr("data-viewtemplate");
 		// switch to page settings does not make sense for dialog maintenance
-		if(!fieldid) {
+		if(!fieldid && !templateid) {
 			$(function() {
-				$('.ui-dialog-titlebar').append('<button id="togglecellpage" type="button" style="position:absolute;top:0px;left:0px;" onclick="toggleCellPage()">Cell/Page</button>');
-				$('#togglecellpage').button({
-					icon: 'ui-icon-transferthick-e-w',
-				});		
+				$('.ui-dialog-titlebar').append(
+					'<ul id="fuip-menutoggle" data-fuip-state="init"></ul>');
+				toggleConfigMenu();
 			});
 		};	
 		// every view is draggable					
@@ -39,7 +39,7 @@ function fuipInit(conf) { //baseWidth, baseHeight, maxCols, gridlines, snapTo
 				drag: function(e,ui) {
 					if(fuip.snapTo == "nothing") return;
 					if(e.altKey) return;
-					var dim = gridDimensions();
+					var dim = snapDimensions();
 					var n = (ui.position.left + fuip.drag_start_left - 5) / dim.gridWidth;
 					if(n - Math.floor(n) > 0.5) n++;
 					var snapped = 5 + Math.floor(n) * dim.gridWidth;  // offset	
@@ -58,7 +58,7 @@ function fuipInit(conf) { //baseWidth, baseHeight, maxCols, gridlines, snapTo
 				resize: function(e,ui) {
 					if(fuip.snapTo == "nothing") return;
 					if(e.altKey) return;
-					var dim = gridDimensions();
+					var dim = snapDimensions();
 					var n = (ui.position.left + ui.size.width) / dim.gridWidth;
 					if(n - Math.floor(n) > 0.5) n++;
 					var snapped = Math.floor(n) * dim.gridWidth;  // offset	
@@ -96,9 +96,138 @@ function fuipInit(conf) { //baseWidth, baseHeight, maxCols, gridlines, snapTo
 		}).data('gridster');
 	};
 	if(conf.gridlines == "show") drawGrid();   
+	// render where-used-list(s)
+	renderWhereUsedLists();
 	});
 };
-		
+	
+	
+function toggleConfigMenu(){
+	// cell menu
+	// Goto ->
+	//		Page config
+	//		View templates
+	// Cell ->
+	//		Add new
+	//		Copy
+	//		Export
+	//		Import
+	//		Delete
+	//		Arrange views
+	//		Make view templ.
+	//
+	// page menu
+	// Goto ->
+	//		Cell config 
+	//		View templates
+	// Page ->
+	//		Copy
+	//		Export
+	//		Import
+	//		Repair
+	
+	let menu;
+	if($('#fuip-menutoggle').attr("data-fuip-state") == "closed"){
+		// menu up to "Goto" header
+		let html = '<ul id="fuip-menutoggle" data-fuip-state="opened"  style="position:absolute;top:2px;left:2px;z-index:999;width:175px;text-align:left;"><li><div><span class="ui-icon ui-icon-triangle-1-s"></span>Menu</div></li><li class="ui-menu-divider"></li><li class="ui-widget-header"><div>Goto</div></li>';
+		let mode = $( "#viewsettings" ).attr("data-mode");
+		if(mode != "cell" && mode != "page") 
+			return;  
+		if(mode == "cell") {
+			html += '<li onclick="toggleCellPage()"><div>Page config</div></li>'
+				+	'<li onclick="callViewTemplateMaint()"><div>View Templates</div></li>'
+				+	'<li class="ui-widget-header"><div>Cell</div></li>'
+				+	'<li onclick="acceptSettings(viewAddNew)"><div title="Add a new cell to this page"><span class="ui-icon ui-icon-plus"></span>Add</div></li>'
+				+	'<li onclick="acceptSettings(copyCurrentCell)"><div><span class="ui-icon ui-icon-copy"></span>Copy</div></li>'
+				+	'<li><div onclick="acceptSettings(exportCellOrDialog)"><span class="ui-icon ui-icon-arrowstop-1-s"></span>Export</div></li>'
+				+	'<li><div onclick="importCellOrDialog()"><span class="ui-icon ui-icon-arrowstop-1-n"></span>Import</div></li>'
+				+	'<li><div onclick="acceptSettings(autoArrange)"><span class="ui-icon ui-icon-calculator"></span>Arrange views</div></li>'
+				+	'<li><div onclick="acceptSettings(dialogConvertToViewtemplate)" title="Create a view template which looks like this cell">Make view template</div></li>'
+				+	'<li><div onclick="deleteCell()"><span class="ui-icon ui-icon-trash"></span>Delete</div></li>';
+		}else{
+			html += '<li onclick="toggleCellPage()"><div>Cell config</div></li>'
+				+	'<li onclick="callViewTemplateMaint()"><div>View Templates</div></li>'
+				+	'<li class="ui-widget-header"><div>Page</div></li>'
+				+	'<li><div onclick="acceptPageSettings(copyCurrentPage)"><span class="ui-icon ui-icon-copy"></span>Copy</div></li>'
+				+	'<li><div onclick="acceptPageSettings(exportPage)"><span class="ui-icon ui-icon-arrowstop-1-s"></span>Export</div></li>'
+				+	'<li><div onclick="importPage()"><span class="ui-icon ui-icon-arrowstop-1-n"></span>Import</div></li>'
+				+	'<li><div onclick="acceptPageSettings(repairPage)"><span class="ui-icon ui-icon-wrench"></span>Repair</div></li>';
+		};	
+		html += '</ul>';
+		menu = $(html);
+		menu.hover(() => 0, toggleConfigMenu);
+	}else{
+		menu = $('<ul id="fuip-menutoggle" data-fuip-state="closed" style="position:absolute;top:2px;left:2px;z-index:999;width:175px;text-align:left;"><li><div><span class="ui-icon ui-icon-triangle-1-e"></span>Menu</div></li></ul>');
+		menu.hover(toggleConfigMenu, () => 0);
+	};	
+	menu.menu({
+      items: "> :not(.ui-widget-header)"
+    });
+	$('#fuip-menutoggle').replaceWith(menu);
+};	
+	
+	
+function renderWhereUsedLists() {
+	// this only works if we already have determined the local csrf token
+	if(!fuip.csrf) {
+		window.setTimeout(renderWhereUsedLists,10);
+		return;
+	};	
+	$(".fuip-whereusedlist").each(function(){
+		let container = $(this);
+		if(container.attr("data-fuip-type") != "viewtemplate") return true;
+		let templateid = container.attr("data-fuip-templateid");
+		let name = $("html").attr("data-name");
+		// call backend to retrieve where used list
+		var cmd = "get " + name + " whereusedlist type=viewtemplate recursive=1 templateid=" + templateid;
+		sendFhemCommandLocal(cmd).done(function(whereusedlistJson){
+			let whereusedlist = json2object(whereusedlistJson);	
+			let html = '<h3 style="text-align:left;margin-top:0;margin-bottom:0.3em;color:var(--fuip-color-symbol-active);">Where-used list</h3>';
+			if(whereusedlist.length){
+				html += '<ul>';	
+				for(let i = 0; i < whereusedlist.length; i++) {
+					html += '<li style="list-style-type:circle;color:var(--fuip-color-symbol-active);">';
+					switch(whereusedlist[i].type) {
+						case "view":
+							html += '<a href="/fhem/' + name.toLowerCase() + '/page/' + whereusedlist[i].pageid + '">Page ' 
+									+ whereusedlist[i].pageid + '</a>';
+							break;
+						case "viewtemplate":
+							html += '<a href="/fhem/' + name.toLowerCase() + '/fuip/viewtemplate?templateid=' 
+								+ whereusedlist[i].templateid + '">View template ' + whereusedlist[i].templateid + '</a>';
+							break;
+						default: 
+							html += 'Some object of type "' + whereusedlist[i].type + '"';
+					};									
+					html += '</li>';
+				};	
+				html += '</ul>';
+			}else{	
+				html += '<div>(not used)</div>';
+			};	
+			container.html(html);
+		});	
+	});	
+};	
+	
+
+function callViewTemplateMaint() {
+	let name = $("html").attr("data-name").toLowerCase();
+	window.location.href = location.origin + "/fhem/" + name + "/fuip/viewtemplate";
+};	
+
+
+function viewTemplateDelete(name,templateid){
+	let cmd = "set " + name + " delete type=viewtemplate templateid=" + templateid;	
+	sendFhemCommandLocal(cmd).done(function(message) {
+		if(message) {
+			ftui.toast("FUIP: " + message,"error");
+			return;
+		};
+		window.location.replace(location.origin + "/fhem/" + name + "/fuip/viewtemplate");
+	});	
+};
+	
 
 function gridDimensions() {
 	// try to determine "smart" dimensions to have gridlines
@@ -110,6 +239,20 @@ function gridDimensions() {
 	return { 
 		gridHeight: (fuip.baseHeight + 10) / nH,
 		gridWidth : (fuip.baseWidth + 10) / nW };
+};	
+
+
+function snapDimensions() {
+	var dim = gridDimensions();
+	if(fuip.snapTo == "halfGrid") {
+		dim.gridWidth /= 2;
+		dim.gridHeight /= 2;
+	};	
+	if(fuip.snapTo == "quarterGrid") {
+		dim.gridWidth /= 4;
+		dim.gridHeight /= 4;
+	};	
+	return dim;
 };	
 		
 		
@@ -201,15 +344,12 @@ function onFlexChangeStop() {
 };	
 			
 
-// when in the dialog (popup) maintenance resizing was finished
-function onDialogResize(e,ui) { 
-	var name = $("html").attr("data-name");
-	var pageId = $("html").attr("data-pageid");
-	var cellId = $("html").attr("data-cellid");	
-	var fieldId = $("html").attr("data-fieldid");
-	var cmd = "set " + name + " dialogsize " + pageId + "_" + cellId + " " + fieldId + " " 
-				+ ui.size.width + " " + ui.size.height; 
-	sendFhemCommandLocal(cmd);					
+// when in the dialog (popup) or view template resizing was finished
+function onResize(e,ui) { 
+	let key = getKeyForCommand();
+	if(!key) return;
+	var cmd = "set " + $("html").attr("data-name") + " resize " + key + " width=" + ui.size.width + " height=" + ui.size.height; 
+	asyncSendFhemCommandLocal(cmd);					
 };		
 
 
@@ -522,77 +662,71 @@ function onFlexMaintDragStop(e,ui) {
 
 			
 // when a view is dropped on a cell
-function onDragStop(cell,ui) {
-	// is this on the dialog maint?
-	var fieldid = $("html").attr("data-fieldid");
-	if(fieldid) {
-		onDragStopDialog(fieldid,ui);
-		return;
+async function onDragStop(cell,ui) {
+	let type = 'cell';
+	let view = ui.draggable;
+	let newCellId;
+	if($("html").attr("data-fieldid")) {
+		type = 'dialog';
+	}else if($("html").attr("data-viewtemplate")) {
+		type = 'viewtemplate';
+	}else{
+		newCellId = cell.attr("data-cellid");
+		let oldCellId = view.closest("[data-cellid]").attr("data-cellid");
+		if(newCellId != oldCellId) 
+			type = 'cellmove';
+	};
+	let cmd = 'set ' + $("html").attr("data-name") + ' position ';
+	switch(type) {
+		case 'cellmove':
+			cmd += 'newcellid="' + newCellId + '" ';
+			let oldCellPos = view.closest("[data-cellid]").offset();
+			let newCellPos = cell.offset();
+			cmd += 'x=' + (ui.position.left + oldCellPos.left - newCellPos.left) 
+					+ ' y=' + (ui.position.top + oldCellPos.top - newCellPos.top - 22);
+			break;		
+		case 'viewtemplate':
+			cmd += 'x=' + ui.position.left + ' y=' + ui.position.top;
+			break;
+		default:
+			cmd += 'x=' + ui.position.left + ' y=' + (ui.position.top-22);
 	};	
-	var cellId = cell.attr("data-cellid");
-	var view = ui.draggable;
-	var viewId = view.attr("data-viewid");
-	var name = $("html").attr("data-name");
-	var pageId = $("html").attr("data-pageid");
-	var cmd = "set " + name;
-	var oldCellId = view.closest("[data-cellid]").attr("data-cellid");
-	if(oldCellId != cellId) {
-		var oldCellPos = view.closest("[data-cellid]").offset();
-		var newCellPos = cell.offset();
-		cmd = cmd + " viewmove " + pageId + "_" + oldCellId + "_" + viewId + " " + cellId + " " + (ui.position.left + oldCellPos.left - newCellPos.left) + " " + (ui.position.top + oldCellPos.top - newCellPos.top - 22); 
-		// TODO: error handling when sending command
-		sendFhemCommandLocal(cmd).done(function() { 
-			location.reload(true);
-		});	
-		return;
-	};	
-	cmd = cmd + " viewposition " + pageId + "_" + cellId + "_" + viewId + " " + ui.position.left + " " + (ui.position.top - 22); 
+	// attach the key at the end (unusual, but does not matter)
+	cmd += ' ' + getViewKeyForCommand(view);
 	// TODO: error handling when sending command
-	sendFhemCommandLocal(cmd).done(function() {
-		location.reload(true);
-	});	
+	await asyncSendFhemCommandLocal(cmd);
+	location.reload(true);
 };
 							
 
-// dialog (popup) maintenance: when a view stops moving
-function onDragStopDialog(fieldid,ui) {
-	var name = $("html").attr("data-name");
-	var pageid = $("html").attr("data-pageid");
-	var cellid = $("html").attr("data-cellid");
-	// the following is the view which moved
-	var view = ui.draggable;
-	var viewid = view.attr("data-viewid");
-	var cmd = "set " + name +
-				" viewposdialog " + pageid + "_" + cellid + " " + fieldid + " " + viewid + " " + ui.position.left + " " + (ui.position.top - 22); 
-	// TODO: error handling when sending command
-	sendFhemCommandLocal(cmd).done(function() {
-		location.reload(true);
-	});	
+function getViewKeyForCommand(view) {
+	let result = 'type=view ';
+	let templateid = $("html").attr("data-viewtemplate");
+	if(templateid) {
+		// view template
+		result += 'templateid="' + templateid + '" ';
+	}else{
+		// normal cell
+		let cell = view.closest("[data-cellid]");
+		result += 'pageid="' + $("html").attr("data-pageid") + '" cellid="' + cell.attr("data-cellid") + '" ';
+	};		
+	let fieldid = $("html").attr("data-fieldid");
+	if(fieldid) { 
+		// dialog
+		result += 'fieldid="' + fieldid + '" ';
+	};
+	let viewid = view.attr("data-viewid");
+	result += 'viewid="' + viewid + '"';
+	return result;
 };
 
 
 // when a view resize finished
 function onViewResizeStop(event,ui) {
-	// is this on the dialog maint? TODO
-	var name = $("html").attr("data-name");
-	var pageId = $("html").attr("data-pageid");
-	var view = ui.originalElement;
-	var viewId = view.attr("data-viewid");
-	var cmd = "set " + name + " viewresize " + pageId + "_";
-	var fieldid = $("html").attr("data-fieldid");
-	var cellId;
-	if(fieldid) {
-		// dialog maintenance	
-		cellId = $("html").attr("data-cellid");
-		cmd += cellId + " " + fieldid + " "; 
-	}else{
-		// normal cell
-		var cell = view.closest("[data-cellid]");
-		cellId = cell.attr("data-cellid");
-		cmd += cellId + "_";
-	};	
-	cmd += viewId + " " + ui.size.width + " " + ui.size.height; 
-	sendFhemCommandLocal(cmd);
+	let view = ui.originalElement;
+	let cmd = "set " + $("html").attr("data-name") + " resize " + getViewKeyForCommand(view);
+	cmd += ' width=' + ui.size.width + ' height=' + ui.size.height;
+	asyncSendFhemCommandLocal(cmd);
 };
 
 
@@ -642,6 +776,33 @@ function sendFhemCommandLocal(cmdline) {
 };
 
 
+async function asyncSendFhemCommandLocal(cmdline) {
+	return new Promise(function(resolve,reject) {
+		cmdline = cmdline.replace('  ', ' ');
+		$.ajax({
+			async: true,
+			cache: false,
+			method: 'GET',
+			dataType: 'text',
+			url: location.origin + '/fhem/',
+			// username: ftui.config.username,
+			// password: ftui.config.password,
+			data: {
+				cmd: cmdline,
+				fwcsrf: fuip.csrf,
+				XHR: "1"
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+					console.log("FUIP command: " + cmdline);
+					console.log("FUIP: Local FHEM command failed: " + jqXHR.status + " " + textStatus + " " + errorThrown);
+					ftui.toast("FUIP: Local FHEM command failed: " + jqXHR.status + " " + textStatus + " " + errorThrown,"error");
+					reject(new Error("FUIP: Local FHEM command failed: " + jqXHR.status + " " + textStatus + " " + errorThrown));
+			}
+		}).done((result) => resolve(result));
+	});
+};
+
+
 function postImportCommand(content,isCell,pageid) {
 	var data = encodeURIComponent(content);
 	var url = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() + '/fuip/import?pageid=' + pageid;
@@ -669,22 +830,35 @@ function postImportCommand(content,isCell,pageid) {
 };
 					
 					
-function autoArrange() {
-	var name = $("html").attr("data-name");
-	var pageId = $("html").attr("data-pageid");
-	var viewId = $("#viewsettings").attr("data-viewid");
-	var fieldid = $("html").attr("data-fieldid");	
-	var cmd = "set " + name + " autoarrange " + pageId + "_" + viewId;
-	if(fieldid) {
-		cmd += " " + fieldid;
-	};	
-	sendFhemCommandLocal(cmd).done(function() {
-		location.reload(true);
-	});	
+async function autoArrange() {
+	let name = $("html").attr("data-name");
+	let key = getKeyForCommand();
+	if(!key) return;  // error message has already been sent
+	let cmd = "set " + name + " autoarrange " + key;  
+	await asyncSendFhemCommandLocal(cmd);
+	location.reload(true);
 };
+	
+
+function collectFieldValues(settingsDialog) {
+	// collect all field values "in" settingsDialog
+	let result = {};
+	settingsDialog.find("input, textarea, select.fuip").each(function() {
+		// do not process hidden elements
+		if($(this).css("visibility") == "hidden") 
+			return true;
+		var value;
+		if($(this).attr("type") == "checkbox") {
+			result[$(this).attr("id")] = ($(this).is(":checked") ? "1" : "0");
+		}else{	
+			result[$(this).attr("id")] = $(this).val();
+		};	
+	});
+	return result;
+};
+	
 					
-					
-function acceptSettings(doneFunc) {
+async function acceptSettings(doneFunc) {
 // accept changes on config popup 
 // doneFunc: this is called on (more or less) successful change
 //           This way, e.g. the settings can be "saved" before something else is done. 
@@ -717,35 +891,66 @@ function acceptSettings(doneFunc) {
 			value = ($(this).is(":checked") ? 1 : 0);
 		}else{	
 			value = $(this).val();
-			// FHEM needs ;; instead of ;
-			// value = value.replace(/;/g , ";;");
-			// parseParams does not have any escape mechanism for quotes...
-			//value = value.replace(/\\/g,"\\\\");  // backslash doubled
-			//value = value.replace(/"/g,"\'");	// double quote becomes escaped single quote
 			value = encodeURIComponent(value);
 		};	
 		value = '"' + value + '"'; 
 		cmd += " " + $(this).attr("id") + "=" + value;
 	});
-	var name = $("html").attr("data-name");
-	var pageId = $("html").attr("data-pageid");
-	var viewId = $("#viewsettings").attr("data-viewid");	
-	var fieldId = $("#viewsettings").attr("data-fieldid");
-	if(fieldId) {
-		// dialog (popup) settings
-		cmd = "set " + name + " viewcomponent " + pageId + "_" + viewId + " " + fieldId + cmd; 
+
+	let key = getKeyForCommand();
+	if(!key) return;
+	cmd = "set " + $("html").attr("data-name") + " settings " + key + " " + cmd;
+	await asyncSendFhemCommandLocal(cmd);
+	if(doneFunc) {
+		doneFunc();
 	}else{	
-		cmd = "set " + name + " viewsettings " + pageId + "_" + viewId + cmd; 
+		location.reload(true);
 	};	
-	// TODO: error handling when sending command
-	sendFhemCommandLocal(cmd).done(function() {
-		if(doneFunc) {
-			doneFunc();
-		}else{	
-			location.reload(true);
-		};	
-	});	
 };
+
+
+function getKeyForCommand(prefix) {
+	// create key-part of command 
+	if(!prefix) {
+		prefix = "";
+	};	
+	let type = $("#viewsettings").attr("data-mode");
+	if(!type) {
+		if($("html").attr("data-fieldid")) {
+			type = "dialog";
+		}else if($("html").attr("data-viewtemplate")) {
+			type = "viewtemplate";
+		};	
+	};	
+	let obj = {};
+	switch(type) {
+		case "cell":
+			obj.pageid = $("html").attr("data-pageid");
+			obj.cellid = $("#viewsettings").attr("data-viewid");
+			break;
+		case "dialog":
+			if($("html").attr("data-pageid")) {
+				obj.pageid = $("html").attr("data-pageid");
+				obj.cellid = $("html").attr("data-cellid");
+			}else{
+				obj.templateid = $("html").attr("data-viewtemplate");
+			};	
+			obj.fieldid = $("html").attr("data-fieldid");
+			break;
+		case "viewtemplate":
+			obj.templateid = $("html").attr("data-viewtemplate");
+			break;
+		default:
+			console.log("FUIP: getKeyForCommand failed: unknown type");
+			ftui.toast("FUIP: getKeyForCommand failed: unknown type","error");
+			return false;
+	};	
+	let result = prefix + "type=" + type + " ";
+	for(const key of Object.keys(obj)) {
+		result += ' ' + prefix + key + '="' + obj[key] + '"';
+	};	
+	return result;
+};	
 
 
 function acceptPageSettings(doneFunc) {
@@ -859,7 +1064,7 @@ function viewDeleteFromArray(viewName) {
 };
 
 					
-function deleteView() {
+function deleteCell() {
 	var cmd = "";
 	var name = $("html").attr("data-name");
 	var pageId = $("html").attr("data-pageid");
@@ -902,7 +1107,7 @@ function defaultCheckChanged(id,defaultDef,fieldType) {
 		inputField.removeAttr("readonly");
 		inputField.removeAttr("disabled");
 		// value help visible
-		$('#'+id+'-value').attr("style","padding:1px 0px;");
+		$('#'+id+'-value').css("visibility","visible");
 	}else{
 		if(fieldType == "dialog") {
 			inputField.replaceWith(
@@ -919,7 +1124,7 @@ function defaultCheckChanged(id,defaultDef,fieldType) {
 			inputField.attr("disabled","disabled");
 		};	
 		// value help invisible
-		$('#'+id+'-value').attr("style","padding:1px 0px;visibility:hidden;");
+		$('#'+id+'-value').css("visibility","hidden");
 		switch(defaultDef.type) {
 			case 'const':
 				inputField.val(defaultDef.value);
@@ -937,6 +1142,15 @@ function defaultCheckChanged(id,defaultDef,fieldType) {
 				break;
 		};
 	};
+}
+
+
+function varCheckChanged(id) {
+	if($("#" + id + "-varcheck").is(":checked")) {
+		$("#" + id + "-variable").css("visibility","visible");
+	}else{
+		$("#" + id + "-variable").css("visibility","hidden");
+	};	
 }
 
 
@@ -967,19 +1181,52 @@ function getInfluencedParts(field,parentName,myName) {
 			return [ myName ];
 	};
 };
-					
+		
+
+function classChangedCopyOldValue(field,oldValues,fieldName) {
+	// only if the field exists in the old values
+	if(! oldValues.hasOwnProperty(fieldName)) return;
+	// if the field has a default and this was selected, 
+	// we also take the default of the new (if it has a default as well)
+	if(oldValues.hasOwnProperty(fieldName + '-check')
+		&& field.hasOwnProperty('default')) {
+		if(oldValues[fieldName + '-check'] == "0") {
+			return;  // i.e. keep default
+		};	
+	};		
+	field.value = oldValues[fieldName];
+	if(field.hasOwnProperty('default')) {
+		field.default.used = "0";
+	};		
+};	
+		
 					
 // classField is the field (input) with the new class name
 function classChanged(classField) {
 	var elemName = classField.id.slice(0,-6);
 	var settingsDialog = $( '#' + elemName );
+	// get old values
+	let oldValues = collectFieldValues(settingsDialog);
 	settingsDialog.html('Just a moment...');
 	var name = $("html").attr("data-name");
 	var cmd = "get " + name + " viewdefaults " + classField.value;
 	sendFhemCommandLocal(cmd).done(function(settingsJson){
+		// copy old values into new view type, if possible
+		let settings = json2object(settingsJson);
+		for(let i = 0; i < settings.length; i++) {
+			// not for the class name obviously
+			if(settings[i].id == 'class') continue;
+			let fieldName = elemName + '-' + settings[i].id;
+			if(settings[i].type == "device-reading") {
+				classChangedCopyOldValue(settings[i].device,oldValues,fieldName + '-device');
+				classChangedCopyOldValue(settings[i].reading,oldValues,fieldName + '-reading');
+			}else{
+				classChangedCopyOldValue(settings[i],oldValues,fieldName);
+			};	
+		};
 		var html = '<h3>';
 		var title = 'New ' + classField.value;
-		html += title + '</h3><div>' + createSettingsTable(json2object(settingsJson), elemName + '-') + '</div>';
+		html += title + '</h3><div>' + createSettingsTable(settings, elemName + '-') + '</div>';
 		settingsDialog.html(html);
 		var accordion = settingsDialog.parent();
 		var active = accordion.accordion('option','active');
@@ -992,21 +1239,23 @@ function classChanged(classField) {
 function createClassField(selectedClass,prefix) {
 	var fieldName = prefix + 'class';
 	// make the value help button a JQuery button
-	$(function() {
+	/*$(function() {
 		$('#' + fieldName + '-value').button({
 			icon: 'ui-icon-triangle-1-s',
 			showLabel: false
 		});		
-	});		
-	return "<table><tr>" +
-			"<td><label for='" + fieldName + "'>View type</label></td>" +  
-			"<td><input type='text'" +
+	});	*/	
+	return "<tr>" +
+			"<td style='text-align:left;'><label for='" + fieldName + "'>View type</label></td>" +  
+			"<td style='text-align:left;'><input type='checkbox' style='visibility:hidden;'><input type='text'" +
 			" name='" + fieldName + "' id='" + fieldName + "' " +
-			"style='width:185px;visibility:visible;background-color:#EBEBE4;' readonly " +
+			"style='visibility:visible;background-color:#EBEBE4;' readonly " +
 			"value='" + selectedClass + "' " +
-			"oninput='classChanged(this)' > " +
-			"<button id='" + fieldName + "-value' onclick='valueHelp(\""+fieldName+"\",\"class\")' type='button' style='padding:1px 0px;'>Possible values</button></td>" +
-			"</tr></table>";		
+			"oninput='classChanged(this)' >" +
+			// "<button id='" + fieldName + "-value' onclick='valueHelp(\""+fieldName+"\",\"class\")' type='button' style='padding:5px 0px 0px 0px;'>Possible values</button>" 
+			'<span class="ui-icon ui-icon-triangle-1-s" onclick="valueHelp(\''+fieldName+'\',\'class\')" title="Possible values" style="background-color:#F6F6F6;border: 1px solid #c5c5c5;color:#454545"></span>' 
+			+ "</td>" +
+			"</tr>";		
 };
 	
 	
@@ -1066,7 +1315,6 @@ function getIcons() {
 };
 	
 	
-	
 function createValueHelpDialog(okFunction) {
 	var valuehelp;	
 	valuehelp = $( "#valuehelp" ).dialog({
@@ -1106,7 +1354,7 @@ function getFullRefName(fieldname,reftype) {
 };
 	
 	
-function valueHelp(fieldName,type) {
+async function valueHelp(fieldName,type) {
 	// device help has its own function
 	if(type == "device" || type == "device-reading" && fieldName.match(/-device$/) ) {
 		valueHelpForDevice(fieldName, 
@@ -1241,45 +1489,58 @@ function valueHelp(fieldName,type) {
 			});	
 		});
 	}else if(type == "class") {
-		var cmd = "get " + name + " viewclasslist";
-		sendFhemCommandLocal(cmd).done(function(classListJson){
-			var classList = json2object(classListJson);
-			var valueDialog = $( "#valuehelp" );
-			var selectedClass = $('#'+fieldName).val();
-			var html = "<table id='valuehelptable' class='tablesorter' data-selected='";
-			for(var i = 0; i < classList.length; i++){
-				if(classList[i].id == selectedClass) {
-					html += 'valuehelp-row-'+i;
-					break;
-				};
-			};	
-			html += "'><thead><tr><th>Class</th><th>Title</th><th>Img</th></tr></thead>";
-			html += "<tbody>";
-			for(var i = 0; i < classList.length; i++){
-				var style = "";
-				if(classList[i].id == selectedClass) {
-					style = " style='background:#F39814;color:black;'";
-				};	
-				html += "<tr id='valuehelp-row-"+i+"' data-key='"+classList[i].id+"'><td"+style+">"+classList[i].id+"</td><td"+style+">"+classList[i].title+"</td><td"+style+">";
-				html += "<img height=48 src='/fhem/"+name.toLowerCase()+"/fuip/view-images/" 
-							+ classList[i].id.replace(/::/g,"-") + ".png'>";
-				html += "</td></tr>";
+		let cmd = "get " + name + " viewclasslist";
+		let classListJson = await asyncSendFhemCommandLocal(cmd);
+		var classList = json2object(classListJson);
+		// if this is a view template maintenance, we need to remove
+		// view templates which use the one we are maintaining
+		if($("html").attr("data-viewtemplate")) {
+			let templateid = $("html").attr("data-viewtemplate");
+			let cmd = "get " + name + " whereusedlist filter-type=viewtemplate recursive=1 type=viewtemplate templateid=" + templateid;
+			let wulJson = await asyncSendFhemCommandLocal(cmd); 
+			let wul = json2object(wulJson);	
+			wul.push({templateid: templateid});
+			for(let i = 0; i < wul.length; i++) {
+				let index = classList.findIndex((elem) => elem.id == "FUIP::VTempl::"+wul[i].templateid);
+				if(index >= 0) classList.splice(index,1);
 			};
-			html += "</tbody></table>";
-			valueDialog.dialog("option","width",500);
-			valueDialog.dialog("option","height",400);			
-			valueDialog.html(html);
-			$(function() {
-				$(".tablesorter").tablesorter({
-					theme: "blue",
-					widgets: ["filter"],
-				    headers: {
-						2: { sorter: false, parser: false }
-					}
-				});
-				registerClicked();
-			});	
-		});			
+		};
+		// go on after special viewtemplate handling
+		var valueDialog = $( "#valuehelp" );
+		var selectedClass = $('#'+fieldName).val();
+		var html = "<table id='valuehelptable' class='tablesorter' data-selected='";
+		for(var i = 0; i < classList.length; i++){
+			if(classList[i].id == selectedClass) {
+				html += 'valuehelp-row-'+i;
+				break;
+			};
+		};	
+		html += "'><thead><tr><th>Class</th><th>Title</th><th>Img</th></tr></thead>";
+		html += "<tbody>";
+		for(var i = 0; i < classList.length; i++){
+			var style = "";
+			if(classList[i].id == selectedClass) {
+				style = " style='background:#F39814;color:black;'";
+			};	
+			html += "<tr id='valuehelp-row-"+i+"' data-key='"+classList[i].id+"'><td"+style+">"+classList[i].id+"</td><td"+style+">"+classList[i].title+"</td><td"+style+">";
+			html += "<img height=48 src='/fhem/"+name.toLowerCase()+"/fuip/view-images/" 
+						+ classList[i].id.replace(/::/g,"-") + ".png' onerror=\"this.style.display='none'\">";
+			html += "</td></tr>";
+		};
+		html += "</tbody></table>";
+		valueDialog.dialog("option","width",500);
+		valueDialog.dialog("option","height",400);			
+		valueDialog.html(html);
+		$(function() {
+			$(".tablesorter").tablesorter({
+				theme: "blue",
+				widgets: ["filter"],
+			    headers: {
+					2: { sorter: false, parser: false }
+				}
+			});
+			registerClicked();
+		});	
 	}else{
 		valueDialog.html("No value help for this field.");
 	};
@@ -1465,9 +1726,17 @@ function valueHelpForOptions(fieldName, callbackFunction,multiSelect) {
 
 
 function callPopupMaint(fieldName) {
-	var name = $("html").attr("data-name").toLowerCase();
-	var pageId = $("html").attr("data-pageid");
-	var viewId = $("#viewsettings").attr("data-viewid");
+	let name = $("html").attr("data-name").toLowerCase();
+	let cellUrlPart;
+	let pageId = $("html").attr("data-pageid");
+	if(pageId) {
+		// normal page/cell
+		let viewId = $("#viewsettings").attr("data-viewid");
+		cellUrlPart = "pageid=" + pageId + "&cellid=" + viewId;
+	}else{
+		// view template
+		cellUrlPart = "templateid=" + $("html").attr("data-viewtemplate");	
+	};	
 	// if this is already the popup maintenance (popup in popup), then we need to concat
     // the field names
 	var lowerFieldId = $("html").attr("data-fieldid");
@@ -1477,7 +1746,7 @@ function callPopupMaint(fieldName) {
 	}else{
 		fullFieldName = fieldName;
 	};	
-	window.location.href = location.origin + "/fhem/" + name + "/fuip/popup?pageid=" + pageId + "&cellid=" + viewId + "&fieldid=" + fullFieldName;
+	window.location.href = location.origin + "/fhem/" + name + "/fuip/popup?" + cellUrlPart + "&fieldid=" + fullFieldName;
 };	
 
 
@@ -1489,14 +1758,14 @@ function createField(settings, fieldNum, component,prefix) {
 		fieldComp = fieldComp[component[i]];
 		fieldNameWoPrefix += "-" + component[i];
 	};
-	var fieldName = prefix + fieldNameWoPrefix;
+	let fieldName = prefix + fieldNameWoPrefix;
 	
 	var fieldValue = (fieldComp.value + '').replace(/'/g, "&#39;");
 	var checkVisibility = "hidden";
 	var checkValue = "";
 	var fieldStyle = "style='visibility: visible;'";
 	var defaultDef = '{type: "none"}';
-	if(fieldComp.hasOwnProperty("default")){
+	if(fieldComp.hasOwnProperty("default") && !(field.type == "sizing" && fieldComp.hasOwnProperty("options") && fieldComp.options.length == 1)){
 		checkVisibility = "visible";
 		if(parseInt(fieldComp.default.used)) {
 			fieldStyle = "style='visibility: visible;background-color:#EBEBE4;' readonly";
@@ -1522,13 +1791,14 @@ function createField(settings, fieldNum, component,prefix) {
 		influencedFields[i] = prefix + influencedFields[i];
 	};
 	var fieldNameInBrackets = '"' + fieldName + '"';
-	$(function() {
+	/* $(function() {
 		$('#' + fieldName + '-value').button({
 			icon: 'ui-icon-triangle-1-s',
 			showLabel: false
 		});		
-	});		
+	});*/		
 	var result = "<input type='checkbox' id='" + fieldName + "-check' style='visibility: " + checkVisibility + ";'" 
+			+ ' title="change (don\'t use default)"'
 			+ checkValue + " onchange='defaultCheckChanged(" + fieldNameInBrackets + "," + defaultDef + ",\"" + field.type + "\")'>";
 			
 	// popups are a bit special
@@ -1549,6 +1819,11 @@ function createField(settings, fieldNum, component,prefix) {
 		result += "<textarea rows='5' cols='50' name='" + fieldName + "' id='" + fieldName + "' " 
 			+ fieldStyle + " oninput='inputChanged(this," + JSON.stringify(influencedFields) +")' >"
 			+ fieldValue + "</textarea>";
+	// special case of sizing fixed to "resizable" (or any other single value)		
+	}else if(field.type == "sizing" && fieldComp.hasOwnProperty("options") && fieldComp.options.length == 1){		
+		result += "<input type='text'";
+		result += " name='" + fieldName + "' id='" + fieldName + "' ";
+		result += "value='" + fieldComp.options[0] + "' style='visibility: visible;background-color:#EBEBE4;width:79px' readonly >";
 	}else{
 		if(fieldComp.hasOwnProperty("options") && field.type != "setoptions"){
 			result += "<select class='fuip'";
@@ -1584,12 +1859,14 @@ function createField(settings, fieldNum, component,prefix) {
 	};	
 	// do we have a value help?
 	if(field.type == "device" || field.type == "device-reading" || field.type == "reading" || field.type == "icon" || field.type == "set" || field.type == "setoptions" || field.type == "setoption") {
-		result += "<button id='" + fieldName + "-value' onclick='valueHelp(\""+fieldName+"\",\""+field.type+"\")' type='button' style='padding:1px 0px;" 
+		result += '<span id="' + fieldName + '-value" class="ui-icon ui-icon-triangle-1-s" onclick="valueHelp(\''+fieldName+'\',\''+field.type+'\')" title="Possible values" style="background-color:#F6F6F6;border: 1px solid #c5c5c5;color:#454545;'; 
+		// result += "<button id='" + fieldName + "-value' onclick='valueHelp(\""+fieldName+"\",\""+field.type+"\")' type='button' style='padding:1px 0px;" 
 		// value help invisible?
 		if(checkVisibility == "visible" && checkValue != " checked") {
 			result += "visibility:hidden;";
 		};	
-		result += "'>Possible values</button>";
+		result += '"></span>';
+		// result += "'>Possible values</button>";
 	};	
 	// for sizing fields, add width and height (if resizable)
 	// TODO: do we need proper default values?
@@ -1616,6 +1893,23 @@ function createField(settings, fieldNum, component,prefix) {
 			sizingChanged(fieldName,prefix+"width",prefix+"height");
 		});	
 	};	
+	// if this is a view template, add variable definition
+	if($("html").attr("data-viewtemplate") && field.type != "sizing" && field.type != "dialog" && fieldName != "title" && field.type != "longtext") {
+		let checkValue = "";
+		let value;
+		if(fieldComp.hasOwnProperty("variable")) {
+			checkValue = " checked";
+			value = fieldComp.variable;
+		}else{
+			 value = fieldNameWoPrefix.replace(/-/g, "_");
+		};	 
+		result += "\n</td><td style='text-align:left;white-space:nowrap;'>" +
+					"\n<input type='checkbox' id='" + fieldName + "-varcheck' title='make this a variable'" 
+					+ checkValue 
+					+ " onchange='varCheckChanged(\"" + fieldName + "\")'>" +
+					"\n<input type='text' id='" + fieldName + "-variable' value='" + value + "'>";	
+		$(function(){varCheckChanged(fieldName)});				
+	};
 	return result;
 };
 
@@ -1623,7 +1917,7 @@ function createField(settings, fieldNum, component,prefix) {
 function createViewArray(field,prefix) {
     var items = field.value;
 	// the current number of items and the (so far) highest item number is stored in the accordion itself
-	var result = '<div  class="ui-widget-content" style="border-width: 2px;"><div id="' + prefix + field.id + '-accordion" data-length="' + items.length + '" data-nextindex="' + items.length + '">';
+	var result = '<table><tr><td class="ui-widget-content" style="border-width: 1px;"><div id="' + prefix + field.id + '-accordion" data-length="' + items.length + '" data-nextindex="' + items.length + '">';
 	for(var i = 0; i < items.length; i++) {
 		result += '<div class="group" id="' + prefix + field.id + '-' + i + '"><h3>';
 		var title = '' + i + ' ';
@@ -1644,7 +1938,7 @@ function createViewArray(field,prefix) {
 			};
 		});
 	};
-	result += '</div></div>';
+	result += '</div></td></tr></table>';
 	// make this a JQuery Accordion
 	$( function() {
 		$( "#" + prefix + field.id + "-accordion" )
@@ -1665,53 +1959,127 @@ function createViewArray(field,prefix) {
 						$( this ).accordion( "refresh" ); 
 					  } 
 			});
+		$(".ui-accordion-content").css("padding-left","10px").css("padding-right","10px");
+		$(".ui-accordion").css("min-width","350px");	
 	});
 	return result;
 };
 					
 
+function setDefaultsGetMapEntry(field) {   // returns map entry
+	let result = { value: field.value, ready: true};
+	if(field.hasOwnProperty('default')) {
+		if(field.default.used == '1') {
+			if(field.default.type == 'field') {
+				result.ready = false;
+				result.reffield = field.default.value;
+				result.suffix = (field.default.hasOwnProperty('suffix') ? field.default.suffix : "");
+			}else{
+				result.value = field.default.value;
+			};	
+		};
+	};	
+	return result;	
+};	
+
+
+function setDefaultsGetDefaults(map,fieldName) {
+	if(map[fieldName].ready) return;
+	// now we can be sure that there is a reference field 
+	// and we need to make sure that this is "ready"
+	setDefaultsGetDefaults(map,map[fieldName].reffield);
+	map[fieldName].value = map[map[fieldName].reffield].value + map[fieldName].suffix;
+};	
+
+	
+function setDefaults(settings) {
+	let map = {};
+	// prepare map field id => value
+	for(let i = 0; i < settings.length; i++) {
+		if(settings[i].type == 'viewarray') continue;
+		if(settings[i].type == 'device-reading') {
+			map[settings[i].id + '-device'] = setDefaultsGetMapEntry(settings[i].device);
+			map[settings[i].id + '-reading'] = setDefaultsGetMapEntry(settings[i].reading);
+		}else{
+			map[settings[i].id] = setDefaultsGetMapEntry(settings[i]);
+		};	
+	};	
+	// do the real defaulting
+	for(let i = 0; i < settings.length; i++) {
+		if(settings[i].type == 'viewarray') continue;
+		if(settings[i].type == 'device-reading') {
+			setDefaultsGetDefaults(map,settings[i].id + '-device');
+			settings[i].device.value = map[settings[i].id + '-device'].value;
+			setDefaultsGetDefaults(map,settings[i].id + '-reading');
+			settings[i].reading.value = map[settings[i].id + '-reading'].value;
+		}else{
+			setDefaultsGetDefaults(map,settings[i].id);
+			settings[i].value = map[settings[i].id].value;
+		};	
+	};	
+};	
+					
+
 function createSettingsTable(settings,prefix) {
 	// this is for one single settings-Array
 	// prefix is put in front of all field names (ids)
-	var html = "";
+	// do the defaulting
+	setDefaults(settings);
+	var html = "<table>";
 	for(var i = 0; i < settings.length; i++){
 		if(settings[i].type != 'class') { continue; }; 
-		if(settings[i].value == 'FUIP::Cell' || settings[i].value == 'FUIP::Page' 
-			|| settings[i].value == 'FUIP::Dialog') { break; };
+		if(	settings[i].value == 'FUIP::Cell' || 
+			settings[i].value == 'FUIP::Page' || 
+			settings[i].value == 'FUIP::Dialog' ||
+			settings[i].value == 'FUIP::ViewTemplate') { break; };
 		html += createClassField(settings[i].value,prefix);
 		break;
 	};
-	html += '<table style="border-style: solid;">';
 	for(var i = 0; i < settings.length; i++){
 		if(settings[i].type == 'class') { continue; };
 		if(settings[i].type == 'dimension') { continue; };
-		var fieldName = prefix + settings[i].id;		
+		if(settings[i].type == 'variables') { continue; };
+		let fieldName = prefix + settings[i].id;		
 		switch(settings[i].type) {
 			case 'device-reading':
-				html += "<tr><td style='text-align:right'><label for='" + fieldName + "'>" + settings[i].id + "</label></td><td style='text-align:left;white-space:nowrap;'>";
-				html += createField(settings, i, ["device"],prefix) + createField(settings, i, ["reading"],prefix);
+				html += "<tr><td";
+				if($("html").attr("data-viewtemplate")) html += ' rowspan="2"'; 
+				html += " style='text-align:left'><label for='" + fieldName + "'>" + settings[i].id + "</label></td><td style='text-align:left;white-space:nowrap;'>";
+				html += createField(settings, i, ["device"],prefix) + '</td>';
+				if($("html").attr("data-viewtemplate")) {
+					html += '</tr><tr>';
+				};
+				html += '<td style="text-align:left;white-space:nowrap;">' + createField(settings, i, ["reading"],prefix);
 				break;
 			case 'viewarray':
+				html += '</table>';
+				html += '<div style="text-align:left;">';
 				var fieldNameInTicks = '"' + fieldName + '"'; 
-				html += "<tr><td style='text-align:left'><label for='" + fieldName + "'>" + settings[i].id + "</label></td><td><button id='" + fieldName + "-add' onclick='viewAddNewToArray("+fieldNameInTicks+")' type='button'>Add new view to " + settings[i].id + "</button></td>" + 
-				"<td><button id='" + fieldName + "-addByDevice' onclick='viewAddNewByDevice("+fieldNameInTicks+")' type='button'>Add views by device to " + settings[i].id + "</button></td></tr>"
-					+ "<tr><td colspan='3' style='text-align:left'>";
-				html += createViewArray(settings[i],prefix) + '</label>';
+				html += '<div id="fuip-viewarraybuttons" style="margin-top:10px;margin-left:20px;">' + 
+					"<button id='" + fieldName + "-add' onclick='viewAddNewToArray("+fieldNameInTicks+")' type='button' title='Add view'>Add view</button>" + 
+					"<button id='" + fieldName + "-addByDevice' onclick='viewAddNewByDevice("+fieldNameInTicks+")' type='button' title='Add views by device'>Add views by device</button>" 
+					+ '</div>';
+				html += createViewArray(settings[i],prefix) 
+						+ '</div><table>';
 				// make the button a jquery ui button
 				$(function() {
 					$('#' + fieldName + '-add').button({
 						icon: 'ui-icon-plus',
-						showLabel: false
+						label: 'view',
+						showLabel: true
 					});		
 					$('#' + fieldName + '-addByDevice').button({
 						icon: 'ui-icon-plus',
 						label: 'by device',
 						showLabel: true
-					});			
+					});
+					$('#fuip-viewarraybuttons').controlgroup();
 				});
 				break;
 			default:
-				html += "<tr><td style='text-align:right'><label for='" + fieldName + "'>" + settings[i].id + "</label></td><td style='text-align:left'>";
+				html += "<tr><td style='text-align:left'><label for='" + fieldName + "'>" + settings[i].id + "</label></td><td style='text-align:left'";
+				if(settings[i].type == "longtext") html += ' colspan="4"';
+				html += ">";
 				html += createField(settings, i,[],prefix);
 		};
 		html += "</td></tr>";
@@ -1746,11 +2114,69 @@ function json2object(json) {
 	return o;
 };	
 
+
+
+function exportCellOrDialog() { 
+	var downloadUrl = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() 
+					+ '/fuip/export?pageid=' + $("html").attr("data-pageid") 
+					+ '&cellid=' + $("#viewsettings").attr("data-viewid");
+	if($("html").attr("data-fieldid")) {
+		downloadUrl += '&fieldid='+$("html").attr("data-fieldid");
+	};	
+	location.href = downloadUrl;
+};	
+
+
+// the following attaches the input field for the file dialog to this function itself
+// it seems that otherwise, it happens that the garbage collector deletes variable "input"
+function importCellOrDialog() { 
+	fuip.fileInput = $('<input type="file">');
+	fuip.fileInput.on("change",function(evt){
+		fuip.fileInput = undefined;  // not needed anymore
+		var reader = new FileReader();
+		reader.onload = function(e) {
+			// TODO: error handling when sending command
+			postImportCommand(e.target.result,true,$("html").attr("data-pageid"))
+				.done(function(msg) {
+					if(msg == "OK") {
+						location.reload(true);
+					}else{	
+						popupError("Import " + (fieldId ? 'dialog' : 'cell') + ": Error",msg);
+					};
+			});		
+		};	
+		reader.readAsText(evt.target.files[0]);
+	});
+	fuip.fileInput.click();
+	// for some (unknown to me) reason, this does not work with the usual construct
+	// however, the import of a cell does not change the cell or the content of the
+	// config popup anyway, so we can just do it "afterwards"
+	if(!$("html").attr("data-fieldid")){ // for dialog, we anyway overwrite the current state
+		acceptSettings( function() {} );  // avoid immediate reload
+	};	
+};	
+
 								
-function changeSettingsDialog(settingsJson,viewId,fieldId) {
-	// fieldId is set in the "popup maintenance mode"
+function changeSettingsDialog(settingsJson,type,cellid,fieldid) {
+	// type: cell,dialog or viewtemplate
+	// fieldId is set in the "popup maintenance mode" (type = dialog)
 	var settingsDialog = $( "#viewsettings" );
-	var title = "Settings cell " + viewId;
+	var title = "Settings ";
+	switch(type) {
+		case "cell": 
+			title += "cell " + cellid; break;
+		case "dialog":
+			title += "popup ";
+			if($("html").attr("data-pageid")) {
+				title += cellid + " ";
+			};
+			title += fieldid; 
+			break;
+		case "viewtemplate":
+			title += "view template " + $("html").attr("data-viewtemplate"); break;
+		default:
+			title += type + " ???";
+	};		
 	var settings = json2object(settingsJson);
 	var html = "<form onsubmit='return false'>" + createSettingsTable(settings,"") + "</form>";
 	for(var i = 0; i < settings.length; i++){
@@ -1766,12 +2192,8 @@ function changeSettingsDialog(settingsJson,viewId,fieldId) {
 			text: 'Ok',
 			icon: 'ui-icon-check',
 			click: function() { acceptSettings(); },
-			showLabel: false },
-		{   text: 'Arrange views (auto-layout)',
-			icon: 'ui-icon-calculator',
-			click: function() { acceptSettings(autoArrange); } ,
 			showLabel: false }];
-	if(!fieldId) {
+	if(type == "cell") {
 		buttons.push(	
 			{   text: 'Add new cell',
 				icon: 'ui-icon-plus',
@@ -1782,55 +2204,22 @@ function changeSettingsDialog(settingsJson,viewId,fieldId) {
 				click: function() { acceptSettings(copyCurrentCell);},
 				showLabel: false });
 	};
-	buttons.push(
-			{	text: 'Export ' + (fieldId ? 'dialog' : 'cell'),
+	if(type == "dialog") {
+		buttons.push(
+			{	text: 'Export ' + type,
 				icon: ' ui-icon-arrowstop-1-s',
-				click: function() { acceptSettings( function() { 
-							var downloadUrl = location.origin + '/fhem/' 
-									+ $("html").attr("data-name").toLowerCase() 
-									+ '/fuip/export?pageid=' + $("html").attr("data-pageid") 
-									+ '&cellid=' + $("#viewsettings").attr("data-viewid");
-							if(fieldId) {
-								downloadUrl += '&fieldid='+fieldId;
-							};	
-							location.href = downloadUrl;
-						});},
+				click: function() { acceptSettings(exportCellOrDialog) },
 				showLabel: false },
-			{	text: 'Import ' + (fieldId ? 'dialog' : 'cell'),
+			{	text: 'Import ' + type,
 				icon: ' ui-icon-arrowstop-1-n',
-			// the following attaches the input field for the file dialog to this function itself
-			// it seems that otherwise, it happens that the garbage collector deletes variable "input"
-				click: function() { fuip.fileInput = $('<input type="file">');
-									fuip.fileInput.on("change",function(evt){
-										fuip.fileInput = undefined;  // not needed anymore
-										var reader = new FileReader();
-										reader.onload = function(e) {
-											// TODO: error handling when sending command
-											postImportCommand(e.target.result,true,$("html").attr("data-pageid"))
-												.done(function(msg) {
-													if(msg == "OK") {
-														location.reload(true);
-													}else{	
-														popupError("Import " + (fieldId ? 'dialog' : 'cell') + ": Error",msg);
-													};
-												});		
-										};	
-										reader.readAsText(evt.target.files[0]);
-									});
-									fuip.fileInput.click();
-									// for some (unknown to me) reason, this does not work with the usual construct
-									// however, the import of a cell does not change the cell or the content of the
-									// config popup anyway, so we can just do it "afterwards"
-									if(!fieldId){ // for dialog, we anyway overwrite the current state
-										acceptSettings( function() {} );  // avoid immediate reload
-									};	
-								},	
+				click: importCellOrDialog,  // does the acceptSettings internally	
 				showLabel: false });
-	if(!fieldId) {
+	};			
+	if(type == "cell") {
 		buttons.push(	
 			{   text: 'Delete cell',
 				icon: 'ui-icon-trash',
-				click: deleteView,
+				click: deleteCell,
 				showLabel: false });
 	};
 	buttons.push(
@@ -1859,8 +2248,15 @@ function changeSettingsDialog(settingsJson,viewId,fieldId) {
 };
 					
 				
-function openSettingsDialog(name, pageId, viewId, fieldId) {
-	// fieldId is "optional". If set, we are maintaining a popup.
+async function openSettingsDialog(type, cellid) {
+	// Parameters depend on type:
+	// cell:	Maintain a normal cell 		
+	//         	page id is taken from HTML, cellid given in parameters
+	// dialog: 	Maintain a dialog (popup)
+	//			everything is taken from the HTML
+	// viewtemplate: Maintain a view template
+	//			everything is taken from the HTML
+	
 	// FTUI switches off text selection (which only seems to work in IE)
 	// The following switches it back on, so select,copy,cut,paste etc. can be used
     $("body").each(function () {
@@ -1872,24 +2268,41 @@ function openSettingsDialog(name, pageId, viewId, fieldId) {
         $(this).css('-webkit-user-select', 'text');
     });	
 	var settingsDialog = $( "#viewsettings" );
+	let name = $("html").attr("data-name");
 	// XMLHTTP request to get config options with current values
-	var cmd = "get " + name + " ";
-	if(fieldId) {
-		// popup or so
-		cmd += "viewcomponent " + pageId + "_" + viewId + " " + fieldId;
-	}else{
-		cmd += "cellsettings " + pageId + "_" + viewId;
+	var cmd = "get " + name + " settings type=" + type + " ";
+	let fieldid;
+	switch(type) {
+		case "cell": 
+			cmd += 'pageid="' + $("html").attr("data-pageid") + '" cellid="' + cellid + '"';
+			break;
+		case "dialog":
+			fieldid = $("html").attr("data-fieldid");
+			if($("html").attr("data-pageid")) {
+				cellid = $("html").attr("data-cellid");
+				cmd += 'pageid="' + $("html").attr("data-pageid") + '" cellid="' + cellid + '"';
+			}else{
+				cmd += 'templateid="' + $("html").attr("data-viewtemplate") + '"';
+			};	
+			cmd += ' fieldid="' + fieldid + '"';
+			break;
+		case "viewtemplate":
+			cmd += 'templateid="' + $("html").attr("data-viewtemplate") + '"';
+			break;
+		default:
+			console.log("FUIP: openSettingsDialog failed: unknown type");
+			ftui.toast("FUIP: openSettingsDialog failed: unknown type","error");
+			return;
 	};	
-	sendFhemCommandLocal(cmd).done(function(settingsJson){
-		changeSettingsDialog(settingsJson,viewId,fieldId);
-		settingsDialog.attr("data-mode","cell");
-		settingsDialog.attr("data-viewid",viewId);
-		// popup maint?
-		if(fieldId) {
-			settingsDialog.attr("data-fieldid",fieldId);
-		};	
-		settingsDialog.dialog("open");
-	});	
+	let settingsJson = await asyncSendFhemCommandLocal(cmd);
+	changeSettingsDialog(settingsJson,type,cellid,fieldid);
+	settingsDialog.attr("data-mode",type);
+	settingsDialog.attr("data-viewid",cellid);
+	// popup maint?
+	if(fieldid) {
+		settingsDialog.attr("data-fieldid",fieldid);
+	};	
+	settingsDialog.dialog("open");
 };
 			
 			
@@ -1973,15 +2386,48 @@ function importAsNewPage(content) {
 	popup.dialog("open");
 };	
 
+
+function exportPage() { 
+	location.href = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() 
+			+ '/fuip/export?pageid=' + $("html").attr("data-pageid"); 
+};
+
+
+async function repairPage() {
+	let cmd = 'set ' + $("html").attr("data-name") + ' repair type=page pageid=' + $("html").attr("data-pageid");
+	await asyncSendFhemCommandLocal(cmd);
+	location.reload(true);
+};	
+			
+	
+function importPage() {
+	// the following attaches the input field for the file dialog to this function itself
+	// it seems that otherwise, it happens that the garbage collector deletes variable "input"
+	toggleCellPage.input = $('<input type="file">');
+	toggleCellPage.input.on("change",function(evt){
+		toggleCellPage.input = undefined;  // not needed anymore
+		var reader = new FileReader();
+		reader.onload = function(e) {
+			//var	cmd = "set uilocal import bla_001 " + e.target.result; 
+			// TODO: error handling when sending command
+			importAsNewPage(e.target.result);
+		};	
+		reader.readAsText(evt.target.files[0]);
+	});
+	toggleCellPage.input.click();
+	acceptPageSettings(function(){});  // avoid page reload
+};
+
 			
 function toggleCellPage() {
 	var settingsDialog = $( "#viewsettings" );
-	settingsDialog.html("Just a moment...");
 	var mode = settingsDialog.attr("data-mode");
+	if(mode != "cell" && mode != "page") return;
+	settingsDialog.html("Just a moment...");
 	if(mode == "page") {
 		// switch to "cell"
-		openSettingsDialog($("html").attr("data-name"),$("html").attr("data-pageid"),settingsDialog.attr("data-viewid"));
-	}else{
+		openSettingsDialog($("html").attr("data-name"),"cell",settingsDialog.attr("data-viewid"));
+	}else if(mode == "cell") {
 		settingsDialog.dialog("option","title", "Settings page " + $("html").attr("data-pageid"));
 		settingsDialog.attr("data-mode","page");
 		settingsDialog.dialog("option","buttons",
@@ -1993,29 +2439,6 @@ function toggleCellPage() {
 				icon: 'ui-icon-copy',
 				click: function() { acceptPageSettings(copyCurrentPage); },
 				showLabel: false },
-			{	text: 'Export page',
-				icon: ' ui-icon-arrowstop-1-s',
-				click: function() { acceptPageSettings( function() { location.href = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() + '/fuip/export?pageid=' + $("html").attr("data-pageid"); })},
-				showLabel: false },	
-			{	text: 'Import page',
-				icon: ' ui-icon-arrowstop-1-n',
-				// the following attaches the input field for the file dialog to this function itself
-				// it seems that otherwise, it happens that the garbage collector deletes variable "input"
-				click: function() { toggleCellPage.input = $('<input type="file">');
-									toggleCellPage.input.on("change",function(evt){
-										toggleCellPage.input = undefined;  // not needed anymore
-										var reader = new FileReader();
-										reader.onload = function(e) {
-										//var	cmd = "set uilocal import bla_001 " + e.target.result; 
-										// TODO: error handling when sending command
-											importAsNewPage(e.target.result);
-									};	
-									reader.readAsText(evt.target.files[0]);
-								});
-								toggleCellPage.input.click();
-								acceptPageSettings(function(){});  // avoid page reload
-				},
-				showLabel: false },	
 			{   text: 'Cancel',
 				icon: 'ui-icon-close',
 				click: function() {	settingsDialog.dialog( "close" ); 
@@ -2077,5 +2500,71 @@ function copyCurrentCell() {
 				'</form>');
 	popup.dialog("open");
 };	
-			
-			
+
+
+async function dialogNewViewTemplateName() {
+	return new Promise(function(resolve,reject) {
+		// create popup to input new view template name
+		let popup = $("#inputpopup");
+		if(!popup.length) {
+			popup = $('<div id="inputpopup"></div>');
+			$("body").append(popup);
+		};	
+		popup.dialog({
+			autoOpen: false,
+			width: 350,
+			height: 150,
+			modal: true,
+			title: "Enter name of new view template",
+			buttons: [{
+				text: 'Ok',
+				icon: 'ui-icon-check',
+				click: function() {
+					let newname = $("#newtemplateid").val();			
+					if(newname.length) { 
+						popup.dialog( "close" );
+						resolve(newname);
+					}else{
+						popupError("Enter a name",'Enter something or hit the "Cancel" button');
+					};		
+				},
+				showLabel: false },
+			{ text: 'Cancel',
+				icon: 'ui-icon-close',
+				click: function() {	
+						popup.dialog( "close" ); 
+						reject(new Error('No name given'));
+					},
+				showLabel: false }
+			],
+		});
+		popup.html('<form onsubmit="return false;">'+
+					'<label style="margin-right:1em;" for="newtemplateid">New template id</label>'+
+					'<input type="text" id="newtemplateid" style="visibility:visible;" value=""/>'+
+				'</form>');
+		popup.dialog("open");
+	});
+};
+
+
+async function dialogCreateNewViewTemplate() {
+	try{
+		let newname = await dialogNewViewTemplateName();
+		window.location.replace("/fhem/" + $("html").attr("data-name").toLowerCase() +"/fuip/viewtemplate?templateid="+newname);
+	}catch(e){}; // we can ignore this, usually only user input error 
+};
+
+
+async function dialogConvertToViewtemplate() {
+	// convert current cell/dialog to view template
+	let newname;
+	try{
+		newname = await dialogNewViewTemplateName();
+	}catch(e){
+		return;
+	};  
+	let cmd = 'set ' + $("html").attr("data-name") + ' convert ' + getKeyForCommand("origin")
+				+ ' targettype=viewtemplate targettemplateid="' + newname + '"';
+	await asyncSendFhemCommandLocal(cmd);
+	window.location.href = location.origin + "/fhem/" + $("html").attr("data-name").toLowerCase() +"/fuip/viewtemplate?templateid="+newname;	
+};	

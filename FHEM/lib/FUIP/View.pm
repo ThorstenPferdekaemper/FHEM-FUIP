@@ -109,6 +109,7 @@ sub getHTML($$){
 		for my $field (keys %$self) {
 			# fuip is the reference to the FUIP object, don't serialize this
 			next if $field eq "fuip";
+			next if $field eq "class";
 			$result .= ",\n".$blanks."   ".$field." => ".serializeRef($self->{$field},$indent);
 		};
 		$result .= "\n".$blanks."}";

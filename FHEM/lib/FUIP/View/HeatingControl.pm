@@ -21,7 +21,7 @@ sub getStructure($) {
 	return [
 		{ id => "class", type => "class", value => $class },
 		{ id => "device", type => "device" },
-		{ id => "title", type => "text", default => { type => "field", value => "thermostat"} },
+		{ id => "title", type => "text", default => { type => "field", value => "device"} },
 		{ id => "measuredTemp", type => "device-reading", 
 			device => { default => { type => "field", value => "device"} },
 			reading => { default => { type => "const", value => "measured-temp" } } },	

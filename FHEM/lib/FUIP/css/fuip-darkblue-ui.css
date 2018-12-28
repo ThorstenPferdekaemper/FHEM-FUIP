@@ -1,3 +1,29 @@
+/* CSS classes for FUIP styles 
+    Started 2018 by Mario Stephan <mstephan@shared-files.de>
+	Thorsten Pferdekaemper (mit Marios Genehmigung)
+*/
+
+/* ---- color variables ---- */
+:root{
+/* main cell background color */
+	--fuip-color-background: #223343;
+/* background when mouse hovers over, used in weatherdetail, defaults to #444 */	
+	--fuip-color-background-hover: #3a4f5c;
+/* main theme color */
+	--fuip-color-symbol-active: #0088CC;
+/* color for inactive switches/symbols */
+	--fuip-color-symbol-inactive: #495C70;
+/* color for symbol foreground */
+	--fuip-color-symbol-foreground: #2A2A2A;
+/* color for "inactive" menu items or other texts etc 
+	might be overwritten by attribute styleColor */
+	--fuip-color-foreground: #667d94;
+/* color for overlay of "edit only" mode. Defaults to rgba(255,255,255,.1) */
+	--fuip-color-editonly: rgba(255,255,255,.1);		
+}
+
+
+
 .red {
     color: #e34343 !important;
 }
@@ -185,49 +211,34 @@ option {background-color: #ffffff;}
 .playstream.off {color:#fff;background-color:#999;}
 
 
-/* CSS classes for FUIP styles */
-/* Thorsten Pferdekaemper */
-/* "blue" style */
-
 /* .thermostat.actual{ color:#888; } */
 
 /* main cell background color */
 .fuip-color-background {
-    background-color:#223343;
-}
-:root{
-	--fuip-color-background: #223343;
-	--fuip-color-background-hover: #3a4f5c
+    background-color: var(--fuip-color-background);
 }
 
 /* main theme color */
 .fuip-color-symbol-active {
-    color: #0088CC;
+	color: var(--fuip-color-symbol-active);
 }
 
 /* color for inactive switches/symbols */
 .fuip-color-symbol-inactive {
-    color: #495C70;
+    color: var(--fuip-color-symbol-inactive);
 }
 
 /* color for symbol foreground */
 .fuip-color-symbol-foreground {
-	color: #2A2A2A;
-}
-:root {
-	--fuip-color-symbol-foreground: #2A2A2A;
+	color: var(--fuip-color-symbol-foreground);
 }
 
 
-/* color for "inactive" menu items or other texts etc 
-	TODO: Attribute styleColor? */
+/* color for "inactive" menu items or other texts etc */
 .fuip-color-foreground, text.title.fuip-color-foreground  {
-	color: #667d94;
-	fill: #667d94;
+	color: var(--fuip-color-foreground);
+	fill: var(--fuip-color-foreground);
 }	
-:root {
-	--fuip-color-foreground: #667d94;
-}
 
 
 /* cell */
@@ -260,6 +271,12 @@ div[data-type="link"].fuip-menu-item-active,
 	align-items:center;
 } 
 
+div[data-type="link"].fuip-menu-item > .linklefticon,
+.fuip-menu-item > .linklefticon,
+div[data-type="link"].fuip-menu-item-active > .linklefticon,
+.fuip-menu-item-active > .linklefticon {
+	padding-left: 8px;
+} 
 
 .fuip-color-menuitem {
 	color: var(--fuip-color-foreground);
@@ -269,3 +286,9 @@ div[data-type="link"].fuip-menu-item-active,
 	color: var(--fuip-color-symbol-active);
 }
 
+.fuip-flex-fake {
+	background-color: #505050;
+	transition: width 0.5s, height 0.5s;
+	border:0;
+	border-radius: 8px;
+}

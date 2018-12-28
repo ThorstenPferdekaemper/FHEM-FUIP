@@ -25,12 +25,7 @@ use warnings;
 	
 sub dimensions($;$$){
 	my $self = shift;
-	if (@_) {
-		$self->{width} = shift;
-		$self->{height} = shift;
-	}	
-	$self->{width} = main::AttrVal($self->{fuip}{NAME},"baseWidth",142) unless $self->{width};
-	return ($self->{width}, $self->{height});
+	return (main::AttrVal($self->{fuip}{NAME},"baseWidth",142), 38);
 };	
 	
 	
@@ -45,8 +40,7 @@ sub getStructure($) {
 		{ id => "link", type => "link" },
 		{ id => "icon", type => "icon" },
 		# TODO: proper "boolean" drop down
-		{ id => "active", type => "boolean", value => "0" },
-		{ id => "height", type => "internal", value => 42 }	
+		{ id => "active", type => "boolean", value => "0" }	
 		];
 };
 

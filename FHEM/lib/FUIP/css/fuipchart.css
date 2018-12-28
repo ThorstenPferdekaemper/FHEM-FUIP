@@ -18,8 +18,41 @@ text.fuipchart.title { font-size:16px; }
 .fuipchart.lwidth16 { stroke-width:16px; }
 .fuipchart.lwidth24 { stroke-width:24px; }
 	
+
+
+
+/* SVG Charts */
+/* Definition of size etc. for the buttons */
+.buttons {
+	fill: var(--fuip-color-symbol-inactive);
+}
+/* Definition for activated texts ('legend' and 'cursor') */
+.caption.active {
+	fill: var(--fuip-color-symbol-active);
+}
+/* Definition for pulldown menus */
+.pulldownmenu {
+	background: var(--fuip-color-symbol-inactive);
+	color: var(--fuip-color-symbol-foreground);
+}
+.pdentry.line {
+	border-bottom-color: #888;
+}
+.pdentry.mouseover {
+	background: var(--fuip-color-symbol-active);
+}
 /* Definition for legend window */
 .legend.lback {
-	fill: #111;
+	fill: var(--fuip-color-symbol-inactive);
 	fill-opacity: 0.7; 
 } 
+/* .legend {
+	stroke: #baabba;
+	font-size: 11px;
+	stroke-width: 0;
+	fill: #aaa;
+	fill-opacity: 0.7;
+}
+.text.legend {
+	fill-opacity: 1;
+} */

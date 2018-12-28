@@ -10,10 +10,10 @@ sub getHTML($){
 	my ($self) = @_;
 	my $left = "";
 	$left = 'left:24px;' if($self->{label}); 
-	my $result = '<div style="width:100px;height:140px;">
+	my $result = '<div style="width:100px;height:136px;">
 					<div style="position:absolute;top:0px;'.$left.'" data-type="push" data-device="'.$self->{device}.'" data-icon="fa-chevron-up" data-background-icon="fa-square-o" data-set-on="'.$self->{setUp}.'" class="readonly"> </div>
-					<div style="position:absolute;top:44px;'.$left.'" data-type="push" data-device="'.$self->{device}.'" data-icon="fa-minus" data-background-icon="fa-square-o" data-set-on="'.$self->{setStop}.'" class="readonly"> </div>
-					<div style="position:absolute;top:86px;'.$left.'" data-type="push" data-device="'.$self->{device}.'" data-icon="fa-chevron-down" data-background-icon="fa-square-o" data-set-on="'.$self->{setDown}.'" class="readonly"> </div>
+					<div style="position:absolute;top:42px;'.$left.'" data-type="push" data-device="'.$self->{device}.'" data-icon="fa-minus" data-background-icon="fa-square-o" data-set-on="'.$self->{setStop}.'" class="readonly"> </div>
+					<div style="position:absolute;top:84px;'.$left.'" data-type="push" data-device="'.$self->{device}.'" data-icon="fa-chevron-down" data-background-icon="fa-square-o" data-set-on="'.$self->{setDown}.'" class="readonly"> </div>
 					</div>';
 	if($self->{label}) {
 		$result .= '<div class="fuip-color">'.$self->{label}.'</div>';
@@ -24,7 +24,7 @@ sub getHTML($){
 	
 sub dimensions($;$$){
     my $self = shift;
-	my $height = 140;
+	my $height = 136;
 	my $width = 52;
 	if($self->{label}) {
 		$height += 17 ;

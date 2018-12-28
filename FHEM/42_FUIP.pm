@@ -48,7 +48,7 @@ my $currentPage = "";
 # possible values of attributes can change...
 sub setAttrList($) {
 	my ($hash) = @_;
-    $hash->{AttrList}  = "layout:gridster,flex locked:0,1 fhemwebUrl baseWidth baseHeight pageWidth styleSchema:default,blue,green,mobil,darkblue,darkgreen,bright-mint styleColor viewportUserScalable:yes,no viewportInitialScale gridlines:show,hide snapTo:gridlines,nothing styleBackgroundImage:";
+    $hash->{AttrList}  = "layout:gridster,flex locked:0,1 fhemwebUrl baseWidth baseHeight pageWidth styleSchema:default,blue,green,mobil,darkblue,darkgreen,bright-mint styleColor viewportUserScalable:yes,no viewportInitialScale gridlines:show,hide snapTo:gridlines,halfGrid,quarterGrid,nothing styleBackgroundImage:";
 	my $imageNames = getImageNames();
 	$hash->{AttrList} .= join(",",@$imageNames);
 	my $cssNames = getUserCssFileNames();
@@ -382,11 +382,13 @@ sub getViewDependencies($$$) {
 	my $rex = qr/$pattern/;
 	
 	my %viewClasses;
-	if(blessed($pageId) and $pageId->isa("FUIP::Dialog")){
+	if(blessed($pageId)){ # this should always have views
+		return unless exists $pageId->{views};
 		for my $view (@{$pageId->{views}}) {
 			getViewClassesSingle($view,\%viewClasses);		
 		};
 	}else{
+		return unless exists $hash->{pages}{$pageId};
 		my $cells = $hash->{pages}{$pageId}{cells};
 		for my $cell (@{$cells}) {
 			for my $view (@{$cell->{views}}) {
@@ -557,6 +559,7 @@ sub renderPage($$$) {
 					};	
 				</script>
 				<title>".$title."</title>"
+				.'<link rel="stylesheet" href="/fhem/'.lc($hash->{NAME}).'/lib/jquery.gridster.min.css" type="text/css">'
 				.renderCommonCss($hash->{NAME})
 				."<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
 		        <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.min.js\"></script>".
@@ -683,6 +686,7 @@ sub renderPageFlex($$) {
 					}
 					#fuip-flex-menu-toggle {
 						display:none;
+						z-index:12;
 					}
 					#fuip-flex-title {
 						display:flex;
@@ -837,19 +841,25 @@ sub renderPageFlexMaint($$) {
 };
 
 
-sub findDialogFromFieldId($$$$) {
+sub findDialogFromFieldId($$$;$) {
 	# gets the FUIP::Dialog instance at the "end" of the field id
 	# if this is not a dialog, it is created and assigned to the field of 
 	# the related view
-	my ($hash,$pageid,$cellid,$fieldid) = @_;
-	# find the dialog and render it	
-	my $cell = $hash->{pages}{$pageid}{cells}[$cellid];
+	# $cKey: container key. Either pageid/cellid or templateid
+	my ($hash,$cKey,$fieldid,$prefix) = @_;
+	$prefix = ($prefix ? $prefix : "");
+	# find the dialog (we start with the container, i.e. cell or view template
+	my $dialog;
+	if(exists($cKey->{$prefix."pageid"})) { 
+		$dialog = $hash->{pages}{$cKey->{$prefix."pageid"}}{cells}[$cKey->{$prefix."cellid"}];
+	}else{
+		$dialog = $hash->{viewtemplates}{$cKey->{$prefix."templateid"}};
+	};	
 	my @fieldIdSplit = split(/-/,$fieldid);
 	# $fieldid should have the form like views-1-popup-views-4-popup-views...
 	# or in general
 	# <name>-<num>-<name>-<name>-<num>-<name>...
 	my $view;
-	my $dialog = $cell;
 	my $popupName;
 	while(@fieldIdSplit) {
 		$view = $dialog->{shift(@fieldIdSplit)}[shift(@fieldIdSplit)];
@@ -872,20 +882,26 @@ sub renderPopupMaint($$) {
 	# get pageid, cellid and fieldid
 	my $urlParams = urlParamsGet($request);
 	# TODO: error management
-	return undef unless exists $urlParams->{pageid};
-	return undef unless exists $urlParams->{cellid};
+	return undef unless (exists($urlParams->{pageid}) and exists($urlParams->{cellid})) 
+					or exists($urlParams->{templateid});
 	return undef unless exists $urlParams->{fieldid};
 
 	# find the dialog and render it	
-	my $dialog = findDialogFromFieldId($hash, $urlParams->{pageid}, $urlParams->{cellid}, $urlParams->{fieldid});
+	my $dialog = findDialogFromFieldId($hash, $urlParams, $urlParams->{fieldid});
 	$currentPage = $dialog;
 	
 	my $title = "Maintain Popup Content";
 	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","var(--fuip-color-foreground,#808080)");
   	my $result = 
 	   "<!DOCTYPE html>
-		<html data-name=\"".$hash->{NAME}."\" data-pageid=\"".$urlParams->{pageid}."\" 
-				data-cellid=\"".$urlParams->{cellid}."\" data-fieldid=\"".$urlParams->{fieldid}."\"
+		<html data-name=\"".$hash->{NAME}."\" ";
+	if(exists($urlParams->{pageid})) {	
+		$result .= 'data-pageid="'.$urlParams->{pageid}.'" 
+					data-cellid="'.$urlParams->{cellid}.'" ';
+	}else{
+		$result .= 'data-viewtemplate="'.$urlParams->{templateid}.'" ';
+	};	
+	$result .= "data-fieldid=\"".$urlParams->{fieldid}."\"
 				data-editonly=\"".$hash->{editOnly}."\">
 			<head>
 	            <title>".$title."</title>"
@@ -918,8 +934,19 @@ sub renderPopupMaint($$) {
 				'<script>
 					$( function() {
 						$( "#popupcontent" ).resizable({
-							stop: onDialogResize
+							stop: onResize
 						});
+						$("#popupsettingsbutton").button({
+							icon: "ui-icon-gear",
+							showLabel: false
+						});	
+						$("#popuparrangebutton").button({
+							icon: "ui-icon-calculator",
+							showLabel: false
+						});	
+						$("#popupmenu").controlgroup({
+							direction: "vertical"
+						});	
 					} );
 				</script>'."\n"
 				.renderHeaderHTML($hash,$dialog)
@@ -927,15 +954,168 @@ sub renderPopupMaint($$) {
             <body";
 	my ($width,$height) = $dialog->dimensions();	
 	$result .= '>'."\n"
-				.renderUserHtmlBodyStart($hash,$dialog)
-	.'<div id="popupcontent" class="fuip-droppable fuip-cell"
-		style="width:'.$width.'px;height:'.$height.'px;border:0;border-bottom:1px solid #aaa;
-									box-shadow: 0 3px 9px rgba(0, 0, 0, 0.5);
-									border: 1px solid rgba(0, 0, 0, 0.1);
-									margin:0;display:inline;position:absolute;top:0;left:0;">'
-				.renderGears($hash->{NAME},$urlParams->{pageid},$urlParams->{cellid},$urlParams->{fieldid}).'
+				.renderUserHtmlBodyStart($hash,$dialog);
+	$result .= '<div style="display:flex;"><div style="display:inline-flex;margin:20px;">
+		<div id="popupcontent" class="fuip-droppable fuip-cell"
+			style="width:'.$width.'px;height:'.$height.'px;border:0;border-bottom:1px solid #aaa;
+					box-shadow: 0 3px 9px rgba(0, 0, 0, 0.5);">
 				<header class="fuip-cell-header">'.$dialog->{title}.'</header>';
 	$result .= $dialog->getHTML(0);  # this is maint, so never locked	
+	$result .= '</div>'."\n";
+		$result .= '<div id="popupmenu" style="margin-left:5px;">
+					<button id="popupsettingsbutton" type="button" 
+							onclick="openSettingsDialog(\'dialog\')">Settings</button>
+					<button id="popuparrangebutton" type="button" 
+							onclick="autoArrange()">Arrange views (auto layout)</button>		
+				</div></div></div>'."\n";
+	$result .=	'<div id="viewsettings">
+		</div>
+		<div id="valuehelp">
+		</div>
+       </body>
+       </html>';
+    return ("text/html; charset=utf-8", $result);
+};
+
+
+sub renderViewTemplateMaint($$) {
+	my ($hash,$request) = @_;
+	# get template id
+	my $urlParams = urlParamsGet($request);
+	# TODO: error management
+	my $templateid = exists($urlParams->{templateid}) ? $urlParams->{templateid} : "";
+	# find the dialog and render it	
+	my $viewtemplate;
+	$currentPage = undef;
+	if($templateid) {
+		if(not exists($hash->{viewtemplates}{$templateid})) {   
+			$hash->{viewtemplates}{$templateid} = FUIP::ViewTemplate->createDefaultInstance($hash);
+			$hash->{viewtemplates}{$templateid}{id} = $templateid;
+		};
+		$viewtemplate = $hash->{viewtemplates}{$templateid};
+		$currentPage = $viewtemplate;  
+	};
+	my $title = "Maintain View Template".($templateid ? " ".$templateid : "s");
+	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","var(--fuip-color-foreground,#808080)");
+  	my $result = 
+	   "<!DOCTYPE html>
+		<html data-name=\"".$hash->{NAME}."\" data-viewtemplate=\"".$templateid."\" 
+				data-editonly=\"".$hash->{editOnly}."\">
+			<head>
+				<script type=\"text/javascript\">
+					// when using browser back or so, we should reload
+					if(performance.navigation.type == 2){
+						location.reload(true);
+					};	
+				</script>
+	            <title>".$title."</title>"
+				.renderCommonCss($hash->{NAME})
+				."
+				<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
+		        <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.min.js\"></script>".
+				"<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.css\">
+								<!-- tablesorter -->
+								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.js\"></script>
+								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.widgets.js\"></script>".
+                "<script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>".
+				renderFuipInit($hash).
+				"<style type=\"text/css\">
+	                .fuip-color {
+		                color: ".$styleColor.";
+                    }
+					a:link, a:visited {
+						color: var(--fuip-color-symbol-active);
+					}	
+					a:hover {
+						color: var(--fuip-color-foreground);
+					}	
+					".renderCommonEditStyles($hash).
+                "</style>".
+				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
+				'<script>
+					$( function() {
+						$( "#templatecontent" ).resizable({
+							stop: onResize
+						});
+						$("#viewtemplatesettingsbutton").button({
+							icon: "ui-icon-gear",
+							showLabel: false
+						});	
+						$("#viewtemplatearrangebutton").button({
+							icon: "ui-icon-calculator",
+							showLabel: false
+						});	
+						$("#viewtemplatedeletebutton").button({
+							icon: "ui-icon-trash",
+							showLabel: false
+						});
+						$("#viewtemplatemenu").controlgroup({
+							direction: "vertical"
+						});	
+					});
+				</script>'."\n"
+				.renderHeaderHTML($hash,($viewtemplate ? $viewtemplate : ""))
+            ."</head>
+            <body style='text-align:left;'";
+	$result .= '>'."\n"
+				.renderUserHtmlBodyStart($hash,($viewtemplate ? $viewtemplate : ""))."\n"
+	.'<h1 style="text-align:left;margin-left:3em;color:var(--fuip-color-symbol-active);">'.($templateid ? 'View Template '.$templateid.($viewtemplate->{title} ? ' ('.$viewtemplate->{title}.')' : "") : 'Maintain View Templates').'</h1>
+	<div style="display:flex;flex-wrap:wrap;">'
+	.'<div style="margin:20px">'."\n";
+	# list of all view templates
+	$hash->{viewtemplates} = {} unless $hash->{viewtemplates};
+	$result .= "<ul>\n";
+	$result .= '<li	style="text-align:left;list-style-type:circle;color:var(--fuip-color-symbol-active);">
+						<a href="javascript:void(0);" 
+							onclick="window.location.replace(\'/fhem/'.lc($hash->{NAME}).'/fuip/viewtemplate\')">
+					Show all (overview)
+					</a></li>
+				<li style="text-align:left;list-style-type:circle;color:var(--fuip-color-symbol-active);"><a href="javascript:void(0);" onclick="dialogCreateNewViewTemplate();">Create new</a></li> 
+				<br>'."\n";
+	for my $viewtemplate (sort keys %{$hash->{viewtemplates}}) {
+		$result .= '<li	style="text-align:left;list-style-type:circle;color:var(--fuip-color-symbol-active);">
+						<a href="javascript:void(0);" 
+							onclick="window.location.replace(\'/fhem/'.lc($hash->{NAME}).'/fuip/viewtemplate?templateid='.$viewtemplate.'\')">
+					FUIP::VTempl::'.$viewtemplate.' ('.$hash->{viewtemplates}{$viewtemplate}{title}.')
+					</a></li>'."\n";
+	};				
+	$result .= '</ul></div>'."\n";
+	if($templateid) {
+		my ($width,$height) = $viewtemplate->dimensions();	
+		$result .= '<div style="display:inline-flex;margin:20px;">
+		<div id="templatecontent" class="fuip-droppable fuip-cell"
+			style="width:'.$width.'px;height:'.$height.'px;border:0;border-bottom:1px solid #aaa;
+					text-align:center;
+					border-radius:0px;
+					box-shadow: 0 3px 9px rgba(0, 0, 0, 0.5);">';
+		$result .= $viewtemplate->getHTML(0);  # this is maint, so never locked	
+		$result .= '</div>'."\n";
+		$result .= '<div id="viewtemplatemenu" style="margin-left:5px;">
+					<button id="viewtemplatesettingsbutton" type="button" 
+							onclick="openSettingsDialog(\'viewtemplate\')">Settings</button>
+					<button id="viewtemplatearrangebutton" type="button" 
+							onclick="autoArrange()">Arrange views (auto layout)</button>		
+					<button id="viewtemplatedeletebutton" type = "button"
+							onclick="viewTemplateDelete(\''.$hash->{NAME}.'\',\''.$templateid.'\')">Delete view template</button>
+				</div></div>'."\n";
+		# display usage of this template
+		$result .= '<div style="margin:20px;" class="fuip-whereusedlist" data-fuip-type="viewtemplate" data-fuip-templateid='.$templateid.'></div>'."\n";		
+	}else{	
+		for my $key (sort keys %{$hash->{viewtemplates}}) {
+			my $viewtemplate = $hash->{viewtemplates}{$key};
+			my ($width,$height) = $viewtemplate->dimensions();	
+			$result .= '<div class="fuip-cell"
+			style="position:relative;width:'.$width.'px;height:'.$height.'px;border:0;border-bottom:1px solid #aaa;
+					text-align:center;
+					border-radius:0px;
+					box-shadow: 0 3px 9px rgba(0, 0, 0, 0.5);
+					border: 1px solid rgba(0, 0, 0, 0.1);
+					margin:20px;">'."\n";
+			$result .= $viewtemplate->getHTML(1);  # always locked	
+			$result .= '<div onclick="window.location.replace(\'/fhem/'.lc($hash->{NAME}).'/fuip/viewtemplate?templateid='.$key.'\')" title="click to change" style="position:absolute;left:0;top:0;width:100%;height:100%;z-index:11;background:var(--fuip-color-background,rgba(255,255,255,.1));opacity:0.1;"></div>';
+			$result .= '</div>'."\n";
+		};
+	};
 	$result .= '</div>
 		<div id="viewsettings">
 		</div>
@@ -1223,11 +1403,11 @@ sub findPositions($$;$) {
 };
 
 
-sub renderGears(@) {
+sub renderGearsForCell($) {
 	# returns the "gears" to open the config popup
-	my @settingsDialogParams = @_;
+	my ($cellid) = @_;
 	return '<span style="position:absolute;right:1px;top:0;z-index:12;" class="fa-stack fa-lg"
-				onclick="openSettingsDialog(\''.join("','",@settingsDialogParams).'\')">
+				onclick="openSettingsDialog(\'cell\',\''.$cellid.'\')">
 				<i class="fa fa-square-o fa-stack-2x"></i>
 				<i class="fa fa-cog fa-stack-1x"></i>
 			</span>'."\n";
@@ -1292,7 +1472,7 @@ sub renderCells($$$) {
 		# TODO: find better handle for dragging
 		if(not $locked or $cell->{title}) {
 			$result .= "<header class='fuip-cell-header'>".($cell->{title} ? $cell->{title} : "").($locked ? "" : " ".$i."\n"
-							.renderGears($hash->{NAME},$pageId,$i)).
+							.renderGearsForCell($i)).
 						"</header>";
 		};				
 		$i++;
@@ -1350,6 +1530,22 @@ sub flexMaintFindRegion($$) {
 };
 
 
+sub cellSizeToPixels($;$$) {
+	my ($hash,$sizeX,$sizeY) = @_;
+	unless(defined($sizeX)) {
+		my $cell = $hash;
+		($sizeX,$sizeY) = $cell->dimensions();
+		$hash = $cell->{fuip};
+	};
+	$sizeX = ceil($sizeX);
+	$sizeY = ceil($sizeY);
+	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
+	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
+	return ($sizeX * ($baseWidth + 10) - 10, 
+			$sizeY * ($baseHeight + 10) - 10); 
+};
+
+
 sub renderCellsFlexMaint($$$) {
 	my ($hash,$pageId,$region) = @_;
 	# no region set yet? => determine
@@ -1359,18 +1555,15 @@ sub renderCellsFlexMaint($$$) {
 	my $result;
 	my $i = -1;
 	my $cells = $hash->{pages}{$pageId}{cells};
-	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
-	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
 	for my $cell (@{$cells}) {
 		$i++;
 		my ($col,$row) = $cell->position();
 		next unless $cell->{region} eq $region;
+		my ($width,$height) = cellSizeToPixels($cell);
 		my ($sizeX, $sizeY) = $cell->dimensions();
 		$sizeX = ceil($sizeX);
 		$sizeY = ceil($sizeY);
-		my $width = $sizeX * ($baseWidth + 10) - 10; 
-		my $height = $sizeY * ($baseHeight + 10) - 10; 
-		$result .= "<div id='fuip-flex-fake-".$i."' style=\"grid-area:".($row+1)." / ".($col+1)." / ".($row+$sizeY+1)." / ".($col+$sizeX+1).";border:0;border-radius: 8px;position:relative;width:".$width."px;height:".$height."px;px;\">
+		$result .= "<div id='fuip-flex-fake-".$i."' class='fuip-flex-fake' style=\"grid-area:".($row+1)." / ".($col+1)." / ".($row+$sizeY+1)." / ".($col+$sizeX+1).";position:relative;width:".$width."px;height:".$height."px;px;\">
 					<div id='fuip-flex-cell-".$i."' data-cellid=\"".$i."\" class=\"fuip-droppable fuip-cell\" style=\"position:absolute;width:".$width."px;height:".$height."px;
 									border:0;\">";
 		$cell->applyDefaults();
@@ -1379,7 +1572,7 @@ sub renderCellsFlexMaint($$$) {
 							style='display: block;
 							font-size: 0.85em;font-weight: bold;line-height: 2em;
 							text-align: center;width: 100%;'>".($cell->{title} ? $cell->{title} : "").$i."\n"
-						.renderGears($hash->{NAME},$pageId,$i)				
+						.renderGearsForCell($i)				
 						."</header>";
 
 		$result .= $cell->getHTML(0);
@@ -1408,8 +1601,6 @@ sub renderCellsFlex($$) {
 	# no region set yet? => determine
 	flexMaintFindRegion($hash,$pageId);	
 	findPositions($hash,$pageId);
-	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
-	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
 	# now try to render this
 	my $menu = '<div id="fuip-flex-menu">';
 	my $titlebar = '<div id="fuip-flex-title">';
@@ -1429,10 +1620,9 @@ sub renderCellsFlex($$) {
 		my ($sizeX, $sizeY) = $cell->dimensions();
 		$sizeX = ceil($sizeX);
 		# TODO: determine title sizes properly
-		$sizeX = 2 if($cell->{region} eq "title" and $col == 0);
+		$sizeX = 1 if($cell->{region} eq "title" and $col == 0);
 		$sizeY = ceil($sizeY);
-		my $width = $sizeX * ($baseWidth + 10) - 10;
-		my $height = $sizeY * ($baseHeight + 10) - 10;  # -10 + 22
+		my ($width,$height) = cellSizeToPixels($hash,$sizeX,$sizeY);
 		# TODO: col, row, sizex, sizey ?
 		my $cellHtml = "<div data-cellid=\"".$i."\" data-row=\"".($row+1)."\" data-col=\"".($col+1)."\" data-sizex=\"".$sizeX."\" data-sizey=\"".$sizeY."\" class=\"fuip-droppable fuip-cell\" style=\"width:";
 		$cellHtml .= $width.'px';
@@ -1463,9 +1653,9 @@ sub renderCellsFlex($$) {
 		};				
 		if($col == 0 and $cell->{region} eq "title") {
 			$cellHtml .= '<div id="fuip-flex-menu-toggle" class="fa-lg"
-							style="position:absolute;left:5px;top:5px;"
+							style="position:absolute;left:0px;top:0px;"
 							onclick="$(\'#fuip-flex-menu\').toggleClass(\'fuip-flex-menu-show\')">
-							<i title="Toggle menu" class="fa fa-bars big"></i>
+							<i title="Toggle menu" class="fa fa-bars bigger"></i>
 						</div>';
 		};
 		$cellHtml .= $cell->getHTML(1).'</div>';
@@ -1659,7 +1849,7 @@ sub settingsExport($$) {
 	my $result = "";
 	my $filename = "";
 	if(exists $urlParams->{fieldid}) {
-		my $dialog = findDialogFromFieldId($hash,$urlParams->{pageid},$urlParams->{cellid},$urlParams->{fieldid});
+		my $dialog = findDialogFromFieldId($hash,$urlParams,$urlParams->{fieldid});
 		$result = $dialog->serialize();
 		$filename = $hash->{NAME}."_".$urlParams->{pageid}."_".$urlParams->{cellid}."_".$urlParams->{fieldid};
 	}elsif(exists $urlParams->{cellid}) {
@@ -1716,7 +1906,7 @@ sub settingsImport($$) {
 	if(exists($urlParams->{fieldid})) {
 		# importing (as) a dialog
 		# This means that what we import will replace the current one
-		my $dialog = findDialogFromFieldId($hash,$urlParams->{pageid},$urlParams->{cellid},$urlParams->{fieldid});
+		my $dialog = findDialogFromFieldId($hash,$urlParams,$urlParams->{fieldid});
 		$dialog->{views} = $newObject->{views};
 		$dialog->{title} = $newObject->{title};
 		$dialog->{defaulted} = $newObject->{defaulted};
@@ -1814,6 +2004,9 @@ sub CGI() {
 		# popup maintenance
 		}elsif($path[1] =~ m/^popup/) { 
 			return renderPopupMaint($hash,$request);
+		# view template maintenance
+		}elsif($path[1] =~ m/^viewtemplate/) { 
+			return renderViewTemplateMaint($hash,$request);		
 		}
 		# other built in fuip files
 		shift @path;
@@ -1868,16 +2061,43 @@ sub CGI() {
 # serializes all pages and views in order to save them
 sub serialize($) {
 	my ($hash) = @_;
-	my $result = 0;
+	# pages 
+	my $pages = 0;
 	for my $pageid (sort keys %{$hash->{pages}}) {
-		if($result) {
-			$result .= ",\n ";
+		if($pages) {
+			$pages .= ",\n ";
 		}else{
-			$result = "{";
+			$pages = "{";
 		};
-		$result .= " '".$pageid."' => \n".$hash->{pages}{$pageid}->serialize(4);
+		$pages .= " '".$pageid."' => \n".$hash->{pages}{$pageid}->serialize(6);
 	};
-	$result .= "\n}";
+	if($pages) {
+		$pages .= "\n}";
+	}else{
+		$pages = "{ }\n";
+	};	
+	# view templates
+	my $viewtemplates = 0;
+	for my $templateid (sort keys %{$hash->{viewtemplates}}) {
+		if($viewtemplates) {
+			$viewtemplates .= ",\n ";
+		}else{
+			$viewtemplates = "{";
+		};
+		$viewtemplates .= " '".$templateid."' => \n".$hash->{viewtemplates}{$templateid}->serialize(6);
+	};
+	if($viewtemplates) {
+		$viewtemplates .= "\n}";
+	}else{
+		$viewtemplates = "{ }\n";
+	};	
+	# put it together
+	my $result = 
+	"{\n".
+	"  version => 2,\n". 
+	"  pages => \n".$pages.",\n".
+	"  viewtemplates => ".$viewtemplates."\n".
+	"}";	
 	return $result;
 }
 
@@ -1912,11 +2132,46 @@ sub load($) {
 	my $config = join("\n",@content);
 	# now config is sth we can "eval"
 	my $confHash = eval($config);
-	# clear pages
+	# clear pages and viewtemplates
 	$hash->{pages} = {};
-	# each page has an id (key) and is an instance of FUIP::Page
-	for my $pageid (keys %$confHash) {
-		my $pageConf = $confHash->{$pageid};
+	$hash->{viewtemplates} = {};
+	# version 1: only pages, directly as a hash
+	# version 2: hash with keys version, pages, viewtemplates
+	my $version = 1;
+	if(exists $confHash->{version} and not ref($confHash->{version})) {
+		$version = $confHash->{version};
+	};
+	my $cPages = {};
+	my $cViewtemplates = {};
+	if($version == 1) {
+		$cPages = $confHash;
+	}elsif($version == 2) {
+		$cPages = $confHash->{pages};
+		$cViewtemplates = $confHash->{viewtemplates};
+	}else{
+		return "Invalid version in file ".$filename;
+	};
+	# first do the view templates, as the rest might depend on them
+	for my $id (keys %$cViewtemplates) {
+		my $conf = $cViewtemplates->{$id};
+		my $class = $conf->{class}; # This allows for other page-implementations (???)
+		delete($conf->{class});
+		$hash->{viewtemplates}{$id} = $class->reconstruct($conf,$hash);
+		$hash->{viewtemplates}{$id}{id} = $id;
+	};
+	# there might be view templates, which use other view templates, but "reconstructed"
+	# in opposite order...
+	for my $id (keys %{$hash->{viewtemplates}}) {
+		my $viewtemplate = $hash->{viewtemplates}{$id};
+		for my $view (@{$viewtemplate->{views}}){
+			next unless blessed($view) eq "FUIP::ViewTemplInstance";
+			next if($view->{viewtemplate});
+			$view->{viewtemplate} = $hash->{viewtemplates}{$view->{templateid}};
+		};		
+	};
+	# now the pages
+	for my $pageid (keys %$cPages) {
+		my $pageConf = $cPages->{$pageid};
 		my $class = $pageConf->{class}; # This allows for other page-implementations (???)
 		delete($pageConf->{class});
 		$hash->{pages}{$pageid} = $class->reconstruct($pageConf,$hash);
@@ -1954,15 +2209,18 @@ sub setField($$$$$) {
 	$refIntoView->{$compName} = main::urlDecode($values->{$nameInValues}) if(defined($values->{$nameInValues}));
 	# should this be an array?
 	if($field->{type} eq "setoptions") {
-		# it is still "allowed" to have something which evaluates to an array
-		$DB::single = 1;
-		my $options = eval($refIntoView->{$compName});
-		if(ref($options) eq "ARRAY") {
-			$refIntoView->{$compName} = $options;
-		}else{
+		# this can be an array reference, something that evaluates to an array or a comma separated list
+		my $options = $refIntoView->{$compName};
+		# not an ARRAY ref, maybe evaluates to an array (-ref)?
+		if(ref($options) ne "ARRAY") {
+			$options = eval($options);
+		};
+		# no ARRAY ref, does not evaluate to an array ref, i.e. comma separated list
+		if(ref($options) ne "ARRAY") {
 			my @options = split(/,/,$refIntoView->{$compName});
-			$refIntoView->{$compName} = \@options;
+			$options = \@options;
 		};	
+		$refIntoView->{$compName} = $options;	
 	};
 	# if this has a default setting 
 	if(defined($refIntoField->{default}) and defined($values->{$nameInValues."-check"})) {
@@ -1983,12 +2241,22 @@ sub setViewSettings($$$$;$) {
 	$newclass = main::urlDecode($h->{$prefix."class"}) if(defined($h->{$prefix."class"}));
 	if(defined($viewlist->[$viewindex])) {
 		$newclass = undef if($newclass and $newclass eq blessed($viewlist->[$viewindex]));  # already this class
+		# now check for view templates
+		if($newclass and $newclass =~ m/^FUIP::VTempl::(.*)/) {
+			$newclass = undef if(blessed($viewlist->[$viewindex]) eq "FUIP::ViewTemplInstance" 
+									and $1 eq $viewlist->[$viewindex]{templateid});
+		};
 	}else{
 		$newclass = "FUIP::View" unless $newclass;  # new view, assign FUIP::View
 	};
 	# has the class changed?
 	if(defined($newclass)) {
-		my $newView = $newclass->createDefaultInstance($hash);
+		my $newView;
+		if($newclass =~ m/^FUIP::VTempl::(.*)$/) {
+			$newView = $hash->{viewtemplates}{$1}->createTemplInstance($hash);  # makes a ViewTemplInstance
+		}else{
+			$newView = $newclass->createDefaultInstance($hash);
+		};	
 		if(defined($viewlist->[$viewindex])) {
 			my $oldView = $viewlist->[$viewindex];
 			$newView->{posX} = $oldView->{posX} if defined $oldView->{posX}; 
@@ -2009,7 +2277,9 @@ sub setViewSettings($$$$;$) {
 			my @sortOrder;
 			if(defined($h->{$prefix.$field->{id}})){
 				@sortOrder = split(',',$h->{$prefix.$field->{id}});
-			};
+			}else{
+				@sortOrder = 0 .. $#{$view->{$field->{id}}};
+			};	
 			my $newviewarray = [];
 			for my $i (@sortOrder) {	
 				setViewSettings($hash, $view->{$field->{id}},$i,$h,$prefix.$field->{id}.'-'.$i.'-'); 
@@ -2041,12 +2311,12 @@ sub autoArrange($) {
 	# get cell width
 	# (This assumes we already have a width.)
 	my $width;
-	if($cell->isa("FUIP::Dialog")) {
-		($width,undef) = $cell->dimensions();
-	}else{	
+	if($cell->isa("FUIP::Cell")) {
 		my ($w,$h) = $cell->dimensions();
 		my $baseWidth = main::AttrVal($cell->{fuip}{NAME},"baseWidth",142);
 		$width = $w * ($baseWidth + 10) -10;
+	}else{	
+		($width,undef) = $cell->dimensions();
 	};	
 	my ($posX,$posY) = (0,0);
 	my $nextPosY = 0;
@@ -2075,12 +2345,12 @@ sub autoArrangeNewViews($) {
 	my $height;
 	my $cellWidth;
 	my $cellHeight;
-	if($cell->isa("FUIP::Dialog")) {
-		($width,$height) = $cell->dimensions();
-	}else{	
+	if($cell->isa("FUIP::Cell")) {
 		($cellWidth,$cellHeight) = $cell->dimensions();
 		my $baseWidth = main::AttrVal($cell->{fuip}{NAME},"baseWidth",142);
 		$width = $cellWidth * ($baseWidth + 10) -10;
+	}else{	
+		($width,$height) = $cell->dimensions();
 	};	
 	# get the lower right corner of what is already occupied
 	my ($occUntilX,$occUntilY) = (0,0);
@@ -2124,18 +2394,18 @@ sub autoArrangeNewViews($) {
 		$nextPosY = $posY + $h if($nextPosY < $posY + $h);
 	}		
 	# resize the cell itself in case we have added something "below", which does not anyway fit
-	if($cell->isa("FUIP::Dialog")) {
-		if($nextPosY + 25 > $height) {
-			$height = $nextPosY + 25;
-			$cell->dimensions($width,$height);
-		};
-	}else{
+	if($cell->isa("FUIP::Cell")) {
 		my $baseHeight = main::AttrVal($cell->{fuip}{NAME},"baseHeight",108);
 		if($nextPosY > $cellHeight * $baseHeight) {
 			use integer;
 			$cellHeight = $nextPosY / $baseHeight + ($nextPosY % $baseHeight ? 1 : 0);
 			no integer;
 			$cell->dimensions($cellWidth,$cellHeight);
+		};
+	}else{
+		if($nextPosY + 25 > $height) {
+			$height = $nextPosY + 25;
+			$cell->dimensions($width,$height);
 		};
 	};
 };
@@ -2155,11 +2425,63 @@ sub getPageAndCellId($$) {
 };
 
 
+sub _setDelete($$) {
+	# e.g. set ui delete type=viewtemplate templateid=test
+	my ($hash,$h) = @_;
+	return '"set delete": unknown type' unless exists $h->{type} and $h->{type} eq "viewtemplate";
+	return '"set delete": template id missing' unless $h->{templateid};
+	return 'View template '.$h->{templateid}.' does not exist' unless $hash->{viewtemplates}{$h->{templateid}};
+	# check whether view template is used
+	my $wul = _getWhereUsedList($hash,$h);
+	return 'View template "'.$h->{templateid}.'" is still used. See where-used list for details.' if(@$wul);
+	# really delete
+	delete $hash->{viewtemplates}{$h->{templateid}};
+	return undef;  # clearly return something like false
+};	
+
+
+sub _setConvert($$) {
+	# convert one thing into another
+	# supported:
+	#	cell -> view template
+	# set ... convert origintype=... originpageid=... origincellid=... targettype=... targettemplateid=...
+	my ($hash,$h) = @_;	
+	return '"set convert": origin type '.$h->{origintype}.' not supported' unless $h->{origintype} eq "cell";
+	return '"set convert": target type '.$h->{targettype}.' not supported' unless $h->{targettype} eq "viewtemplate";
+	my $origin = _getContainerForCommand($hash,$h,"origin");
+	return '"set convert": origin does not exist' unless $origin;
+	my $templateid = $h->{targettemplateid};
+	return '"set convert": target already exists' if(exists($hash->{viewtemplates}{$templateid}));   
+	# create new view template
+	$hash->{viewtemplates}{$templateid} = FUIP::ViewTemplate->createDefaultInstance($hash);
+	$hash->{viewtemplates}{$templateid}{id} = $templateid;
+	# create a deep copy of the cell
+	my $instanceStr = $origin->serialize();
+	my $instance = "FUIP::Cell"->reconstruct(eval($instanceStr),$hash);
+	$hash->{viewtemplates}{$templateid}{views} = $instance->{views};
+	$hash->{viewtemplates}{$templateid}->dimensions(cellSizeToPixels($instance));
+};
+
+
+sub _setRepair($$) {
+	# currently only for pages
+	# simply removes width and height from cells to force them being re-determined
+	my ($hash,$h) = @_;
+	my $page = _getContainerForCommand($hash,$h);
+	for my $cell (@{$page->{cells}}) {
+		delete $cell->{width};
+		delete $cell->{height};
+		delete $cell->{posX};
+		delete $cell->{posY};
+	};
+}
+
+
 sub Set($$$)
 {
 	my ( $hash, $a, $h ) = @_;
 
-	# main::Log3($hash, 4, 'FUIP: Set: ' . main::Dumper($a).'  '.main::Dumper($h));
+	# main::Log3($hash, 3, 'FUIP: Set: ' . main::Dumper($a).'  '.main::Dumper($h));
 	
 	return "\"set ".$hash->{NAME}."\" needs at least one argument" unless(@$a > 1);
 	my $cmd = $a->[1];
@@ -2167,27 +2489,28 @@ sub Set($$$)
 		return save($hash);
 	}elsif($cmd eq "load"){
 		return load($hash);
-	}elsif($cmd eq "viewsettings") {	
-		# get cell id
-		my ($pageId,$cellId) = getPageAndCellId($hash,$a);
-		return $cellId unless(defined($pageId));
-		setViewSettings($hash, $hash->{pages}{$pageId}{cells}, $cellId, $h);
-		autoArrangeNewViews($hash->{pages}{$pageId}{cells}[$cellId]);
-	}elsif($cmd eq "viewcomponent") {	
-		# get cell id
-		my ($pageId,$cellId) = getPageAndCellId($hash,$a);
-		return $cellId unless(defined($pageId));
-		# get dialog
-		my $dialog = findDialogFromFieldId($hash,$pageId,$cellId,$a->[3]);
-		my $comps = [$dialog];
-		setViewSettings($hash, $comps, 0, $h);
-		autoArrangeNewViews($dialog);	
-	}elsif($cmd eq "dialogsize") {	
-		# get cell id
-		my ($pageId,$cellId) = getPageAndCellId($hash,$a);
-		return $cellId unless(defined($pageId));
-		my $dialog = findDialogFromFieldId($hash,$pageId,$cellId,$a->[3]);
-		$dialog->dimensions($a->[4],$a->[5]);
+	}elsif($cmd eq "settings") {
+		# type=cell|dialog|viewtemplate
+		# cell:
+		#	pageid, cellid
+		# dialog:
+		#	popups in cells: pageid, cellid, fieldid 
+		#	popups in viewtemplates: templateid, fieldid
+		# viewtemplate
+		#	templateid
+		return _setSettings($hash,$h);
+	}elsif($cmd eq "delete") {
+		# e.g. set ui delete type=viewtemplate templateid=test
+		return _setDelete($hash,$h);	
+	}elsif($cmd eq "resize") {
+		my $container = _getContainerForCommand($hash,$h);
+		return "\"set resize\": could not find view/cell/dialog/view template" unless $container;
+		$container->dimensions($h->{width},$h->{height});
+	}elsif($cmd eq "convert") {
+		return _setConvert($hash,$h);
+	}elsif($cmd eq "repair") {
+		# repair page, i.e. set cell sizes
+		return _setRepair($hash,$h);	
 	}elsif($cmd eq "viewdelete") {
 		# get cell id
 		my ($pageId,$cellId) = getPageAndCellId($hash,$a);
@@ -2226,92 +2549,24 @@ sub Set($$$)
 		my $pageId = $a->[2]; 
 		return "\"set pagesettings\": page ".$pageId." does not exist" unless defined $hash->{pages}{$pageId};
 		setPageSettings($hash->{pages}{$pageId}, $h);
-	}elsif($cmd eq "viewposition") {
-		# set ... viewposition pageId_cellId_viewId posX posY
-		# get cell
-		my @pageAndViewId = split(/_/,$a->[2]);
-		return "\"set viewposition\" needs a page id, a cell id and a view id" unless(@pageAndViewId > 2);
-		my $viewId = pop(@pageAndViewId);
-		my $cellId = pop(@pageAndViewId);
-		my $pageId = join("_",@pageAndViewId);
-		# cell exists? 
-		return "\"set viewposition\": cell ".$pageId." ".$cellId." not found" unless(defined($hash->{pages}{$pageId}) and defined($hash->{pages}{$pageId}{cells}[$cellId]));
-		my $cell = $hash->{pages}{$pageId}{cells}[$cellId];
-		return "\"set viewposition\": view ".$viewId." not found in cell ".$pageId."_".$cellId unless(defined($cell->{views}[$viewId]));
-		# set position into view
-		$cell->{views}[$viewId]->position($a->[3],$a->[4]);
-	}elsif($cmd eq "viewresize") {
-		# set ... viewresize pageId_cellId_viewId width height
-		# or (for dialog/popup maintenance):
-		# set ... viewresize pageId_cellId fieldId viewId width height
-		if(@$a == 5) {
-			# normal case
-			# get cell
-			my @pageAndViewId = split(/_/,$a->[2]);
-			return "\"set viewresize\" needs a page id, a cell id and a view id" unless(@pageAndViewId > 2);
-			my $viewId = pop(@pageAndViewId);
-			my $cellId = pop(@pageAndViewId);
-			my $pageId = join("_",@pageAndViewId);
-			# cell exists? 
-			return "\"set viewresize\": cell ".$pageId." ".$cellId." not found" unless(defined($hash->{pages}{$pageId}) and defined($hash->{pages}{$pageId}{cells}[$cellId]));
-			my $cell = $hash->{pages}{$pageId}{cells}[$cellId];
-			return "\"set viewresize\": view ".$viewId." not found in cell ".$pageId."_".$cellId unless(defined($cell->{views}[$viewId]));
-			# set size into view
-			$cell->{views}[$viewId]->dimensions($a->[3],$a->[4]);
-		}else{
-			# dialog maintenance
-			my ($pageId, $cellId) = getPageAndCellId($hash, $a);
-			return $cellId unless(defined($pageId));
-			my $dialog = findDialogFromFieldId($hash,$pageId,$cellId,$a->[3]);
-			# find the view in the dialog
-			my $view = $dialog->{views}[$a->[4]];
-			$view->dimensions($a->[5],$a->[6]);
-		};	
-	}elsif($cmd eq "viewposdialog") {
-		# set ... viewposdialog pageId_cellId fieldId viewId posX posY
-		# get cell
-		my @pageAndViewId = split(/_/,$a->[2]);
-		my $cellId = pop(@pageAndViewId);
-		my $pageId = join("_",@pageAndViewId);
-		# cell exists? 
-		return "\"set viewposdialog\": cell ".$pageId." ".$cellId." not found" unless(defined($hash->{pages}{$pageId}) and defined($hash->{pages}{$pageId}{cells}[$cellId]));
-		my $dialog = findDialogFromFieldId($hash,$pageId,$cellId,$a->[3]);
-		# find the view in the dialog
-		my $view = $dialog->{views}[$a->[4]];
-		# set position into view
-		$view->position($a->[5],$a->[6]);	
-	}elsif($cmd eq "viewmove") {
-		# set ... viewposition pageId_cellId_viewId posX posY
-		# get cell
-		my @pageAndViewId = split(/_/,$a->[2]);
-		return "\"set viewmove\" needs a page id, a cell id and a view id" unless(@pageAndViewId > 2);
-		my $viewId = pop(@pageAndViewId);
-		my $oldCellId = pop(@pageAndViewId);
-		my $pageId = join("_",@pageAndViewId);
-		# old cell exists? 
-		return "\"set viewmove\": cell ".$pageId." ".$oldCellId." not found" unless(defined($hash->{pages}{$pageId}) and defined($hash->{pages}{$pageId}{cells}[$oldCellId]));
-		my $oldCell = $hash->{pages}{$pageId}{cells}[$oldCellId];
-		return "\"set viewmove\": view ".$viewId." not found in cell ".$pageId."_".$oldCellId unless(defined($oldCell->{views}[$viewId]));
-		my $view = $oldCell->{views}[$viewId];
-		# new cell exists? 
-		my $newCellId = $a->[3];
-		return "\"set viewmove\": cell ".$pageId." ".$newCellId." not found" unless(defined($hash->{pages}{$pageId}) and defined($hash->{pages}{$pageId}{cells}[$newCellId]));
-		my $newCell = $hash->{pages}{$pageId}{cells}[$newCellId];
-		# remove view from old cell
-		splice(@{$oldCell->{views}},$viewId,1);
-		# put view into new cell 
-		push(@{$newCell->{views}},$view);
-		# set position into view
-		$view->position($a->[4],$a->[5]);
+	}elsif($cmd eq "position") {
+		my $container = _getContainerForCommand($hash,$h);
+		return "\"set position\": could not find view" unless $container;
+		$container->position($h->{x},$h->{y});
+		# has the view moved into a new cell?
+		if(defined($h->{newcellid})) {
+			my $oldCell = $hash->{pages}{$h->{pageid}}{cells}[$h->{cellid}];
+			my $newCell = $hash->{pages}{$h->{pageid}}{cells}[$h->{newcellid}];
+			return '"set position": cell missing when trying to move between cells' unless $oldCell and $newCell;
+			# remove view from old cell
+			splice(@{$oldCell->{views}},$h->{viewid},1);
+			# put view into new cell 
+			push(@{$newCell->{views}},$container);
+		};
 	}elsif($cmd eq "autoarrange") {
-		# get cell id
-		my ($pageId,$cellId) = getPageAndCellId($hash,$a);
-		return $cellId unless(defined($pageId));
-		if(exists($a->[3])) {
-			autoArrange(findDialogFromFieldId($hash,$pageId,$cellId,$a->[3]));
-		}else{		
-			autoArrange($hash->{pages}{$pageId}{cells}[$cellId]);
-		};	
+		my $container = _getContainerForCommand($hash,$h);
+		return '"set autoarrange": No container found' unless $container;	
+		autoArrange($container);
 	}elsif($cmd eq "refreshBuffer") {
 		FUIP::Model::refresh($hash->{NAME});
 	}elsif($cmd eq "editOnly") {
@@ -2383,6 +2638,135 @@ sub _getDeviceList($) {
 };
 
 
+sub _getWhereUsedList($$;$) {
+	# determine where-used-list, currently only for view templates
+	# TODO: popups (dialogs)
+	my ($hash,$h,$result) = @_;
+	# Doc
+	# $h: hash with possible keys:
+	#	type: 		must be "viewtemplate"
+	#	templateid: must be present, contains view template id
+	#	filter-type: if set, only return objects of this type
+	#	recursive: 1/0 if set and 1, return recursive where used list
+	# result
+	# 	array reference to array of hashes
+	#	each entry can refer to a view or viewtemplate		
+	
+	return "[]" unless $h->{type} eq "viewtemplate";
+	my $templateid = $h->{templateid};
+	return "[]" unless $templateid;
+	$result = [] unless $result;
+	unless($h->{"filter-type"} and $h->{"filter-type"} ne "view") {
+		# usage in views in cells in pages
+		for my $pageid (sort keys %{$hash->{pages}}) { 
+			# check all cells
+			my $cells = $hash->{pages}{$pageid}{cells};
+			for my $cellid (0..$#$cells) {
+				# check all views
+				my $views = $cells->[$cellid]{views};
+				for my $viewid (0..$#$views) {
+					my $view = $views->[$viewid];
+					next unless blessed($view) eq 'FUIP::ViewTemplInstance' and $view->{templateid} eq $templateid;
+					# found it!
+					push(@$result, {type => "view", pageid => $pageid, cellid => $cellid, viewid => $viewid}); 
+				};
+			};
+		};	
+	};
+	unless($h->{"filter-type"} and $h->{"filter-type"} ne "viewtemplate") {
+		# usage in other view templates
+		for my $id (sort keys %{$hash->{viewtemplates}}) {
+			my $views = $hash->{viewtemplates}{$id}{views};
+			for my $viewid (0..$#$views) {
+				my $view = $views->[$viewid];
+				next unless blessed($view) eq 'FUIP::ViewTemplInstance' and $view->{templateid} eq $templateid;
+				# found it!
+				# do not re-add if already there (view templates can use the same view type multiple times)
+				# also to avoid endless recursion
+				unless ( grep { $_->{type} eq "viewtemplate" and $_->{templateid} eq $id} @$result ){
+					push(@$result, {type => "viewtemplate", templateid => $id}); 
+					if($h->{recursive}) {
+						_getWhereUsedList($hash,{type => "viewtemplate", templateid => $id, 
+												"filter-type" => $h->{"filter-type"}, recursive => 1},$result);
+					};
+				};
+			};
+		};
+	};	
+	return $result;
+};
+
+
+sub _getContainerForCommand($$;$) {
+	# type=cell|dialog|viewtemplate|view
+	# cell:
+	#	pageid, cellid
+	# dialog:
+	#	popups in cells: pageid, cellid, fieldid 
+	#	popups in viewtemplates: templateid, fieldid
+	# viewtemplate
+	#	templateid
+	# view
+	# 	viewid plus "all of the above"
+	my ($hash,$h,$prefix) = @_;
+	$prefix = ($prefix ? $prefix : "");
+	my $type = $h->{$prefix."type"};
+	if($type eq "page") {
+		my $pageid = $h->{$prefix."pageid"};
+		return $hash->{pages}{$pageid};
+	}elsif($type eq "cell") {
+		# get cell
+		my $cellid = $h->{$prefix."cellid"};
+		my $pageid = $h->{$prefix."pageid"};
+		# get field list and values from views 
+		return undef unless(defined($hash->{pages}{$pageid}) and defined($hash->{pages}{$pageid}{cells}[$cellid]));
+		return $hash->{pages}{$pageid}{cells}[$cellid];
+	}elsif($type eq "dialog"){  
+		# e.g. for popups: Get a component (field) of a view
+		# find the dialog
+		return findDialogFromFieldId($hash,$h,$h->{$prefix."fieldid"},$prefix);
+	}elsif($type eq "viewtemplate"){
+		# for view templates
+		return $hash->{viewtemplates}{$h->{$prefix."templateid"}};  
+	}elsif($type eq "view") {
+		my $container;
+		if(exists($h->{$prefix."fieldid"})) {
+			$container = findDialogFromFieldId($hash,$h,$h->{$prefix."fieldid"},$prefix);
+		}elsif(exists($h->{$prefix."templateid"})) {
+			$container = $hash->{viewtemplates}{$h->{$prefix."templateid"}};
+		}else{
+			my $cellid = $h->{$prefix."cellid"};
+			my $pageid = $h->{$prefix."pageid"};
+			return undef unless(defined($hash->{pages}{$pageid}) and defined($hash->{pages}{$pageid}{cells}[$cellid]));
+			$container = $hash->{pages}{$pageid}{cells}[$cellid];
+		};
+		return undef unless $container;	
+		return $container->{views}[$h->{$prefix."viewid"}];
+	};
+};
+
+
+sub _getSettings($$) {
+	my ($hash,$h) = @_;
+	my $container = _getContainerForCommand($hash,$h);
+	return "\"get settings\": could not find cell/dialog/view template" unless $container;
+	return _toJson($container->getConfigFields());
+};
+
+
+sub _setSettings($$) {
+	my ($hash,$h) = @_;
+	my $container = _getContainerForCommand($hash,$h);
+	return "\"set settings\": could not find cell/dialog/view template" unless $container;
+	setViewSettings($hash, [$container], 0, $h);
+	if($h->{type} eq "viewtemplate") {
+		$container->{variables} = [];
+		$container->setVariableDefs($h);
+	};
+	autoArrangeNewViews($container);	
+};		
+	
+
 sub Get($$$)
 {
 	my ( $hash, $a, $h ) = @_;
@@ -2390,36 +2774,39 @@ sub Get($$$)
 	return "\"get ".$hash->{NAME}."\" needs at least one argument" unless(@$a > 1);
     my $opt = $a->[1];
 	
-	if($opt eq "cellsettings"){
-		# get cell
-		my @pageAndCellId = split(/_/,$a->[2]);
-		return "\"get cellsettings\" needs a page id and a cell id" unless(@pageAndCellId > 1);
-		my $cellId = pop(@pageAndCellId);
-		my $pageId = join("_",@pageAndCellId);
-		# get field list and values from views 
-		return "\"get cellsettings\": cell ".$pageId." ".$cellId." not found" unless(defined($hash->{pages}{$pageId}) and defined($hash->{pages}{$pageId}{cells}[$cellId]));
-		my $cell = $hash->{pages}{$pageId}{cells}[$cellId];
-		# return as to JSON
-		return _toJson($cell->getConfigFields());
-	}elsif($opt eq "viewcomponent"){  
-		# e.g. for popups: Get a component (field) of a view
-		# TODO: error handling
-		my @pageAndCellId = split(/_/,$a->[2]);
-		my $cellId = pop(@pageAndCellId);
-		my $pageId = join("_",@pageAndCellId);
-		# find the dialog
-		my $dialog = findDialogFromFieldId($hash,$pageId,$cellId,$a->[3]);
-		return _toJson($dialog->getConfigFields()) if($dialog);
-		return "Something went wrong with get viewcomponent";
+	if($opt eq "settings") {
+		# type=cell|dialog|viewtemplate
+		# cell:
+		#	pageid, cellid
+		# dialog:
+		#	popups in cells: pageid, cellid, fieldid 
+		#	popups in viewtemplates: templateid, fieldid
+		# viewtemplate
+		#	templateid
+		return _getSettings($hash,$h);
+	}elsif($opt eq "whereusedlist"){
+		return _toJson(_getWhereUsedList($hash,$h));
 	}elsif($opt eq "viewclasslist") {
-		my @result = map { { id => $_, title => $selectableViews->{$_}{title} } } sort keys(%$selectableViews);
+		my @result = map { { id => $_, title => $hash->{viewtemplates}{$_}{title} } } sort keys(%{$hash->{viewtemplates}});  
+		for my $entry (@result) {
+			$entry->{title} = "View template ".$entry->{id} unless($entry->{title});	
+			$entry->{id} = "FUIP::VTempl::".$entry->{id};
+		};
+		push @result, map { { id => $_, title => $selectableViews->{$_}{title} } } sort keys(%$selectableViews);
 		return _toJson(\@result);
 	}elsif($opt eq "viewdefaults") {
 		my $class = $a->[2];
 		return "\"get viewdefaults\" needs a view class as an argument" unless $class;
-		my $viewclasses = _getViewClasses();
-		return "\"get viewdefaults\": view class ".$class." unknown, use one of ".join(",",@$viewclasses) unless(grep $_ eq $class, @$viewclasses);
-		return _toJson($class->getDefaultFields());		
+		if($class =~ m/^FUIP::VTempl::(.*)$/) {
+			my $templateid = $1;
+			return '"get viewdefaults": view template '.$templateid.' does not exist' unless defined $hash->{viewtemplates}{$templateid};
+			my $viewtemplate = $hash->{viewtemplates}{$templateid};
+			return _toJson($viewtemplate->getDefaultFields());
+		}else{	
+			my $viewclasses = _getViewClasses();
+			return "\"get viewdefaults\": view class ".$class." unknown, use one of ".join(",",@$viewclasses) unless(grep $_ eq $class, @$viewclasses);
+			return _toJson($class->getDefaultFields());	
+		};	
 	}elsif($opt eq "viewsByDevices") {
 		my @views;
 		foreach my $i (2 .. $#{$a}) {
@@ -2467,7 +2854,7 @@ sub Get($$$)
 			};
 		};
 		my $viewclasses = _getViewClasses();
-		return "Unknown argument $opt, choose one of cellsettings:".join(",",@cells)." viewclasslist:noArg viewdefaults:".join(",",@$viewclasses)." pagelist:noArg pagesettings:".join(",",@pages)." devicelist:noArg readingslist sets";
+		return "Unknown argument $opt, choose one of settings viewclasslist:noArg viewdefaults:".join(",",@$viewclasses)." pagelist:noArg pagesettings:".join(",",@pages)." devicelist:noArg readingslist sets";
 	}
 }
    
