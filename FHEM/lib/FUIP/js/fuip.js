@@ -882,6 +882,7 @@ async function acceptSettings(doneFunc) {
 		};	
 	});
 	// collect inputs and checkboxes
+	let flexfields = {};
 	$("#viewsettings input, #viewsettings textarea, #viewsettings select.fuip").each(function() {
 		// do not process hidden elements
 		if($(this).css("visibility") == "hidden") 
@@ -895,7 +896,23 @@ async function acceptSettings(doneFunc) {
 		};	
 		value = '"' + value + '"'; 
 		cmd += " " + $(this).attr("id") + "=" + value;
+		// is this a flex field?
+		if($(this).attr("data-flexfield") == "1") {
+			let id = $(this).attr('id');
+			let parts = id.split('-');
+			let name = parts.pop();
+			let flexfieldsId = parts.join('-') + '-flexfields';
+			if(flexfields.hasOwnProperty(flexfieldsId)) {
+				flexfields[flexfieldsId] += ',' + name;
+			}else{
+				flexfields[flexfieldsId] = name;
+			};
+			cmd += ' ' + id + '-type="' + $(this).attr("fuip-type") + '"';	
+		};	
 	});
+	for (const id of Object.keys(flexfields)) {
+		cmd += ' ' + id + '="' + flexfields[id] + '"';
+	};
 
 	let key = getKeyForCommand();
 	if(!key) return;
@@ -1843,6 +1860,10 @@ function createField(settings, fieldNum, component,prefix) {
 		if(field.type == "setoptions" && fieldComp.hasOwnProperty("options")) {
 			result += "data-options='"+JSON.stringify(fieldComp.options)+"' ";
 		};	
+		if(fieldComp.hasOwnProperty("flexfield")) {
+			result += "data-flexfield='" + fieldComp.flexfield + "' "
+					+ "fuip-type='" + field.type + "' ";
+		};	
 		result += "value='" + fieldValue + "' " 
 				+ fieldStyle + " oninput='inputChanged(this," + JSON.stringify(influencedFields) +")' >";
 		// are there options to show? (dropdown)
@@ -2018,11 +2039,98 @@ function setDefaults(settings) {
 		};	
 	};	
 };	
+
+
+function renderHtmlView(html,variables) {
+	// replace variables
+	// find matches for <fuip-field>...</fuip-field>
+	let fieldStrings = html.match(/<fuip-field.*?<\/fuip-field>/g);
+	// something wrong?
+	// TODO: error message or so
+	if(!fieldStrings) fieldStrings = [];  // null if no match
+	for(let fieldString of fieldStrings){
+		// TODO: The following checks partially mean that a field def was found,
+		//		but something is wrong. Maybe proper error message and do not 
+		//		change anything
+		let fieldDef = $(fieldString);
+		if(!fieldDef) continue;
+		let id = fieldDef.attr("fuip-name");
+		if(!id) continue;
+		if(!variables.hasOwnProperty(id)) continue;
+		html = html.replace(fieldString,variables[id]);
+	}; 
+	// create DOM node
+	// the following is supposed not to break the whole
+	// document in case something is wrong
+	let elem = document.createElement("div");
+	elem.innerHTML = html;
+	document.write(elem.innerHTML);
+};
+
+
+function addFieldsFromHtmlView(settings){
+	// find whether this is an HTML view
+	for(let i = 0; i < settings.length; i++){
+		if(settings[i].type != 'class') { continue; };
+		if(	settings[i].value != 'FUIP::View::Html' ) { return; };
+		break;
+	};
+	// remove all existing flexfields from settings (we might delete some,
+	// change types, change sequence etc.)	
+	let oldFlexfields = {};
+	for(let i = 0; i < settings.length; i++){
+		if(!settings[i].hasOwnProperty("flexfield") || settings[i].flexfield != "1")
+			continue;
+		oldFlexfields[settings[i].id] = settings[i];	
+		settings.splice(i,1);
+		i--;
+	};
+	// find html field and its index
+	let index;
+	let html = false;
+	for(let i = 0; i < settings.length; i++){
+		if(settings[i].id != 'html') { continue; };
+		index = i;
+		html = settings[i].value;
+		break;
+	};
+	// is there anything?
+	if(!html) return;
+	// find matches for <fuip-field>...</fuip-field>
+	let fieldStrings = html.match(/<fuip-field.*?<\/fuip-field>/g);
+	// something wrong?
+	// TODO: error message or so
+	if(!fieldStrings) return;  // null if no match
+	for(let fieldString of fieldStrings){
+		// TODO: The following checks partially mean that a field def was found,
+		//		but something is wrong. Maybe proper error message and do not 
+		//		change anything
+		let fieldDef = $(fieldString);
+		if(!fieldDef) continue;
+		let id = fieldDef.attr("fuip-name");
+		if(!id) continue;
+		// check if this is already there (leave alone "standard" fields and duplicates)
+		if(settings.find((element) => element.id == id)) continue;
+		// not there, add it
+		let flexfield;
+		if(oldFlexfields.hasOwnProperty(id)) {
+			flexfield = oldFlexfields[id];
+		}else{
+			flexfield = {"id":id, "flexfield":1, "value":fieldDef.text()};
+		};	
+		flexfield.type = fieldDef.attr("fuip-type");
+		if(!flexfield.type) flexfield.type = "text";
+		index++;
+		settings.splice(index,0,flexfield);
+	}; 
+};	
 					
 
 function createSettingsTable(settings,prefix) {
 	// this is for one single settings-Array
 	// prefix is put in front of all field names (ids)
+	// html special
+	addFieldsFromHtmlView(settings);
 	// do the defaulting
 	setDefaults(settings);
 	var html = "<table>";
@@ -2039,6 +2147,7 @@ function createSettingsTable(settings,prefix) {
 		if(settings[i].type == 'class') { continue; };
 		if(settings[i].type == 'dimension') { continue; };
 		if(settings[i].type == 'variables') { continue; };
+		if(settings[i].type == 'flexfields') { continue; };
 		let fieldName = prefix + settings[i].id;		
 		switch(settings[i].type) {
 			case 'device-reading':

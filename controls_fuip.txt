@@ -7,9 +7,9 @@ DIR FHEM/lib/FUIP/js
 DIR FHEM/lib/FUIP/View
 DIR FHEM/lib/FUIP/jquery-ui
 DIR FHEM/lib/FUIP/jquery-ui/images
-UPD 2018-12-28_16:47:47 99362 FHEM/42_FUIP.pm
+UPD 2018-12-30_16:57:34 99747 FHEM/42_FUIP.pm
 UPD 2018-11-21_12:09:09 12409 FHEM/lib/FUIP/Model.pm
-UPD 2018-12-11_12:02:49 9592 FHEM/lib/FUIP/View.pm
+UPD 2018-12-30_17:11:03 10346 FHEM/lib/FUIP/View.pm
 UPD 2018-11-28_14:24:46 6848 FHEM/lib/FUIP/View/Batteries.pm
 UPD 2018-08-21_20:44:45 1336 FHEM/lib/FUIP/View/Brightness.pm
 UPD 2018-12-07_14:56:07 4393 FHEM/lib/FUIP/View/Cell.pm
@@ -19,7 +19,7 @@ UPD 2018-12-25_11:29:36 3289 FHEM/lib/FUIP/View/Dialog.pm
 UPD 2018-12-09_18:05:16 3791 FHEM/lib/FUIP/View/HeatingControl.pm
 UPD 2018-04-14_20:19:11 4330 FHEM/lib/FUIP/View/HeatingOverview.pm
 UPD 2018-03-23_22:14:57 838 FHEM/lib/FUIP/View/HomeButton.pm
-UPD 2018-11-28_14:24:38 1562 FHEM/lib/FUIP/View/Html.pm
+UPD 2018-12-29_21:17:55 1847 FHEM/lib/FUIP/View/Html.pm
 UPD 2018-12-01_23:20:54 1590 FHEM/lib/FUIP/View/LabelHumidity.pm
 UPD 2018-11-24_21:06:04 2392 FHEM/lib/FUIP/View/LabelReading.pm
 UPD 2018-11-24_21:06:05 1836 FHEM/lib/FUIP/View/LabelTemperature.pm
@@ -40,7 +40,7 @@ UPD 2018-11-24_21:06:07 4072 FHEM/lib/FUIP/View/Thermostat.pm
 UPD 2018-12-02_21:57:10 2757 FHEM/lib/FUIP/View/Title.pm
 UPD 2018-12-09_16:28:50 2060 FHEM/lib/FUIP/View/UpStopDown.pm
 UPD 2018-12-26_15:12:50 3112 FHEM/lib/FUIP/View/ViewTemplInstance.pm
-UPD 2018-12-28_16:18:11 12673 FHEM/lib/FUIP/View/ViewTemplate.pm
+UPD 2018-12-30_17:12:03 12735 FHEM/lib/FUIP/View/ViewTemplate.pm
 UPD 2018-11-28_14:24:11 4160 FHEM/lib/FUIP/View/WeatherDetail.pm
 UPD 2018-11-28_14:24:25 4049 FHEM/lib/FUIP/View/WeatherOverview.pm
 UPD 2018-12-28_20:15:09 5338 FHEM/lib/FUIP/css/fuip-blue-ui.css
@@ -65,7 +65,7 @@ UPD 2018-03-21_12:10:11 4632 FHEM/lib/FUIP/jquery-ui/images/ui-icons_cc0000_256x
 UPD 2018-03-21_12:10:11 6313 FHEM/lib/FUIP/jquery-ui/images/ui-icons_ffffff_256x240.png
 UPD 2018-03-21_12:10:11 37326 FHEM/lib/FUIP/jquery-ui/jquery-ui.css
 UPD 2017-12-18_21:55:39 253669 FHEM/lib/FUIP/jquery-ui/jquery-ui.min.js
-UPD 2018-12-27_16:55:39 87488 FHEM/lib/FUIP/js/fuip.js
+UPD 2018-12-30_17:02:17 91118 FHEM/lib/FUIP/js/fuip.js
 UPD 2018-11-16_15:34:16 1586 FHEM/lib/FUIP/js/fuip_batteries.js
 UPD 2018-03-17_22:57:55 106396 FHEM/lib/FUIP/js/jquery.tablesorter.js
 UPD 2018-03-17_22:57:55 125594 FHEM/lib/FUIP/js/jquery.tablesorter.widgets.js

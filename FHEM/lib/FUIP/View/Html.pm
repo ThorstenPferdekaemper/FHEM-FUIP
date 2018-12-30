@@ -15,11 +15,24 @@ sub getHTML($){
 	$html =~ s/\n/\\n/g;	# replace new line by \n
 	$html =~ s/\"/\\\"/g;	# " -> \"
 	$html =~ s|<\/script>|<\\/script>|g; # </script> => <\/scipt>
+	my @flexfields = split(/,/,$self->{flexfields});
+	my $fieldStr;
+	for my $flexfield (@flexfields) {
+		if($fieldStr) {
+			$fieldStr .= ',';
+		}else{
+			$fieldStr = '{';
+		};	
+		$fieldStr .= '"'.$flexfield.'":"'.$self->{$flexfield}.'"'; 
+	};
+	if($fieldStr) {
+		$fieldStr .= '}';
+	}else{
+		$fieldStr = '{}';
+	};	
 	return '<script type="text/javascript">
-					var elem = document.createElement("div");
-					elem.innerHTML = "'.$html.'";
-					document.write(elem.innerHTML);
-				</script>';	
+				renderHtmlView("'.$html.'",'.$fieldStr.');
+			</script>';	
 };
 
 	
@@ -42,6 +55,7 @@ sub getStructure($) {
 		{ id => "class", type => "class", value => $class },
 		{ id => "title", type => "text" },
 		{ id => "html", type => "longtext" },
+		{ id => "flexfields", type => "flexfields" },
 		{ id => "width", type => "dimension", value => 50},
 		{ id => "height", type => "dimension", value => 25 },
 		{ id => "sizing", type => "sizing", options => [ "resizable", "auto" ],

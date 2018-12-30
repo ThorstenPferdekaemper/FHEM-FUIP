@@ -130,6 +130,7 @@ sub getStructure($) {
 				my $field = dclone($self->_findField($conf,$fieldpath));
 				my ($type,$basePath) = _findFieldBase($conf,$fieldpath);
 				$field->{id} = $variable->{name};
+				$field->{flexfield} = 0; 
 				# for fields with a reference, we can only take this (TODO: for now?), if the reference 
 				# field is also assigned to a variable (refdevice, refset, default[type=field]-value, reading of device-reading
 				# refdevice
@@ -263,6 +264,7 @@ sub setVariableDefs($$;$$$) {
 		$fields = "FUIP::ViewTemplate"->getStructure();
 		$view = $self;
 	};	
+	$view->addFlexFields($fields);
 	for my $field (@$fields) {
 		if($field->{type} eq "device-reading") {
 			setVariableDefSingle($self->{variables},$h,$oldPrefix.$field->{id}.'-device',$newPrefix.$field->{id}.'-device');

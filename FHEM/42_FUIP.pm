@@ -2290,6 +2290,15 @@ sub setViewSettings($$$$;$) {
 			setField($view,$field,[],$h,$prefix);
 		};	
 	};
+	# flexible fields, e.g. from HTML view?
+	if(exists($h->{$prefix.'flexfields'})) {
+		my @flexfields = split(/,/,$h->{$prefix.'flexfields'});
+		for my $flexname (@flexfields) {
+			setField($view,{id => $flexname, type => $h->{$prefix.$flexname.'-type'}},[],$h,$prefix);
+			# put "flex structure" stuff
+			$view->{flexstruc}{$flexname}{type} = $h->{$prefix.$flexname.'-type'};	
+		};
+	};
 };
 
 

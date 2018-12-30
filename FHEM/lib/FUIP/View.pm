@@ -353,6 +353,26 @@ sub applyDefaults($) {
 		};	
 	};
 };	
+
+
+sub addFlexFields($$) {
+	# do we have flex fields?
+	my ($self,$configFields) = @_;
+	# the following allows multiple sets of flexfields
+	for(my $i = 0; $i <= $#$configFields; $i++){
+		next unless $configFields->[$i]{type} eq "flexfields";
+		my $flexFieldsStr = $configFields->[$i]{value};
+		$flexFieldsStr = $self->{$configFields->[$i]{id}} unless $flexFieldsStr;
+		next unless $flexFieldsStr;
+		my @flexfields = split(/,/,$flexFieldsStr);
+		for my $flexfield (@flexfields) {
+			$i++;
+			my $type = $self->{flexstruc}{$flexfield}{type};
+			$type = "text" unless $type;
+			splice(@$configFields,$i,0,{id => $flexfield, value => $self->{$flexfield}, type => $type, flexfield => 1});
+		};	
+	};	
+};
 	
 
 sub getConfigFields($) {
@@ -370,9 +390,10 @@ sub getConfigFields($) {
 	for my $field (@$result) {
 		$self->_fillField($field);
 	};
+	# do we have flex fields?
+	$self->addFlexFields($result);
 	return $result;
 }
-
 
 # register me as selectable
 $FUIP::View::selectableViews{"FUIP::View"}{title} = "The Empty View"; 
