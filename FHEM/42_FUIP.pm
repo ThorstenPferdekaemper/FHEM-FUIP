@@ -334,10 +334,16 @@ sub renderFuipInit($) {
 
 
 sub getViewClassesSingle($$) {
-	# get classes of one view. This might be a dialog, so recursive
+	# get classes of one view. This might be a dialog or view template, so recursive
 	my ($view,$viewClasses) = @_;
 	# first the view itself
 	$viewClasses->{blessed($view)} = 1;
+	# is this a view template instance?
+	if(blessed($view) eq "FUIP::ViewTemplInstance") {
+		for my $subview (@{$view->{viewtemplate}{views}}) {
+			getViewClassesSingle($subview,$viewClasses);
+		};
+	};
 	# check whether the view has a popup, i.e. a component of type "dialog"
 	# which is actually switched on
 	my $viewStruc = $view->getStructure(); 
@@ -370,7 +376,7 @@ sub getViewClassesSingle($$) {
 sub getViewDependencies($$$) {
 	my ($hash,$pageId,$suffix) = @_;
 	
-	# pageId might also be a dialog instance
+	# pageId might also be a dialog/viewtemplate instance
 	
 	# if($pageId) {
 		# main::Log3(undef,1,"getViewDependencies page: ".$pageId);
@@ -387,6 +393,15 @@ sub getViewDependencies($$$) {
 		for my $view (@{$pageId->{views}}) {
 			getViewClassesSingle($view,\%viewClasses);		
 		};
+	}elsif(ref($pageId) eq "HASH") {
+		# in this case, the hash elements should contain something with views
+		# e.g. for view template overview
+		for my $elem (values %$pageId) {
+			next unless exists $elem->{views};
+			for my $view (@{$elem->{views}}) {
+				getViewClassesSingle($view,\%viewClasses);		
+			};			
+		};	
 	}else{
 		return unless exists $hash->{pages}{$pageId};
 		my $cells = $hash->{pages}{$pageId}{cells};
@@ -948,7 +963,9 @@ sub renderViewTemplateMaint($$) {
 		};
 		$viewtemplate = $hash->{viewtemplates}{$templateid};
 		$currentPage = $viewtemplate;  
-	};
+	}else{
+		$currentPage = $hash->{viewtemplates};
+	};	
 	my $title = "Maintain View Template".($templateid ? " ".$templateid : "s");
 	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","var(--fuip-color-foreground,#808080)");
   	my $result = 
@@ -1008,11 +1025,11 @@ sub renderViewTemplateMaint($$) {
 						});	
 					});
 				</script>'."\n"
-				.renderHeaderHTML($hash,($viewtemplate ? $viewtemplate : ""))
+				.renderHeaderHTML($hash,$currentPage)
             ."</head>
             <body style='text-align:left;'";
 	$result .= '>'."\n"
-				.renderUserHtmlBodyStart($hash,($viewtemplate ? $viewtemplate : ""))."\n"
+				.renderUserHtmlBodyStart($hash,$currentPage)."\n"
 	.'<h1 style="text-align:left;margin-left:3em;color:var(--fuip-color-symbol-active);">'.($templateid ? 'View Template '.$templateid.($viewtemplate->{title} ? ' ('.$viewtemplate->{title}.')' : "") : 'Maintain View Templates').'</h1>
 	<div style="display:flex;flex-wrap:wrap;">'
 	.'<div style="margin:20px">'."\n";

@@ -5,6 +5,11 @@ use warnings;
 
 use lib::FUIP::View;
 use parent -norequire, 'FUIP::View';
+
+	
+sub getDependencies($$) {
+	return ['js/fuip_htmlview.js'];
+};
 	
 	
 sub getHTML($){
