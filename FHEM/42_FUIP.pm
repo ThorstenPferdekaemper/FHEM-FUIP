@@ -421,6 +421,26 @@ sub renderHeaderHTML($$) {
 };
 
 
+sub renderBackgroundImage($$){
+	my ($hash,$pageWidth) = @_;
+	my $result = '';
+	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
+	if($backgroundImage) {
+		# load background picture when the browser is bored only
+		$result .= '<link rel="prefetch" 
+						href="/fhem/'.lc($hash->{NAME}).'/fuip/images/'.$backgroundImage.'"
+						onload="$(\'body\').css(\'background\',\'#000000 url(/fhem/'.lc($hash->{NAME}).'/fuip/images/'.$backgroundImage.') 0 0/';
+		if($pageWidth) {
+			$result .= $pageWidth.'px';
+		}else{	
+			$result .= 'cover';
+		};
+		$result .= ' no-repeat\');">';
+	};			
+	return $result;
+};
+
+
 sub readTextFile($$) {
 	my ($hash,$filename) = @_;
 	my $forceLocal = 1;
@@ -578,19 +598,9 @@ sub renderPage($$$) {
 	$result .= renderCommonEditStyles($hash) unless $locked;				
 	$result .= "</style>\n"
 				.renderHeaderHTML($hash,$currentLocation)
+				.renderBackgroundImage($hash,$pageWidth)
 				.'</head>
-            <body';
-	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
-	if($backgroundImage) {
-		$result .= ' style="background:#000000 url(/fhem/'.lc($hash->{NAME}).'/fuip/images/'.$backgroundImage.') 0 0/';
-		if($pageWidth) {
-			$result .= $pageWidth.'px';
-		}else{	
-			$result .= 'cover';
-		};
-		$result .= ' no-repeat"';
-	};
-	$result .= '>'
+            <body>'
 				.renderUserHtmlBodyStart($hash,$currentLocation)."\n"
                 .'<div class="gridster"';
 	if($pageWidth) {
@@ -689,20 +699,9 @@ sub renderPageFlex($$) {
 					}
                 </style>'
 				.renderHeaderHTML($hash,$currentLocation)
+				.renderBackgroundImage($hash,$pageWidth)
 				.'</head>
-            <body';
-	# TODO: above there are widget_-metas, which probably do not make sense here							
-	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
-	if($backgroundImage) {
-		$result .= ' style="background:#000000 url(/fhem/'.lc($hash->{NAME}).'/fuip/images/'.$backgroundImage.') 0 0/';
-		if($pageWidth) {
-			$result .= $pageWidth.'px';
-		}else{	
-			$result .= 'cover';
-		};
-		$result .= ' no-repeat"';
-	};
-	$result .= '>'
+            <body>'
 				.renderUserHtmlBodyStart($hash,$currentLocation)."\n"	
                 .'<div style="margin:5px;display:flex;"';
 	# TODO: does the following make any sense?
@@ -775,19 +774,9 @@ sub renderPageFlexMaint($$) {
 					".renderCommonEditStyles($hash).	
                 "</style>"
 				.renderHeaderHTML($hash,$currentLocation)
+				.renderBackgroundImage($hash,$pageWidth)
 				."</head>
-            <body";
-	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
-	if($backgroundImage) {
-		$result .= ' style="position:relative;background:#000000 url(/fhem/'.lc($hash->{NAME}).'/fuip/images/'.$backgroundImage.') 0 0/';
-		if($pageWidth) {
-			$result .= $pageWidth.'px';
-		}else{	
-			$result .= 'cover';
-		};
-		$result .= ' no-repeat"';
-	};
-	$result .= '>'
+            <body>"
 				.renderUserHtmlBodyStart($hash,$currentLocation)."\n"	
 		.'<div style="display:flex">
 			<div id="fuip-flex-menu" class="fuip-flex-region">'.renderCellsFlexMaint($hash,$currentLocation,"menu").'</div>
