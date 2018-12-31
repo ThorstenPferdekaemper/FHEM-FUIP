@@ -7,6 +7,7 @@
 :root{
 /* main cell background color */
 	--fuip-color-background: #2A2A2A;
+	--fuip-color-background-transparent: rgba(42,42,42,.7);
 /* background when mouse hovers over, used in weatherdetail, defaults to #444 */
 	--fuip-color-background-hover: #444;	
 /* main theme color */
@@ -159,6 +160,10 @@ polyline {
 	background-color: var(--fuip-color-background);
 	color: var(--fuip-color-foreground);
 }
+/* transparent, i.e. with background picture */
+.fuip-cell.fuip-transparent {
+	background-color: var(--fuip-color-background-transparent);
+}
 
 
 /* cell headers */
@@ -166,6 +171,9 @@ polyline {
 	border-radius:8px 8px 0px 0px;
 	background-color: #262626;
 	color: #8c8c8c;			
+}
+.fuip-cell-header.fuip-transparent {
+	background-color: rgba(38,38,38,.7);
 }
 
 

@@ -574,21 +574,13 @@ sub renderPage($$$) {
 					<style type=\"text/css\">
 	                .fuip-color {
 		                color: ".$styleColor.";
-                    }
-					.gridster ul li {";
-	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
-	$result .= '		background: rgba(0, 0, 0, 0.7) !important;' if($backgroundImage);
-	$result .= "
-					}
-					.gridster ul li header { ";
-	$result .= '		background: rgba(0, 0, 0, 0.7) !important;' if($backgroundImage);
-	$result .= "
-					}\n";
+                    }\n";
 	$result .= renderCommonEditStyles($hash) unless $locked;				
 	$result .= "</style>\n"
 				.renderHeaderHTML($hash,$currentLocation)
 				.'</head>
             <body';
+	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
 	if($backgroundImage) {
 		$result .= ' style="background:#000000 url(/fhem/'.lc($hash->{NAME}).'/fuip/images/'.$backgroundImage.') 0 0/';
 		if($pageWidth) {
@@ -662,24 +654,13 @@ sub renderPageFlex($$) {
 				</script>
 				<title>".$title."</title>"
 				.renderCommonCss($hash->{NAME})
-				."<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
-		        <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.min.js\"></script>
-				<script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>
-                <style type=\"text/css\">
+				.'<script type="text/javascript" src="/fhem/'.lc($hash->{NAME}).'/lib/jquery.min.js"></script>
+		        <script type="text/javascript" src="/fhem/'.lc($hash->{NAME}).'/fuip/jquery-ui/jquery-ui.min.js"></script>
+				<script src="/fhem/'.lc($hash->{NAME}).'/js/fhem-tablet-ui.js"></script>
+                <style type="text/css">
 	                .fuip-color {
-		                color: ".$styleColor.";
+		                color: '.$styleColor.';
                     }
-					.gridster ul li {
-						border-radius:8px;";
-	# TODO: change gridster stuff to flex					
-	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
-	$result .= '		background: rgba(0, 0, 0, 0.7) !important;' if($backgroundImage);
-	$result .= "
-					}
-					.gridster ul li header { ";
-	$result .= '		background: rgba(0, 0, 0, 0.7) !important;' if($backgroundImage);
-	$result .= '
-					}
 					#fuip-flex-menu {
 						display:flex;
 						flex-direction:column;
@@ -710,7 +691,8 @@ sub renderPageFlex($$) {
 				.renderHeaderHTML($hash,$currentLocation)
 				.'</head>
             <body';
-	# TODO: above there are widget_-metas, which probably do not make sense here		
+	# TODO: above there are widget_-metas, which probably do not make sense here							
+	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
 	if($backgroundImage) {
 		$result .= ' style="background:#000000 url(/fhem/'.lc($hash->{NAME}).'/fuip/images/'.$backgroundImage.') 0 0/';
 		if($pageWidth) {
@@ -790,21 +772,12 @@ sub renderPageFlexMaint($$) {
 						grid-gap:10px;
 						place-content:start;
 					}
-					.gridster ul li {
-						border-radius:8px;";
-	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
-	$result .= '		background: rgba(0, 0, 0, 0.7) !important;' if($backgroundImage);
-	$result .= "
-					}
-					.gridster ul li header { ";
-	$result .= '		background: rgba(0, 0, 0, 0.7) !important;' if($backgroundImage);
-	$result .= "
-					}
 					".renderCommonEditStyles($hash).	
                 "</style>"
 				.renderHeaderHTML($hash,$currentLocation)
 				."</head>
             <body";
+	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
 	if($backgroundImage) {
 		$result .= ' style="position:relative;background:#000000 url(/fhem/'.lc($hash->{NAME}).'/fuip/images/'.$backgroundImage.') 0 0/';
 		if($pageWidth) {
@@ -920,14 +893,6 @@ sub renderPopupMaint($$) {
 	                .fuip-color {
 		                color: ".$styleColor.";
                     }
-					.gridster ul li {
-						border-radius:8px;";
-	$result .= "
-					}
-					.gridster ul li header {
-						border-radius:8px;";
-	$result .= "
-					}
 					".renderCommonEditStyles($hash).
                 "</style>".
 				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
@@ -1457,6 +1422,7 @@ sub renderCells($$$) {
 	my ($hash,$pageId,$locked) = @_;
 	positionsFlexToGridster($hash,$pageId);
 	findPositions($hash,$pageId);
+	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
 	# now try to render this
 	my $result;
 	my $i = 0;
@@ -1466,12 +1432,16 @@ sub renderCells($$$) {
 		my ($sizeX, $sizeY) = $cell->dimensions();
 		$sizeX = ceil($sizeX);
 		$sizeY = ceil($sizeY);
-		$result .= "<li data-cellid=\"".$i."\" data-row=\"".($row+1)."\" data-col=\"".($col+1)."\" data-sizex=\"".$sizeX."\" data-sizey=\"".$sizeY."\" class=\"fuip-droppable fuip-cell\">";
+		$result .= "<li data-cellid=\"".$i."\" data-row=\"".($row+1)."\" data-col=\"".($col+1)."\" data-sizex=\"".$sizeX."\" data-sizey=\"".$sizeY."\" class=\"fuip-droppable fuip-cell";
+		$result .= ' fuip-transparent' if $backgroundImage;
+		$result .= "\">";
 		$cell->applyDefaults();
 		# if there is no title and it is locked, we do not display a header
 		# TODO: find better handle for dragging
 		if(not $locked or $cell->{title}) {
-			$result .= "<header class='fuip-cell-header'>".($cell->{title} ? $cell->{title} : "").($locked ? "" : " ".$i."\n"
+			$result .= "<header class='fuip-cell-header";
+			$result .= ' fuip-transparent' if $backgroundImage;
+			$result .= "'>".($cell->{title} ? $cell->{title} : "").($locked ? "" : " ".$i."\n"
 							.renderGearsForCell($i)).
 						"</header>";
 		};				
@@ -1551,6 +1521,7 @@ sub renderCellsFlexMaint($$$) {
 	# no region set yet? => determine
 	flexMaintFindRegion($hash,$pageId);	
 	findPositions($hash,$pageId);
+	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
 	# now try to render this
 	my $result;
 	my $i = -1;
@@ -1563,13 +1534,16 @@ sub renderCellsFlexMaint($$$) {
 		my ($sizeX, $sizeY) = $cell->dimensions();
 		$sizeX = ceil($sizeX);
 		$sizeY = ceil($sizeY);
-		$result .= "<div id='fuip-flex-fake-".$i."' class='fuip-flex-fake' style=\"grid-area:".($row+1)." / ".($col+1)." / ".($row+$sizeY+1)." / ".($col+$sizeX+1).";position:relative;width:".$width."px;height:".$height."px;px;\">
-					<div id='fuip-flex-cell-".$i."' data-cellid=\"".$i."\" class=\"fuip-droppable fuip-cell\" style=\"position:absolute;width:".$width."px;height:".$height."px;
+		$result .= "<div id='fuip-flex-fake-".$i."' style=\"grid-area:".($row+1)." / ".($col+1)." / ".($row+$sizeY+1)." / ".($col+$sizeX+1).";position:relative;width:".$width."px;height:".$height."px;px;background-color:rgba(0,0,0,0);\">
+					<div id='fuip-flex-cell-".$i."' data-cellid=\"".$i."\" class=\"fuip-droppable fuip-cell";
+		$result .= ' fuip-transparent' if $backgroundImage;
+		$result .= "\" style=\"position:absolute;width:".$width."px;height:".$height."px;
 									border:0;\">";
 		$cell->applyDefaults();
 		# TODO: find better handle for dragging
-		$result .= "<header class='fuip-cell-header'
-							style='display: block;
+		$result .= "<header class='fuip-cell-header";
+		$result .= ' fuip-transparent' if $backgroundImage;
+		$result .= "' style='display: block;
 							font-size: 0.85em;font-weight: bold;line-height: 2em;
 							text-align: center;width: 100%;'>".($cell->{title} ? $cell->{title} : "").$i."\n"
 						.renderGearsForCell($i)				
@@ -1580,6 +1554,7 @@ sub renderCellsFlexMaint($$$) {
 		$result .= '<script>
 					$( function() {
 						$( "#fuip-flex-cell-'.$i.'" ).resizable({
+							start: onFlexMaintResizeStart,
 							stop: onFlexMaintResizeStop,
 							resize: onFlexMaintResize
 						});
@@ -1614,7 +1589,7 @@ sub renderCellsFlex($$) {
 		my ($c,$r) = $cl->position();
 		$lastMenuRow = $r if($cl->{region} eq "menu" and $lastMenuRow < $r);
 	};
-					
+	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
 	for my $cell (@{$cells}) {
 		my ($col,$row) = $cell->position();
 		my ($sizeX, $sizeY) = $cell->dimensions();
@@ -1624,7 +1599,9 @@ sub renderCellsFlex($$) {
 		$sizeY = ceil($sizeY);
 		my ($width,$height) = cellSizeToPixels($hash,$sizeX,$sizeY);
 		# TODO: col, row, sizex, sizey ?
-		my $cellHtml = "<div data-cellid=\"".$i."\" data-row=\"".($row+1)."\" data-col=\"".($col+1)."\" data-sizex=\"".$sizeX."\" data-sizey=\"".$sizeY."\" class=\"fuip-droppable fuip-cell\" style=\"width:";
+		my $cellHtml = "<div data-cellid=\"".$i."\" data-row=\"".($row+1)."\" data-col=\"".($col+1)."\" data-sizex=\"".$sizeX."\" data-sizey=\"".$sizeY."\" class=\"fuip-droppable fuip-cell";
+		$cellHtml .= ' fuip-transparent' if $backgroundImage;
+		$cellHtml .= "\" style=\"width:";
 		$cellHtml .= $width.'px';
 		$cellHtml .= ";height:".$height."px;position:relative;border:0;
 									order:".($row*100+$col).";";
@@ -1645,8 +1622,9 @@ sub renderCellsFlex($$) {
 		$cellHtml .= '100%';
 		$cellHtml .= ';height:'.$height.'px;">';
 		if($cell->{title}) {
-			$cellHtml .= "<header class='fuip-cell-header' 
-								style='display: block;
+			$cellHtml .= "<header class='fuip-cell-header";
+			$cellHtml .= ' fuip-transparent' if $backgroundImage;
+			$cellHtml .= "' style='display: block;
 								font-size: 0.85em;font-weight: bold;line-height: 2em;
 								text-align: center;width: 100%;'>".$cell->{title}."
 						</header>";

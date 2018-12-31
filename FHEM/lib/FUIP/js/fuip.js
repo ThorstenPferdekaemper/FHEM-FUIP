@@ -452,6 +452,14 @@ function flexMaintMoveCellsUp(cell,includingMyself) {
 };	
 
 
+function onFlexMaintResizeStart(e,ui) {
+	// make "fake" element visible
+	let fakeElem = ui.element.parent();
+	fakeElem.css("background-color","");
+	fakeElem.addClass("fuip-flex-fake");
+};	
+
+
 // flex maint: resize cell
 function onFlexMaintResize(e,ui) {
 	// do "gridster effect"
@@ -485,9 +493,13 @@ function onFlexMaintResize(e,ui) {
 			
 
 function onFlexMaintResizeStop(e,ui) {
+	// hide fake element
+	let fakeElem = ui.element.parent();
+	fakeElem.css("background-color","rgba(0,0,0,0)");
+	fakeElem.removeClass("fuip-flex-fake");
 	// correct size is the size of the preview
-	ui.element.height(ui.element.parent().height());
-	ui.element.width(ui.element.parent().width());
+	ui.element.height(fakeElem.height());
+	ui.element.width(fakeElem.width());
 	// TODO: The following can be optimized by only calling resize() for the views where 
 	// this makes sense. However, this is effort...
 	$(window).trigger("resize");
@@ -505,6 +517,8 @@ function onFlexMaintDragStart(e,ui) {
 	var id = ui.helper.attr("id");
 	id = id.replace("cell","fake"); 
 	var fakeElem = $("#"+id);
+	fakeElem.css("background-color","");
+	fakeElem.addClass("fuip-flex-fake");
 	fuip.drag_start_area = flexMaintGetArea(fakeElem);
 	fuip.drag_start_region = fakeElem.parent().attr("id");
 	fuip.drag_colzero = 0;
@@ -654,6 +668,8 @@ function onFlexMaintDragStop(e,ui) {
 	var id = ui.helper.attr("id");
 	id = id.replace("cell","fake"); 
 	var fakeElem = $("#"+id);
+	fakeElem.css("background-color","rgba(0,0,0,0)");
+	fakeElem.removeClass("fuip-flex-fake");
 	fakeElem.prepend(ui.helper);
 	ui.helper.css({top:0,left:0});
 	fuip.drag_colzero = 0;

@@ -7,6 +7,7 @@
 :root{
 /* main cell background color */
 	--fuip-color-background: #2B445A;
+	--fuip-color-background-transparent: rgba(43,68,90,.7);
 /* background when mouse hovers over, used in weatherdetail, defaults to #444 */		
 	--fuip-color-background-hover: #3F586E;
 /* main theme color */
@@ -258,6 +259,10 @@ div[data-type="circlemenu"] > .circlemenu-wrapper > .circlemenu li div[data-type
 	background-color: var(--fuip-color-background);
 	color: var(--fuip-color-foreground);
 }
+/* transparent, i.e. with background picture */
+.fuip-cell.fuip-transparent {
+	background-color: var(--fuip-color-background-transparent);
+}
 
 
 /* cell headers */
@@ -266,6 +271,10 @@ div[data-type="circlemenu"] > .circlemenu-wrapper > .circlemenu li div[data-type
 	background-color: var(--fuip-color-background);
 	color: #AAA;			
 }
+.fuip-cell-header.fuip-transparent {
+	background-color: var(--fuip-color-background-transparent);
+}
+
 
 
 /* menu item */

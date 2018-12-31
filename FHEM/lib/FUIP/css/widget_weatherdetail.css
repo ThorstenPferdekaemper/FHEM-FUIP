@@ -10,8 +10,8 @@
 	padding: 0;
 	padding-top: 3px;
 	color: var(--fuip-color-foreground,#eeeeee);
-    background-color: var(--fuip-color-background,#2a2a2a);
-    border-color: var(--fuip-color-foreground,#eee);
+    background-color: initial;
+	border-color: var(--fuip-color-foreground,#eee);
     border-width: 1px;
     border-style: none none solid none;
 }
