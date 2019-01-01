@@ -441,16 +441,18 @@ sub renderBackgroundImage($$){
 	my $result = '';
 	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
 	if($backgroundImage) {
-		# load background picture when the browser is bored only
-		$result .= '<link rel="prefetch" 
-						href="/fhem/'.lc($hash->{NAME}).'/fuip/images/'.$backgroundImage.'"
-						onload="$(\'body\').css(\'background\',\'#000000 url(/fhem/'.lc($hash->{NAME}).'/fuip/images/'.$backgroundImage.') 0 0/';
+		# load background picture only after (most of?) the rest has loaded
+		$result .= 
+			'<script type="text/javascript">
+				$(() =>
+					$(\'body\').css(\'background\',\'#000000 url(/fhem/'.lc($hash->{NAME}).'/fuip/images/'.$backgroundImage.') 0 0/';
 		if($pageWidth) {
 			$result .= $pageWidth.'px';
 		}else{	
 			$result .= 'cover';
 		};
-		$result .= ' no-repeat\');">';
+		$result .= ' no-repeat\'));
+			</script>'."\n";
 	};			
 	return $result;
 };
