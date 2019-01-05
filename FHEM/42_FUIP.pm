@@ -2280,9 +2280,24 @@ sub setViewSettings($$$$;$) {
 	if(exists($h->{$prefix.'flexfields'})) {
 		my @flexfields = split(/,/,$h->{$prefix.'flexfields'});
 		for my $flexname (@flexfields) {
-			setField($view,{id => $flexname, type => $h->{$prefix.$flexname.'-type'}},[],$h,$prefix);
 			# put "flex structure" stuff
-			$view->{flexstruc}{$flexname}{type} = $h->{$prefix.$flexname.'-type'};	
+			delete $view->{flexstruc}{$flexname};
+			delete $view->{defaulted}{$flexname};
+			for my $attribute ("type", "refdevice", "refset") {
+				$view->{flexstruc}{$flexname}{$attribute} = $h->{$prefix.$flexname.'-'.$attribute} if exists $h->{$prefix.$flexname.'-'.$attribute}; 
+			};
+			if(exists $h->{$prefix.$flexname.'-options'}) {
+				my @opts = split(/,/,$h->{$prefix.$flexname.'-options'});
+				$view->{flexstruc}{$flexname}{options} = \@opts;
+			};
+			for my $attribute ("type", "value", "suffix") {
+				$view->{flexstruc}{$flexname}{default}{$attribute} = $h->{$prefix.$flexname.'-default-'.$attribute} if exists $h->{$prefix.$flexname.'-default-'.$attribute};	
+			};
+			# set field value
+			setField($view,{id => $flexname, 
+							type => $h->{$prefix.$flexname.'-type'},
+							default => ($view->{flexstruc}{$flexname}{default} ? $view->{flexstruc}{$flexname}{default} : undef)
+							},[],$h,$prefix);
 		};
 	};
 };

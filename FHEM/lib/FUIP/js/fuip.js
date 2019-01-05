@@ -923,7 +923,20 @@ async function acceptSettings(doneFunc) {
 			}else{
 				flexfields[flexfieldsId] = name;
 			};
-			cmd += ' ' + id + '-type="' + $(this).attr("fuip-type") + '"';	
+			// flex field attributes
+			for (let attribute of ["type", "default-type", "default-value", "default-suffix"]) {
+				let val = $(this).attr("fuip-" + attribute);
+				if(typeof val !== "undefined") cmd += ' ' + id + '-' + attribute + '="' + val + '"';	
+			};
+			for (let attribute of ["refdevice", "refset", "options"]) {
+				let val = $(this).attr("data-" + attribute);
+				if(typeof val !== "undefined") cmd += ' ' + id + '-' + attribute + '="' + val + '"';	
+			};
+			let val = $(this).attr("data-options");
+			if(typeof val !== "undefined"){
+				val = json2object(val);
+				cmd += ' ' + id + '-options="' + val.join(',') + '"';	
+			};	
 		};	
 	});
 	for (const id of Object.keys(flexfields)) {
@@ -1824,16 +1837,9 @@ function createField(settings, fieldNum, component,prefix) {
 		influencedFields[i] = prefix + influencedFields[i];
 	};
 	var fieldNameInBrackets = '"' + fieldName + '"';
-	/* $(function() {
-		$('#' + fieldName + '-value').button({
-			icon: 'ui-icon-triangle-1-s',
-			showLabel: false
-		});		
-	});*/		
 	var result = "<input type='checkbox' id='" + fieldName + "-check' style='visibility: " + checkVisibility + ";'" 
 			+ ' title="change (don\'t use default)"'
 			+ checkValue + " onchange='defaultCheckChanged(" + fieldNameInBrackets + "," + defaultDef + ",\"" + field.type + "\")'>";
-			
 	// popups are a bit special
 	if(field.type == "dialog" && (checkValue || !fieldComp.hasOwnProperty("default"))) {
 		$(function() {
@@ -1858,9 +1864,9 @@ function createField(settings, fieldNum, component,prefix) {
 		result += " name='" + fieldName + "' id='" + fieldName + "' ";
 		result += "value='" + fieldComp.options[0] + "' style='visibility: visible;background-color:#EBEBE4;width:79px' readonly >";
 	}else{
-		if(fieldComp.hasOwnProperty("options") && field.type != "setoptions"){
+		if(fieldComp.hasOwnProperty("options") && field.type != "setoptions" && field.type != "setoption"){
 			result += "<select class='fuip'";
-			if(parseInt(fieldComp.default.used)) {
+			if(fieldComp.hasOwnProperty("default") && parseInt(fieldComp.default.used)) {
 				result += " disabled";
 			};	
 		}else{
@@ -1873,17 +1879,24 @@ function createField(settings, fieldNum, component,prefix) {
 		if(fieldComp.hasOwnProperty("refset")){
 			result += "data-refset='" + fieldComp.refset + "' ";
 		};	
-		if(field.type == "setoptions" && fieldComp.hasOwnProperty("options")) {
+		if(fieldComp.hasOwnProperty("options")) {
 			result += "data-options='"+JSON.stringify(fieldComp.options)+"' ";
 		};	
 		if(fieldComp.hasOwnProperty("flexfield")) {
 			result += "data-flexfield='" + fieldComp.flexfield + "' "
 					+ "fuip-type='" + field.type + "' ";
+			if(fieldComp.hasOwnProperty("default")) {
+				for (let attribute of ["type", "value", "suffix"]) {
+					if(fieldComp.default.hasOwnProperty(attribute)) {
+						result += "fuip-default-" + attribute + "='" + fieldComp.default[attribute] + "' ";
+					};	
+				};	
+			};	
 		};	
 		result += "value='" + fieldValue + "' " 
 				+ fieldStyle + " oninput='inputChanged(this," + JSON.stringify(influencedFields) +")' >";
 		// are there options to show? (dropdown)
-		if(fieldComp.hasOwnProperty("options") && field.type != "setoptions"){
+		if(fieldComp.hasOwnProperty("options") && field.type != "setoptions" && field.type != "setoption"){
 			for(var i = 0; i < fieldComp.options.length; i++) {
 				result += "<option ";
 				if(fieldComp.options[i] == fieldValue) {
@@ -1897,13 +1910,11 @@ function createField(settings, fieldNum, component,prefix) {
 	// do we have a value help?
 	if(field.type == "device" || field.type == "device-reading" || field.type == "reading" || field.type == "icon" || field.type == "set" || field.type == "setoptions" || field.type == "setoption") {
 		result += '<span id="' + fieldName + '-value" class="ui-icon ui-icon-triangle-1-s" onclick="valueHelp(\''+fieldName+'\',\''+field.type+'\')" title="Possible values" style="background-color:#F6F6F6;border: 1px solid #c5c5c5;color:#454545;'; 
-		// result += "<button id='" + fieldName + "-value' onclick='valueHelp(\""+fieldName+"\",\""+field.type+"\")' type='button' style='padding:1px 0px;" 
 		// value help invisible?
 		if(checkVisibility == "visible" && checkValue != " checked") {
 			result += "visibility:hidden;";
 		};	
 		result += '"></span>';
-		// result += "'>Possible values</button>";
 	};	
 	// for sizing fields, add width and height (if resizable)
 	// TODO: do we need proper default values?
@@ -2101,13 +2112,39 @@ function addFieldsFromHtmlView(settings){
 		// check if this is already there (leave alone "standard" fields and duplicates)
 		if(settings.find((element) => element.id == id)) continue;
 		// not there, add it
-		let flexfield;
+		let flexfield = {"id":id, "flexfield":1};
 		if(oldFlexfields.hasOwnProperty(id)) {
-			flexfield = oldFlexfields[id];
+			flexfield.value = oldFlexfields[id].value;
+			if(oldFlexfields[id].hasOwnProperty("variable")) 
+				flexfield.variable = oldFlexfields[id].variable;
 		}else{
-			flexfield = {"id":id, "flexfield":1, "value":fieldDef.text()};
+			flexfield.value = fieldDef.text();
 		};	
-		flexfield.type = fieldDef.attr("fuip-type");
+		// flex field attributes
+		for (let attribute of ["type", "refdevice", "refset"]) {
+			let val = fieldDef.attr("fuip-" + attribute);
+			if(typeof val !== "undefined") flexfield[attribute] = val;	
+		};
+		let val = fieldDef.attr("fuip-options");
+		if(typeof val !== "undefined"){
+			flexfield.options = val.split(',');	
+		};	
+		for (let attribute of ["type", "value", "suffix"]) {
+			let val = fieldDef.attr("fuip-default-" + attribute);
+			if(typeof val !== "undefined"){
+				if(!flexfield.hasOwnProperty("default")) 		
+					flexfield.default = {};		
+				flexfield.default[attribute] = val;	
+			};	
+		};
+		// default used?
+		if(flexfield.hasOwnProperty("default")) {
+			if(oldFlexfields[id].hasOwnProperty("default") && oldFlexfields[id].default.hasOwnProperty("used")) {
+				flexfield.default.used = oldFlexfields[id].default.used;
+			}else{
+				flexfield.default.used = 1;
+			};			
+		};		
 		if(!flexfield.type) flexfield.type = "text";
 		index++;
 		settings.splice(index,0,flexfield);

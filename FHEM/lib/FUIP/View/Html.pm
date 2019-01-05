@@ -27,8 +27,12 @@ sub getHTML($){
 			$fieldStr .= ',';
 		}else{
 			$fieldStr = '{';
-		};	
-		$fieldStr .= '"'.$flexfield.'":"'.$self->{$flexfield}.'"'; 
+		};
+		my $value = $self->{$flexfield};
+		if($self->{flexstruc}{$flexfield}{type} eq "setoptions") {
+			$value = '[\"'.join('\",\"',@$value).'\"]';
+		};
+		$fieldStr .= '"'.$flexfield.'":"'.$value.'"'; 
 	};
 	if($fieldStr) {
 		$fieldStr .= '}';

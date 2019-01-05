@@ -11,11 +11,16 @@ function renderHtmlView(html,variables) {
 		//		but something is wrong. Maybe proper error message and do not 
 		//		change anything
 		let fieldDef = $(fieldString);
-		if(!fieldDef) continue;
+		if(!fieldDef) continue; 
 		let id = fieldDef.attr("fuip-name");
 		if(!id) continue;
-		if(!variables.hasOwnProperty(id)) continue;
-		html = html.replace(fieldString,variables[id]);
+		let value;
+		if(variables.hasOwnProperty(id)) {
+			value = variables[id];
+		}else{
+			value = fieldDef.text();
+		};		
+		html = html.replace(fieldString,value);
 	}; 
 	// create DOM node
 	// the following is supposed not to break the whole

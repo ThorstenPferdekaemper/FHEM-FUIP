@@ -365,11 +365,24 @@ sub addFlexFields($$) {
 		$flexFieldsStr = $self->{$configFields->[$i]{id}} unless $flexFieldsStr;
 		next unless $flexFieldsStr;
 		my @flexfields = split(/,/,$flexFieldsStr);
-		for my $flexfield (@flexfields) {
+		for my $id (@flexfields) {
+			my $flexfield = $self->{flexstruc}{$id};
+			$flexfield->{type} = "text" unless $flexfield->{type};
+			$flexfield->{id} = $id;
+			# do we have a default?
+			if($flexfield->{default}) {	
+				# if defaulted is not there yet, set it to 1 (at the beginning, we should use the default)
+				$flexfield->{default}{used} = (defined $self->{defaulted}{$id} ? $self->{defaulted}{$id} : 1);
+				if($flexfield->{default}{type} eq "const") {
+					$flexfield->{value} = $flexfield->{default}{value};
+				};
+			};
+			# avoid "undefined"
+			$flexfield->{value} = "" unless defined $flexfield->{value};
+			$flexfield->{value} = $self->{$id} if(defined $self->{$id});
+			$flexfield->{flexfield} = 1;
 			$i++;
-			my $type = $self->{flexstruc}{$flexfield}{type};
-			$type = "text" unless $type;
-			splice(@$configFields,$i,0,{id => $flexfield, value => $self->{$flexfield}, type => $type, flexfield => 1});
+			splice(@$configFields,$i,0,$flexfield);
 		};	
 	};	
 };
