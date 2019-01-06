@@ -40,13 +40,14 @@ function fuipInit(conf) { //baseWidth, baseHeight, maxCols, gridlines, snapTo
 					if(fuip.snapTo == "nothing") return;
 					if(e.altKey) return;
 					var dim = snapDimensions();
-					var n = (ui.position.left + fuip.drag_start_left - 5) / dim.gridWidth;
+					var start = gridStart();
+					var n = (ui.position.left + fuip.drag_start_left - start.left) / dim.gridWidth;
 					if(n - Math.floor(n) > 0.5) n++;
-					var snapped = 5 + Math.floor(n) * dim.gridWidth;  // offset	
+					var snapped = start.left + Math.floor(n) * dim.gridWidth;  // offset	
 					ui.position.left = snapped - fuip.drag_start_left;
-					n = (ui.position.top + fuip.drag_start_top - 27) / dim.gridHeight;
+					n = (ui.position.top + fuip.drag_start_top - start.top) / dim.gridHeight;
 					if(n - Math.floor(n) > 0.5) n++;
-					snapped = 27 + Math.floor(n) * dim.gridHeight;  // offset	
+					snapped = start.top + Math.floor(n) * dim.gridHeight;  // offset	
 					ui.position.top = snapped - fuip.drag_start_top;
 				}	
 			});
@@ -59,14 +60,15 @@ function fuipInit(conf) { //baseWidth, baseHeight, maxCols, gridlines, snapTo
 					if(fuip.snapTo == "nothing") return;
 					if(e.altKey) return;
 					var dim = snapDimensions();
+					var start = gridStart();
 					var n = (ui.position.left + ui.size.width) / dim.gridWidth;
 					if(n - Math.floor(n) > 0.5) n++;
 					var snapped = Math.floor(n) * dim.gridWidth;  // offset	
 					ui.size.width = snapped - ui.position.left;
-					n = (ui.position.top - 22 + ui.size.height) / dim.gridHeight;
+					n = (ui.originalElement.offset().top - start.top + ui.size.height) / dim.gridHeight;
 					if(n - Math.floor(n) > 0.5) n++;
-					snapped = 22 + Math.floor(n) * dim.gridHeight;  // offset	
-					ui.size.height = snapped - ui.position.top;					
+					snapped = start.top + Math.floor(n) * dim.gridHeight;  // offset	
+					ui.size.height = snapped - ui.originalElement.offset().top;					
 				}				
 			});
 		});		
@@ -242,6 +244,25 @@ function gridDimensions() {
 };	
 
 
+function gridStart() {
+	// determine coordinates of the first grid lines
+	// returns { left: ..., top: ... }
+	// get offset of maintained area
+	let offset;
+	if($("html").attr("data-viewtemplate")) {
+		offset = $("#templatecontent").offset();
+	}else if($("html").attr("data-fieldid")) {
+		offset = $("#popupcontent").offset();
+		offset.top += 16;
+	}else {
+		offset = {left:5,top:27};
+	};	
+	// move grid so that it fits offset	
+	let dim = gridDimensions();
+	return {left: offset.left % dim.gridWidth, top: offset.top % dim.gridHeight };
+};	
+
+
 function snapDimensions() {
 	var dim = gridDimensions();
 	if(fuip.snapTo == "halfGrid") {
@@ -259,16 +280,17 @@ function snapDimensions() {
 function drawGrid() {
 	// determine grid width
 	var dim = gridDimensions();
+	var start = gridStart();
 	// create canvas to draw on
 	$("body").append('<canvas id="gridCanvas" width=' + $(document).width() + ' height=' + $(document).height() + ' style="position:absolute;top:0;left:0;z-index:99;pointer-events:none;"></canvas>');
 	var canvas = document.getElementById("gridCanvas");
 	var c = canvas.getContext("2d");
 	c.setLineDash([1,4]);
-	for(var x = 5; x < $(document).width(); x += dim.gridWidth) {
+	for(var x = start.left; x < $(document).width(); x += dim.gridWidth) {
 		c.moveTo(x,0);
 		c.lineTo(x,$(document).height() -1);
 	};	
-	for(var y = 27; y < $(document).height(); y += dim.gridHeight) {
+	for(var y = start.top; y < $(document).height(); y += dim.gridHeight) {
 		c.moveTo(0,y);
 		c.lineTo($(document).width() -1,y);
 	};	

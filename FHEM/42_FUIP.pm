@@ -314,12 +314,14 @@ sub determineMaxCols($;$) {
 };
 
 
-sub renderFuipInit($) {
+sub renderFuipInit($;$) {
 	# include fuip.js, call fuipInit and include proper JQueryUI style sheet
-	my ($hash) = @_;
+	my ($hash,$gridlines) = @_;
 	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
 	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
-	my $gridlines = main::AttrVal($hash->{NAME},"gridlines","hide");	
+	if(not $gridlines) {
+		$gridlines = main::AttrVal($hash->{NAME},"gridlines","hide");
+	};	
 	my $snapto = main::AttrVal($hash->{NAME},"snapTo","nothing");
 	return "<script src=\"/fhem/".lc($hash->{NAME})."/fuip/js/fuip.js\"></script>
   			<script>
@@ -958,6 +960,7 @@ sub renderViewTemplateMaint($$) {
 	# find the dialog and render it	
 	my $viewtemplate;
 	$currentPage = undef;
+	my $gridlines = undef;
 	if($templateid) {
 		if(not exists($hash->{viewtemplates}{$templateid})) {   
 			$hash->{viewtemplates}{$templateid} = FUIP::ViewTemplate->createDefaultInstance($hash);
@@ -966,6 +969,7 @@ sub renderViewTemplateMaint($$) {
 		$viewtemplate = $hash->{viewtemplates}{$templateid};
 		$currentPage = $viewtemplate;  
 	}else{
+		$gridlines = "hide";
 		$currentPage = $hash->{viewtemplates};
 	};	
 	my $title = "Maintain View Template".($templateid ? " ".$templateid : "s");
@@ -991,7 +995,7 @@ sub renderViewTemplateMaint($$) {
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.js\"></script>
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.widgets.js\"></script>".
                 "<script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>".
-				renderFuipInit($hash).
+				renderFuipInit($hash,$gridlines).
 				"<style type=\"text/css\">
 	                .fuip-color {
 		                color: ".$styleColor.";
