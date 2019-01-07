@@ -27,6 +27,7 @@ UPD 2018-12-25_21:26:25 1392 FHEM/lib/FUIP/View/MenuItem.pm
 UPD 2018-11-24_21:06:05 389 FHEM/lib/FUIP/View/Page.pm
 UPD 2018-12-03_21:22:12 1087 FHEM/lib/FUIP/View/Popup.pm
 UPD 2018-10-02_13:46:23 1489 FHEM/lib/FUIP/View/Push.pm
+UPD 2019-01-07_21:35:40 1317 FHEM/lib/FUIP/View/ReadingsGroup.pm
 UPD 2018-03-23_22:26:04 1478 FHEM/lib/FUIP/View/ReadingsList.pm
 UPD 2018-08-27_20:32:01 1518 FHEM/lib/FUIP/View/STATE.pm
 UPD 2018-11-24_21:06:06 2589 FHEM/lib/FUIP/View/Select.pm
@@ -83,6 +84,7 @@ UPD 2018-08-03_20:00:49 1714 FHEM/lib/FUIP/view-images/FUIP-View-LabelTemperatur
 UPD 2018-08-03_20:15:52 1697 FHEM/lib/FUIP/view-images/FUIP-View-MenuItem.png
 UPD 2018-08-22_13:42:21 4217 FHEM/lib/FUIP/view-images/FUIP-View-Popup.png
 UPD 2018-10-02_13:51:00 1024 FHEM/lib/FUIP/view-images/FUIP-View-Push.png
+UPD 2019-01-07_21:47:15 3027 FHEM/lib/FUIP/view-images/FUIP-View-ReadingsGroup.png
 UPD 2018-08-03_20:20:33 5877 FHEM/lib/FUIP/view-images/FUIP-View-ReadingsList.png
 UPD 2018-08-03_20:23:52 2049 FHEM/lib/FUIP/view-images/FUIP-View-STATE.png
 UPD 2018-08-03_20:28:02 1228 FHEM/lib/FUIP/view-images/FUIP-View-Select.png
