@@ -1818,6 +1818,34 @@ function callPopupMaint(fieldName) {
 };	
 
 
+function hasValueHelp(settings,fieldNum) {
+	// TODO: some of the following are actually errors. E.g. a reading should 
+	//       always have a refdevice. Maybe issue error message.
+	let field = settings[fieldNum];
+	// device, device-reading, icon always have a value help
+	if(field.type == "device" || field.type == "device-reading" || field.type == "icon" ) {
+		return true;
+	};	
+	// reading and set needs a refdevice
+	if(field.type == "reading" || field.type == "set") {
+		return field.hasOwnProperty("refdevice");
+	};	
+	// setoption(s) need options or refset, which in turn has a refdevice 
+	if(field.type == "setoption" || field.type == "setoptions") {	
+		if(field.hasOwnProperty("options")) return true;
+		if(!field.hasOwnProperty("refset")) return false;
+		// find refset field
+		for(let refsetfield of settings) {
+			if(refsetfield.id != field.refset) continue;
+			// found
+			return refsetfield.hasOwnProperty("refdevice");
+		};	
+		return false;  // refset not found
+	};
+	return false;  // all other types
+};	
+
+
 function createField(settings, fieldNum, component,prefix) {
     var field = settings[fieldNum];
 	var fieldComp = field;
@@ -1930,7 +1958,7 @@ function createField(settings, fieldNum, component,prefix) {
 		};	
 	};	
 	// do we have a value help?
-	if(field.type == "device" || field.type == "device-reading" || field.type == "reading" || field.type == "icon" || field.type == "set" || field.type == "setoptions" || field.type == "setoption") {
+	if(hasValueHelp(settings,fieldNum)) {
 		result += '<span id="' + fieldName + '-value" class="ui-icon ui-icon-triangle-1-s" onclick="valueHelp(\''+fieldName+'\',\''+field.type+'\')" title="Possible values" style="background-color:#F6F6F6;border: 1px solid #c5c5c5;color:#454545;'; 
 		// value help invisible?
 		if(checkVisibility == "visible" && checkValue != " checked") {
