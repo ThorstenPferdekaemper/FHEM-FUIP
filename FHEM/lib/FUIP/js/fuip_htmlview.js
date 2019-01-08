@@ -2,7 +2,7 @@
 function renderHtmlView(html,variables) {
 	// replace variables
 	// find matches for <fuip-field>...</fuip-field>
-	var fieldStrings = html.match(/<fuip-field.*?<\/fuip-field>/g);
+	var fieldStrings = html.match(/<fuip-field(.|\s)*?<\/fuip-field>/g);
 	// something wrong?
 	// TODO: error message or so
 	if(!fieldStrings) fieldStrings = [];  // null if no match

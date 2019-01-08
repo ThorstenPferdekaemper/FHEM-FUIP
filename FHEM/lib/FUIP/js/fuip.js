@@ -2147,7 +2147,7 @@ function addFieldsFromHtmlView(settings){
 	// is there anything?
 	if(!html) return;
 	// find matches for <fuip-field>...</fuip-field>
-	let fieldStrings = html.match(/<fuip-field.*?<\/fuip-field>/g);
+	let fieldStrings = html.match(/<fuip-field(.|\s)*?<\/fuip-field>/g);
 	// something wrong?
 	// TODO: error message or so
 	if(!fieldStrings) return;  // null if no match
@@ -2189,7 +2189,9 @@ function addFieldsFromHtmlView(settings){
 		};
 		// default used?
 		if(flexfield.hasOwnProperty("default")) {
-			if(oldFlexfields[id].hasOwnProperty("default") && oldFlexfields[id].default.hasOwnProperty("used")) {
+			if(oldFlexfields.hasOwnProperty[id] 
+			   && oldFlexfields[id].hasOwnProperty("default")
+			   && oldFlexfields[id].default.hasOwnProperty("used")) {
 				flexfield.default.used = oldFlexfields[id].default.used;
 			}else{
 				flexfield.default.used = 1;
