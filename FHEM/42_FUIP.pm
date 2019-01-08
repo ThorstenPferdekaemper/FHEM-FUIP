@@ -502,7 +502,7 @@ sub getFtuiUserCss($$) {
 	my $cssList = getViewDependencies($hash,$pageId,"css");
 	# get contents of userCss (if Attribute userCss is set)
 	my $userCss = main::AttrVal($hash->{NAME},"userCss", undef);
-	push(@$cssList, 'FHEM/lib/FUIP/css/'.$userCss) if $userCss;
+	push(@$cssList, 'FHEM/lib/FUIP/config/'.$userCss) if $userCss;
 	# get contents of original fhem-tablet-ui-user.css (if exists)
 	push(@$cssList, 'www/tablet/css/fhem-tablet-ui-user.css');
 	# concatenate everything and return text...
