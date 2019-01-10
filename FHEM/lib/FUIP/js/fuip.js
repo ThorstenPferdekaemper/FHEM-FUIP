@@ -310,6 +310,7 @@ function getLocalCSrf() {
         },
         'success': function (data, textStatus, jqXHR) {
             fuip.csrf = jqXHR.getResponseHeader('X-FHEM-csrfToken');
+			if(!fuip.csrf) fuip.csrf = "none";
         },
 		error: function (jqXHR, textStatus, errorThrown) {
 			console.log("FUIP: Failed to get csrfToken: " + textStatus + ": " + errorThrown);
