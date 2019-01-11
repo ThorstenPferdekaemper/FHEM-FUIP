@@ -6,6 +6,9 @@ use warnings;
 use lib::FUIP::View;
 use parent -norequire, 'FUIP::View';
 
+sub getDependencies($$) {
+	return ['js/fuip_readingsgroup.js'];
+};
 
 sub dimensions($;$$){
 	my ($self,$width,$height) = @_;
