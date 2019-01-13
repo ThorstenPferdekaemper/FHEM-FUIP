@@ -1975,9 +1975,10 @@ sub CGI() {
 		return getFuipPage($hash,join('/',@path));
 	};
 	
-	# special logic for weatherdetail
+	# special logic for weatherdetail and readingsgroup
 	# add "fuip" in front of path to make sure to use the FUIP version
-	if($path[-1] eq "widget_weatherdetail.js" and $path[0] ne "fuip") {
+	if($path[0] ne "fuip" and ( $path[-1] eq "widget_weatherdetail.js" or 
+								$path[-1] eq "widget_readingsgroup.js" )) {
 		unshift(@path,"fuip");
 	};
 	# special logic for css/fhem-tablet-ui-user.css

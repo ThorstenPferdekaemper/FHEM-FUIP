@@ -7,7 +7,7 @@ DIR FHEM/lib/FUIP/js
 DIR FHEM/lib/FUIP/View
 DIR FHEM/lib/FUIP/jquery-ui
 DIR FHEM/lib/FUIP/jquery-ui/images
-UPD 2019-01-08_16:13:54 100375 FHEM/42_FUIP.pm
+UPD 2019-01-13_16:08:54 100448 FHEM/42_FUIP.pm
 UPD 2018-11-21_12:09:09 12409 FHEM/lib/FUIP/Model.pm
 UPD 2019-01-05_20:35:12 10870 FHEM/lib/FUIP/View.pm
 UPD 2018-11-28_14:24:46 6848 FHEM/lib/FUIP/View/Batteries.pm
@@ -73,6 +73,7 @@ UPD 2019-01-08_15:22:04 1018 FHEM/lib/FUIP/js/fuip_htmlview.js
 UPD 2019-01-11_16:27:51 475 FHEM/lib/FUIP/js/fuip_readingsgroup.js
 UPD 2018-03-17_22:57:55 106396 FHEM/lib/FUIP/js/jquery.tablesorter.js
 UPD 2018-03-17_22:57:55 125594 FHEM/lib/FUIP/js/jquery.tablesorter.widgets.js
+UPD 2019-01-13_16:33:44 3986 FHEM/lib/FUIP/js/widget_readingsgroup.js
 UPD 2018-12-02_20:21:10 25541 FHEM/lib/FUIP/js/widget_weatherdetail.js
 UPD 2018-08-03_14:12:09 4468 FHEM/lib/FUIP/view-images/FUIP-View-Batteries.png
 UPD 2018-08-03_14:17:14 1830 FHEM/lib/FUIP/view-images/FUIP-View-Brightness.png
