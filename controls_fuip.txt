@@ -103,4 +103,5 @@ UPD 2018-08-05_16:30:23 1475 FHEM/lib/FUIP/view-images/FUIP-View-Title.png
 UPD 2018-08-05_16:33:00 744 FHEM/lib/FUIP/view-images/FUIP-View-UpStopDown.png
 UPD 2018-09-20_19:43:29 7218 FHEM/lib/FUIP/view-images/FUIP-View-WeatherDetail.png
 UPD 2018-09-20_19:42:44 3406 FHEM/lib/FUIP/view-images/FUIP-View-WeatherOverview.png
+UPD 2019-01-13_19:57:18 1373 FHEM/lib/FUIP/view-images/FUIP-View-Window.png
 UPD 2018-08-03_14:05:38 1051 FHEM/lib/FUIP/view-images/FUIP-View.png
