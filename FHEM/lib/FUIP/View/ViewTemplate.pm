@@ -245,7 +245,45 @@ sub setVariableDefSingle($$$$) {
 		$var = { name => $varname, fields => [] };
 		push(@$variables,$var);
 	};
+	# is this part of a dialog?
+	$newFieldName = $h->{fieldid}.'-'.$newFieldName if($h->{type} eq "dialog");
 	push(@{$var->{fields}}, $newFieldName);
+};
+
+
+sub removeOldVariables($;$$) {
+	my ($self,$fieldid,$view) = @_;
+	if($fieldid) {
+		$fieldid .= '-';
+	}else{
+		$fieldid = '';
+	};	
+	$view = $self unless $view;
+	# remove all fields, which are on the same level like fieldid
+	for my $variable (@{$self->{variables}}) {
+		for my $i (0 .. $#{$variable->{fields}}) {
+			my $field = $variable->{fields}[$i];
+			if($fieldid) {
+				# if field does not start with fieldid, then don't remove
+				next if(substr($field,0,length($fieldid)) ne $fieldid);
+				# cut off field id
+				$field = substr($field,length($fieldid));
+			};
+			# $view is now either a view template or a dialog
+			# and $field should be like views-<i>-<field> or views-<i>-<field>-<device/reading>
+			# otherwise we do not delete
+			my @parts = split(/-/,$field);
+			next unless(scalar(@parts) == 3 or scalar(@parts) == 4);
+			# probably we do not need to check more. If the field belongs to a next level popup,
+			# then $field would look like views-<i>-popup-views-<i>-<field>(-...)
+			# i.e. we can safely delete the field here
+			$variable->{fields}[$i] = undef;
+		}
+		# now really remove from the fields array
+		@{$variable->{fields}} = grep { $_ } @{$variable->{fields}};
+	};	
+	# remove variables with empty field list
+	@{$self->{variables}} = grep { @{$_->{fields}} } @{$self->{variables}};
 };
 
 
@@ -257,12 +295,19 @@ sub setVariableDefs($$;$$$) {
 	#	store ...-variable as key with list of (full) field names
 	$oldPrefix = "" unless $oldPrefix;
 	$newPrefix = "" unless $newPrefix;
+	
 	my $fields;
 	if($view) {
 		$fields = $view->getStructure();
-	}else{	
+	}elsif($h->{type} eq "viewtemplate"){	
 		$fields = "FUIP::ViewTemplate"->getStructure();
 		$view = $self;
+		# if this is not called for a view, we need to delete "old" variables/fields
+		$self->removeOldVariables();	
+	}else{  # should be dialog
+		$view = FUIP::findDialogFromFieldId($self->{fuip},$h,$h->{fieldid});
+		$fields = $view->getStructure();
+		$self->removeOldVariables($h->{fieldid},$view);
 	};	
 	$view->addFlexFields($fields);
 	for my $field (@$fields) {
@@ -297,6 +342,15 @@ sub _findField($$$) {
 		}elsif($type eq "device-reading"){
 			$result = $result->{$key};  # device or reading
 		}else{
+			if($type eq "dialog") {
+				return undef unless defined $result->{value};
+				my $dialog = $result->{value};
+				return undef unless blessed($dialog);
+				$result = $dialog->getConfigFields();
+			};	
+			# if the field does not exist (or belongs to a "higher" popup,
+			# then this is not an array now
+			return undef unless ref($result) eq "ARRAY";
 			# find the field def with the id 
 			for my $field (@$result) {
 				next unless $field->{id} eq $key;
@@ -322,8 +376,11 @@ sub _findFieldBase($$$) {
 			$baseField = $baseField->{value}[$key];
 		}elsif($type eq "device-reading"){
 			return ('device-reading',$result);
-			$baseField = $baseField->{$key};  # device or reading
 		}else{
+			if($type eq "dialog") {
+				my $dialog = $baseField->{value};
+				$baseField = $dialog->getConfigFields();
+			};
 			# find the field def with the id 
 			for my $field (@$baseField) {
 				next unless $field->{id} eq $key;
@@ -352,6 +409,30 @@ sub _findVariableForReffield($$$) {
 	return undef;
 };	
 	
+
+sub getConfigFieldsSetVariables($$;$) {
+	my ($self,$conf,$fieldid) = @_;
+	$fieldid .= '-' if $fieldid;
+	# set variables into field definitions
+	for my $variable (@{$self->{variables}}) {
+		for my $i (0 .. $#{$variable->{fields}}) {
+			my $fieldpath = $variable->{fields}[$i];
+			if($fieldid) {
+				# if field does not start with fieldid, then don't remove
+				next if(substr($fieldpath,0,length($fieldid)) ne $fieldid);
+				# cut off field id
+				$fieldpath = substr($fieldpath,length($fieldid));			
+			};
+			# we do not fill fields of popups in popups
+			my @parts = split(/-/,$fieldpath);
+			next unless(scalar(@parts) == 3 or scalar(@parts) == 4); 		
+			my $field = $self->_findField($conf,$fieldpath);
+			next unless $field;
+			$field->{variable} = $variable->{name};
+		};
+	};
+};	
+	
 	
 sub getConfigFields($) {
 	# returns config fields including value, type and defaulting information
@@ -369,12 +450,7 @@ sub getConfigFields($) {
 		$self->_fillField($field);
 	};
 	# set variables into field definitions
-	for my $variable (@{$self->{variables}}) {
-		for my $fieldpath (@{$variable->{fields}}) {
-			my $field = $self->_findField($result,$fieldpath);
-			$field->{variable} = $variable->{name};
-		};
-	};
+	$self->getConfigFieldsSetVariables($result);
 	return $result;
 }
 

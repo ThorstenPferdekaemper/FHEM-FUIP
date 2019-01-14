@@ -249,11 +249,11 @@ function gridStart() {
 	// returns { left: ..., top: ... }
 	// get offset of maintained area
 	let offset;
-	if($("html").attr("data-viewtemplate")) {
-		offset = $("#templatecontent").offset();
-	}else if($("html").attr("data-fieldid")) {
+	if($("html").attr("data-fieldid")) {
 		offset = $("#popupcontent").offset();
 		offset.top += 16;
+	}else if($("html").attr("data-viewtemplate")) {
+		offset = $("#templatecontent").offset();
 	}else {
 		offset = {left:5,top:27};
 	};	

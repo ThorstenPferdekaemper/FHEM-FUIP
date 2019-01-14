@@ -2264,7 +2264,7 @@ sub setViewSettings($$$$;$) {
 			setField($view,$field,["device"],$h,$prefix);
 			setField($view,$field,["reading"],$h,$prefix);
 		}elsif($field->{type} eq "viewarray"){
-			# we must have a "sort order" argument
+			# "sort order" argument
 			my @sortOrder;
 			if(defined($h->{$prefix.$field->{id}})){
 				@sortOrder = split(',',$h->{$prefix.$field->{id}});
@@ -2277,6 +2277,12 @@ sub setViewSettings($$$$;$) {
 				push(@$newviewarray,$view->{$field->{id}}[$i]);
 			};
 			$view->{$field->{id}} = $newviewarray;
+		}elsif($field->{type} eq 'dialog') {
+			# special case for view template instances
+			# when variables are set
+			if($view->{$field->{id}} and blessed($view->{$field->{id}})) {   # only if there is already a popup
+				setViewSettings($hash, [$view->{$field->{id}}],0,$h,$prefix.$field->{id}.'-');
+			};
 		}else{
 			setField($view,$field,[],$h,$prefix);
 		};	
@@ -2765,7 +2771,12 @@ sub _getSettings($$) {
 	my ($hash,$h) = @_;
 	my $container = _getContainerForCommand($hash,$h);
 	return "\"get settings\": could not find cell/dialog/view template" unless $container;
-	return _toJson($container->getConfigFields());
+	my $result = $container->getConfigFields();
+	# some special logic for popups within templates
+	if($h->{type} eq 'dialog' and $h->{templateid}) {
+		$hash->{viewtemplates}{$h->{templateid}}->getConfigFieldsSetVariables($result,$h->{fieldid});	
+	};
+	return _toJson($result);
 };
 
 
@@ -2774,9 +2785,8 @@ sub _setSettings($$) {
 	my $container = _getContainerForCommand($hash,$h);
 	return "\"set settings\": could not find cell/dialog/view template" unless $container;
 	setViewSettings($hash, [$container], 0, $h);
-	if($h->{type} eq "viewtemplate") {
-		$container->{variables} = [];
-		$container->setVariableDefs($h);
+	if($h->{type} eq "viewtemplate" or $h->{type} eq "dialog" and $h->{templateid}) {
+		$hash->{viewtemplates}{$h->{templateid}}->setVariableDefs($h);
 	};
 	autoArrangeNewViews($container);	
 };		
