@@ -1,0 +1,152 @@
+    /* weather table with fixed column width */
+    .weatherForecast {
+        display: table;
+        table-layout: fixed;
+        column-gap: 10px;
+    }
+    /* weather table header row */
+    .weatherHeaderRow {
+        display: table-header-group;
+        white-space: nowrap;
+    }
+    /* weather table data row */
+    .weatherDataRow {
+        display: table-row-group;
+    }
+    /* weather table data cells */
+    #weatherFontBold {
+        font-weight: bold;
+    }
+    .weatherWeekday {
+        display: table-cell;
+        min-width: 70px;
+        text-align: center;
+        vertical-align: middle;
+    }
+    .weatherCondition {
+        display: table-cell;
+        position: relative;
+        top: -4px;
+        text-align: center;
+        vertical-align: middle;
+        font-size: 60%;
+        word-wrap: break-word;
+    }
+    .weatherTemperature {
+        display: table-cell;
+        text-align: center;
+        vertical-align: middle;
+        font-size: 95%;
+        white-space: nowrap;
+    }
+    .weatherWind {
+        display: table-cell;
+        text-align: center;
+        vertical-align: middle;
+        font-size: 80%;
+        padding-top: 3px;
+    }
+    /* weather table condition icon cell */
+    .weatherIcon {
+        display: table-cell;
+        position: relative;
+        text-align: center;
+    }
+    /* weather icon */
+    .weatherIcon img {
+        width: 96%;
+        height: auto;
+        position: relative;
+    }
+    /* embedded alert icon with pointer support */
+    .weatherAlertIcon {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        width: 25px;
+        height: 22px;
+        background-size: 25px 22px;
+        background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAkCAMAAADM4ogkAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyppVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NjcyOSwgMjAxMi8wNS8wMy0xMzo0MDowMyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIEVsZW1lbnRzIDEyLjAgV2luZG93cyIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo1RjU1NzJBRDMyRTcxMUU1QTk4MkI0RTkwODEwODQ1QSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo1RjU1NzJBRTMyRTcxMUU1QTk4MkI0RTkwODEwODQ1QSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjVGNTU3MkFCMzJFNzExRTVBOTgyQjRFOTA4MTA4NDVBIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjVGNTU3MkFDMzJFNzExRTVBOTgyQjRFOTA4MTA4NDVBIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+oFydjAAAAwBQTFRF9fX267W51Csy9d7c1VBV9uPc/vz89+nl5YB/2Flk2mZp1Cgv0Csw5pWR7K2t1Soy1Cow7b6y0iUr+/r61jI54X+A+uvq21xV44qO/fj400tU1kxG3nNx2mJp34Bz/Pj2a2tr4Ht91S43fn5+1jA31S0y0iYu1TA1/ff3+/TxEhIS3W1u1jA010Q++efj1kVH1Tk+gYGB6qWh4oWEtra21TI48sjH1VVc1tbW1jY22ltd4YF/1kFHl5eX/vz7/Pz84nZt+evt9+Tm2mNu1Sw14YSD1Ss04YKC0isv4X5/0zc21CUu8cnL0jA20jAz22xy1jE422Zv1i800isw1Cgx11xjKysr1FFZ4X190iQsGRkZ0jY+1TE41Cww0y0y0ykt1i431i4z0y800ikvPz4/AAAA////DQwM1TI30yYs1TE31TA21TE21S401S801S810ycs//7+1TA3///+/v791TI2/v//0Sov0iYt0yYt6urqkZGR1TM40ycu1S414ODg4YB3+/Hw7bK0/vv78fHxh4eH+OPf0i8w1DI30icu1y843Zia/PX13Nvb6aWZ4YKE+fDv21RT00E83G5y3m9x7tDF3Gdu99fW1EJK1ktK3t7e5I+R4oeH3WNp3oCF+vH16ZOJ1Sw27cG31i018dDL4qOf3Wde7Kqe+O7m2ERH+e3o+u/t4YuY/Pb15IqG5p2R4np52TA82mhx2V1p3mpx5oWL66uiRkZG4YOR/v7+1ygz1TxC8dDV9dHS2VJL1CUw8by79+Hg7bq3vr6+9dnR1Tc49d/X11le77yv22hl2lVY+Ofo33540icspqan+/f49N/h5J6m2HB7zczN3nZ88c3FsrKz3HZ74ICC4YGA1oJy10JD+Onj8c3J1Dk71T494oaE4HpxNTU14XRz7Ozs7+/vcG9v+/bz/Pj1/fr3IiIi676/5IJx4Hpr6amn56On6aGd2mlu4X2A22Vm2WFk1jI33GNk+/Ds2VJU2FZW8/Pz78jD3V1v55iY3W1x////C1yJRAAAAQB0Uk5T////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////AFP3ByUAAAMKSURBVHjajNEFWBNxGAbwOXEoUzYnqCgGuPMUUFE8sRuwgDlUEJmK8z6/XWyEEjrswu7u7u7u7u4u7G7FWxoj/J6L9/7v77nnQpTpMM7XFkocV0UOK2VKbkt3/R+4KY0Zlnw8d7ikBeu9VroRcoXPg5F1Y5Mn5wYPaRnGqOxMfPbIGXZfFMxxJGtg0lxzhoWlKpYfSrCd9f4rc4JPKs1l9B1aeabGoLRQTnBxG8T2K2DwLV7FRVTOHi47yKKmxGyAagoGxb7x2cLSMuS0eZIAMopJUaWtkR3M1yUBpe8lkuoj4WYYm8Bf98gaxjdsSik7toKydPQ0OKEzUnGuWcOLWgZPXoCe3Wi6HlS+zVMG/35Zwfq7eqO+wxk4T9N0OYDXKQylnZ4VnKdxM5bfAtDTh6arAlT4IldxXYo6woyS3hwxpRHA12ia7gUA3yKUKL8f7wCPiClMOSsA0VPTMwIkeeoQm+39F1asZECZ02kBFGlH06eEM+Rt0RvFHyX/wNUy7JGex9Q3EGB1U4BCLVXK9D1/wxu1lJS8lMTc36Pp/eZQcaoM9Us9/oSJL8QUGbrDXMNmOvqBJe3TxqC22p/wgIbBlrMsLZSju1pT93dSZDsW/Q3rF/NG3r+xte4zqKY1QY0IBuVvwQ4LazFGUTzRVhexJziahkzyTht8PM6AwXUbWbutj3za2W+5IIxEovYAKxwlww+KV7buYTfzL7TODOGry/tb4KdaCSg/VsFWDfSx/ELLLK9CILl9hBnOEaOq4DN7BZe6lv36++plJ3ST/zDBfEOEN6udBNnNWDHFhTpnihIbNkXKUNfLyyuqeciVOwFvr7oHrApqHhTiPjog6EqdNVFVDIji/JmiiYQbopFM3R0XF6fT6VJ15jFFnUJhSqQRETV5RXfnGykhMea9B2M624ezBaOmuKiv1GDg9TxJ8sIxltB7E0QsT/BqpdrPT9g4P7VaTcZKL4vGDP/psq71BpdSLj9nTmod3mTC+HDfN+FN2jodjlwfGRnoFNg2cH2B7+ca/xJgAFL1l3PxpIx4AAAAAElFTkSuQmCC);
+    }
+    .weatherAlertIcon:hover {
+        opacity: 0.7;
+    }
+    .weatherAlertIcon:focus {
+        opacity: 1.0;
+    }
+    /* opaque white background for alerts dialog */
+    .weatherOverlay {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        opacity: 0.2;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: white;
+    }
+    .weatherAlertIcon:focus .weatherOverlay {
+        display: block;
+    }
+    /* alerts dialog box */
+    [class^=weatherAlertBox] {
+        display: none;
+        position: absolute;
+        z-index: 2;
+        opacity: 1;
+        top: 0;
+        border: 3px solid white;
+        border-radius:3px;
+        box-shadow: 0px 0px 6px 4px #666;
+        background: #EEE;
+    }
+    .weatherAlertIcon:focus .weatherAlertBoxLeft {
+        display: block;
+        right: -268px;
+    }
+    .weatherAlertIcon:focus .weatherAlertBoxCenter {
+        display: block;
+        left: -178px;
+    }
+    .weatherAlertIcon:focus .weatherAlertBoxRight {
+        display: block;
+        left: -312px;
+    }
+    /* alerts dialog close button */
+    .weatherAlertsClose {
+        position: absolute;
+        top: -12px;
+        right: -13px;
+
+        border-radius: 12px;
+        box-shadow: 1px 1px 3px #666;
+
+        line-height: 21px;
+        width: 21px;
+        background: #606061;
+
+        text-align: center;
+        text-decoration: none;
+        font-family: Sans-serif;
+        font-weight: bold;
+        color: white;
+    }
+    .weatherAlertsClose:hover {
+        opacity: 0.8;
+    }
+    /* alerts dialog title */
+    .weaterAlertsTitle {
+        font-weight: bold;
+        color: black;
+    }
+    /* alert messages */
+    [class^=weaterAlertMessage] {
+        float: left;
+        text-align: left;
+        white-space: nowrap;
+    }
+    .weaterAlertMessage p {
+        white-space: normal;
+    }
+  

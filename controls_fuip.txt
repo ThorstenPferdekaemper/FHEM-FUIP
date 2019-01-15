@@ -7,7 +7,7 @@ DIR FHEM/lib/FUIP/js
 DIR FHEM/lib/FUIP/View
 DIR FHEM/lib/FUIP/jquery-ui
 DIR FHEM/lib/FUIP/jquery-ui/images
-UPD 2019-01-14_22:23:51 101008 FHEM/42_FUIP.pm
+UPD 2019-01-15_12:09:08 101103 FHEM/42_FUIP.pm
 UPD 2018-11-21_12:09:09 12409 FHEM/lib/FUIP/Model.pm
 UPD 2019-01-05_20:35:12 10870 FHEM/lib/FUIP/View.pm
 UPD 2018-11-28_14:24:46 6848 FHEM/lib/FUIP/View/Batteries.pm
@@ -16,6 +16,7 @@ UPD 2018-12-07_14:56:07 4393 FHEM/lib/FUIP/View/Cell.pm
 UPD 2018-12-03_21:25:51 9260 FHEM/lib/FUIP/View/Chart.pm
 UPD 2018-12-03_21:44:02 947 FHEM/lib/FUIP/View/Clock.pm
 UPD 2018-12-25_11:29:36 3289 FHEM/lib/FUIP/View/Dialog.pm
+UPD 2019-01-15_11:58:25 1696 FHEM/lib/FUIP/View/DwdWebLink.pm
 UPD 2018-12-09_18:05:16 3791 FHEM/lib/FUIP/View/HeatingControl.pm
 UPD 2018-04-14_20:19:11 4330 FHEM/lib/FUIP/View/HeatingOverview.pm
 UPD 2018-03-23_22:14:57 838 FHEM/lib/FUIP/View/HomeButton.pm
@@ -56,6 +57,7 @@ UPD 2018-12-31_14:57:59 10171 FHEM/lib/FUIP/css/fuip-mobil-ui.css
 UPD 2018-12-09_21:48:13 1454 FHEM/lib/FUIP/css/fuipchart.css
 UPD 2018-11-24_21:06:08 7260 FHEM/lib/FUIP/css/theme.blue.css
 UPD 2018-03-17_22:57:55 5774 FHEM/lib/FUIP/css/theme.default.css
+UPD 2019-01-11_10:04:40 7268 FHEM/lib/FUIP/css/widget_dwdweblink.css
 UPD 2018-12-31_15:16:21 1302 FHEM/lib/FUIP/css/widget_weatherdetail.css
 UPD 2018-07-18_14:43:10 38 FHEM/lib/FUIP/images/lizenzen.txt
 UPD 2018-07-17_19:59:37 1224122 FHEM/lib/FUIP/images/pexels-gleitschirm.jpg
@@ -74,12 +76,14 @@ UPD 2019-01-08_15:22:04 1018 FHEM/lib/FUIP/js/fuip_htmlview.js
 UPD 2019-01-11_16:27:51 475 FHEM/lib/FUIP/js/fuip_readingsgroup.js
 UPD 2018-03-17_22:57:55 106396 FHEM/lib/FUIP/js/jquery.tablesorter.js
 UPD 2018-03-17_22:57:55 125594 FHEM/lib/FUIP/js/jquery.tablesorter.widgets.js
+UPD 2019-01-15_12:06:58 1847 FHEM/lib/FUIP/js/widget_dwdweblink.js
 UPD 2019-01-13_16:33:44 3986 FHEM/lib/FUIP/js/widget_readingsgroup.js
 UPD 2018-12-02_20:21:10 25541 FHEM/lib/FUIP/js/widget_weatherdetail.js
 UPD 2018-08-03_14:12:09 4468 FHEM/lib/FUIP/view-images/FUIP-View-Batteries.png
 UPD 2018-08-03_14:17:14 1830 FHEM/lib/FUIP/view-images/FUIP-View-Brightness.png
 UPD 2018-11-25_17:04:03 2518 FHEM/lib/FUIP/view-images/FUIP-View-Chart.png
 UPD 2018-08-03_14:20:11 2046 FHEM/lib/FUIP/view-images/FUIP-View-Clock.png
+UPD 2019-01-15_12:13:28 5666 FHEM/lib/FUIP/view-images/FUIP-View-DwdWebLink.png
 UPD 2018-08-03_14:24:41 2052 FHEM/lib/FUIP/view-images/FUIP-View-HomeButton.png
 UPD 2018-08-03_14:29:13 1320 FHEM/lib/FUIP/view-images/FUIP-View-Html.png
 UPD 2018-08-03_20:02:46 1720 FHEM/lib/FUIP/view-images/FUIP-View-LabelHumidity.png
