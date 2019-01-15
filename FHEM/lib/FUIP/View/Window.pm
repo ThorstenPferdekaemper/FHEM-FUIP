@@ -10,7 +10,7 @@ use parent -norequire, 'FUIP::View';
 sub getHTML($){
 	my ($self) = @_;
 	return '
-		<div data-type="symbol" class="compressed large" 
+		<div data-type="symbol" class="compressed '.$self->{iconsize}.'" 
 			style="margin: 5px 5px 5px 5px;"
 			data-device="'.$self->{device}.'" 
 			data-states=\'["'.$self->{openstate}.'","'.$self->{closedstate}.'"]\' 
@@ -21,6 +21,21 @@ sub getHTML($){
 			<div class="fuip-color">'.$self->{label}.'</div>' : ''); 
 };
 
+
+my %iconsizes = (
+	mini => 13,
+	tiny => 16,
+	small => 21,
+	normal => 26,
+	large => 33,
+	big => 39,
+	bigger => 52,
+	tall => 91,
+	great => 117,
+	grande => 156,
+	gigantic => 288
+	);
+
 	
 sub dimensions($;$$){
 	my ($self,$width,$height) = @_;
@@ -29,10 +44,11 @@ sub dimensions($;$$){
 		$self->{height} = $height if $height;
 	};
 	if($self->{sizing} eq "fixed") {
+		my $size = $iconsizes{$self->{iconsize}} + 10;
 		if($self->{label}) {
-			return (100,62);
+			return ($size < 100 ? 100 : $size, $size + 19);
 		}else{
-			return (43,43);
+			return ($size, $size);
 		};	
 	};
 	return ("auto","auto") if($self->{sizing} eq "auto");
@@ -58,7 +74,11 @@ sub getStructure($) {
 		{ id => "closedstate", type => "text",
 			default => { type => "const", value => "closed" } },			
 		{ id => "closedicon", type => "icon",
-			default => { type => "const", value => "oa-fts_window_1w" } },		
+			default => { type => "const", value => "oa-fts_window_1w" } },	
+		{ id => "iconsize", type => "text",
+			options => ["mini","tiny","small","normal","large","big","bigger","tall","great","grande","gigantic"],
+			default => {type => 'const', value => 'large'}
+		},	
 		{ id => "width", type => "dimension", value => 43},
 		{ id => "height", type => "dimension", value => 43},
 		{ id => "sizing", type => "sizing", options => [ "fixed", "resizable", "auto" ],

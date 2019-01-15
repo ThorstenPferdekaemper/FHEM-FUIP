@@ -46,12 +46,6 @@ nav,
     color: #222;
 }
 
-[data-type="symbol"].big, [data-type="multistatebutton"].big,
-[data-type="switch"].big, [data-type="button"].big,
-[data-type="push"].big, [data-type="pagebutton"].big {
-    font-size: 200% !important;
-}
-
 /* Switch */
 /* Foreground On */
 [data-type="switch"]:not([data-colors]):not([data-on-color]):not([data-color]) .active i#fg,
