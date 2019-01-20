@@ -1,26 +1,16 @@
-/*  color theme style addon for FTUI
+/*  CSS classes for FUIP styles
     Started 2018 by Mario Stephan <mstephan@shared-files.de>
 	Thorsten Pferdekaemper (mit Marios Genehmigung)
+	"green" style			   
 */
 
 /* ---- color variables ---- */
 :root{
-/* main cell background color */
-	--fuip-color-background: #2A2A2A;
-	--fuip-color-background-transparent: rgba(42,42,42,.7);
-/* background when mouse hovers over, used in weatherdetail, defaults to #444 */
-	--fuip-color-background-hover: #444;	
 /* main theme color */
 	--fuip-color-symbol-active: #32a054;
-/* color for inactive switches/symbols */
-	--fuip-color-symbol-inactive: #505050;
-/* color for symbol foreground */
-	--fuip-color-symbol-foreground: #2A2A2A;
 /* color for "inactive" menu items or other texts etc 
 	might be overwritten by attribute styleColor */
 	--fuip-color-foreground: #EEE;
-/* color for overlay of "edit only" mode. Defaults to rgba(255,255,255,.1) */
-	--fuip-color-editonly: rgba(255,255,255,.1);		
 }
 
 
@@ -30,70 +20,7 @@
     color: #32a054;
 }
 
-/* Slider colors */
-.range-handle {
-  background-color: #bcbcbc !important;
-}
-[data-type="slider"]:not([data-background-color]) .range-bar {
-  background-color: #404040;
-}
-[data-type="slider"]:not([data-color]) .range-quantity {
-    background-color: #32a054 !important;
-}
 
-polyline {
-    stroke: #32a054 !important;
-}
-
-
-/* spinner colors */
-[data-type="spinner"]:not([data-color]) .spinner {
-  color: #337ab7;
-}
-[data-type="spinner"]:not([data-background-color]) .spinner {
-  background-color: #404040  !important;
-}
-[data-type="spinner"]:not([data-background-color]) .spinner .levelRange {
-  background-color: #32a054 !important;
-}
-
-/* color theme classes for widgets */
-
-/* label widget */
-[data-type="label"].active {
-  color: #32a054 !important;
-}
-
-/* symbol  widget */
-/* foreground on */
-[data-type="symbol"]:not([data-colors]):not([data-on-color]):not([data-color]) .active i#fg {
-    color: #32a054 !important;
-}
-
-/* switch  widget */
-/* background on */
-[data-type="switch"]:not([data-background-colors]):not([data-on-background-color]):not([data-background-color]) .active i#bg,
-[data-type="dimmer"]:not([data-background-colors]):not([data-on-background-color]):not([data-background-color]) .active i#bg,
-[data-type="button"]:not([data-background-colors]):not([data-on-background-color]):not([data-background-color]) .active i#bg {
-    color: #32a054 !important;
-}
-
-/* switch  widget invert */
-/* foreground on */
-[data-type="switch"]:not([data-colors]):not([data-on-color]):not([data-color]).invert .active i#fg,
-[data-type="dimmer"]:not([data-colors]):not([data-on-color]):not([data-color]).invert .active i#fg,
-[data-type="button"]:not([data-colors]):not([data-on-color]):not([data-color]).invert .active i#fg{
-    color: #32a054 !important;
-}
-
-/* push  widget */
-/* foreground on */
-    color: #32a054 !important;
-}
-/* background on */
-[data-type="push"]:not([data-background-colors]):not([data-on-background-color]):not([data-background-color]) .active i#bg {
-    color: #32a054 !important;
-}
 
 /* pseudo classes for canvas painted widgets
    read by ftui.getStyle() in init and reinit function  */
@@ -110,94 +37,7 @@ polyline {
 .thermostat{background-color:#222;color:#7a7a7a;}
 
 
-/* CSS classes for FUIP styles */
-/* "green" style */
 
-/* main cell background color */
-.fuip-color-background {
-    background-color:var(--fuip-color-background);
-}
-
-/* main theme color */
-.fuip-color-symbol-active {
-    color: var(--fuip-color-symbol-active);
-}
-
-/* color for inactive switches/symbols */
-.fuip-color-symbol-inactive {
-    color: var(--fuip-color-symbol-inactive);
-}
-
-/* color for symbol foreground */
-.fuip-color-symbol-foreground {
-	color: var(--fuip-color-symbol-foreground);
-}
-
-
-/* color for "inactive" menu items or other texts etc */
-.fuip-color-foreground, text.title.fuip-color-foreground  {
-	color: var(--fuip-color-foreground);
-	fill: var(--fuip-color-foreground);
-}	
-
-/* cell */
-.fuip-cell {
-	border-radius:8px;
-	background-color: var(--fuip-color-background);
-	color: var(--fuip-color-foreground);
-}
-/* transparent, i.e. with background picture */
-.fuip-cell.fuip-transparent {
-	background-color: var(--fuip-color-background-transparent);
-}
-
-
-/* cell headers */
-.fuip-cell-header {
-	border-radius:8px 8px 0px 0px;
-	background-color: #262626;
-	color: #8c8c8c;			
-}
-.fuip-cell-header.fuip-transparent {
-	background-color: rgba(38,38,38,.7);
-}
-
-
-/* menu item */
-div[data-type="link"].fuip-menu-item,
-.fuip-menu-item,
-div[data-type="link"].fuip-menu-item-active,
-.fuip-menu-item-active {
-	margin: 3px 4px;
-	text-align: center;
-	border-style: solid;
-	border-radius: 17px;
-	border-width:2px;
-	display:flex;
-	align-items:center;
-} 
-
-div[data-type="link"].fuip-menu-item > .linklefticon,
-.fuip-menu-item > .linklefticon,
-div[data-type="link"].fuip-menu-item-active > .linklefticon,
-.fuip-menu-item-active > .linklefticon {
-	padding-left: 8px;
-} 
-
-.fuip-color-menuitem {
-	color: var(--fuip-color-foreground);
-}
-
-.fuip-color-menuitem-active {
-	color: var(--fuip-color-symbol-active);
-}
-
-.fuip-flex-fake {
-	background-color: #505050;
-	transition: width 0.5s, height 0.5s;
-	border:0;
-	border-radius: 8px;
-}
 
 
 

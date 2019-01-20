@@ -1,12 +1,18 @@
 /* CSS classes for FUIP styles 
 	Thorsten Pferdekaemper 
+	"bright-mint" style 
 */
 
 /* ---- color variables ---- */
 :root{
+/* page background */
+	--fuip-color-page-background: #FFF;					 								
 /* main cell background color */
 	--fuip-color-background: #eee;
 	--fuip-color-background-transparent: rgba(238,238,238,.7);
+/* cell header */
+	--fuip-color-header: #5bc995;
+	--fuip-color-header-transparent: rgba(91,201,149,.7);
 /* background when mouse hovers over, used in weatherdetail, defaults to #444 */
 	--fuip-color-background-hover: #ddd;
 /* main theme color */
@@ -22,59 +28,13 @@
 	--fuip-color-editonly: rgba(0,80,255,0.2);
 }	
 
-body {
-    background-color: #fff;
-    color: #222222;
-}
-
 nav,
 :not([data-type="circlemenu"]) > .menu {
-  background: #5bc995;
-    color: #ffffff;
+  background: var(--fuip-color-header);
+    color: var(--fuip-color-symbol-foreground);
 }
 .menu .menu-trigger {
-  background: #5bc995;
-}
-
-.gridster > ul > li, .card {
-    background-color:#eee;
-    text-align: center;
-}
-
-.gridster li header, .card > header {
-    background: #5bc995;
-    color: #222;
-}
-
-/* Switch */
-/* Foreground On */
-[data-type="switch"]:not([data-colors]):not([data-on-color]):not([data-color]) .active i#fg,
-[data-type="dimmer"]:not([data-colors]):not([data-on-color]):not([data-color]) .active i#fg,
-[data-type="button"]:not([data-colors]):not([data-on-color]):not([data-color]) .active i#fg {
-    color: #eee !important;
-}
-/* Foreground Off */
-[data-type="switch"]:not([data-colors]):not([data-on-color]):not([data-color]) :not(.active) i#fg,
-[data-type="dimmer"]:not([data-colors]):not([data-on-color]):not([data-color]) :not(.active) i#fg,
-[data-type="button"]:not([data-colors]):not([data-on-color]):not([data-color]) :not(.active) i#fg {
-    color: #eee !important;
-}
-/* Background On */
-[data-type="switch"]:not([data-background-colors]):not([data-on-background-color]):not([data-background-color]) .active i#bg,
-[data-type="dimmer"]:not([data-background-colors]):not([data-on-background-color]):not([data-background-color]) .active i#bg,
-[data-type="button"]:not([data-background-colors]):not([data-on-background-color]):not([data-background-color]) .active i#bg {
-    color: #0088CC !important;
-}
-/* Background Off */
-[data-type="switch"]:not([data-background-colors]):not([data-off-background-color]):not([data-background-color]) :not(.active) i#bg,
-[data-type="dimmer"]:not([data-background-colors]):not([data-off-background-color]):not([data-background-color]) :not(.active) i#bg,
-[data-type="button"]:not([data-background-colors]):not([data-off-background-color]):not([data-background-color]) :not(.active) i#bg {
-    color: rgba(153, 153, 153, 0.6) !important;
-}
-
-
-section{
-    background-color: #ffffff;
+  background: var(--fuip-color-header);
 }
 
 .uline{
@@ -89,7 +49,7 @@ section{
   background-color: #aaa;
 }
 
-select {
+select {		
     color: #444;
 }
 
@@ -97,12 +57,8 @@ svg > text {
     fill: #444;
 }
 
-polyline {
-    stroke: #0088CC !important;
-}
-
 .dialog  {
-    color: #eeeeee;
+    color: var(--fuip-color-symbol-foreground);
 }
 
 i#warn {
@@ -145,57 +101,15 @@ option {background-color: #ffffff;}
 .volume.fgcolor{color:#555;}
 
 
-/* main cell background color */
-.fuip-color-background {
-    background-color: var(--fuip-color-background);
-}
-
-/* main theme color */
-.fuip-color-symbol-active {
-    color: var(--fuip-color-symbol-active);
-}
-
-/* color for inactive switches/symbols */
-.fuip-color-symbol-inactive {
-    color: var(--fuip-color-symbol-inactive);
-}
-
-/* color for symbol foreground */
-.fuip-color-symbol-foreground {
-	color: var(--fuip-color-symbol-foreground);
-}
-
-
-/* color for "inactive" menu items or other texts etc 
-	TODO: Attribute styleColor? */
-.fuip-color-foreground, text.title.fuip-color-foreground  {
-	color: var(--fuip-color-foreground);
-	fill: var(--fuip-color-foreground);
-}
-
 /* cell headers */
 .fuip-cell-header, .dialog > header {
-	border-radius:8px 8px 0px 0px;
-	background-color: #5bc995;
-	color: #222;	
-    border-bottom: 1px solid #222;	
+    border-bottom: 1px solid var(--fuip-color-foreground);	
 }
-.fuip-cell-header.fuip-transparent {
-	background-color: rgba(91,201,149,.7);
-}
-
 
 /* cell */
 .fuip-cell {
 	border-radius:8px 8px 0px 0px;
-	background-color: var(--fuip-color-background);
-	color: var(--fuip-color-foreground);
 }
-/* transparent, i.e. with background picture */
-.fuip-cell.fuip-transparent {
-	background-color: var(--fuip-color-background-transparent);
-}
-
 
 /* menu item */
 div[data-type="link"].fuip-menu-item,
@@ -203,11 +117,8 @@ div[data-type="link"].fuip-menu-item,
 div[data-type="link"].fuip-menu-item-active,
 .fuip-menu-item-active {
 	margin: 2px 0 0 0;
-	text-align: center;
 	border: none;
 	border-radius: 0px;
-	display:flex;
-	align-items:center;
 } 
 
 div[data-type="link"].fuip-menu-item > .linklefticon,
@@ -224,17 +135,18 @@ div[data-type="link"].fuip-menu-item,
 
 div[data-type="link"].fuip-menu-item-active,
 .fuip-menu-item-active {
-	background-color: #5bc995;
+	background-color: var(--fuip-color-symbol-active);
+}
+.fuip-color-menuitem-active {
+	color: var(--fuip-color-foreground);
 }
 
+
 .gridster .preview-holder {
-  background-color: #AbF9F5;
+  background-color: var(--fuip-color-symbol-inactive);
 }
 
 .fuip-flex-fake {
-	background-color: #AbF9F5;
-	transition: width 0.5s, height 0.5s;
 	border-radius:8px 8px 0px 0px;
-	border: 0;
 }
 

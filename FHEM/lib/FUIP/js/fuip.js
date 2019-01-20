@@ -104,6 +104,228 @@ function fuipInit(conf) { //baseWidth, baseHeight, maxCols, gridlines, snapTo
 };
 	
 	
+function pulsateColorStart(key) {
+	// reset pulsating stuff
+	pulsateColorStop();
+	fuip.colorpulse = {};
+	// get current color value
+	let value = document.documentElement.style.getPropertyValue(key);
+	if(!value) value = fuip.colorVariables[key];
+	if(!value) return;  // this does not work
+	fuip.colorpulse.key = key;
+	fuip.colorpulse.resetValue = value;
+	// convert to rgba 	
+	fuip.colorpulse.rgbaValue = colorToRgbaArray(value);
+	fuip.colorpulse.currentOffset = 0;
+	fuip.colorpulse.currentDirection = 1;
+	fuip.colorpulse.timer = setInterval(pulsateColor,50);
+};
+
+
+function pulsateColorStop() {
+	if(!fuip.colorpulse) return;
+	clearInterval(fuip.colorpulse.timer);
+	document.documentElement.style.setProperty(fuip.colorpulse.key,fuip.colorpulse.resetValue);
+	fuip.colorpulse = false;
+};	
+
+
+function pulsateColor() {
+	// determine new value
+	if(fuip.colorpulse.currentOffset >= 10) {
+		fuip.colorpulse.currentDirection = -2;
+	}else if(fuip.colorpulse.currentOffset <= -10) {
+		fuip.colorpulse.currentDirection = 2;
+	};	
+	fuip.colorpulse.currentOffset += fuip.colorpulse.currentDirection;
+	let value = fuip.colorpulse.rgbaValue;
+	for(let i = 0; i < 3; i++){
+		value[i] += fuip.colorpulse.currentOffset;
+		if(value[i] > 255) value[i] = 255;
+		if(value[i] < 0) value[i] = 0;
+	};	
+	let color = colorToRgbaString(value);
+	// set color
+	document.documentElement.style.setProperty(fuip.colorpulse.key,color);	
+};	
+
+
+// convert any color to rgba-object
+function colorToRgbaArray(color) {
+	// return color itself if this is already an array
+	if(Array.isArray(color)) return color;
+	// remove blanks
+	let value = color.replace(/\s/g, "");
+	let result = [255,0,0,1];  // R,G,B,A (A = opacity)
+	if(value.length == 4) {  // short hex like #ggg
+		for(let i = 0; i < 3; i++) {
+			result[i] = parseInt(value.charAt(i+1) + value.charAt(i+1),16);
+		};
+		return result;	
+	};	
+	if(/^rgba/.test(value)) {  // like rgba(0,80,255,0.2)
+		let parts = value.substr(5,value.length - 6).split(",");
+		for(let i = 0; i < 3; i++) {
+			result[i] = parseInt(parts[i]);
+		};	
+		result[3] = parseFloat(parts[3]);
+		return result;
+	};	
+	// now it should be #123456
+	if(value.length == 7) {
+		for(let i = 0; i < 3; i++) {
+			result[i] = parseInt(value.charAt(i*2+1) + value.charAt(i*2+2),16);
+		};
+		return result;	
+	};	
+	// something is wrong here, just return something "red"
+	return result;
+};	
+
+
+function colorToRgbaString(color) {
+	let colAsAr = colorToRgbaArray(color);
+	let result = 'rgba(';
+	for(let i = 0; i < 4; i++) {
+		if(i > 0) result += ',';
+		result += colAsAr[i].toString();
+	};
+	result += ')';
+	return result;	
+};	
+
+
+function colorToCodeAndOpacity(color) {
+	let colAsAr = colorToRgbaArray(color);
+	let code = '#';
+	for(let i = 0; i < 3; i++) {
+		let hexStr = colAsAr[i].toString(16);
+		if(hexStr.length < 2) hexStr = '0' + hexStr;
+		code += hexStr;
+	};		
+	return {
+		'code': code,
+		'opacity': colAsAr[3]
+	};	
+};	
+
+
+// change colours 	
+function coloursChangeDialog() {
+	// close settings dialog
+	$("#viewsettings").dialog("close");
+
+	// get variables from style sheets (seems that it does not work easier) 
+	fuip.colorVariables = { };
+	for(let i = 0; i < document.styleSheets.length; i++){
+		let currentSheet = document.styleSheets[i];
+		//loop through css Rules
+		for(j = 0; j < currentSheet.cssRules.length; j++){
+			let rule = currentSheet.cssRules[j];
+			if(rule.selectorText != ":root") continue;
+			if(rule.type != CSSRule.STYLE_RULE) continue;
+			let style = rule.style;
+			for( let k = 0; k < style.length; k++ ) {
+				let prop = style.item(k);
+				if(! /^--fuip-color-/.test(prop)) continue;		
+				fuip.colorVariables[prop] = style.getPropertyValue(prop);
+			};	
+		};
+	};
+	// now get the current value in case it has already been changed
+	for(const prop in fuip.colorVariables) {
+		let newVal = document.documentElement.style.getPropertyValue(prop);	
+		if(newVal) fuip.colorVariables[prop] = newVal;
+	};
+	
+	// now colorVariables contains all --fuip-color-Variables with their value
+	// create message if there are no colors to set (do we really?)
+	// create popup with color names and and input type="color"	
+	let html = "<form onsubmit='return false'><table>" 
+	fuip.oncolorinput = function(id) {
+		pulsateColorStop();
+		let colArr = colorToRgbaArray($('#'+id).val());
+		colArr[3] = parseFloat($('#'+id+'-opacity').val());
+		let rgba = colorToRgbaString(colArr);
+		document.documentElement.style.setProperty(id,rgba);	
+		$('#'+id+'-preview').css('background-color',rgba);
+	};	
+		
+	for(const key in fuip.colorVariables){
+		// prepare color value
+		let colAsAr = colorToRgbaArray(fuip.colorVariables[key]);
+		let color = colorToCodeAndOpacity(colAsAr);
+		let rgbaString = colorToRgbaString(colAsAr);
+		html += '<tr><td style="text-align:left">' + key.substr(13) + '</td><td>' 
+			+ '<input type="color" value="' + color.code + '" id="' + key + '" oninput="fuip.oncolorinput(\''+key+'\')">'
+			+ '</td><td> x </td>'
+			+ '<td><input type="number" id="'+key+'-opacity" value="'+color.opacity+'" min="0" max="1" step="0.01" style="width:50px;" oninput="fuip.oncolorinput(\''+key+'\')"></td>'
+			+ '<td> = </td>'
+			+ '<td style="position:relative">transparent<div id="'+key+'-preview" style="position:absolute;top:0;left:0;width:100%;height:100%;background-color:'+rgbaString+';"></div></td>' 
+			+ '</tr>';
+		$(function(){
+			$('#'+key).val(color.code);
+			$('#'+key).hover(
+				function(){pulsateColorStart(key)},
+				function(){pulsateColorStop()});
+		});	
+	};	
+	html += "</table></form>";	
+	let buttons = [
+		{	text: "Ok", 
+			icon: "ui-icon-check",
+			click: function() { 
+				let cmd = "";
+				for(let prop in fuip.colorVariables) {
+					let value = document.documentElement.style.getPropertyValue(prop);
+					if(value) {
+						value = value.replace(/\s/g, "")
+						fuip.colorVariables[prop] = value;
+						cmd += prop.substr(13) + "=" + value + " ";
+					};	
+				};	
+				fuip.colorchangepopup.dialog("close"); 
+				if(cmd.length > 0) {
+					cmd = "set " + $("html").attr("data-name") + " colors " + cmd;
+					asyncSendFhemCommandLocal(cmd);
+				};	
+			},
+			showLabel: false
+		},
+		{	text: 'Reset all to style schema',
+			icon: 'ui-icon-arrowreturnthick-1-w',
+			click: async function() {
+				let cmd = "set " + $("html").attr("data-name") + " colors reset"; 
+				fuip.colorchangepopup.dialog("close"); 
+				await asyncSendFhemCommandLocal(cmd);
+				location.reload(true);
+			},	
+			showLabel: false
+		},
+		{	text: 'Cancel',
+			icon: 'ui-icon-close',
+			click: function() {	fuip.colorchangepopup.dialog("close"); }, 
+			showLabel: false }
+		];
+	if(fuip.colorchangepopup) {
+		fuip.colorchangepopup.html = html;
+	}else{	
+		fuip.colorchangepopup = $(html);
+	};	
+	fuip.colorchangepopup.dialog({
+			width: 400,
+			title: 'Select colors',
+			modal: true,
+			buttons: buttons,
+			close: function(event,ui) {
+				for(let prop in fuip.colorVariables) {
+					document.documentElement.style.setProperty(prop,fuip.colorVariables[prop]);
+				};	
+			}
+	});
+};	
+	
+	
 function toggleConfigMenu(){
 	// cell menu
 	// Goto ->
@@ -155,6 +377,8 @@ function toggleConfigMenu(){
 				+	'<li><div onclick="importPage()"><span class="ui-icon ui-icon-arrowstop-1-n"></span>Import</div></li>'
 				+	'<li><div onclick="acceptPageSettings(repairPage)"><span class="ui-icon ui-icon-wrench"></span>Repair</div></li>';
 		};	
+		html +=	'<li class="ui-widget-header"><div>General</div></li>'
+			+ '<li onclick="coloursChangeDialog()"><div>Colours</div></li>';
 		html += '</ul>';
 		menu = $(html);
 		menu.hover(() => 0, toggleConfigMenu);

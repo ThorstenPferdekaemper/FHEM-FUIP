@@ -494,7 +494,6 @@ sub renderUserHtmlBodyStart($$) {
 };	
 
 
-# TODO...
 # answers "GET fhem-tablet-ui-user.css"
 sub getFtuiUserCss($$) {
 	my ($hash,$pageId) = @_;
@@ -510,6 +509,13 @@ sub getFtuiUserCss($$) {
 	for my $css (@$cssList) {
 		$result .= readTextFile($hash,$css)."\n";
 	};
+	# FUIP colors
+	$result .= "\n/* FUIP colors */\n"
+			.":root{\n";
+	for my $key (keys %{$hash->{colors}}) {
+		$result .= "    --fuip-color-".$key.": ".$hash->{colors}{$key}.";\n";
+	};	
+	$result .= "}\n";
 	return ("text/css; charset=utf-8", $result);
 };
 
@@ -556,9 +562,10 @@ sub renderCommonCss($) {
 	my $lcName = lc($name);
 	my $styleSchema = main::AttrVal($name,"styleSchema","default");
 	my $styleSchemaLine = "";	
-	$styleSchemaLine = '<link rel="stylesheet" href="/fhem/'.$lcName.'/fuip/css/fuip-'.$styleSchema.'-ui.css" type="text/css" />'."\n"; 
+	$styleSchemaLine = '<link rel="stylesheet" href="/fhem/'.$lcName.'/fuip/css/fuip-'.$styleSchema.'-ui.css" type="text/css" />'."\n" unless $styleSchema eq "default"; 
 	return '<link rel="shortcut icon" href="/fhem/icons/favicon" />
 			<link rel="stylesheet" href="/fhem/'.$lcName.'/css/fhem-tablet-ui.css"  type="text/css" />'."\n"
+			.'<link rel="stylesheet" href="/fhem/'.$lcName.'/fuip/css/fuip-default-ui.css" type="text/css" />'."\n"
 			.$styleSchemaLine
 			.'<link rel="stylesheet" href="/fhem/'.$lcName.'/lib/font-awesome.min.css"   type="text/css" />
 			<link rel="stylesheet" href="/fhem/'.$lcName.'/lib/nesges.css" type="text/css" />'."\n";
@@ -2084,12 +2091,28 @@ sub serialize($) {
 	}else{
 		$viewtemplates = "{ }\n";
 	};	
+	# colors
+	my $colors = 0;
+	for my $key (sort keys %{$hash->{colors}}) {
+		if($colors) {
+			$colors .= ",\n ";
+		}else{
+			$colors = "{";
+		};
+		$colors .= " '".$key."' => '".$hash->{colors}{$key}."'";
+	};
+	if($colors) {
+		$colors .= "\n}";
+	}else{
+		$colors = "{ }\n";
+	};	
 	# put it together
 	my $result = 
 	"{\n".
 	"  version => 2,\n". 
 	"  pages => \n".$pages.",\n".
-	"  viewtemplates => ".$viewtemplates."\n".
+	"  viewtemplates => ".$viewtemplates.",\n".
+	"  colors => ".$colors."\n".
 	"}";	
 	return $result;
 }
@@ -2129,7 +2152,7 @@ sub load($) {
 	$hash->{pages} = {};
 	$hash->{viewtemplates} = {};
 	# version 1: only pages, directly as a hash
-	# version 2: hash with keys version, pages, viewtemplates
+	# version 2: hash with keys version, pages, viewtemplates, maybe colors
 	my $version = 1;
 	if(exists $confHash->{version} and not ref($confHash->{version})) {
 		$version = $confHash->{version};
@@ -2169,6 +2192,12 @@ sub load($) {
 		delete($pageConf->{class});
 		$hash->{pages}{$pageid} = $class->reconstruct($pageConf,$hash);
 	};
+	# colors
+	if(defined($confHash->{colors})) {
+		$hash->{colors} = $confHash->{colors};
+	}else{
+		$hash->{colors} = { };
+	};	
 	return undef;
 };
 
@@ -2594,6 +2623,14 @@ sub Set($$$)
 		FUIP::Model::refresh($hash->{NAME});
 	}elsif($cmd eq "editOnly") {
 		$hash->{editOnly} = $a->[2];
+	}elsif($cmd eq "colors") {
+		if($a->[2] eq "reset") {
+			$hash->{colors} = { };
+		}else{	
+			for my $key (keys %$h) {
+				$hash->{colors}{$key} = $h->{$key};
+			};
+		};	
 	}else{
 		# redetermine attribute values
 		setAttrList($main::modules{FUIP});

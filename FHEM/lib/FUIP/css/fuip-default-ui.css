@@ -1,12 +1,18 @@
-/* CSS classes for FUIP styles */
-/* Thorsten Pferdekaemper */
-/* "default" style */
+/* CSS classes for FUIP styles 
+   Thorsten Pferdekaemper 
+   "default" style 
+*/
 
 /* ---- color variables ---- */
-:root {
+:root{
+/* page background */
+	--fuip-color-page-background: #000;
 /* main cell background color */
 	--fuip-color-background: #2A2A2A;
 	--fuip-color-background-transparent: rgba(42,42,42,.7);
+/* cell header */
+	--fuip-color-header: #262626;
+	--fuip-color-header-transparent: rgba(38,38,38,.7);
 /* background when mouse hovers over, used in weatherdetail, defaults to #444 */
 	--fuip-color-background-hover: #444;
 /* main theme color */
@@ -14,16 +20,129 @@
 /* color for inactive switches/symbols */
 	--fuip-color-symbol-inactive: #505050;
 /* color for symbol foreground */
-	--fuip-color-symbol-foreground: #2A2A2A;	
+	--fuip-color-symbol-foreground: #2A2A2A;
 /* color for "inactive" menu items or other texts etc 
 	might be overwritten by attribute styleColor*/
-	--fuip-color-foreground: #808080;	
+	--fuip-color-foreground: #808080;
 /* color for overlay of "edit only" mode. Defaults to rgba(255,255,255,.1) */
-	--fuip-color-editonly: rgba(255,255,255,.1);	
+	--fuip-color-editonly: rgba(255,255,255,.1);
+}
+
+body {
+    background-color: var(--fuip-color-page-background);
+}
+
+.gridster > ul > li, .card, section {
+    background-color: var(--fuip-color-background);
+}
+
+.gridster li header, .card > header {
+    background: var(--fuip-color-header);
+    color: var(--fuip-color-foreground);
+}
+
+/* Slider colors */
+.range-handle {
+  background-color: #bcbcbc !important;
+}
+[data-type="slider"]:not([data-background-color]) .range-bar {
+  background-color: #404040;
+}
+[data-type="slider"]:not([data-color]) .range-quantity {
+    background-color: var(--fuip-color-symbol-active) !important;
+}
+
+polyline {
+    stroke: var(--fuip-color-symbol-active) !important;
+}
+
+/* spinner colors */
+[data-type="spinner"]:not([data-color]) .spinner {
+  color: var(--fuip-color-symbol-active);
+}
+[data-type="spinner"]:not([data-background-color]) .spinner {
+  background-color: var(--fuip-color-symbol-inactive)  !important;
+}
+[data-type="spinner"]:not([data-background-color]) .spinner .levelRange {
+  background-color: var(--fuip-color-symbol-active) !important;
+}
+
+/* color theme classes for widgets */
+
+/* label widget */
+[data-type="label"].active {
+  color: var(--fuip-color-symbol-active) !important;
+}
+
+/* symbol  widget */
+/* foreground on */
+[data-type="symbol"]:not([data-colors]):not([data-on-color]):not([data-color]) .active i#fg {
+    color: var(--fuip-color-symbol-active) !important;
+}
+/* foreground off */
+[data-type="symbol"]:not([data-colors]):not([data-off-color]):not([data-color]) :not(.active) i#fg {
+    color: var(--fuip-color-symbol-inactive) !important;
 }
 
 
-.thermostat.actual{ color:#888; }
+/* switch  widget */
+/* background on */
+[data-type="switch"]:not([data-background-colors]):not([data-on-background-color]):not([data-background-color]) .active i#bg,
+[data-type="dimmer"]:not([data-background-colors]):not([data-on-background-color]):not([data-background-color]) .active i#bg,
+[data-type="button"]:not([data-background-colors]):not([data-on-background-color]):not([data-background-color]) .active i#bg{
+    color: var(--fuip-color-symbol-active) !important;
+}
+/* background off */
+[data-type="switch"]:not([data-background-colors]):not([data-off-background-color]):not([data-background-color]) :not(.active) i#bg,
+[data-type="dimmer"]:not([data-background-colors]):not([data-off-background-color]):not([data-background-color]) :not(.active) i#bg,
+[data-type="button"]:not([data-background-colors]):not([data-off-background-color]):not([data-background-color]) :not(.active) i#bg{
+    color: var(--fuip-color-symbol-inactive) !important;
+}
+/* foreground */
+[data-type="switch"]:not([data-colors]):not([data-on-color]):not([data-color])  i#fg,
+[data-type="dimmer"]:not([data-colors]):not([data-on-color]):not([data-color])  i#fg,
+[data-type="button"]:not([data-colors]):not([data-on-color]):not([data-color])  i#fg{
+    color: var(--fuip-color-symbol-foreground) !important;
+}
+
+
+/* switch  widget invert */
+/* foreground on */
+[data-type="switch"]:not([data-colors]):not([data-on-color]):not([data-color]).invert .active i#fg,
+[data-type="dimmer"]:not([data-colors]):not([data-on-color]):not([data-color]).invert .active i#fg,
+[data-type="button"]:not([data-colors]):not([data-on-color]):not([data-color]).invert .active i#fg{
+    color: var(--fuip-color-symbol-active) !important;
+}
+/* foreground off */
+[data-type="switch"]:not([data-colors]):not([data-off-color]):not([data-color]).invert :not(.active) i#fg,
+[data-type="dimmer"]:not([data-colors]):not([data-off-color]):not([data-color]).invert :not(.active) i#fg,
+[data-type="button"]:not([data-colors]):not([data-off-color]):not([data-color]).invert :not(.active) i#fg{
+    color: var(--fuip-color-symbol-inactive) !important;
+}
+/* background */
+[data-type="switch"]:not([data-background-colors]):not([data-off-background-color]):not([data-background-color]).invert i#bg,
+[data-type="dimmer"]:not([data-background-colors]):not([data-off-background-color]):not([data-background-color]).invert i#bg,
+[data-type="button"]:not([data-background-colors]):not([data-off-background-color]):not([data-background-color]).invert i#bg{
+    color: var(--fuip-color-symbol-foreground) !important;
+}
+
+/* push  widget */
+/* foreground on */
+[data-type="push"]:not([data-colors]):not([data-on-color]):not([data-color]) .active i#fg {
+    color: var(--fuip-color-symbol-active) !important;
+}
+/* background on */
+[data-type="push"]:not([data-background-colors]):not([data-on-background-color]):not([data-background-color]) .active i#bg {
+    color: var(--fuip-color-symbol-active) !important;
+}
+/* foreground off */
+[data-type="push"]:not([data-colors]):not([data-off-color]):not([data-color]) :not(.active) i#fg {
+    color: var(--fuip-color-symbol-inactive) !important;
+}
+/* background off */
+[data-type="push"]:not([data-background-colors]):not([data-off-background-color]):not([data-background-color]) :not(.active) i#bg {
+    color: var(--fuip-color-symbol-inactive) !important;
+}
 
 /* main cell background color */
 .fuip-color-background {
@@ -65,13 +184,13 @@
 }
 
 /* cell headers */
-.fuip-cell-header {
+.fuip-cell-header, .dialog > header {
 	border-radius:8px 8px 0px 0px;
-	background-color: #262626;
-	color: #8c8c8c;			
+	background-color: var(--fuip-color-header);
+	color: var(--fuip-color-foreground);
 }
 .fuip-cell-header.fuip-transparent {
-	background-color: rgba(38,38,38,.7);
+	background-color: var(--fuip-color-header-transparent);
 }
 
 
@@ -105,7 +224,7 @@ div[data-type="link"].fuip-menu-item-active > .linklefticon,
 }
 
 .fuip-flex-fake {
-	background-color: #505050; 
+	background-color: var(--fuip-color-symbol-inactive); 
 	transition: width 0.5s, height 0.5s;
 	border:0;
 	border-radius: 8px;

@@ -1,15 +1,20 @@
-/*  color theme style addon for FTUI
+/*  CSS classes for FUIP styles
     Started 2018 by Mario Stephan <mstephan@shared-files.de>
 	Thorsten Pferdekaemper (mit Marios Genehmigung)
+	"mobil" style				   
 */
 
 /* ---- color variables ---- */
 :root{
+/* page background */
+	--fuip-color-page-background: #EEE;
 /* main cell background color */
 	--fuip-color-background: #fff;
 	--fuip-color-background-transparent: rgba(255,255,255,.5);	
 /* background when mouse hovers over, used in weatherdetail, defaults to #444 */
 	--fuip-color-background-hover: #eee;
+/* header foreground */
+	--fuip-color-header-foreground: #222;	
 /* main theme color */
 	--fuip-color-symbol-active: #0088CC;
 /* color for inactive switches/symbols */
@@ -19,8 +24,8 @@
 /* color for "inactive" menu items or other texts etc 
 	might be overwritten by attribute styleColor */
 	--fuip-color-foreground: #555;
-/* color for overlay of "edit only" mode. Defaults to rgba(255,255,255,.1) */
-	--fuip-color-editonly: rgba(255,255,255,.1);		
+/* color for overlay of "edit only" mode. Defaults to rgba(255,255,255,.1) */	
+	--fuip-color-editonly: rgba(96,96,96,0.1);
 }
 
 
@@ -37,10 +42,6 @@
     color: #c80420;
 }
 
-body {
-    background-color: #eeeeee;
-    color: #222222;
-}
 
 nav {
     background-color: #1D1F20;
@@ -48,18 +49,11 @@ nav {
     color: #ffffff;
 }
 
-.gridster > ul > li, .card, section {
-    background-color:#fff;
-}
-
-.gridster li header, .card > header {
-    background: #ffffff;
-    color: #222;
-    border-bottom: 1px solid #222;
-}
-
-ul, ol {
-    list-style: none;
+.gridster li header, .card > header, .dialog > header {
+	border-radius:0;
+    background:  var(--fuip-color-background);
+    color: var(--fuip-color-header-foreground);
+    border-bottom: 1px solid var(--fuip-color-header-foreground);
 }
 
 .uline{
@@ -76,11 +70,6 @@ svg > text {
     fill: #444;
 }
 
-polyline {
-    stroke: #0088CC !important;
-}
-
-
 i#warn {
     color: #FFFFFF;
 }
@@ -89,36 +78,12 @@ i#warn-back {
 }
 
 
-/* color theme classes for widgets */
-
 /* Slider colors */
 .range-handle {
   background-color: #fff !important;
 }
 [data-type="slider"]:not([data-background-color]) .range-bar {
   background-color: #bbb !important;
-}
-[data-type="slider"]:not([data-color]) .range-quantity {
-    background-color: #0088CC !important;
-}
-
-/* label widget */
-[data-type="label"].active {
-  color: #006090 !important;
-}
-
-/* spinner colors */
-[data-type="spinner"]:not([data-color]) .spinner {
-  color: #337ab7;
-}
-[data-type="spinner"]:not([data-background-color]) .spinner {
-  background-color: #eee  !important;
-}
-[data-type="spinner"]:not([data-background-color]) .spinner .levelRange {
-  background-color: #0088CC !important;
-}
-[data-type="spinner"]:not([data-background-color]) .spinner .levelArea {
-  background-color: #cacaca !important;
 }
 
 /* Weather */
@@ -132,79 +97,6 @@ div.weather-icon.meteocons {
     border-color: #0088CC !important;
     box-shadow: #0088CC 0px 0px 0px 0px !important;
 }
-
-/* symbol  widget */
-/* foreground on */
-[data-type="symbol"]:not([data-colors]):not([data-on-color]):not([data-color]) .active i#fg {
-    color: #0088CC !important;
-}
-/* foreground off */
-[data-type="symbol"]:not([data-colors]):not([data-off-color]):not([data-color]) :not(.active) i#fg {
-    color: rgba(153, 153, 153, 0.6) !important;
-}
-
-/* Switch */
-/* Foreground On */
-[data-type="switch"]:not([data-colors]):not([data-on-color]):not([data-color]) .active i#fg,
-[data-type="dimmer"]:not([data-colors]):not([data-on-color]):not([data-color]) .active i#fg,
-[data-type="button"]:not([data-colors]):not([data-on-color]):not([data-color]) .active i#fg {
-    color: #eee !important;
-}
-/* Foreground Off */
-[data-type="switch"]:not([data-colors]):not([data-on-color]):not([data-color]) :not(.active) i#fg,
-[data-type="dimmer"]:not([data-colors]):not([data-on-color]):not([data-color]) :not(.active) i#fg,
-[data-type="button"]:not([data-colors]):not([data-on-color]):not([data-color]) :not(.active) i#fg {
-    color: #eee !important;
-}
-/* Background On */
-[data-type="switch"]:not([data-background-colors]):not([data-on-background-color]):not([data-background-color]) .active i#bg,
-[data-type="dimmer"]:not([data-background-colors]):not([data-on-background-color]):not([data-background-color]) .active i#bg,
-[data-type="button"]:not([data-background-colors]):not([data-on-background-color]):not([data-background-color]) .active i#bg {
-    color: #0088CC !important;
-}
-/* Background Off */
-[data-type="switch"]:not([data-background-colors]):not([data-off-background-color]):not([data-background-color]) :not(.active) i#bg,
-[data-type="dimmer"]:not([data-background-colors]):not([data-off-background-color]):not([data-background-color]) :not(.active) i#bg,
-[data-type="button"]:not([data-background-colors]):not([data-off-background-color]):not([data-background-color]) :not(.active) i#bg {
-    color: rgba(153, 153, 153, 0.6) !important;
-}
-
-/* switch  widget invert */
-/* foreground on */
-[data-type="switch"]:not([data-colors]):not([data-on-color]):not([data-color]).invert .active i#fg {
-    color: rgba(6, 111, 189, 0.87) !important;
-}
-/* foreground off */
-[data-type="switch"]:not([data-colors]):not([data-on-color]):not([data-color]).invert :not(.active) i#fg {
-    color: rgba(153, 153, 153, 0.6) !important;
-}
-/* background on */
-[data-type="switch"]:not([data-background-colors]):not([data-on-background-color]):not([data-background-color]).invert .active i#bg {
-    color: #f44 !important;
-}
-/* background off */
-[data-type="switch"]:not([data-background-colors]):not([data-off-background-color]):not([data-background-color]).invert :not(.active) i#bg {
-    color: #2B445A !important;
-}
-
-/* push  widget */
-/* foreground on */
-[data-type="push"]:not([data-colors]):not([data-on-color]):not([data-color]) .active i#fg {
-    color: #0088CC !important;
-}
-/* foreground off */
-[data-type="push"]:not([data-colors]):not([data-on-color]):not([data-color]) :not(.active) i#fg {
-    color: #999 !important;
-}
-/* background on */
-[data-type="push"]:not([data-background-colors]):not([data-on-background-color]):not([data-background-color]) .active i#bg {
-    color: #0088CC !important;
-}
-/* background off */
-[data-type="push"]:not([data-background-colors]):not([data-off-background-color]):not([data-background-color]) :not(.active) i#bg {
-    color: #999 !important;
-}
-
 
 /* pagebutton  widget */
 /* foreground on */
@@ -255,82 +147,33 @@ option {background-color: #ffffff;}
 .playstream.off {color:#fff;background-color:#999;}
 
 
-/* CSS classes for FUIP styles */
-/* "mobil" style */
 
-/* main cell background color */
-.fuip-color-background {
-    background-color: var(--fuip-color-background);
-}
-
-/* main theme color */
-.fuip-color-symbol-active {
-    color: var(--fuip-color-symbol-active);
-}
-
-/* color for inactive switches/symbols */
-.fuip-color-symbol-inactive {
-    color: var(--fuip-color-symbol-inactive);
-}	
-
-/* color for symbol foreground */
-.fuip-color-symbol-foreground {
-	color: var(--fuip-color-symbol-foreground);
-}
-
-
-/* color for "inactive" menu items or other texts etc 
-	TODO: Attribute styleColor? */
-.fuip-color-foreground, text.title.fuip-color-foreground {
-	color: var(--fuip-color-foreground);
-	fill: var(--fuip-color-foreground);
-}	
-
-
-/* cell headers */
-.dialog > header {
-	border-radius:0px;
-	background-color: #FFFFFF;
-	color: #222;	
-    border-bottom: 1px solid #222;	
-}
 
 
 /* cell headers */
 .fuip-cell-header {
 	border-radius:0;
-	background-color: #FFFFFF;
-	color: #222;	
-    border-bottom: 1px solid #222;	
+	background-color: var(--fuip-color-background);
+	color: var(--fuip-color-header-foreground);	
+    border-bottom: 1px solid var(--fuip-color-header-foreground);	
 }
 .fuip-cell-header.fuip-transparent {
-	background-color: rgba(255,255,255,.5);
+	background-color: var(--fuip-color-background-transparent);
 }
 
 
 /* cell */
 .fuip-cell {
 	border-radius:0;
-	background-color: var(--fuip-color-background);
-	color: var(--fuip-color-foreground);
 }
-/* transparent, i.e. with background picture */
-.fuip-cell.fuip-transparent {
-	background-color: var(--fuip-color-background-transparent);
-}
-
 
 /* menu item */
 div[data-type="link"].fuip-menu-item,
 .fuip-menu-item,
 div[data-type="link"].fuip-menu-item-active,
 .fuip-menu-item-active {
-	margin: 3px 4px;
-	text-align: center;
 	border: none;
 	border-radius: 0px;
-	display:flex;
-	align-items:center;
 } 
 
 div[data-type="link"].fuip-menu-item > .linklefticon,
@@ -350,17 +193,15 @@ div[data-type="link"].fuip-menu-item-active,
 	background-color: var(--fuip-color-symbol-active);
 }
 
-:root {
-	--fuip-color-editonly: rgba(96,96,96,0.1);
-}	
+.fuip-color-menuitem-active {
+	color: var(--fuip-color-symbol-foreground);							  
+}
+
 
 .gridster .preview-holder {
-  background-color: lightblue;
+  background-color: var(--fuip-color-symbol-inactive);
 }
 
 .fuip-flex-fake {
-	background-color: lightblue;
-	transition: width 0.5s, height 0.5s;
 	border-radius:0;
-	border: 0;
 }
