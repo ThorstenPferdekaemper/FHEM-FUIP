@@ -138,8 +138,16 @@ sub getHTML($){
 			$gplot->{conf}{yrange} = substr($gplot->{conf}{yrange},1,-1);
 		};	
 		@minmax = split(/:/,$gplot->{conf}{yrange});
-	}else{
+	};	
+	if(@minmax == 0) {
+		# empty, non-existing or ":"
 		@minmax = ("auto","auto");
+	}elsif(@minmax == 1) {
+		# "min:"
+		$minmax[1] = "auto";
+	}elsif($minmax[0] eq ''){
+		# ":max"
+		$minmax[0] = "auto";
 	};	
 	my @minmax_sec;
 	if(exists($gplot->{conf}{y2range})) {
@@ -147,10 +155,17 @@ sub getHTML($){
 			$gplot->{conf}{y2range} = substr($gplot->{conf}{y2range},1,-1);
 		};	
 		@minmax_sec = split(/:/,$gplot->{conf}{y2range});
-	}else{
-		@minmax_sec = ("auto","auto");
 	};
-	
+	if(@minmax_sec == 0) {
+		# empty, non-existing or ":"
+		@minmax_sec = ("auto","auto");
+	}elsif(@minmax_sec == 1) {
+		# "min:"
+		$minmax_sec[1] = "auto";
+	}elsif($minmax_sec[0] eq ''){
+		# ":max"
+		$minmax_sec[0] = "auto";
+	};		
 	# data-timeranges
 	my %timerangeKeys;
 	if(ref($self->{timeranges}) eq "ARRAY") {
