@@ -490,6 +490,15 @@ sub renderUserHtmlBodyStart($$) {
 		my $part = readTextFile($hash,"FHEM/lib/FUIP/config/".$userHtml);
 		$result .= $part."\n" if $part;	
 	};
+	
+	# hack to fix wrong weather icon sizes
+	$result .= "\n"
+		.'<style>
+		.wi {
+			line-height: inherit;
+		}
+		</style>'."\n";			
+
 	return $result;
 };	
 
