@@ -18,7 +18,7 @@ use warnings;
 		};
 		my $link = (substr($self->{link},0,1) eq "/" ? $self->{link} : "/fhem/".lc($self->{fuip}{NAME})."/page/".$self->{link});
 		return '	
-			<div data-type="link" data-color="'.$color.'" data-height="36px" data-url="'.$link.'" 
+			<div data-type="link" data-color="'.$color.'" data-background-color="'.$class.'" data-height="36px" data-url="'.$link.'" 
 				data-icon="'.$self->{icon}.'" class="'.$class.'">'.$self->{text}.'</div>';		
 	};
 
