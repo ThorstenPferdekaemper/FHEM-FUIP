@@ -2600,7 +2600,9 @@ sub Set($$$)
 		#get page ids etc.
 		my ($oldPageId,$oldCellId) = getPageAndCellId($hash,$a);
 		return $oldCellId unless(defined($oldPageId));
-		my $newPageId = (exists($a->[3]) ? $a->[3] : "");
+		return "\"set cellcopy\": needs a target page id" unless exists($a->[3]);
+		my $newPageId = $a->[3];
+		return 'page "'.$newPageId.'" does not exist' unless defined $hash->{pages}{$newPageId};
 		my $newCell = cloneView($hash->{pages}{$oldPageId}{cells}[$oldCellId]);
 		delete $newCell->{posX};
 		delete $newCell->{posY};

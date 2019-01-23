@@ -1061,7 +1061,15 @@ async function asyncSendFhemCommandLocal(cmdline) {
 					ftui.toast("FUIP: Local FHEM command failed: " + jqXHR.status + " " + textStatus + " " + errorThrown,"error");
 					reject(new Error("FUIP: Local FHEM command failed: " + jqXHR.status + " " + textStatus + " " + errorThrown));
 			}
-		}).done((result) => resolve(result));
+		}).done((result) => { 
+				// set-commands should not return a result, otherwise we have an error
+				if(cmdline.startsWith("set ") &&result.length > 0) {
+					popupError("FHEM error", result);
+					reject(new Error("FHEM says: " + result));
+				}else{	
+					resolve(result);
+				};		
+			});
 	});
 };
 
@@ -2884,12 +2892,10 @@ function copyCurrentCell() {
 		buttons: [{
 			text: 'Ok',
 			icon: 'ui-icon-check',
-			click: function() {
+			click: async function() {
 				var newname = $("#newpagename").val();			
-				sendFhemCommandLocal("set " + name + " cellcopy " + pageid + "_" + viewid + " " + newname)
-					.done(function() {
-						window.location = "/fhem/"+name+"/page/"+newname;
-					});	
+				await asyncSendFhemCommandLocal("set " + name + " cellcopy " + pageid + "_" + viewid + " " + newname);
+				window.location = "/fhem/"+name+"/page/"+newname;
 			},
 			showLabel: false },
 		  { text: 'Cancel',
