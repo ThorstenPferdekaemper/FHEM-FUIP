@@ -1,13 +1,14 @@
 DIR FHEM/lib
 DIR FHEM/lib/FUIP
 DIR FHEM/lib/FUIP/css
+DIR FHEM/lib/FUIP/fonts
 DIR FHEM/lib/FUIP/images
 DIR FHEM/lib/FUIP/view-images
 DIR FHEM/lib/FUIP/js
 DIR FHEM/lib/FUIP/View
 DIR FHEM/lib/FUIP/jquery-ui
 DIR FHEM/lib/FUIP/jquery-ui/images
-UPD 2019-01-23_11:47:30 102325 FHEM/42_FUIP.pm
+UPD 2019-01-23_21:24:48 102332 FHEM/42_FUIP.pm
 UPD 2018-11-21_12:09:09 12409 FHEM/lib/FUIP/Model.pm
 UPD 2019-01-05_20:35:12 10870 FHEM/lib/FUIP/View.pm
 UPD 2018-11-28_14:24:46 6848 FHEM/lib/FUIP/View/Batteries.pm
@@ -59,6 +60,8 @@ UPD 2018-11-24_21:06:08 7260 FHEM/lib/FUIP/css/theme.blue.css
 UPD 2018-03-17_22:57:55 5774 FHEM/lib/FUIP/css/theme.default.css
 UPD 2019-01-11_10:04:40 7268 FHEM/lib/FUIP/css/widget_dwdweblink.css
 UPD 2018-12-31_15:16:21 1302 FHEM/lib/FUIP/css/widget_weatherdetail.css
+UPD 2019-01-23_21:22:28 1553 FHEM/lib/FUIP/fonts/nesges.css
+UPD 2015-05-26_10:04:28 5784 FHEM/lib/FUIP/fonts/nesges.woff
 UPD 2018-07-18_14:43:10 38 FHEM/lib/FUIP/images/lizenzen.txt
 UPD 2018-07-17_19:59:37 1224122 FHEM/lib/FUIP/images/pexels-gleitschirm.jpg
 UPD 2018-07-16_20:34:58 2605770 FHEM/lib/FUIP/images/pexels-milchstrasse.jpg

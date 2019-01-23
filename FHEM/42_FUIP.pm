@@ -577,7 +577,7 @@ sub renderCommonCss($) {
 			.'<link rel="stylesheet" href="/fhem/'.$lcName.'/fuip/css/fuip-default-ui.css" type="text/css" />'."\n"
 			.$styleSchemaLine
 			.'<link rel="stylesheet" href="/fhem/'.$lcName.'/lib/font-awesome.min.css"   type="text/css" />
-			<link rel="stylesheet" href="/fhem/'.$lcName.'/lib/nesges.css" type="text/css" />'."\n";
+			<link rel="stylesheet" href="/fhem/'.$lcName.'/fuip/fonts/nesges.css" type="text/css" />'."\n";
 };
 
 
