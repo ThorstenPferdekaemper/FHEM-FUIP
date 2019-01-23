@@ -1232,7 +1232,7 @@ sub defaultPage($$){
 	#creates a default (almost empty) page
 	my ($hash,$pageId) = @_;
 	$hash->{pages}{$pageId} = FUIP::Page->createDefaultInstance($hash);
-	$hash->{pages}{$pageId}{cells} = [FUIP::Cell->createDefaultInstance($hash)];
+	$hash->{pages}{$pageId}{cells} = [];
 };
 
 
@@ -1705,6 +1705,30 @@ sub FW_setPositionsAndDimensions($$$) {
 };
 
 
+sub createPage($$) {
+	# creates a new page
+	# there is no check whether the page exists, i.e. might be overwritten
+	my ($hash,$pageid) = @_;
+	if($pageid eq "home"){
+		defaultPageIndex($hash);
+	}else{
+		my @path = split(/\//,$pageid);
+		if($path[0] eq "room" and defined($path[1])) {
+			shift(@path);
+			defaultPageRoom($hash,join("/",@path));
+		}elsif($path[0] eq "device" and defined($path[1]) and defined($path[2])){
+			shift(@path);
+			my $room = shift(@path);
+			# we need to put the paths together again in case there are further "/"
+			# this is in principle rubbish but we need to avoid crashes
+			defaultPageDevice($hash,$room,join("/",@path));
+		}else{		
+			defaultPage($hash,$pageid);
+		};
+	};		
+};
+
+
 sub getFuipPage($$) {
 	my ($hash,$path) = @_;
 	
@@ -1728,23 +1752,9 @@ sub getFuipPage($$) {
 	# do we need to create the page?
 	if(not defined($hash->{pages}{$pageid})) {
 		return("text/plain; charset=utf-8", "FUIP page $pageid does not exist") if($locked);
-		if($pageid eq "home"){
-			defaultPageIndex($hash);
-		}else{
-			my @path = split(/\//,$pageid);
-			if($path[0] eq "room" and defined($path[1])) {
-				shift(@path);
-				defaultPageRoom($hash,join("/",@path));
-			}elsif($path[0] eq "device" and defined($path[1]) and defined($path[2])){
-				shift(@path);
-				my $room = shift(@path);
-				# we need to put the paths together again in case there are further "/"
-				# this is in principle rubbish but we need to avoid crashes
-				defaultPageDevice($hash,$room,join("/",@path));
-			}else{		
-				defaultPage($hash,$pageid);
-			};
-		}		
+		createPage($hash,$pageid);
+		# add a cell, as otherwise it cannot be maintained
+		push(@{$hash->{pages}{$pageid}{cells}},FUIP::Cell->createDefaultInstance($hash)) unless @{$hash->{pages}{$pageid}{cells}};
 	};
 	# ok, we can render this	
 	if(main::AttrVal($hash->{NAME},"layout","gridster") eq "flex") {
@@ -2602,7 +2612,7 @@ sub Set($$$)
 		return $oldCellId unless(defined($oldPageId));
 		return "\"set cellcopy\": needs a target page id" unless exists($a->[3]);
 		my $newPageId = $a->[3];
-		return 'page "'.$newPageId.'" does not exist' unless defined $hash->{pages}{$newPageId};
+		createPage($hash,$newPageId) unless defined $hash->{pages}{$newPageId};
 		my $newCell = cloneView($hash->{pages}{$oldPageId}{cells}[$oldCellId]);
 		delete $newCell->{posX};
 		delete $newCell->{posY};
