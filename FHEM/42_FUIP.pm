@@ -1599,6 +1599,17 @@ sub renderCellsFlexMaint($$$) {
 };
 
 
+sub cellHasAutoView($) {
+	# check whether the cell contains at least one "auto" view
+	my ($cell) = @_;
+	for my $view (@{$cell->{views}}) {
+		next unless exists $view->{sizing};
+		return 1 if($view->{sizing} eq "auto");
+	};
+	return 0;
+};
+
+
 sub renderCellsFlex($$) {
 	my ($hash,$pageId) = @_;
 	# no region set yet? => determine
@@ -1627,6 +1638,7 @@ sub renderCellsFlex($$) {
 		$sizeY = ceil($sizeY);
 		my ($width,$height) = cellSizeToPixels($hash,$sizeX,$sizeY);
 		# TODO: col, row, sizex, sizey ?
+		# outer DIV: the cell itself
 		my $cellHtml = "<div data-cellid=\"".$i."\" data-row=\"".($row+1)."\" data-col=\"".($col+1)."\" data-sizex=\"".$sizeX."\" data-sizey=\"".$sizeY."\" class=\"fuip-droppable fuip-cell";
 		$cellHtml .= ' fuip-transparent' if $backgroundImage;
 		$cellHtml .= "\" style=\"width:";
@@ -1637,18 +1649,7 @@ sub renderCellsFlex($$) {
 		$cellHtml .= '				margin:5px;">';
 		$cell->applyDefaults();
 		# if there is no title and it is locked, we do not display a header
-		# TODO: find better handle for dragging
-		$i++;
-		$cellHtml .= '<div style="margin-left:';
-		
-		if($col == 0 and $cell->{region} eq "title") {
-			$cellHtml .= '0px';
-		}else{
-			$cellHtml .= 'auto';
-		};	
-		$cellHtml .= ';margin-right:auto;position:relative;width:';
-		$cellHtml .= '100%';
-		$cellHtml .= ';height:'.$height.'px;">';
+		# header, if needed
 		if($cell->{title}) {
 			$cellHtml .= "<header class='fuip-cell-header";
 			$cellHtml .= ' fuip-transparent' if $backgroundImage;
@@ -1656,7 +1657,25 @@ sub renderCellsFlex($$) {
 								font-size: 0.85em;font-weight: bold;line-height: 2em;
 								text-align: center;width: 100%;'>".$cell->{title}."
 						</header>";
-		};				
+		};		
+		$i++;
+		# inner div, the real content 
+		$cellHtml .= '<div style="';
+		# the first cell in the title row is supposed to be the title, i.e. left-aligned
+		$cellHtml .= 'margin-left:0px;margin-right:auto;' if($col == 0 and $cell->{region} eq "title");
+		# in main area, centered stuff should stay centered if the cell grows
+		# i.e. distribute extra space due to flex layout
+		if($cell->{region} eq "main" and not cellHasAutoView($cell)) {
+			$cellHtml .= 'margin-left:auto;margin-right:auto;width:'.$width.'px;'; 
+		}else{
+		#   otherwise, views should be given the complete area. This especially includes auto sizing views. 
+			$cellHtml .= 'width:100%;';
+		};	
+		$cellHtml .= 'position:relative;';
+		# move the content area up by 22px if there is a title
+		# this is a bit ugly, but for compatibility with earlier versions 
+		$cellHtml .= 'top:-22px;' if($cell->{title});
+		$cellHtml .= 'height:'.$height.'px;">';
 		if($col == 0 and $cell->{region} eq "title") {
 			$cellHtml .= '<div id="fuip-flex-menu-toggle" class="fa-lg"
 							style="position:absolute;left:0px;top:0px;"

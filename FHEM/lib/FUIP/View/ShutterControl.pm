@@ -27,7 +27,7 @@ sub getHTML($){
 		@iconLevels = reverse(@iconLevels);
 	};
 	my $result = '
-		<div style="position:relative";>
+		<div style="position:relative;">
 		<table>	
 			<tr>
 				<td>
