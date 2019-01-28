@@ -15,7 +15,7 @@ UPD 2018-11-28_14:24:46 6848 FHEM/lib/FUIP/View/Batteries.pm
 UPD 2018-08-21_20:44:45 1336 FHEM/lib/FUIP/View/Brightness.pm
 UPD 2019-01-22_11:11:40 4393 FHEM/lib/FUIP/View/Cell.pm
 UPD 2019-01-21_10:18:25 9613 FHEM/lib/FUIP/View/Chart.pm
-UPD 2018-12-03_21:44:02 947 FHEM/lib/FUIP/View/Clock.pm
+UPD 2019-01-28_22:17:13 1828 FHEM/lib/FUIP/View/Clock.pm
 UPD 2018-12-25_11:29:36 3289 FHEM/lib/FUIP/View/Dialog.pm
 UPD 2019-01-15_11:58:25 1696 FHEM/lib/FUIP/View/DwdWebLink.pm
 UPD 2018-12-09_18:05:16 3791 FHEM/lib/FUIP/View/HeatingControl.pm
@@ -75,6 +75,7 @@ UPD 2018-03-21_12:10:11 37326 FHEM/lib/FUIP/jquery-ui/jquery-ui.css
 UPD 2017-12-18_21:55:39 253669 FHEM/lib/FUIP/jquery-ui/jquery-ui.min.js
 UPD 2019-01-23_11:45:57 101205 FHEM/lib/FUIP/js/fuip.js
 UPD 2018-11-16_15:34:16 1586 FHEM/lib/FUIP/js/fuip_batteries.js
+UPD 2019-01-28_22:31:41 1384 FHEM/lib/FUIP/js/fuip_clock.js
 UPD 2019-01-08_15:22:04 1018 FHEM/lib/FUIP/js/fuip_htmlview.js
 UPD 2019-01-11_16:27:51 475 FHEM/lib/FUIP/js/fuip_readingsgroup.js
 UPD 2018-03-17_22:57:55 106396 FHEM/lib/FUIP/js/jquery.tablesorter.js
