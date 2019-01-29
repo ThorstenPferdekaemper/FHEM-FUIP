@@ -14,6 +14,7 @@ sub getDependencies($$) {
 
 sub dimensions($;$$){
 	my ($self,$width,$height) = @_;
+	$self->{sizing} = "fixed" unless $self->{sizing};
 	if($self->{sizing} eq "resizable") {
 		$self->{width} = $width if $width;
 		$self->{height} = $height if $height;

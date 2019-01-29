@@ -13,8 +13,8 @@ use warnings;
 				 data-device="'.$self->{brightness}{device}.'" 
 				 data-get="'.$self->{brightness}{reading}.'" 
 				 data-set="dim" 
-				 data-min="0" 
-				 data-max="250" 
+				 data-min="'.$self->{min}.'"
+				 data-max="'.$self->{max}.'"
 				 class="small dim-back readonly" 
 			>
 			<div style="position:absolute;top:80px;width:100%;color:#808080;" class="large">'.$self->{label}.'</div></div>';
@@ -38,6 +38,8 @@ use warnings;
 			reading => { default => { type => "const", value => "brightness" } } },	
 		{ id => "title", type => "text", default => { type => "field", value => "brightness-device"} },
 		{ id => "label", type => "text", default => { type => "field", value => "title"} },
+		{ id => "min", type => "text", default => { type => "const", value => "0"}},
+		{ id => "max", type => "text", default => { type => "const", value => "250"}},
 		{ id => "popup", type => "dialog", default=> { type => "const", value => "inactive"} }	
 		];
 };

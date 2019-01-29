@@ -20,13 +20,6 @@ sub getHTML($){
 
 
 sub dimensions($;$$){
-	my $self = shift;
-	$self->{width} = "auto" unless $self->{width};
-	return (($self->{width} eq "fixed") ? 500 : "auto", 86);
-};	
-
-
-sub dimensions($;$$){
 	my ($self,$width,$height) = @_;
 	if($self->{sizing} eq "resizable") {
 		$self->{width} = $width if $width;

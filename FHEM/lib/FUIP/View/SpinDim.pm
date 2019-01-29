@@ -17,6 +17,8 @@ sub getHTML($){
 				data-device="'.$self->{dimmer}{device}.'"
 				data-get="'.$self->{dimmer}{reading}.'"
 				data-set="'.$self->{dimmer}{reading}.'"
+				data-min="'.$self->{min}.'"
+				data-max="'.$self->{max}.'"
 				data-height="34"
 				data-width="154" 
 				class="value"
@@ -50,7 +52,9 @@ sub getStructure($) {
 			device => {},
 			reading => { default => { type => "const", value => "level" } } },	
 		{ id => "title", type => "text", default => { type => "field", value => "dimmer-device"} },
-		{ id => "label", type => "text" }
+		{ id => "label", type => "text" },
+		{ id => "min", type => "text", default => { type => "const", value => "0"}},
+		{ id => "max", type => "text", default => { type => "const", value => "100"}}
 		];
 };
 

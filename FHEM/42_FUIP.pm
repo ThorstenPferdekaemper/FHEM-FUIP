@@ -335,6 +335,8 @@ sub renderFuipInit($;$) {
 };
 
 
+sub getViewClassesSingle($$);  # recursion
+
 sub getViewClassesSingle($$) {
 	# get classes of one view. This might be a dialog or view template, so recursive
 	my ($view,$viewClasses) = @_;
@@ -2738,6 +2740,7 @@ sub _getDeviceList($) {
 };
 
 
+sub _getWhereUsedList($$;$); # recursion
 sub _getWhereUsedList($$;$) {
 	# determine where-used-list, currently only for view templates
 	# TODO: popups (dialogs)

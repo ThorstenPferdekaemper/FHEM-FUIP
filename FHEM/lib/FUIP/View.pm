@@ -135,7 +135,22 @@ sub getHTML($$){
 			if(defined($ref->{class})) {
 				my $class = $ref->{class};
 				delete($ref->{class});
-				return $class->reconstruct($ref,$fuip);
+				# in case there is something wrong with the class, try to 
+				# create something meaningful
+				my $result;
+				eval {
+					$result = $class->reconstruct($ref,$fuip);
+				};
+				if($@) {
+					$result = "FUIP::View"->reconstruct($ref,$fuip);
+					$result->{content} = "Could not create view of type ".$class;
+					$result->{title} = "Error" unless $result->{title};
+					$result->{defaulted}{title} = '0';
+					$result->{defaulted}{content} = '0';
+					$result->{width} = 150 unless $result->{width};
+					$result->{height} = 50 unless $result->{height};
+				};
+				return $result;
 			};
 			# normal hash
 			for my $key (keys %$ref) {
