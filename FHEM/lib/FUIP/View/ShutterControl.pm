@@ -61,7 +61,8 @@ sub getHTML($){
 					<div data-type="select" data-device="'.$device.'" 
 						data-items=\'["'.join('","',reverse(@levels)).'"]\' 
 						data-alias=\'["Auf","90%","80%","70%","60%","50%","40%","30%","20%","10%","Zu"]\' 
-						data-get="'.$self->{readingLevel}.'" data-set="'.$self->{setLevel}.'" class="right">
+						data-get="'.$self->{readingLevel}.'" data-set="'.$self->{setLevel}.'"
+						style="width:65px">
 					</div>
 				</td>
 			</tr>';

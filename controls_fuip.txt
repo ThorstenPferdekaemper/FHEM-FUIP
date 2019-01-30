@@ -33,7 +33,7 @@ UPD 2019-01-11_16:28:46 1384 FHEM/lib/FUIP/View/ReadingsGroup.pm
 UPD 2018-03-23_22:26:04 1478 FHEM/lib/FUIP/View/ReadingsList.pm
 UPD 2018-08-27_20:32:01 1518 FHEM/lib/FUIP/View/STATE.pm
 UPD 2018-11-24_21:06:06 2589 FHEM/lib/FUIP/View/Select.pm
-UPD 2019-01-26_21:30:37 4771 FHEM/lib/FUIP/View/ShutterControl.pm
+UPD 2019-01-30_20:12:37 4782 FHEM/lib/FUIP/View/ShutterControl.pm
 UPD 2018-12-01_20:41:29 2780 FHEM/lib/FUIP/View/ShutterOverview.pm
 UPD 2018-07-01_21:12:48 1807 FHEM/lib/FUIP/View/ShutterTimer.pm
 UPD 2018-11-29_08:36:57 1722 FHEM/lib/FUIP/View/SimpleSwitch.pm
