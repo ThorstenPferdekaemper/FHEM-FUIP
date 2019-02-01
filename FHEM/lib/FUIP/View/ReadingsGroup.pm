@@ -23,7 +23,11 @@ sub dimensions($;$$){
 
 sub getHTML($){
 	my ($self) = @_; 
-	return '<div data-type="readingsgroup" data-device="'.$self->{device}.'"></div>'; 
+	$self->{columns} = 1 unless $self->{columns};
+	return '<div data-type="readingsgroup" 
+				data-device="'.$self->{device}.'" 
+				data-columns="'.$self->{columns}.'"
+				style="text-align:left;"></div>'; 
 };
 	
 	
@@ -35,6 +39,7 @@ sub getStructure($) {
 		{ id => "class", type => "class", value => $class },
 		{ id => "device", type => "device" },
 		{ id => "title", type => "text", default => { type => "field", value => "device"} },
+		{ id => "columns", type => "text", default => { type => "const", value => "1"}, options => ["1","2","3","4"] }, 
 		{ id => "width", type => "dimension", value => 300},
 		{ id => "height", type => "dimension", value => 100 },
 		{ id => "sizing", type => "sizing", options => [ "resizable", "auto" ],

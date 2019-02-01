@@ -29,7 +29,7 @@ UPD 2019-01-22_11:19:40 1427 FHEM/lib/FUIP/View/MenuItem.pm
 UPD 2018-11-24_21:06:05 389 FHEM/lib/FUIP/View/Page.pm
 UPD 2018-12-03_21:22:12 1087 FHEM/lib/FUIP/View/Popup.pm
 UPD 2018-10-02_13:46:23 1489 FHEM/lib/FUIP/View/Push.pm
-UPD 2019-01-11_16:28:46 1384 FHEM/lib/FUIP/View/ReadingsGroup.pm
+UPD 2019-02-01_17:25:39 1621 FHEM/lib/FUIP/View/ReadingsGroup.pm
 UPD 2018-03-23_22:26:04 1478 FHEM/lib/FUIP/View/ReadingsList.pm
 UPD 2018-08-27_20:32:01 1518 FHEM/lib/FUIP/View/STATE.pm
 UPD 2018-11-24_21:06:06 2589 FHEM/lib/FUIP/View/Select.pm
@@ -81,7 +81,7 @@ UPD 2019-01-11_16:27:51 475 FHEM/lib/FUIP/js/fuip_readingsgroup.js
 UPD 2018-03-17_22:57:55 106396 FHEM/lib/FUIP/js/jquery.tablesorter.js
 UPD 2018-03-17_22:57:55 125594 FHEM/lib/FUIP/js/jquery.tablesorter.widgets.js
 UPD 2019-01-15_12:06:58 1847 FHEM/lib/FUIP/js/widget_dwdweblink.js
-UPD 2019-01-13_16:33:44 3986 FHEM/lib/FUIP/js/widget_readingsgroup.js
+UPD 2019-02-01_17:27:02 4934 FHEM/lib/FUIP/js/widget_readingsgroup.js
 UPD 2018-12-02_20:21:10 25541 FHEM/lib/FUIP/js/widget_weatherdetail.js
 UPD 2018-08-03_14:12:09 4468 FHEM/lib/FUIP/view-images/FUIP-View-Batteries.png
 UPD 2018-08-03_14:17:14 1830 FHEM/lib/FUIP/view-images/FUIP-View-Brightness.png

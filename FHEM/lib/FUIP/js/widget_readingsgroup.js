@@ -26,6 +26,11 @@ var Modul_readingsgroup = function () {
 		// max-update means the time to a full update of the
 		// widget. Updates of single readings are done immediately
         elem.initData('max-update', 60);
+		// multi-columns 
+		// 1 => no change
+		// 2,3,4 : Distribute to 2,3,4 columns
+		// everything else: like 1
+		elem.initData('columns',1);
         me.addReading(elem, 'get');
     }
 
@@ -64,13 +69,39 @@ var Modul_readingsgroup = function () {
 		return false;
 	};	
 
-
+	
+	function multiColumns(elem,newContent) {
+		var columns = elem.data('columns');
+		// only do anything for 2,3 or 4
+		if(columns < 2 || columns > 4) return;
+		var theTable = newContent.find("table#readingsGroup-"+elem.data('device'));
+		var innerTables = new Array();
+		for(var i = 0; i < columns; i++) {
+			innerTables[i] = $("<table></table>");
+		};	
+		var i = 0;
+		theTable.find("tr").each(function() {
+			$(this).detach().appendTo(innerTables[i]);
+			i++;
+			if(i >= columns) i = 0;
+		});
+		var newLine = $("<tr></tr>");
+		for(var i = 0; i < columns; i++) {
+			if(i > 0) newLine.append($("<td><div style='width:15px'></div></td>"));
+			newLine.append($("<td'></td>").append(innerTables[i]));
+		};	
+		theTable.empty().append(newLine);
+	};	
+	
+	
 	// do a complete update
 	function doCompleteUpdate(elem) {
 		var cmd = [ 'get', elem.data('device'), "html" ].join(' ');
         ftui.log('readingsgroup update', cmd);
         ftui.sendFhemCommand(cmd).done(function (data, dev) {
-            elem.html(data);
+			var newElem = $(data);
+			multiColumns(elem,newElem);
+			elem.empty().append(newElem);
 			var getList = {'STATE':1};					
 			elem.find("[informId]").each(function() {
 				var informId = $(this).attr('informId');
