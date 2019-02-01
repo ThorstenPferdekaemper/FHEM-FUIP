@@ -6,13 +6,16 @@ use warnings;
 use lib::FUIP::View;
 use parent -norequire, 'FUIP::View';
 	
+sub getDependencies($$) {
+	return ['js/fuip_label.js'];
+};	
 	
 sub getHTML($){
 	my ($self) = @_;
-	my $result = '';
+	my $result = '<div data-fuip-type="fuip-label-temperature" style="width:100%;height:100%;">';
 	if($self->{label}) {
-		$result .= '<div class="fuip-color big left">'.$self->{label}.':</div>
-					<div style="position:absolute;top:0px;left:120px"';
+		$result .= '<div class="fuip-color left">'.$self->{label}.':</div>
+					<div style="position:absolute;top:0px;right:0px"';
 	}else{
 		$result .= '<div';
 	};	
@@ -26,17 +29,32 @@ sub getHTML($){
 	}else{
 		$result .= "data-limits=\"[-99,12,19,23,28]\"";
 	};
-	$result .= " data-colors='[\"#ffffff\",\"#6699ff\",\"#AA6900\",\"#AD3333\",\"#FF0000\"]'
-				 class=\"big\">
-			</div>"; 
+	$result .= " data-colors='[\"#ffffff\",\"#6699ff\",\"#AA6900\",\"#AD3333\",\"#FF0000\"]'>
+			</div></div>"; 
 	return $result;	
 };
 
 
 sub dimensions($;$$){
-	my $self = shift;
-	return (180,25) if($self->{label});
-	return (60, 25);	
+	my ($self,$width,$height) = @_;
+	$self->{sizing} = "fixed" unless $self->{sizing};
+	if($self->{sizing} eq "resizable") {
+		$self->{width} = $width if $width;
+		$self->{height} = $height if $height;
+	};
+	# do we have to determine the size?
+	# even if sizing is "auto", we at least determine an initial size
+	# either resizable and no size yet
+	# or fixed
+	if(not $self->{height} or $self->{sizing} eq "fixed") {
+		$self->{height} = 25;
+	};
+	if(not $self->{width} or $self->{sizing} eq "fixed") {
+		$self->{width} = 60;
+		$self->{width} += 120 if($self->{label});
+	};	
+	return ("auto","auto") if($self->{sizing} eq "auto");
+	return ($self->{width},$self->{height});
 };	
 
 	
@@ -54,6 +72,10 @@ sub getStructure($) {
 				default => { type => "const", value => "air" },
 				options => ["air","boiler"] },
 		{ id => "label", type => "text", default => { type => "field", value => "temperature-reading"} },
+		{ id => "width", type => "dimension" },
+		{ id => "height", type => "dimension" },
+		{ id => "sizing", type => "sizing", options => [ "fixed", "auto", "resizable" ],
+			default => { type => "const", value => "fixed" } },
 		{ id => "popup", type => "dialog", default=> { type => "const", value => "inactive"} }			
 		];
 };
