@@ -39,7 +39,15 @@ sub _getDevices($$){
 		# own key
 		$devices{$dev}{key} = $dev;
 	};
-	return \%devices;
+	# we need a sorted array as a result
+	# sort by alias (if exists), otherwise by key (NAME)
+	# sort case-insensitive
+	my @result = 
+		sort {
+			my $a_key = exists($a->{alias}) ? $a->{alias} : $a->{key};
+			my $b_key = exists($b->{alias}) ? $b->{alias} : $b->{key};
+			return CORE::fc($a_key) cmp CORE::fc($b_key); } values %devices;
+	return \@result;
 };	
 	
 	
@@ -121,7 +129,7 @@ sub getHTML($){
 	my $result = '<div  data-fuip-type="fuip-batteries" style="overflow:auto;width:100%;height:100%;">
 				<table style="border-spacing:0px;"><tr><td style="padding:0;">';
 	my $devices = _getDevices($self->{fuip}{NAME},$self->{deviceFilter});				
-	my $numDevs = keys %$devices;				
+	my $numDevs = @$devices;				
 	my $count = 0;
 	use integer;
 	# avoid division by zero error
@@ -129,13 +137,12 @@ sub getHTML($){
 	my $perCol = $numDevs / $self->{columns} + ($numDevs % $self->{columns} ? 1 : 0);
 	my $colWidth = 100 / ($self->{columns} + 1);
 	$result .= '<table style="border-spacing:0px;">';
-	for my $devKey (sort keys %$devices) {
+	for my $device (@$devices) {
 		if($count == $perCol) {
 			$result .= '</table></td><td style="padding:0;"><div style="width:25px;"></div></td><td style="padding:0;"><table style="table-layout:fixed;border-spacing:0px;">';
 			$count = 0;
 		}  
 		$count++;
-		my $device = $devices->{$devKey};			
 		$result.= '<tr>
 					<td>'._getHtmlName($device).'</td>
 					<td><div style="width:42px;">'._getHtmlBatterySymbol($device).'</div></td>
