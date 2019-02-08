@@ -210,7 +210,7 @@ sub getDevicesForRoom($$) {
 		my $devicesStr = _sendRemoteCommand($name,$url,
 			'{  
 				my @devices;;
-				foreach my $d (keys %attr ) {
+				foreach my $d (keys %defs ) {
 					next unless grep {$_ eq "'.$room.'";;} split(",", main::AttrVal($d, "room", "Unsorted"));;
 					push(@devices,$d);;
 				};;		

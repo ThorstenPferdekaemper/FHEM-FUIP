@@ -9,7 +9,7 @@ use lib::FUIP::Model;
 	
 	
 sub getDependencies($$) {
-	return ['js/fuip_batteries.js'];
+	return ['js/fuip_5_resize.js','js/fuip_batteries.js'];
 };
 	
 
@@ -170,7 +170,7 @@ sub dimensions($;$$){
 	if(not $self->{height} or $self->{sizing} eq "fixed") {
 		my $devices = _getDevices($self->{fuip}{NAME},$self->{deviceFilter});
 		use integer;
-		my $numDevs = keys %$devices;
+		my $numDevs = @$devices;
 		$self->{height} = 19 * ($numDevs / 2 + $numDevs % 2) + 8;
 	};	
 	if(not $self->{width} or $self->{sizing} eq "fixed") {

@@ -274,28 +274,53 @@ sub createRoomsMenu($$) {
 
 sub addStandardCells($$$) {
 	my ($hash,$cells,$pageid) = @_;
+	# determine height of title line
+	# this gives more flexibility for baseHeight
+	# baseWidth is assumed something roughly around 140
+	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
+	use integer;
+	my $titleHeight = 60 / $baseHeight;
+	$titleHeight += 1 if 60 % $baseHeight;
+	no integer;
+	# Home button
 	my $view = FUIP::View::HomeButton->createDefaultInstance($hash);
 	$view->{active} = ($pageid eq "home" ? 1 : 0);
 	$view->position(0,0);
-	my $cell = FUIP::Cell->createDefaultInstance($hash);
-	$cell->position(0,0);
-	$cell->{views} = [ $view ];
-	push(@$cells,$cell);
-	$view = FUIP::View::Clock->createDefaultInstance($hash);
-	$view->position(0,0);
-	$cell = FUIP::Cell->createDefaultInstance($hash);
-	$cell->position(5,0);
-	$cell->{views} = [ $view ];
-	push(@$cells,$cell);
+	my $homeCell = FUIP::Cell->createDefaultInstance($hash);
+	$homeCell->position(0,0);
+	$homeCell->dimensions(1,$titleHeight);
+	$homeCell->{views} = [ $view ];
+	$homeCell->{title} = "Home";
+	push(@$cells,$homeCell);
+	# Clock
+	my $clockView = FUIP::View::Clock->createDefaultInstance($hash);
+	$clockView->position(0,0);
+	# switch sizing of the clock to auto, e.g. to center it
+	$clockView->{sizing} = "auto";
+	$clockView->{defaulted}{sizing} = 0;
+	my $clockCell = FUIP::Cell->createDefaultInstance($hash);
+	$clockCell->position(6,0);
+	$clockCell->dimensions(1,$titleHeight);
+	$clockCell->{views} = [ $clockView ];
+	$clockCell->{title} = "Uhrzeit";
+	push(@$cells,$clockCell);
+	# Title cell
 	my $title = ($pageid eq "home" ? "Home, sweet home" : ( split '/', $pageid )[ -1 ]);
 	$view = FUIP::View::Title->createDefaultInstance($hash);
 	$view->{text} = $title;
+	$view->{icon} = "oa-control_building_s_all" if $pageid eq "home";
 	$view->position(0,0);
-	$cell = FUIP::Cell->createDefaultInstance($hash);
-	$cell->position(1,0);
-	$cell->{views} = [ $view ];
-	push(@$cells,$cell);
-	push(@$cells,createRoomsMenu($hash,$pageid));
+	my $titleCell = FUIP::Cell->createDefaultInstance($hash);
+	$titleCell->position(1,0);
+	$titleCell->dimensions(5,$titleHeight);
+	$titleCell->{views} = [ $view ];
+	$titleCell->{title} = $title;
+	push(@$cells,$titleCell);
+	# rooms menu
+	my $roomsMenu = createRoomsMenu($hash,$pageid);
+	# make sure rooms menu is under home button
+	$roomsMenu->position(0,$titleHeight);
+	push(@$cells,$roomsMenu);
 };
 
 
@@ -802,6 +827,7 @@ sub renderPageFlexMaint($$) {
 						margin:4px;
 						border:solid;
 						border-width:1px;
+						border-color:var(--fuip-color-foreground,#808080);
 						display:grid;
 						grid-auto-columns:".$baseWidth."px;
 						grid-auto-rows:".$baseHeight."px;
@@ -1131,18 +1157,47 @@ sub defaultPageIndex($) {
 	# get "room views" 
 	my @rooms = FUIP::Model::getRooms($hash->{NAME});
 	foreach my $room (@rooms) {
+		my $views = getDeviceViewsForRoom($hash,$room,"overview");
+		# we do not show empty rooms here
+		next unless @$views;
+		my @switches;
+		my @thermostats;
+		my @shutters;
+		my @others;  
+		for my $view (@$views) {
+			if($view->isa('FUIP::View::SimpleSwitch')) {
+				push(@switches,$view);
+			}elsif($view->isa('FUIP::View::Thermostat')) {	
+				push(@thermostats,$view);
+			}elsif($view->isa('FUIP::View::ShutterOverview')) {	
+				push(@shutters,$view);	
+			}else{
+				push(@others, $view);
+			};		
+		};
+		@$views = (@thermostats,@shutters);
+		if(@switches) {
+			if(@$views) {
+				my $spacer = FUIP::View::Spacer->createDefaultInstance($hash);
+				$spacer->dimensions($baseWidth * 2 + 10, 5);
+				push(@$views,$spacer);
+			};
+			push(@$views,@switches);
+		};
+		if(@others) {
+			if(@$views) {
+				my $spacer = FUIP::View::Spacer->createDefaultInstance($hash);
+				$spacer->dimensions($baseWidth * 2 + 10, 5);
+				push(@$views,$spacer);
+			};
+			push(@$views,@others);
+		};
 	    my $cell = FUIP::Cell->createDefaultInstance($hash);
 		$cell->{title} = $room;
-		$cell->{views} = getDeviceViewsForRoom($hash,$room,"overview");
+		$cell->{views} = $views;
 		$cell->applyDefaults();
-		my $posY = 0;  
-		for my $view (@{$cell->{views}}) {
-			# try to center in X direction
-			my ($w,$h) = $view->dimensions();
-			$view->position(($baseWidth - $w)/2, $posY);  
-			$posY += $h;  # next one is directly after this one 	
-		};
-		$cell->dimensions(1,undef);  #let system determine height
+		$cell->dimensions(2,1);  #auto-arranging will fit the height
+		autoArrangeNewViews($cell);
 		push(@cells, $cell);
 	};
 	$hash->{pages}{"home"} = FUIP::Page->createDefaultInstance($hash);
@@ -1154,58 +1209,74 @@ sub defaultPageRoom($$){
 	my ($hash,$room) = @_;
 	my $pageid = "room/".$room;
 	my $viewsInRoom = getDeviceViewsForRoom($hash,$room,"room");
-	# make a "Bag" of all switches (lights)
+	# sort devices by type
 	my @switches;
-	my @views;
+	my @thermostats;
+	my @shutters;
+	my @states;  # i.e. STATE only
+	my @others;  
 	for my $view (@$viewsInRoom) {
 		if($view->isa('FUIP::View::SimpleSwitch')) {
 			push(@switches,$view);
+		}elsif($view->isa('FUIP::View::Thermostat')) {	
+			push(@thermostats,$view);
+		}elsif($view->isa('FUIP::View::ShutterControl')) {	
+			push(@shutters,$view);	
+		}elsif($view->isa('FUIP::View::STATE')) {	
+			push(@states,$view);		
 		}else{
-			push(@views, $view);
+			push(@others, $view);
 		};		
 	};
+	# now render thermostats - shutters - switches (one cell only) - others - states (one cell only)
 	my @cells;
+	my $cell;
+	# create cells for thermostats and shutters 
+	for my $view (@thermostats) {
+		$cell = FUIP::Cell->createDefaultInstance($hash);
+		$cell->{views} = [$view];
+		$cell->{title} = "Heizung";
+		push(@cells,$cell);
+	};
+	for my $view (@shutters) {
+		$cell = FUIP::Cell->createDefaultInstance($hash);
+		$cell->{views} = [$view];
+		$cell->{title} = "Rollladen";
+		push(@cells,$cell);
+	};
+	# create one cell for all switches
 	if(@switches) {
-		my $num = @switches;	
-		use integer; 
-		my $rows = sqrt($num);
-		my $cols = $num / $rows;
-		my $fullrows = $num % $rows;	
-		if($fullrows) {
-			$cols++;
-		}else{
-			$fullrows = $rows;
-		};	
-		no integer;
-		$cols = $num if($cols > $num);
-		my $i = 0;	
-		my $posY = 0;
-		for(my $row = 0; 1; $row++) {		
-			$cols-- if($row == $fullrows); 
-			my $posX = 0;
-			my $maxHeight = 1;
-			for( my $col = 0; $col < $cols; $col++ ) {
-				$switches[$i]->position($posX,$posY);
-				my ($w,$h) = $switches[$i]->dimensions();
-				$posX += $w;
-				$maxHeight = $h if($h > $maxHeight);	
-				$i++;
-				last if($i >= $num);
-			};
-			$posY += $maxHeight;
-			last if($i >= $num);			
-        };
-		my $cell = FUIP::Cell->createDefaultInstance($hash);
+		$cell = FUIP::Cell->createDefaultInstance($hash);
 		$cell->{title} = "Lampen";
 		$cell->{views} = \@switches;
 		push(@cells,$cell);
 	};	
-	# create cells 
-	for my $view (@views) {
-		$view->position(0,0);
-		my $cell = FUIP::Cell->createDefaultInstance($hash);
+	# create cells for "others"
+	for my $view (@others) {
+		$cell = FUIP::Cell->createDefaultInstance($hash);
 		$cell->{views} = [$view];
 		push(@cells,$cell);
+	};
+	# create one cell for all "STATE only"
+	if(@states) {
+		$cell = FUIP::Cell->createDefaultInstance($hash);
+		$cell->{title} = "Sonstige";
+		$cell->{views} = \@states;
+		push(@cells,$cell);
+	};	
+	# care for proper size of the cells
+	for $cell (@cells) { 
+		$cell->applyDefaults();
+		if($cell->{views}[0]->isa('FUIP::View::WeatherDetail') ||
+				$cell->{views}[0]->isa('FUIP::View::DwdWebLink') ||
+				$cell->{views}[0]->isa('FUIP::View::WebLink')){
+			$cell->dimensions(4,1);
+			autoArrangeNewViews($cell);
+			$cell->{views}[0]{sizing} = "auto";
+		}else{	
+			$cell->dimensions(2,1);
+			autoArrangeNewViews($cell);
+		};
 	};
 	# home button and rooms menu
 	addStandardCells($hash, \@cells, $pageid);
@@ -1244,7 +1315,10 @@ sub getDeviceView($$$){
 	return undef unless defined $device;
 	# don't show FileLogs or FHEMWEBs
 	# TODO: rooms and types to ignore could be configurable
-	return undef if($device->{Internals}{TYPE} =~ m/^(FileLog|FHEMWEB|at|notify|SVG)$/);
+	return undef if($device->{Internals}{TYPE} =~ m/^(FileLog|FHEMWEB|at|notify|FUIP|HMUARTLGW|HMinfo|HMtemplate|DWD_OpenData)$/);
+	if($level eq "overview") {
+		return undef if($device->{Internals}{TYPE} =~ m/^(weblink|SVG|DWD_OpenData_Weblink)$/);
+	};
 	# we have something special for SYSMON
 	if($device->{Internals}{TYPE} eq "SYSMON" and not $level eq "overview") {
 		my $view = FUIP::View::Sysmon->createDefaultInstance($hash);
@@ -1276,7 +1350,51 @@ sub getDeviceView($$$){
 			return $view;
 		};	
 	};
+	# weather (PROPLANTA)
+	if($device->{Internals}{TYPE} eq "PROPLANTA") {
+		if($level eq "overview") {
+			my $view = FUIP::View::WeatherOverview->createDefaultInstance($hash);
+			$view->{device} = $name;
+			$view->{sizing} = "resizable";
+			$view->{defaulted}{sizing} = 0;
+			$view->{width} = 80;
+			$view->{height} = 70;
+			$view->{layout} = "small";
+			$view->{defaulted}{layout} = 0;
+			return $view;
+		}else{
+			my $view = FUIP::View::WeatherDetail->createDefaultInstance($hash);
+			$view->{device} = $name;
+			$view->{sizing} = "resizable";
+			$view->{defaulted}{sizing} = 0;
+			$view->{width} = 560;
+			$view->{height} = 335;
+			return $view;
+		};	
+	};
     my $view;
+	# weblink -> no...
+	# general weblinks seem to be too dangerous. E.g. the usual DWD-weblink destroys the flex layout
+	if($device->{Internals}{TYPE} eq "weblink"){
+		return undef;
+		#$view = FUIP::View::WebLink->createDefaultInstance($hash);
+		#$view->{device} = $name;
+		#$view->{sizing} = "resizable";
+		#$view->{defaulted}{sizing} = 0;
+		#$view->{width} = 600;
+		#$view->{height} = 300;
+		#return $view;
+	};
+	# DWD_OpenData_Weblink
+	if($device->{Internals}{TYPE} eq "DWD_OpenData_Weblink"){
+		$view = FUIP::View::DwdWebLink->createDefaultInstance($hash);
+		$view->{device} = $name;
+		$view->{sizing} = "resizable";
+		$view->{defaulted}{sizing} = 0;
+		$view->{width} = 600;
+		$view->{height} = 175;
+		return $view;
+	};
 	# TODO: Does subType "shutter" exist at all?
 	if($subType =~ /^(shutter|blind)$/){
 		if($level eq 'overview') {
@@ -2488,10 +2606,9 @@ sub autoArrangeNewViews($) {
 	# resize the cell itself in case we have added something "below", which does not anyway fit
 	if($cell->isa("FUIP::Cell")) {
 		my $baseHeight = main::AttrVal($cell->{fuip}{NAME},"baseHeight",108);
-		if($nextPosY > $cellHeight * $baseHeight) {
-			use integer;
-			$cellHeight = $nextPosY / $baseHeight + ($nextPosY % $baseHeight ? 1 : 0);
-			no integer;
+		my $sizeY = $cellHeight * ($baseHeight + 10) - 10; 
+		if($nextPosY + 22 > $sizeY) {
+			$cellHeight = ceil(($nextPosY +32)/($baseHeight+10));
 			$cell->dimensions($cellWidth,$cellHeight);
 		};
 	}else{

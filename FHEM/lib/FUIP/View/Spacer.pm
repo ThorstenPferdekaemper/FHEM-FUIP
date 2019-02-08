@@ -1,4 +1,4 @@
-package FUIP::View::Clock;
+package FUIP::View::Spacer;
 
 use strict;
 use warnings;
@@ -6,15 +6,8 @@ use warnings;
 use lib::FUIP::View;
 use parent -norequire, 'FUIP::View';
 
-
-sub getDependencies($$) {
-	return ['js/fuip_5_resize.js','js/fuip_clock.js'];
-};
-
-
 sub dimensions($;$$){
 	my ($self,$width,$height) = @_;
-	$self->{sizing} = "fixed" unless $self->{sizing};
 	if($self->{sizing} eq "resizable") {
 		$self->{width} = $width if $width;
 		$self->{height} = $height if $height;
@@ -24,10 +17,10 @@ sub dimensions($;$$){
 	# either resizable and no size yet
 	# or fixed
 	if(not $self->{height} or $self->{sizing} eq "fixed") {
-		$self->{height} = 66;
+		$self->{height} = 10;
 	};
 	if(not $self->{width} or $self->{sizing} eq "fixed") {
-		$self->{width} = 110;
+		$self->{width} = main::AttrVal($self->{fuip}{NAME},"baseWidth",142);
 	};	
 	return ("auto","auto") if($self->{sizing} eq "auto");
 	return ($self->{width},$self->{height});
@@ -35,10 +28,7 @@ sub dimensions($;$$){
 
 
 sub getHTML($){
-	return '<div data-fuip-type="fuip-clock" style="width:100%;height:100%;">
-			<div data-type="clock" data-format="H:i" style="font-size:200%" class="fuip-color-foreground"></div> 
-            <div data-type="clock" data-format="d.M Y" style="font-size:100%" class="cell fuip-color-foreground"></div>
-			</div>'; 			
+	return '';  # this is just empty and needs some space 			
 };
 	
 	
@@ -48,17 +38,16 @@ sub getStructure($) {
 	my ($class) = @_;
 	return [
 		{ id => "class", type => "class", value => $class },
-		{ id => "title", type => "text", default => { type => "const", value => "Uhrzeit"} },
+		{ id => "title", type => "text", default => { type => "const", value => "Spacer"} },
 		{ id => "width", type => "dimension" },
 		{ id => "height", type => "dimension" },
 		{ id => "sizing", type => "sizing", options => [ "fixed", "auto", "resizable" ],
-			default => { type => "const", value => "fixed" } },
-		{ id => "popup", type => "dialog", default=> { type => "const", value => "inactive"} }	
+			default => { type => "const", value => "resizable" } }	
 		];
 };
 
 
 # register me as selectable
-$FUIP::View::selectableViews{"FUIP::View::Clock"}{title} = "Clock (client time)"; 
+$FUIP::View::selectableViews{"FUIP::View::Spacer"}{title} = "Spacer (just wastes some space)"; 
 	
 1;	

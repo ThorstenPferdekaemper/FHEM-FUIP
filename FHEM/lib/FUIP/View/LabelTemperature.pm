@@ -7,7 +7,7 @@ use lib::FUIP::View;
 use parent -norequire, 'FUIP::View';
 	
 sub getDependencies($$) {
-	return ['js/fuip_label.js'];
+	return ['js/fuip_5_resize.js','js/fuip_label.js'];
 };	
 	
 sub getHTML($){
