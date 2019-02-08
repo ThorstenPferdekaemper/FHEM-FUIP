@@ -37,7 +37,7 @@ sub getHTML($){
 
 sub dimensions($;$$){
 	my ($self,$width,$height) = @_;
-	$self->{sizing} = "fixed" unless $self->{sizing};
+	$self->{sizing} = "fixed" unless $self->{sizing} and $self->{sizing} eq "resizable";
 	if($self->{sizing} eq "resizable") {
 		$self->{width} = $width if $width;
 		$self->{height} = $height if $height;
@@ -53,7 +53,6 @@ sub dimensions($;$$){
 		$self->{width} = 60;
 		$self->{width} += 120 if($self->{label});
 	};	
-	return ("auto","auto") if($self->{sizing} eq "auto");
 	return ($self->{width},$self->{height});
 };	
 
@@ -74,7 +73,7 @@ sub getStructure($) {
 		{ id => "label", type => "text", default => { type => "field", value => "temperature-reading"} },
 		{ id => "width", type => "dimension" },
 		{ id => "height", type => "dimension" },
-		{ id => "sizing", type => "sizing", options => [ "fixed", "auto", "resizable" ],
+		{ id => "sizing", type => "sizing", options => [ "fixed", "resizable" ],
 			default => { type => "const", value => "fixed" } },
 		{ id => "popup", type => "dialog", default=> { type => "const", value => "inactive"} }			
 		];
