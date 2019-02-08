@@ -48,7 +48,7 @@ UPD 2019-01-14_22:09:27 15527 FHEM/lib/FUIP/View/ViewTemplate.pm
 UPD 2018-11-28_14:24:11 4160 FHEM/lib/FUIP/View/WeatherDetail.pm
 UPD 2018-11-28_14:24:25 4049 FHEM/lib/FUIP/View/WeatherOverview.pm
 UPD 2019-01-08_22:03:01 1277 FHEM/lib/FUIP/View/WebLink.pm
-UPD 2019-01-15_15:59:12 2740 FHEM/lib/FUIP/View/Window.pm
+UPD 2019-02-08_16:02:37 2964 FHEM/lib/FUIP/View/Window.pm
 UPD 2019-01-18_22:26:39 1054 FHEM/lib/FUIP/css/fuip-blue-ui.css
 UPD 2019-01-19_22:11:25 3832 FHEM/lib/FUIP/css/fuip-bright-mint-ui.css
 UPD 2019-01-19_22:42:24 3526 FHEM/lib/FUIP/css/fuip-darkblue-ui.css

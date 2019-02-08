@@ -12,8 +12,9 @@ sub getHTML($){
 	return '
 		<div data-type="symbol" class="compressed '.$self->{iconsize}.'" 
 			style="margin: 5px 5px 5px 5px;"
-			data-device="'.$self->{device}.'" 
-			data-states=\'["'.$self->{openstate}.'","'.$self->{closedstate}.'"]\' 
+			data-device="'.$self->{device}.'"'."\n". 
+			($self->{reading} and $self->{reading} ne "STATE" ? 'data-get="'.$self->{reading}.'"'."\n" : '')
+			.'data-states=\'["'.$self->{openstate}.'","'.$self->{closedstate}.'"]\' 
 			data-icons=\'["'.$self->{openicon}.'","'.$self->{closedicon}.'"]\' 
 			data-colors=\'["red","green"]\' >
 		</div>'.
@@ -63,6 +64,7 @@ sub getStructure($) {
 	return [
 		{ id => "class", type => "class", value => $class },
 		{ id => "device", type => "device" },
+		{ id => "reading", type => "reading", refdevice => "device", default => { type => "const", value => "STATE" } },
 		{ id => "title", type => "text", 
 			default => { type => "field", value => "device" } },
 		{ id => "label", type => "text", 
