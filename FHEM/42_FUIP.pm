@@ -1882,6 +1882,9 @@ sub getFuipPage($$) {
 	# if not locked, this would mean very bad performance for e.g. value help for devices
 	FUIP::Model::refresh($hash->{NAME}) if($locked);
 	
+	# for weird characters in page names etc.
+	$pageid = main::urlDecode($pageid);
+	
 	# "" goes to "home" 
 	if(not defined($pageid) or $pageid eq "") {
 		$pageid = "home";
