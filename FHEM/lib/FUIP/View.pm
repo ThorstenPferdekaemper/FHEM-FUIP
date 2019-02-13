@@ -292,7 +292,10 @@ sub _fillField($$;$$) {
 		return;
 	};
 	
-	$field->{value} = $valueRef;
+	# if valueRef (i.e. the value in the view) is not defined (yet), but there is a 
+	# value in the field definition, then keep the value from the field definition
+	# this e.g. happens if a new variable is created in a view template
+	$field->{value} = $valueRef unless defined($field->{value}) and not defined($valueRef);
 	if(defined($field->{default})) {
 		if(defined($defaultRef)) {
 			$field->{default}{used} = $defaultRef;
