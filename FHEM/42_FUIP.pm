@@ -258,7 +258,7 @@ sub createRoomsMenu($$) {
 		$menuItem->{active} = "0";
 		my @parts = split('/',$pageid);
 		if(@parts > 1) {
-			if($parts[0] =~ /room|device/ and $parts[1] eq $room) {
+			if($parts[0] =~ /room|device/ and main::urlDecode($parts[1]) eq $room) {
 				$menuItem->{active} = "1";
 			};
 		};	
@@ -305,7 +305,7 @@ sub addStandardCells($$$) {
 	$clockCell->{title} = "Uhrzeit";
 	push(@$cells,$clockCell);
 	# Title cell
-	my $title = ($pageid eq "home" ? "Home, sweet home" : ( split '/', $pageid )[ -1 ]);
+	my $title = ($pageid eq "home" ? "Home, sweet home" : main::urlDecode(( split '/', $pageid )[ -1 ]));
 	$view = FUIP::View::Title->createDefaultInstance($hash);
 	$view->{text} = $title;
 	$view->{icon} = "oa-control_building_s_all" if $pageid eq "home";
@@ -612,7 +612,7 @@ sub renderPage($$$) {
 	my ($hash,$currentLocation,$locked) = @_;
 	# falls $locked, dann werden die Editierfunktionen nicht mit gerendert
 	my $title = $hash->{pages}{$currentLocation}{title};
-	$title = $currentLocation unless $title;
+	$title = main::urlDecode($currentLocation) unless $title;
 	$title = "FHEM Tablet UI by FUIP" unless $title;
 	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
 	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
@@ -697,7 +697,7 @@ sub renderPageFlex($$) {
 	my ($hash,$currentLocation) = @_;
 	# falls $locked, dann werden die Editierfunktionen nicht mit gerendert
 	my $title = $hash->{pages}{$currentLocation}{title};
-	$title = $currentLocation unless $title;
+	$title = main::urlDecode($currentLocation) unless $title;
 	$title = "FHEM Tablet UI by FUIP" unless $title;
 	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
 	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
@@ -785,7 +785,7 @@ sub renderPageFlex($$) {
 sub renderPageFlexMaint($$) {
 	my ($hash,$currentLocation) = @_;
 	my $title = $hash->{pages}{$currentLocation}{title};
-	$title = $currentLocation unless $title;
+	$title = main::urlDecode($currentLocation) unless $title;
 	$title = "FHEM Tablet UI by FUIP" unless $title;
 	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
 	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
@@ -1208,6 +1208,7 @@ sub defaultPageIndex($) {
 sub defaultPageRoom($$){
 	my ($hash,$room) = @_;
 	my $pageid = "room/".$room;
+	$room = main::urlDecode($room);
 	my $viewsInRoom = getDeviceViewsForRoom($hash,$room,"room");
 	# sort devices by type
 	my @switches;
@@ -1882,13 +1883,23 @@ sub getFuipPage($$) {
 	# if not locked, this would mean very bad performance for e.g. value help for devices
 	FUIP::Model::refresh($hash->{NAME}) if($locked);
 	
-	# for weird characters in page names etc.
-	$pageid = main::urlDecode($pageid);
-	
 	# "" goes to "home" 
 	if(not defined($pageid) or $pageid eq "") {
 		$pageid = "home";
 	};	
+
+	# for weird characters in page names etc., URLs are encoded
+	# and the page keys also need to be stored encoded. However, 
+	# at least one version of FUIP stored decoded keys. I.e. if 
+	# there is no "encoded" page, but a "decoded" one, we need to 
+	# display this page.
+	if(not exists($hash->{pages}{$pageid})) {
+		my $decodedPageid = main::urlDecode($pageid);
+		if(exists($hash->{pages}{$decodedPageid})) {
+			$pageid = $decodedPageid;
+		};
+	};	
+
 	$currentPage = $pageid;  # might be needed for subsequent GET requests
 	
 	# do we need to create the page?
@@ -2148,7 +2159,10 @@ sub CGI() {
 	if($path[0] ne "fuip" and ( $path[-1] eq "widget_weatherdetail.js" or 
 								$path[-1] eq "widget_dwdweblink.js" or
 								$path[-1] eq "widget_dwdweblink.css" or
-								$path[-1] eq "widget_readingsgroup.js" )) {
+								$path[-1] eq "widget_readingsgroup.js" or 
+								#$path[-1] eq "widget_wdtimer.js" or
+								#$path[-1] eq "widget_wdtimer.css"
+								)) {
 		unshift(@path,"fuip");
 	};
 	# special logic for css/fhem-tablet-ui-user.css
