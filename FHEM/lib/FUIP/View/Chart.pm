@@ -225,10 +225,13 @@ sub getHTML($){
 		$daysago_end = $fixedrange[1];
 	};
 	
-	# if only "secondary" axis, we need to add a dummy primary. Otherwise, the chart widget is empty...
+	# if only "secondary" axis, we need to swap axis. Otherwise, the chart widget is empty...
 	# TODO: eki?
 	if(not $primaryExists) {
-		push(@uaxis,"primary");
+		@uaxis = ("primary") x @uaxis;
+		($yticks,$y2ticks) = ($y2ticks,$yticks);
+		($minmax[0],$minmax[1],$minmax_sec[0],$minmax_sec[1]) = ($minmax_sec[0],$minmax_sec[1],$minmax[0],$minmax[1]);
+		($gplot->{conf}{ylabel},$gplot->{conf}{y2label}) = ($gplot->{conf}{y2label},$gplot->{conf}{ylabel})
 	};
 
 	my $result = '<div data-type="chart"
