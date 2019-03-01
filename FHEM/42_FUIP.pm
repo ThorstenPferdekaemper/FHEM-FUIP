@@ -2159,9 +2159,9 @@ sub CGI() {
 	if($path[0] ne "fuip" and ( $path[-1] eq "widget_weatherdetail.js" or 
 								$path[-1] eq "widget_dwdweblink.js" or
 								$path[-1] eq "widget_dwdweblink.css" or
-								$path[-1] eq "widget_readingsgroup.js"  
-								#$path[-1] eq "widget_wdtimer.js" or
-								#$path[-1] eq "widget_wdtimer.css"
+								$path[-1] eq "widget_readingsgroup.js" or 
+								$path[-1] eq "widget_fuip_wdtimer.js" or
+								$path[-1] eq "widget_fuip_wdtimer.css"
 								)) {
 		unshift(@path,"fuip");
 	};

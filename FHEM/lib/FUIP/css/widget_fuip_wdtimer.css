@@ -1,0 +1,311 @@
+
+@font-face {
+	font-family: "Font Awesome 5 Free";
+	src:url('../fonts/fa-solid-900.woff') format('woff');
+	font-weight: 900;
+	font-style: normal;
+} 
+
+
+/* wdtimer_widget default CSS */
+.wdtimer { z-index: 1000; }
+.wdtimer_dialog { height: 150px; overflow: auto; width: 200px; text-align: center; scroll-behavior: smooth;}
+.wdtimer_profile{ padding-top: 0; padding-bottom: 5px; text-align: left; overflow: auto;}
+.wdtimer_profile.error { background-color: #cd3700 !important; }
+.wdtimer_profilelist {margin-left: 5px; margin-right: 5px;}
+.wdtimer_profilerow {
+	height: 100%;
+	text-align: left;
+	max-width: calc(100% - 6em - 10px);
+}
+button.wdtimer_profileup, button.wdtimer_profiledown {
+    font-size: 15px;
+    margin-top: 5px;
+}
+.wdtimer_button {
+    padding: 0.5em;
+    margin-left: 0.3em;
+    text-decoration: none;
+    border: none;
+    font-weight: 900;
+    color: inherit;
+}
+
+.ui-dialog .ui-dialog-buttonpane .ui-button.wdtimer_button {
+    padding: 0.5em;
+	margin:0px;
+    margin-left: 0.3em;
+    text-decoration: none;
+    border: none;
+    font-weight: 900;
+    color: var(--fuip-color-foreground,#eee);
+	font-size:13.3333px;
+}
+
+.wdtimer_checkbox>input {
+	display: none
+}
+.wdtimer_buttonblock {
+	float: right;
+	height: 100%;
+	min-width: 6em;
+	max-width: 11em;
+}
+button.wdtimer_deleteprofile {
+    font-size: 15px;
+    position: relative; 
+    top: 5px;
+}
+.wdtimer_delprofile { text-align: right;}
+.wdtimer_profilemove {text-align: left;}
+.wdtimer_profileweekdays { padding-left: 4px; padding-top:5px; margin-right: 0px !important;}
+.wdtimer_profilecmds { vertical-align: top; margin-right: 0px !important; width:350px;}
+.wdtimer_profiletime { width: auto !important; }
+/* .wdtimer_profilecmd{ width: auto !important; } */
+.wdtimer_text.command{
+	width: auto !important;
+}
+.wdtimer_text{ 
+    border: none;
+    font-size: small;
+    padding: 6px 6px 6px 6px !important;
+    width: 35px !important;    
+    height: auto;
+}
+
+.wdtimer_text.wdtimer_horizon{ 
+    width: 50px !important;    
+}
+
+.wdtimer_text.wdtimer_offset{ 
+    width: 40px !important;    
+}
+
+.wdtimer_time{ 
+    border: none;
+    font-size: small;
+    padding: 6px 6px 6px 6px !important;
+    width: 3.5em !important;    
+    height: auto;
+}
+.wdtimer_dropdowncmd {
+    width: auto;    
+	border:1px solid;
+    padding: 6px 6px 6px 6px !important; 
+}
+.wdtimer_dropdowncmd.iconic {
+	font-size: 18px !important;
+	padding: 2px 0px 4px 4px !important;
+	word-spacing: -1.675em;
+	letter-spacing: 0.3em;
+}
+.wdtimer_checkbox {
+	position: relative;
+    display: inherit;       
+    border: none;
+    margin-left: -6px;        
+    height:35px;
+    line-height: 1.6em;
+    width:33px;
+}
+.wdtimer_checkbox label {
+	cursor: pointer;
+	position: absolute;
+	left: 7px;
+	top: 7px;
+}
+.wdtimer_checkbox label:after {
+	opacity: 0;
+	content: '';
+	position: absolute;
+	top: -7px;
+	left: -7px;
+	width: 35px;
+	height: 35px;    
+}
+
+/* .wdtimer_checkbox input[type=checkbox]:checked + label:after { background-color:var(--fuip-color-symbol-active); } */
+ 
+.wdtimer_header { text-align: center; padding-bottom: 5px; padding-top: 5px; font-size: 1.4em; }
+.wdtimer_header_icon { position: absolute; left: 8px; font-size: 1.25em !important; }
+.wdtimer_footer { padding-bottom: 5px; padding-top: 5px; height: 40px; }
+.wdtimer_footer .ui-dialog-buttonset{ float: right;}
+.wdtimer_active { float:left; display: inline-block; margin: 6px; }
+.wdtimer_shader {
+    position:absolute;
+    background-color:#000000;
+    opacity:0.5;
+    height:100%;
+    width:100%;
+    top:0px;
+    left:0px;    
+}
+.wdtimer_shader.wdtimer_profilelist { 
+	margin:0px;
+	background-color:#ff1a1a;
+}
+
+/* ---------------------------------------------------- */
+/* wdtimer_widget Style "round" */
+.wdtimer_button.round { border-radius: 10px; }        
+.wdtimer_header.round { border-top-left-radius: 10px; border-top-right-radius: 10px; }
+.wdtimer_footer.round { border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; }
+.wdtimer_checkbox.begin.round { border-bottom-left-radius: 10px; border-top-left-radius: 10px; }  
+.wdtimer_checkbox.end.round { border-bottom-right-radius: 10px; border-top-right-radius: 10px; }   
+.wdtimer_checkbox.round input[type=checkbox]:checked + label.begin::after { border-bottom-left-radius: 10px; border-top-left-radius: 10px; }    
+.wdtimer_checkbox.round input[type=checkbox]:checked + label.end::after { border-bottom-right-radius: 10px; border-top-right-radius: 10px; } 
+.wdtimer_time.round { border-radius: 10px; }
+.wdtimer_dropdowncmd.round { border-radius: 10px; }
+.wdtimer_text.round { border-radius: 10px; }
+/* ---------------------------------------------------- */
+/* wdtimer_widget Style "square" */
+.wdtimer_dropdowncmd.square { border-radius: unset; }
+/* ---------------------------------------------------- */
+/* wdtimer_widget Thema "fuip" */
+.wdtimer_button.dark { color: var(--fuip-color-symbol-foreground,#d1eeee); background-color: var(--fuip-color-symbol-inactive,#393939); }
+.wdtimer_deleteprofile {color: var(--fuip-color-symbol-foreground,#ff0000) !important;}
+.wdtimer_time.dark { border-spacing: 0px;border:1px solid; border-radius:8px;
+					 background-color: var(--fuip-color-background,#393939); color: var(--fuip-color-foreground,#d1eeee); }
+.wdtimer_text.dark { border-spacing: 0px;border:1px solid; border-radius:8px;
+					 background-color: var(--fuip-color-background,#393939); color: var(--fuip-color-foreground,#d1eeee); }
+.wdtimer_datetimepicker.dark { background-color: var(--fuip-color-background,#393939) !important; color: var(--fuip-color-foreground,#d1eeee) !important; } 
+.wdtimer_datetimepicker.dark  button { background-color: var(--fuip-color-background,#393939) !important; color: var(--fuip-color-foreground,#d1eeee) !important; }
+
+.xdsoft_datetimepicker.xdsoft_fuip {
+	/* box-shadow: 0 5px 15px -5px rgba(255, 255, 255, 0.506); */
+	background: var(--fuip-color-background);
+	border: 1px solid var(--fuip-color-foreground);
+	color: var(--fuip-color-foreground);
+}
+
+.xdsoft_datetimepicker .xdsoft_timepicker .xdsoft_time_box > div > div {
+	background-color: var(--fuip-color-symbol-inactive) !important; 
+	color: var(--fuip-color-symbol-foreground) !important;
+}
+
+.xdsoft_datetimepicker.xdsoft_fuip .xdsoft_timepicker .xdsoft_time_box > div > div.xdsoft_time:hover {
+	background-color: var(--fuip-color-background-hover) !important; 
+	color: var(--fuip-color-foreground) !important;
+}
+
+.xdsoft_datetimepicker.xdsoft_fuip .xdsoft_timepicker .xdsoft_time_box > div > div.xdsoft_current {
+	background-color: var(--fuip-color-symbol-active) !important; 
+	box-shadow:none;
+}
+
+.xdsoft_datetimepicker.xdsoft_fuip .xdsoft_timepicker .xdsoft_time_box {
+	border: 1px solid var(--fuip-color-foreground);
+}
+.xdsoft_datetimepicker.xdsoft_fuip .xdsoft_timepicker .xdsoft_time_box >div >div {
+	border-top: 1px solid var(--fuip-color-foreground);
+}
+
+.xdsoft_datetimepicker.xdsoft_fuip .xdsoft_scrollbar .xdsoft_scroller {
+	background: var(--fuip-color-symbol-foreground) !important;
+}
+
+.xdsoft_datetimepicker.xdsoft_fuip .xdsoft_scrollbar .xdsoft_scroller:hover {
+	background: var(--fuip-color-foreground) !important;
+}
+
+.xdsoft_datetimepicker.xdsoft_fuip .xdsoft_prev:before {
+	content: "\f0d8";
+}
+
+.xdsoft_datetimepicker.xdsoft_fuip .xdsoft_next:before {
+	content: "\f0d7";
+}
+
+.xdsoft_datetimepicker.xdsoft_fuip .xdsoft_timepicker .xdsoft_prev,
+.xdsoft_datetimepicker.xdsoft_fuip .xdsoft_timepicker .xdsoft_next {
+	font-family: "Font Awesome 5 Free";
+	font-weight:900;
+	text-indent:0;
+	font-size:25px;
+	background: none;
+	margin-top:0px;
+	margin-bottom:0px;
+	height:25px;
+}
+
+
+.wdtimer_dropdowncmd.dark { background-color: var(--fuip-color-background,#393939); color: var(--fuip-color-foreground,#d1eeee); }
+.wdtimer_checkbox.dark { background-color: var(--fuip-color-symbol-inactive,#393939); color: var(--fuip-color-symbol-foreground,#d1eeee); }
+.wdtimer_checkbox.dark.checked { background-color: var(--fuip-color-symbol-active,#c50); }
+
+/* .wdtimer_checkbox.dark label:after { background-color: var(--fuip-color-symbol-active,#cc5500); } */
+.wdtimer_dialog.dark{ background-color: var(--fuip-color-background,#2a2a2a); }
+.wdtimer_header.dark { background-color: var(--fuip-color-header,#262626); color: var(--fuip-color-foreground,#d1eeee); }
+.wdtimer_footer.dark { background-color: var(--fuip-color-background,#262626); }
+.dark .wdtimer_profile:last-child > .wdtimer_buttonblock > .wdtimer_profilemove > .wdtimer_profiledown { visibility:hidden;}
+.dark .wdtimer_profile:first-child > .wdtimer_buttonblock > .wdtimer_profilemove > .wdtimer_profileup { visibility:hidden; }
+.dark .wdtimer_profile:nth-child(odd) {background: var(--fuip-color-background-hover,#404040);}
+
+.wdtimer_dropdown.iconic {
+	font-size: 18px !important;
+	padding: 2px 0px 5px 2px !important;
+	word-spacing: -1.675em;
+	letter-spacing: 0.3em;
+}
+.wdtimer_dropdown.popup_activated {
+	z-index: 9999;
+	position: relative;
+	display: inline-grid;
+	border-style: solid;
+	border-width: 1px;
+	scroll-behavior: auto;
+	overflow-y: auto;
+	overflow-x: hidden;
+	color: var(--fuip-color-foreground,#eee);
+}
+.wdtimer_dropdown.dark.popup_activated {background-color: var(--fuip-color-background,#393939); border-color: var(--fuip-color-foreground,#808080);}
+.wdtimer_dropdown.popup_activated>div {margin: 0px 0px 0px 0px;}
+.wdtimer_dropdown:not(.selected) {display: none;}
+.wdtimer_dropdown.selected {opacity: 1 !important;}
+.wdtimer_dropdown.popup_activated {opacity: 1 !important;display: inline-grid; position: absolute;}
+.wdtimer_dropdown.dark.popup_activated>div:hover {background-color: var(--fuip-color-background-hover,#007fff);}
+
+.fa.wdtimer_button {
+    font-family: "Font Awesome 5 Free";
+}
+
+.ui-dialog.wdtimer {
+	background: none;
+	border: none;
+	padding:0px;
+	border-radius:0px;
+	outline:0;
+}
+
+.ui-dialog-content.wdtimer_dialog {
+	padding:0px;
+	position:static;
+}
+
+.ui-widget-header.wdtimer_header {
+	border-width:0px;
+	padding:0px;
+	padding-bottom: 5px; padding-top: 5px;
+	font-weight:400;
+	border-bottom-left-radius: 0px; border-bottom-right-radius: 0px;
+	cursor:move;
+}
+
+.ui-dialog-buttonpane.wdtimer_footer {
+	border-width:0px;
+	margin:0px;
+	padding:0px;
+	padding-bottom:5px;
+	padding-top:5px;
+}
+
+.wdtimer_header .ui-dialog-title {
+	float:none;
+	margin:0;
+	width:auto;
+}
+
+.wdtimer_code_header {
+	color:var(--fuip-color-foreground,#eee);
+};	
+

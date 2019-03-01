@@ -70,14 +70,15 @@ sub getHTML($){
 	if($self->{timer}) {
 		$result .= '
 		<div style="position:absolute; top:92px; left:210px;"
-			data-type="wdtimer" 
+			data-type="fuip_wdtimer" 
 			data-device="'.$self->{timer}.'"    
-			data-style="round" 
+			data-width="450"
+			data-style="round noicons" 
 			data-theme="dark" 
 			data-title="'.$device.'"  
 			data-sortcmdlist="MANUELL"
 			data-cmdlist=\'{"Auf":"'.$levels[10].'"'; 		
-	for (my $i=9; $i <= 1; $i--) {
+	for (my $i=9; $i >= 1; $i--) {
 		$result .= ',"'.($i*10).'%":"'.$levels[$i].'"';
 	};
 	$result .= ',"Zu":"'.$levels[0].'"';

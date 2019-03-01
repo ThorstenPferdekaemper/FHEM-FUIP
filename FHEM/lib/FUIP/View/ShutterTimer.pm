@@ -15,9 +15,10 @@ sub getHTML($){
 	my $result = '
 				<div style="width:100px;height:38px">	
 				<div style="position:absolute;top:-11px;'.$left.'width:100px;height:38px"
-					data-type="wdtimer" 
+					data-type="fuip_wdtimer" 
 					data-device="'.$self->{device}.'"    
-					data-style="round" 
+					data-width="450"
+					data-style="round noicons" 
 					data-theme="dark" 
 					data-title="'.$self->{title}.'"  
 					data-sortcmdlist="MANUELL"
