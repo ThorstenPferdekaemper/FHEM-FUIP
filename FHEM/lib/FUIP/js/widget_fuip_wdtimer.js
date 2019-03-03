@@ -127,16 +127,6 @@ function depends_fuip_wdtimer (){
 
         deps.push(ftui.config.basedir + "lib/jquery.datetimepicker.js");
     }
-    if ($('head').find("[href$='codemirror.css']").length == 0){
-		if (topCSS.length)
-			topCSS.before('<link rel="stylesheet" href="'+ ftui.config.basedir + '../codemirror/codemirror.css" type="text/css" />');
-		else
-			$('head').append('<link rel="stylesheet" href="'+ ftui.config.basedir + '../codemirror/codemirror.css" type="text/css" />');
-
-		ftui.dynamicload(ftui.config.basedir + "js/fhem-tablet-ui-codemirror.js", true).done(function () {
-			InitCodeMirror();
-		});
-    }
     if (!$.fn.Switchery){
 		if (userCSS.length)
 			userCSS.before('<link rel="stylesheet" href="'+ ftui.config.basedir + 'lib/switchery.min.css" type="text/css" />');
@@ -1172,7 +1162,6 @@ var Modul_fuip_wdtimer = function () {
 			elem.initData('savecfg',$(this).data('savecfg') || false);  // Save FHEM Configuration
             elem.initData('timesteps',    $(this).data('timesteps') || 30);
 			elem.initData('trigger', ['state','disabled']);
-			elem.initData('codemirror', $(this).data('codemirror') || false)
 			//-----------------------------------------------
 			me.addReading(elem, 'trigger');
 		});
