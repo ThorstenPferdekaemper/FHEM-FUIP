@@ -242,6 +242,102 @@ var Modul_fuip_wdtimer = function () {
 	};
 
 	
+	// fix sizes of fields with (dynamic) dropdowns
+	function wdtimer_fixFieldSizes(elem) {
+		elem.find(".wdtimer_dropdowncmd").each(function() {
+			var list = $(this).parent().find(".wdtimer_dropdown");
+			list.addClass("popup_activated");
+			var width = list[0].clientWidth + 14;  // 14 for paddings and frame
+			list.removeClass("popup_activated");
+			$(this).css("width",width.toString() +"px");
+		});
+	};	
+	
+	
+	// show wdtimer within the widget itself
+	function wdtimer_showInplace(elem,config) { 
+		elem.data('dialog_visible', true);  // TODO: really needed?
+		// remove "old" content
+		elem.find('.wdtimer_inplace').remove();
+		// now build new stuff
+		var popup = elem.closest('.dialog');  // in case this is on a popup 
+		var content = $('<div class="wdtimer_inplace"></div>');
+		elem.append(content);
+		content.append('<div class="wdtimer_header"><i class="wdtimer_header_icon fa oa '+elem.data('icon')+'"></i><span>'+config[2][4]+'</span></div>');
+		content.append(wdtimer_buildwdtimer(config));
+		// buttons
+		var buttonpane = $('<div class="wdtimer_footer"></div>');
+		content.append(buttonpane);
+		// activation switch
+		var wdtimer_status;
+		if (config[2][3]) { wdtimer_status = "checked"; } else { wdtimer_status = ""; }
+		buttonpane.append("<div class='wdtimer_active'><input style='visibility: visible;' type='checkbox' class='js-switch' "+wdtimer_status+"/></div>");
+		// real buttons
+		var buttonset = $('<div style="float:right;"></div>');
+		buttonpane.append(buttonset);
+		// Hinzufuegen
+		var buttonAdd = $('<button type="button" class="wdtimer_button">Hinzufügen</button>');
+		buttonAdd.on('click', function() { wdtimer_addProfile( content, config ) });
+		buttonset.append(buttonAdd);
+		// Speichern
+		var buttonSave = $('<button type="button" class="wdtimer_button">Speichern</button>');
+		buttonSave.on('click', function(){ 
+			var canSave = wdtimer_saveProfile( content, config ); 
+			if(canSave && popup) popup.find('.dialog-close').trigger('click');  
+		});
+		buttonset.append(buttonSave);
+		// Abbrechen
+		var buttonCancel = $('<button type="button" class="wdtimer_button">Abbrechen</button>');
+		buttonCancel.on('click', function() {
+			wdtimer_showInplace(elem,config);
+			if(popup) popup.find('.dialog-close').trigger('click');  
+		});
+		buttonset.append(buttonCancel);
+		// make these JQuery UI buttons later
+		$(function() {
+			buttonAdd.button();	
+			buttonSave.button();
+			buttonCancel.button();
+			wdtimer_setStatusChangeAction(content,config[2][3]);
+		});	
+
+		// fix height and width
+		elem.css('height',"100%");
+		content.css('height',"100%");
+		elem.css('width','auto');
+		elem.find('.wdtimer_dialog').css('height','calc(100% - 71px)');
+		elem.find('.wdtimer_dialog').css('width','auto');
+		
+		elem.find(".wdtimer_checkbox > input").change(wdtimer_checkboxchanged).trigger("change");
+		// fix sizes of fields with (dynamic) dropdowns
+		wdtimer_fixFieldSizes(elem);
+		// in case this is on a popup, we need to register this for when the popup appears
+		if(popup) popup.on("fadein",function() { wdtimer_fixFieldSizes(elem) } );
+		
+		elem.find('[name="wdtimer_timedd"]').on('change',function(evt) {wdtimer_showhideoptions(evt,config[2]);});
+
+		var device = config[2][0];
+		// Benötige Klassen ergänzen
+		elem.find('.wdtimer_header').addClass(config[2][8]+" "+config[2][9]);
+		buttonpane.addClass(config[2][8]+" "+config[2][9]);
+		elem.find('.wdtimer_button').addClass(config[2][8]+" "+config[2][9]);
+		//-----------------------------------------------
+		//Verwendete Plugins aktivieren
+		wdtimer_setDateTimePicker($('.wdtimer_'+device.replace(/\./g,'\\.')), config[2]); //DateTimePicker Plugin zuweisen
+		wdtimer_setTimerStatusSwitch($('.js-switch'),config[2][7]); //Status Switch
+		//-----------------------------------------------
+		// Aktionen zuweisen
+		wdtimer_setDeleteAction($('.wdtimer_'+device.replace(/\./g,'\\.'))); //Löschen-Schalter Aktion
+        wdtimer_setSortAction($('.wdtimer_'+device.replace(/\./g,'\\.'))); //Sortierungs-Schalter Aktion
+		content.on("change", ".wdtimer_active", function () {
+			wdtimer_setStatusChangeAction(content,  $(this).children('input').prop('checked')); //WeekdayTimer aktivieren/deaktivieren
+		});
+
+		$('.wdtimer_'+device.replace(/\./g,'\\.')).find('[name^="wdtimer_time"]').trigger('input',[true]);
+		$('.wdtimer_'+device.replace(/\./g,'\\.')).find('[name^="wdtimer_text"]').trigger('input',[true]);
+	};
+	
+	
 	function wdtimer_showDialog(elem,config) { //Erstellen des Dialogs und öffnen des Dialogs
 		if (elem.data('dialog_visible')) return; // dialog is already open, nothing to create (in case of multiple firing due to bind to click and touch)
 
@@ -250,13 +346,7 @@ var Modul_fuip_wdtimer = function () {
 		elem.append(wdtimer_buildwdtimer(config));
 		elem.find(".wdtimer_checkbox > input").change(wdtimer_checkboxchanged).trigger("change");
 		// fix sizes of fields with (dynamic) dropdowns
-		elem.find(".wdtimer_dropdowncmd").each(function() {
-			var list = $(this).parent().find(".wdtimer_dropdown");
-			list.addClass("popup_activated");
-			var width = list[0].clientWidth + 14;  // 14 for paddings and frame
-			list.removeClass("popup_activated");
-			$(this).css("width",width.toString() +"px");
-		});
+		wdtimer_fixFieldSizes(elem);
 		
 		elem.find('[name="wdtimer_timedd"]').on('change',function(evt) {wdtimer_showhideoptions(evt,config[2]);});
 
@@ -267,16 +357,16 @@ var Modul_fuip_wdtimer = function () {
 			autoOpen: false,
 			modal: elem.data('isPopup')?true:false,
 			resizable: false,
-			draggable: true,
+			draggable: elem.data('isPopup')?true:false,
 			closeOnEscape: false,
-			dialogClass: "wdtimer "+"wdtimer_"+device,
+			dialogClass: "wdtimer "+"wdtimer_"+device + (elem.data('isPopup')? " wdtimer_popup":" wdtimer_inplace"),
 			title: config[2][4],
 			buttons: {
 				"Hinzufügen": function(){
-					wdtimer_addProfile( $('.wdtimer_'+device.replace(/\./g,'\\.')), config );
+					wdtimer_addProfile( $('#'+elem.data('dialog-id')).parent(), config );
 				},
 				"Speichern": function(){
-					var canClose = wdtimer_saveProfile( $('.wdtimer_'+device.replace(/\./g,'\\.')), config );
+					var canClose = wdtimer_saveProfile( $('#'+elem.data('dialog-id')).parent(), config );
 					if (canClose === true) {
 						wdtimer_closeDialog(elem,config)
 
@@ -287,21 +377,22 @@ var Modul_fuip_wdtimer = function () {
 				}
 			},
 			create: function (e, ui) {
-				var device = $(this).data('device');
-				var pane = $('.wdtimer_'+device.replace(/\./g,'\\.')).find(".ui-dialog-buttonpane");
+				var pane = $(this).parent().find(".ui-dialog-buttonpane");
 				var wdtimer_status;
 				if (config[2][3] === true) { wdtimer_status = "checked"; } else { wdtimer_status = ""; }
 				$("<div class='wdtimer_active ' ><input style='visibility: visible;' type='checkbox' class='js-switch' "+wdtimer_status+"/></div>").prependTo(pane);
-				$('.wdtimer_'+device.replace(/\./g,'\\.')).find('.ui-dialog-titlebar-close').remove();
+				$(this).parent().find('.ui-dialog-titlebar-close').remove();
 			},
 			open: function () {
 				var device = $(this).data('device');
 				var elem = $(this).data('elem');
 				$(this).parent().children(".ui-dialog-titlebar").prepend('<i class="wdtimer_header_icon fa oa '+elem.data('icon')+'"></i>');
-				wdtimer_setStatusChangeAction($('.wdtimer_'+device.replace(/\./g,'\\.')),config[2][3]);
-				if (!elem.data('isPopup')) { // car for right position and attach dialog a child of ftui widget
+				wdtimer_setStatusChangeAction($(this).parent(),config[2][3]);
+				if (!elem.data('isPopup')) { // care for right position and attach dialog a child of ftui widget
 					$(this).parent().css('top',"");
 					$(this).parent().css('left',"");
+					$(this).parent().css('height',"100%");
+					$(this).css('height','calc(100% - 71px)');
 					$(this).parent().detach().appendTo(elem);
 				}
 			},
@@ -318,6 +409,7 @@ var Modul_fuip_wdtimer = function () {
 		}
 
 		var wdtimer_dialog = elem.find( '.wdtimer_dialog' ).data('elem',elem).data('device',device).dialog(wdtimer_dialogConfig);
+		elem.data('dialog-id',wdtimer_dialog.attr('id'));
 		// Benötige Klassen ergänzen
 		$( ".wdtimer" ).children('.ui-dialog-titlebar').addClass('wdtimer_header '+config[2][8]+" "+config[2][9]);
 		$( ".wdtimer" ).children('.ui-dialog-buttonpane').addClass('wdtimer_footer '+config[2][8]+" "+config[2][9]);
@@ -330,8 +422,8 @@ var Modul_fuip_wdtimer = function () {
 		// Aktionen zuweisen
 		wdtimer_setDeleteAction($('.wdtimer_'+device.replace(/\./g,'\\.'))); //Löschen-Schalter Aktion
         wdtimer_setSortAction($('.wdtimer_'+device.replace(/\./g,'\\.'))); //Sortierungs-Schalter Aktion
-		$('.wdtimer_'+device.replace(/\./g,'\\.')).on("change", ".wdtimer_active", function () {
-			wdtimer_setStatusChangeAction($('.wdtimer_'+device.replace(/\./g,'\\.')),  $(this).children('input').prop('checked')); //WeekdayTimer aktivieren/deaktivieren
+		wdtimer_dialog.parent().on("change", ".wdtimer_active", function () {
+			wdtimer_setStatusChangeAction(wdtimer_dialog.parent(),  $(this).children('input').prop('checked')); //WeekdayTimer aktivieren/deaktivieren
 		});
 		//-----------------------------------------------
 		wdtimer_dialog.dialog( "open" );
@@ -341,9 +433,7 @@ var Modul_fuip_wdtimer = function () {
         $(".wdtimer_shader").on('click',function() {
 			if (elem.data('isPopup')) {
 				wdtimer_dialog.dialog( "close" );
-				$('.wdtimer_datetimepicker_'+device.replace(/\./g,'\\.')).each(function(){ $(this).remove(); });
-				$('.wdtimer_'+device.replace(/\./g,'\\.')).remove();
-				elem.children('.wdtimer_dialog').remove();
+				wdtimer_dialog.remove();
 				elem.data('dialog_visible', false);
 			}
         });
@@ -355,13 +445,11 @@ var Modul_fuip_wdtimer = function () {
 	
 	function wdtimer_closeDialog(elem,config) {
 		var device = config[2][0];
-		var wdtimer_dialog = $( ".wdtimer_dialog.wdtimer_"+device.replace(/\./g,'\\.'));
+		var wdtimer_dialog = $('#'+elem.data('dialog-id'));
 		wdtimer_dialog.dialog( "close" );
-		$('.wdtimer_'+device.replace(/\./g,'\\.')).remove();
-		$('.wdtimer_datetimepicker_'+device.replace(/\./g,'\\.')).each(function(){ $(this).remove(); });
-		elem.children('.wdtimer_dialog.wdtimer_'+device.replace(/\./g,'\\.')).remove();
+		wdtimer_dialog.remove();
 		elem.data('dialog_visible', false);
-		if (!elem.data('isPopup')) wdtimer_showDialog(elem,config); // show dialog again, if widget is not configured as popup
+		// if (!elem.data('isPopup')) wdtimer_showDialog(elem,config); // show dialog again, if widget is not configured as popup
 	};
 	
 	
@@ -460,15 +548,15 @@ var Modul_fuip_wdtimer = function () {
 	function wdtimer_buildtimespec(timespec,theme,style) {
 		var t_type = (style.indexOf('nokeyboard')>-1)?"'submit'":"'text'";	
 		if (timespec[0] == 'Time') {
-			return "<input class='wdtimer_time inline "+theme+" "+style+"' type="+t_type+" tabindex='-1' name = 'wdtimer_time2' value='"+timespec[1].replace(/\"/g,"")+"' autocomplete='off'>"; // given time value
+			return "<input class='wdtimer_time inline "+theme+" "+style+"' type="+t_type+" tabindex='-1' name = 'wdtimer_time2' value='"+timespec[1].replace(/\"/g,"")+"' autocomplete='off' style='visibility:visible'>"; // given time value
 		} else if (timespec[0] == 'Command') {
-			return "<input class='wdtimer_text command inline "+theme+" "+style+"' type='text' name = 'wdtimer_text1' title='Perl command (read-only)' value='"+timespec[1]+"' disabled>"; //command as string
+			return "<input class='wdtimer_text command inline "+theme+" "+style+"' type='text' name = 'wdtimer_text1' title='Perl command (read-only)' value='"+timespec[1]+"' disabled  style='visibility:visible'>"; //command as string
 		} else{   // if (profile[1][0]=='Sunrise' || profile[1][0]=='Sunset'){ 
 			var result = "";
-			result += "<input class='wdtimer_text wdtimer_horizon inline "+theme+" "+style+"' type='text' name = 'wdtimer_text2' title='Horizon (REAL, CIVIL, NAUTIC, ASTRONOMIC or degrees as a number)' value='"+timespec[1].replace(/\"/g,"")+"'>"; //Horizon
-			result += "<input class='wdtimer_text wdtimer_offset inline "+theme+" "+style+"' type='text' name = 'wdtimer_text3' title='Offset in minutes' value='"+timespec[2].replace(/\"/g,"")+"'>"; //offset for sunrise/sunset
-			result += "<input class='wdtimer_time inline "+theme+" "+style+"' type="+t_type+" tabindex='-1' name = 'wdtimer_time1' title='Not before...' value='"+timespec[3].replace(/\"/g,"")+"'>"; // min time values for sunrise/sunset
-			result += "<input class='wdtimer_time inline "+theme+" "+style+"' type="+t_type+" tabindex='-1' name = 'wdtimer_time2' title='Not after...' value='"+timespec[4].replace(/\"/g,"")+"'>"; // max time values for sunrise/sunset
+			result += "<input class='wdtimer_text wdtimer_horizon inline "+theme+" "+style+"' type='text' name = 'wdtimer_text2' title='Horizon (REAL, CIVIL, NAUTIC, ASTRONOMIC or degrees as a number)' value='"+timespec[1].replace(/\"/g,"")+"' style='visibility:visible'>"; //Horizon
+			result += "<input class='wdtimer_text wdtimer_offset inline "+theme+" "+style+"' type='text' name = 'wdtimer_text3' title='Offset in minutes' value='"+timespec[2].replace(/\"/g,"")+"' style='visibility:visible'>"; //offset for sunrise/sunset
+			result += "<input class='wdtimer_time inline "+theme+" "+style+"' type="+t_type+" tabindex='-1' name = 'wdtimer_time1' title='Not before...' value='"+timespec[3].replace(/\"/g,"")+"' style='visibility:visible'>"; // min time values for sunrise/sunset
+			result += "<input class='wdtimer_time inline "+theme+" "+style+"' type="+t_type+" tabindex='-1' name = 'wdtimer_time2' title='Not after...' value='"+timespec[4].replace(/\"/g,"")+"' style='visibility:visible'>"; // max time values for sunrise/sunset
 			return result;
 		}
 	};
@@ -664,11 +752,11 @@ var Modul_fuip_wdtimer = function () {
 	function wdtimer_setStatusChangeAction(elem,wdtimer_enabled){
 		if (wdtimer_enabled === false) {
 			elem.children('.wdtimer_dialog').append('<div class="ui-widget-overlay ui-front wdtimer_shader wdtimer_profilelist" style="z-index: 5999; top: '+elem.children('.wdtimer_dialog').position().top+'px; height: '+elem.children('.wdtimer_dialog').height()+'px;      "></div>');
-			elem.find('.ui-dialog-buttonset').children().eq(0).hide();
+			elem.find('.wdtimer_footer .wdtimer_button').first().hide();
 		}
 		else {
 			elem.children('.wdtimer_dialog').children('.wdtimer_shader').remove();
-			elem.find('.ui-dialog-buttonset').children().eq(0).show();
+			elem.find('.wdtimer_footer .wdtimer_button').first().show();
 		}
 	};
 	
@@ -1029,7 +1117,7 @@ var Modul_fuip_wdtimer = function () {
 
 			// Aufruf des Popups
 			var showDialogObject = (elem.data('starter')) ? $(document).find( elem.data('starter') ) : elem.children(":first");
-			if (showDialogObject.length && showDialogObject.length > 0 && !showDialogObject.hasClass('ui-dialog')) { // if there is a child object other than the dialog itself, assume popup
+			if (showDialogObject.length && showDialogObject.length > 0 && !showDialogObject.hasClass('ui-dialog') && !showDialogObject.hasClass('wdtimer_inplace')) { // if there is a child object other than the dialog itself, assume popup
 				showDialogObject.css({'cursor': 'pointer'});
 				showDialogObject.off("clicked click touchend mouseup");
 				showDialogObject.on( "clicked click touchend mouseup", function(e) {
@@ -1040,12 +1128,13 @@ var Modul_fuip_wdtimer = function () {
 				elem.data('isPopup',true);
 			} else {
 				elem.data('isPopup',false);
-				if (elem[0].style.getPropertyValue('visibility') != 'visible') wdtimer_showDialog(elem, arr_weekdaytimer);
+				// if (elem[0].style.getPropertyValue('visibility') != 'visible') wdtimer_showDialog(elem, arr_weekdaytimer);
+				wdtimer_showInplace(elem,arr_weekdaytimer);
 			}
 			//-----------------------------------------------
 			ftui.log(3,"Widget vorbereitungen sind abgeschlossen. ["+attr_device+"]");
 			
-			if (elem.data('dialog_visible')) {
+			if (elem.data('isPopup') && elem.data('dialog_visible')) {
 				ftui.log(3, 'wdtimer triggered Dialog ist sichtbar und wird aktualisiert');
 				wdtimer_closeDialog(elem,arr_weekdaytimer)	//Dialogfenster bei Update schliessen	
 				wdtimer_showDialog(elem,arr_weekdaytimer)	//...und aktualisiert oeffnen
@@ -1148,7 +1237,7 @@ var Modul_fuip_wdtimer = function () {
 		this.elements.each(function(index) {
 			var elem = $(this);
 			elem.data('dialog_visible', false);
-            //Setzten der Standartattribute falls diese nicht angegeben wurden
+            //Setzten der Standardattribute falls diese nicht angegeben wurden
             elem.initData('language',    $(this).data('language') || 'de');
             elem.initData('cmdlist',    $(this).data('cmdlist') || '');
             elem.initData('sortcmdlist',    $(this).data('sortcmdlist') || "TEXT");

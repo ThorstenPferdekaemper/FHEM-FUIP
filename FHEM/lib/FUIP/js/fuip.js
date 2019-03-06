@@ -326,6 +326,12 @@ function coloursChangeDialog() {
 };	
 	
 	
+function openChangeLog() {
+	let name = $("html").attr("data-name").toLowerCase();
+	window.open(location.origin + "/fhem/" + name + "/fuip/doc/changes.html","fuipdoc");
+};	
+	
+	
 function toggleConfigMenu(){
 	// cell menu
 	// Goto ->
@@ -378,7 +384,8 @@ function toggleConfigMenu(){
 				+	'<li><div onclick="acceptPageSettings(repairPage)"><span class="ui-icon ui-icon-wrench"></span>Repair</div></li>';
 		};	
 		html +=	'<li class="ui-widget-header"><div>General</div></li>'
-			+ '<li onclick="coloursChangeDialog()"><div>Colours</div></li>';
+			+ '<li onclick="coloursChangeDialog()"><div>Colours</div></li>'
+			+ '<li onclick="openChangeLog()"><div>FUIP News</div></li>';
 		html += '</ul>';
 		menu = $(html);
 		menu.hover(() => 0, toggleConfigMenu);

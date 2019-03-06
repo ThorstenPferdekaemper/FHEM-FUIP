@@ -8,7 +8,7 @@
 
 
 /* wdtimer_widget default CSS */
-.wdtimer { z-index: 1000; }
+.wdtimer_popup { z-index: 1000; }
 .wdtimer_dialog { height: 150px; overflow: auto; width: 200px; text-align: center; scroll-behavior: smooth;}
 .wdtimer_profile{ padding-top: 0; padding-bottom: 5px; text-align: left; overflow: auto;}
 .wdtimer_profile.error { background-color: #cd3700 !important; }
@@ -29,6 +29,7 @@ button.wdtimer_profileup, button.wdtimer_profiledown {
     border: none;
     font-weight: 900;
     color: inherit;
+	cursor: pointer;
 }
 
 .ui-dialog .ui-dialog-buttonpane .ui-button.wdtimer_button {
@@ -42,9 +43,21 @@ button.wdtimer_profileup, button.wdtimer_profiledown {
 	font-size:13.3333px;
 }
 
+.wdtimer_inplace .wdtimer_footer .wdtimer_button {
+    padding: 0.5em;
+	margin:0px;
+    margin-left: 0.3em;
+    text-decoration: none;
+    border: none;
+    font-weight: 900;
+    color: var(--fuip-color-foreground,#eee);
+	font-size:13.3333px;
+}
+
 .wdtimer_checkbox>input {
 	display: none
 }
+
 .wdtimer_buttonblock {
 	float: right;
 	height: 100%;

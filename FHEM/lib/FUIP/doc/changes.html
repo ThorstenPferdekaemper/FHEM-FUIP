@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>FUIP News</title>
+</head>
+<body>
+<h1>FUIP News</h1>
+<h2>06.03.2019</h2>
+<h3>Neuer View: WeekdayTimer</h3>
+Der neue View "FUIP::View::WeekdayTimer" ist eine Erweiterung des Views ShutterTimer und des im ShutterControl integrierten WeekdayTimer-Widgets. Anders als die beiden "alten" Views erzeugt WeekdayTimer allerdings nicht automatisch ein Popup, sondern wird ganz normal in die Zelle eingebunden. Falls man den WeekdayTimer auf einem Popup haben m&ouml;chte, muss man explizit den View FUIP::View::Popup verwenden bzw. einen anderen Popup-f&auml;higen View.
+<p>Es wird empfohlen, den View ShutterTimer nicht mehr zu verwenden, sondern nur noch WeekdayTimer. <b>Vorsicht:</b> Das Device beim WeekdayTimer muss in FHEM ein Device vom Typ WeekdayTimer sein, also nicht das zu steuernde Device wie beim ShutterControl.
+<p>Zus&auml;tzlich zum ShutterControl bzw. ShutterTimer bietet der WeekdayTimer die folgenden M&ouml;glichkeiten:
+<ul>
+<li>"save config" kann automatisch ausgel&ouml;st werden. (Feld "saveconfig" im Konfigurations-Popup)</li>
+<li>Au&szlig;er Prozents&auml;tzen (f&uuml;r Rolll&auml;den) k&ouml;nnen auch Temperaturen oder zwei beliebige Werte (wie z.B. on/off) gesetzt werden. (Feld "levelType" im Konfigurations-Popup)</li>
+<li>"sizing" (auto/fixed/resizable) wird unterst&uuml;tzt</li>
+<li>Wenn der View WeekdayTimer auf einem Popup platziert wird, dann schlie&szlig;en die Tasten "Speichern" und "Abbrechen" das Popup.</li>
+</ul>
+
+<h3>FUIP News</h3>
+...ab jetzt gibt es die Funktion "FUIP News". Sie ist erreichbar im Menu des Konfigurations-Popups unter "FUIP News".
+</body>
+</html>

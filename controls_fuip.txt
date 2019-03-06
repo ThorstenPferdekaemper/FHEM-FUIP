@@ -3,12 +3,13 @@ DIR FHEM/lib/FUIP
 DIR FHEM/lib/FUIP/css
 DIR FHEM/lib/FUIP/fonts
 DIR FHEM/lib/FUIP/images
+DIR FHEM/lib/FUIP/doc
 DIR FHEM/lib/FUIP/view-images
 DIR FHEM/lib/FUIP/js
 DIR FHEM/lib/FUIP/View
 DIR FHEM/lib/FUIP/jquery-ui
 DIR FHEM/lib/FUIP/jquery-ui/images
-UPD 2019-02-28_20:57:06 108260 FHEM/42_FUIP.pm
+UPD 2019-03-03_15:05:07 108260 FHEM/42_FUIP.pm
 UPD 2019-02-07_22:35:51 12409 FHEM/lib/FUIP/Model.pm
 UPD 2019-02-13_17:15:33 11702 FHEM/lib/FUIP/View.pm
 UPD 2019-02-07_20:55:41 7143 FHEM/lib/FUIP/View/Batteries.pm
@@ -48,6 +49,7 @@ UPD 2019-01-14_22:09:27 15527 FHEM/lib/FUIP/View/ViewTemplate.pm
 UPD 2018-11-28_14:24:11 4160 FHEM/lib/FUIP/View/WeatherDetail.pm
 UPD 2018-11-28_14:24:25 4049 FHEM/lib/FUIP/View/WeatherOverview.pm
 UPD 2019-01-08_22:03:01 1277 FHEM/lib/FUIP/View/WebLink.pm
+UPD 2019-03-06_11:31:58 3360 FHEM/lib/FUIP/View/WeekdayTimer.pm
 UPD 2019-02-08_16:02:37 2964 FHEM/lib/FUIP/View/Window.pm
 UPD 2019-01-18_22:26:39 1054 FHEM/lib/FUIP/css/fuip-blue-ui.css
 UPD 2019-01-19_22:11:25 3832 FHEM/lib/FUIP/css/fuip-bright-mint-ui.css
@@ -60,8 +62,9 @@ UPD 2018-12-09_21:48:13 1454 FHEM/lib/FUIP/css/fuipchart.css
 UPD 2018-11-24_21:06:08 7260 FHEM/lib/FUIP/css/theme.blue.css
 UPD 2018-03-17_22:57:55 5774 FHEM/lib/FUIP/css/theme.default.css
 UPD 2019-01-11_10:04:40 7268 FHEM/lib/FUIP/css/widget_dwdweblink.css
-UPD 2019-03-01_16:46:00 10303 FHEM/lib/FUIP/css/widget_fuip_wdtimer.css
+UPD 2019-03-06_09:38:44 10574 FHEM/lib/FUIP/css/widget_fuip_wdtimer.css
 UPD 2018-12-31_15:16:21 1302 FHEM/lib/FUIP/css/widget_weatherdetail.css
+UPD 2019-03-06_12:12:10 1641 FHEM/lib/FUIP/doc/changes.html
 UPD 2019-01-23_21:22:28 1553 FHEM/lib/FUIP/fonts/nesges.css
 UPD 2015-05-26_10:04:28 5784 FHEM/lib/FUIP/fonts/nesges.woff
 UPD 2018-07-18_14:43:10 38 FHEM/lib/FUIP/images/lizenzen.txt
@@ -75,7 +78,7 @@ UPD 2018-03-21_12:10:11 4632 FHEM/lib/FUIP/jquery-ui/images/ui-icons_cc0000_256x
 UPD 2018-03-21_12:10:11 6313 FHEM/lib/FUIP/jquery-ui/images/ui-icons_ffffff_256x240.png
 UPD 2018-03-21_12:10:11 37326 FHEM/lib/FUIP/jquery-ui/jquery-ui.css
 UPD 2017-12-18_21:55:39 253669 FHEM/lib/FUIP/jquery-ui/jquery-ui.min.js
-UPD 2019-01-23_11:45:57 101205 FHEM/lib/FUIP/js/fuip.js
+UPD 2019-03-06_11:45:11 101444 FHEM/lib/FUIP/js/fuip.js
 UPD 2019-02-07_20:55:04 1373 FHEM/lib/FUIP/js/fuip_5_resize.js
 UPD 2019-02-07_20:57:43 1275 FHEM/lib/FUIP/js/fuip_batteries.js
 UPD 2019-02-07_21:00:49 897 FHEM/lib/FUIP/js/fuip_clock.js
@@ -85,7 +88,7 @@ UPD 2019-01-11_16:27:51 475 FHEM/lib/FUIP/js/fuip_readingsgroup.js
 UPD 2018-03-17_22:57:55 106396 FHEM/lib/FUIP/js/jquery.tablesorter.js
 UPD 2018-03-17_22:57:55 125594 FHEM/lib/FUIP/js/jquery.tablesorter.widgets.js
 UPD 2019-01-15_12:06:58 1847 FHEM/lib/FUIP/js/widget_dwdweblink.js
-UPD 2019-03-03_15:17:28 92716 FHEM/lib/FUIP/js/widget_fuip_wdtimer.js
+UPD 2019-03-06_09:36:01 96779 FHEM/lib/FUIP/js/widget_fuip_wdtimer.js
 UPD 2019-02-01_17:27:02 4934 FHEM/lib/FUIP/js/widget_readingsgroup.js
 UPD 2018-12-02_20:21:10 25541 FHEM/lib/FUIP/js/widget_weatherdetail.js
 UPD 2018-08-03_14:12:09 4468 FHEM/lib/FUIP/view-images/FUIP-View-Batteries.png
@@ -116,5 +119,6 @@ UPD 2018-08-05_16:30:23 1475 FHEM/lib/FUIP/view-images/FUIP-View-Title.png
 UPD 2018-08-05_16:33:00 744 FHEM/lib/FUIP/view-images/FUIP-View-UpStopDown.png
 UPD 2018-09-20_19:43:29 7218 FHEM/lib/FUIP/view-images/FUIP-View-WeatherDetail.png
 UPD 2018-09-20_19:42:44 3406 FHEM/lib/FUIP/view-images/FUIP-View-WeatherOverview.png
+UPD 2019-03-06_12:09:10 3199 FHEM/lib/FUIP/view-images/FUIP-View-WeekdayTimer.png
 UPD 2019-01-13_19:57:18 1373 FHEM/lib/FUIP/view-images/FUIP-View-Window.png
 UPD 2018-08-03_14:05:38 1051 FHEM/lib/FUIP/view-images/FUIP-View.png
