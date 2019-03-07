@@ -2686,6 +2686,7 @@ sub _setConvert($$) {
 	my $instance = "FUIP::Cell"->reconstruct(eval($instanceStr),$hash);
 	$hash->{viewtemplates}{$templateid}{views} = $instance->{views};
 	$hash->{viewtemplates}{$templateid}->dimensions(cellSizeToPixels($instance));
+	return undef;  # show caller that everything is ok
 };
 
 
@@ -2700,6 +2701,7 @@ sub _setRepair($$) {
 		delete $cell->{posX};
 		delete $cell->{posY};
 	};
+	return undef;
 }
 
 
@@ -2812,7 +2814,7 @@ sub Set($$$)
 		setAttrList($main::modules{FUIP});
 		return "Unknown argument $cmd, choose one of save:noArg load:noArg viewsettings viewaddnew viewdelete viewposition autoarrange refreshBuffer pagedelete:".join(',',sort keys %{$hash->{pages}});
 	}
-	return undef;
+	return undef;  # i.e. all good
 }
 
 
@@ -3005,6 +3007,7 @@ sub _setSettings($$) {
 		$hash->{viewtemplates}{$h->{templateid}}->setVariableDefs($h);
 	};
 	autoArrangeNewViews($container);	
+	return undef;
 };		
 	
 

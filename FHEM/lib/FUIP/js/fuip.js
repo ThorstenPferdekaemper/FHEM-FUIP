@@ -1070,7 +1070,7 @@ async function asyncSendFhemCommandLocal(cmdline) {
 			}
 		}).done((result) => { 
 				// set-commands should not return a result, otherwise we have an error
-				if(cmdline.startsWith("set ") &&result.length > 0) {
+				if(cmdline.startsWith("set ") && result.length > 0) {
 					popupError("FHEM error", result);
 					reject(new Error("FHEM says: " + result));
 				}else{	
