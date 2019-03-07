@@ -220,17 +220,23 @@ function coloursChangeDialog() {
 	for(let i = 0; i < document.styleSheets.length; i++){
 		let currentSheet = document.styleSheets[i];
 		//loop through css Rules
-		for(j = 0; j < currentSheet.cssRules.length; j++){
-			let rule = currentSheet.cssRules[j];
-			if(rule.selectorText != ":root") continue;
-			if(rule.type != CSSRule.STYLE_RULE) continue;
-			let style = rule.style;
-			for( let k = 0; k < style.length; k++ ) {
-				let prop = style.item(k);
-				if(! /^--fuip-color-/.test(prop)) continue;		
-				fuip.colorVariables[prop] = style.getPropertyValue(prop);
-			};	
-		};
+		try {
+			for(j = 0; j < currentSheet.cssRules.length; j++){
+				let rule = currentSheet.cssRules[j];
+				if(rule.selectorText != ":root") continue;
+				if(rule.type != CSSRule.STYLE_RULE) continue;
+				let style = rule.style;
+				for( let k = 0; k < style.length; k++ ) {
+					let prop = style.item(k);
+					if(! /^--fuip-color-/.test(prop)) continue;		
+					fuip.colorVariables[prop] = style.getPropertyValue(prop);
+				};	
+			};
+		}catch(e) {
+			// this can happen if a style sheet comes from "elsewhere"
+			// however, in this case it probably does not contain any colors
+			// which we have to display
+		}	
 	};
 	// now get the current value in case it has already been changed
 	for(const prop in fuip.colorVariables) {
@@ -1581,23 +1587,29 @@ function getIcons() {
 	for(i = 0; i<document.styleSheets.length; i++){
 		currentSheet = document.styleSheets[i];
 		//loop through css Rules
-		for(j = 0; j< currentSheet.cssRules.length; j++){
-			if(!currentSheet.cssRules[j].selectorText) { continue; };
-			var selectors = currentSheet.cssRules[j].selectorText.split(",");
-			var key = false;
-			for(var k = 0; k < selectors.length; k++) {
-				var icons = selectors[k].match(/\.(fa|ftui|mi|oa|wi|fs|nesges)-.*(?=::before)/);
-				if(!icons){ continue; };
-				var icon = icons[0].substring(1);
-				// sometimes there is another class...
-				icon = icon.split(" ")[0];
-				if(!key) {
-					key = icon;
-					allIcons[key] = {};
-				};	
-				allIcons[key][icon] = 1;
+		try{
+			for(j = 0; j< currentSheet.cssRules.length; j++){
+				if(!currentSheet.cssRules[j].selectorText) { continue; };
+				var selectors = currentSheet.cssRules[j].selectorText.split(",");
+				var key = false;
+				for(var k = 0; k < selectors.length; k++) {
+					var icons = selectors[k].match(/\.(fa|ftui|mi|oa|wi|fs|nesges)-.*(?=::before)/);
+					if(!icons){ continue; };
+					var icon = icons[0].substring(1);
+					// sometimes there is another class...
+					icon = icon.split(" ")[0];
+					if(!key) {
+						key = icon;
+						allIcons[key] = {};
+					};	
+					allIcons[key][icon] = 1;
+				}
 			}
-		}
+		}catch(e) {
+			// this can happen if a style sheet comes from "elsewhere"
+			// however, in this case it probably does not contain any icons
+			// which we have to display
+		}	
 	}
 	var result = [];
 	Object.keys(allIcons).sort().forEach(function(key) {
