@@ -22,17 +22,18 @@ sub getHTML($){
 		};
 	}elsif($self->{levelType} eq "switch") {
 		$levelStr = '"'.$self->{minLevel}.'":"'.$self->{minLevel}.'", "'.$self->{maxLevel}.'":"'.$self->{maxLevel}.'"';
-	}else{  # shutter
+	}else{  # shutter/inverted_shutter
 		my @levels;
 		use integer;
+		my $inverted = ($self->{levelType} eq "inverted_shutter");
 		for (my $i=0; $i <= 10; $i++) {
 			push(@levels,$self->{minLevel} + ($self->{maxLevel} - $self->{minLevel}) * $i / 10);
 		};
-		$levelStr = '"Auf":"'.$levels[10].'"'; 		
+		$levelStr = '"Auf":"'.$levels[$inverted ? 0 : 10].'"'; 		
 		for (my $i=9; $i >= 1; $i--) {
-			$levelStr .= ',"'.($i*10).'%":"'.$levels[$i].'"';
+			$levelStr .= ',"'.(($inverted ? (10 - $i) : $i)*10).'%":"'.$levels[$inverted ? (10 - $i) : $i].'"';
 		};
-		$levelStr .= ',"Zu":"'.$levels[0].'"';
+		$levelStr .= ',"Zu":"'.$levels[$inverted ? 10 : 0].'"';
 	};
 	my $result = '
 				<div data-type="fuip_wdtimer" 
@@ -83,7 +84,7 @@ sub getStructure($) {
 		{ id => "label", type => "text", default => { type => "field", value => "title"} },
 		{ id => "saveconfig", type => "text", options => [ "yes", "no" ], 
 				default => { type => "const", value => "no" }},
-		{ id => "levelType", type => "text", options => [ "shutter", "heating", "switch" ], 
+		{ id => "levelType", type => "text", options => [ "shutter", "inverted_shutter", "heating", "switch" ], 
 				default => { type => "const", value => "shutter" }},
 		{ id => "minLevel", type => "text", default => { type => "const", value => "0" } },
 		{ id => "maxLevel", type => "text", default => { type => "const", value => "100" } },
