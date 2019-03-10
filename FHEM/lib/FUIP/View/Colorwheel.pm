@@ -5,22 +5,30 @@ use warnings;
 use lib::FUIP::View;
 use parent -norequire, 'FUIP::View';
 	
+sub getDependencies($$) {
+	return ['js/fuip_5_resize.js'];
+};	
+	
 sub getHTML($){
 	my ($self) = @_;
 	my $result = '
-		<div style="display:flex;flex-direction:column;width:100%;height:100%">
 		<div data-type="fuip_colorwheel"
 			data-fuip-type="fuip-colorwheel"
 			data-device="'.$self->{device}.'"
 			data-get="'.$self->{reading}.'"
 			data-set="'.$self->{set}.'"
 			class="roundIndicator"
-			style="flex-grow:1">
+			style="width:100%;height:';
+	if($self->{label}) {
+		$result .= 'calc(100% - 20px)';
+	}else{
+		$result .= 'calc(100% - 5px)';
+	};
+	$result .= '">
 		</div>';
 	if($self->{label}) {
-		$result .= '<div class="fuip-color" style="flex-grow:0">'.$self->{label}.'</div>';
+		$result .= '<div class="fuip-color" style="height:15px">'.$self->{label}.'</div>';
 	};	
-	$result .= "</div>";
 	return $result;
 };
 

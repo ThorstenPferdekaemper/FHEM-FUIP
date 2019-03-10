@@ -653,7 +653,10 @@ function fuip_colorwheel_resize(id) {
 	
 	var elem = $("#"+id);
 	var targetWidth = elem.prop("clientWidth") -10;
-	var targetHeight = elem.prop("clientHeight") -5;
+	var targetHeight = elem.prop("clientHeight");
+	// if this is on a popup (dialog), which has not opened yet, we get negative values
+	// we don't need to resize in this case
+	if(targetWidth <= 0 || targetHeight <= 0) return;
 	// the whole thing is width:height = 3:4
 	if(targetWidth * 4 > targetHeight * 3) targetWidth = targetHeight * 3 / 4;
 	var colorArea = elem.find(".colorArea");

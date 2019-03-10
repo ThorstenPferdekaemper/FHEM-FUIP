@@ -41,5 +41,7 @@ function fuip_resize_register(fuipType,resizeFunc) {
 
 // register resize events
 $(window).on("resize",fuip_resize_all);
-$(".dialog").on("fadein",function() { setTimeout(fuip_resize_all, 10 ) } );  // TODO: not for all of them!	
+$(function() {
+	$(".dialog").on("fadein",function() {  setTimeout(fuip_resize_all, 10 ) } );  // TODO: not for all of them!	
+});	
 

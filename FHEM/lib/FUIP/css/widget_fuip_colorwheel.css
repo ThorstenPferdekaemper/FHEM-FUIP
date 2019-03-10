@@ -1,5 +1,6 @@
 .colorArea {
 	display:block;
+	margin-top:5px;
 	margin-left:auto;
 	margin-right:auto;
 }
@@ -9,7 +10,6 @@
     height:50px;
     width: 50px;
     border-radius: 50%;
-	margin-top: 5px;
 	margin-bottom: -5px;
     margin-left:5px;
 }
