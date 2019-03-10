@@ -9,6 +9,7 @@ use parent -norequire, 'FUIP::View';
 sub getHTML($){
 	my ($self) = @_;
 	my (undef,$height) = $self->dimensions();
+	$self->{step} = 1 unless defined $self->{step};
 	my $result = '<table style="width:100%;height:'.$height.'px !important;border-collapse: collapse;">
 					<tr>
 					<td style="padding:0;">
@@ -19,6 +20,7 @@ sub getHTML($){
 				data-set="'.$self->{dimmer}{reading}.'"
 				data-min="'.$self->{min}.'"
 				data-max="'.$self->{max}.'"
+				data-step="'.$self->{step}.'"
 				data-height="34"
 				data-width="154" 
 				class="value"
@@ -54,7 +56,8 @@ sub getStructure($) {
 		{ id => "title", type => "text", default => { type => "field", value => "dimmer-device"} },
 		{ id => "label", type => "text" },
 		{ id => "min", type => "text", default => { type => "const", value => "0"}},
-		{ id => "max", type => "text", default => { type => "const", value => "100"}}
+		{ id => "max", type => "text", default => { type => "const", value => "100"}},
+		{ id => "step", type => "text", default => { type => "const", value => "1"}}
 		];
 };
 
