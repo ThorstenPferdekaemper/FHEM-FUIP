@@ -42,7 +42,7 @@ UPD 2018-11-29_08:36:57 1722 FHEM/lib/FUIP/View/SimpleSwitch.pm
 UPD 2019-02-06_21:04:19 1483 FHEM/lib/FUIP/View/Spacer.pm
 UPD 2019-03-10_21:07:05 1963 FHEM/lib/FUIP/View/SpinDim.pm
 UPD 2018-07-20_20:11:22 1906 FHEM/lib/FUIP/View/Sysmon.pm
-UPD 2019-02-06_21:16:33 3786 FHEM/lib/FUIP/View/Thermostat.pm
+UPD 2019-03-11_21:34:14 4352 FHEM/lib/FUIP/View/Thermostat.pm
 UPD 2019-01-29_16:14:57 2604 FHEM/lib/FUIP/View/Title.pm
 UPD 2018-12-09_16:28:50 2060 FHEM/lib/FUIP/View/UpStopDown.pm
 UPD 2018-12-26_15:12:50 3112 FHEM/lib/FUIP/View/ViewTemplInstance.pm
@@ -67,7 +67,7 @@ UPD 2019-03-10_17:59:56 1015 FHEM/lib/FUIP/css/widget_fuip_colorwheel.css
 UPD 2019-03-06_09:38:44 10574 FHEM/lib/FUIP/css/widget_fuip_wdtimer.css
 UPD 2018-12-31_15:16:21 1302 FHEM/lib/FUIP/css/widget_weatherdetail.css
 UPD 2019-03-09_22:14:06 18647 FHEM/lib/FUIP/doc/Colorwheel.png
-UPD 2019-03-10_21:11:14 4539 FHEM/lib/FUIP/doc/changes.html
+UPD 2019-03-11_21:44:32 4880 FHEM/lib/FUIP/doc/changes.html
 UPD 2019-01-23_21:22:28 1553 FHEM/lib/FUIP/fonts/nesges.css
 UPD 2015-05-26_10:04:28 5784 FHEM/lib/FUIP/fonts/nesges.woff
 UPD 2018-07-18_14:43:10 38 FHEM/lib/FUIP/images/lizenzen.txt

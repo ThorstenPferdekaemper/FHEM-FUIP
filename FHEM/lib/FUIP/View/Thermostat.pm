@@ -23,6 +23,9 @@ sub getStructure($) {
 		{ id => "desiredTemp", type => "reading", refdevice => "device", default => { type => "const", value => "desired-temp" } },
 		{ id => "desiredSet", type => "set", refdevice => "device", default => { type => "field", value => "desiredTemp" } },
 		{ id => "measuredTemp", type => "reading", refdevice => "device", default => { type => "const", value => "measured-temp" } },
+		{ id => "minTemp", type => "text", default => { type => "const", value => "10" } },
+		{ id => "maxTemp", type => "text", default => { type => "const", value => "30" } },
+		{ id => "step", type => "text", default => { type => "const", value => "0.5" } },		
 		{ id => "valvePos1", type => "device-reading",  
 			device => { default => { type => "field", value => "device"} },
 			reading => { default => { type => "const", value => "ValvePosition"} } },
@@ -54,9 +57,21 @@ sub dimensions($;$$){
 
 sub getHTML($){
 	my ($self) = @_;
+	# set defaults for "new" parameters
+	$self->{minTemp} = "10" unless defined $self->{minTemp};
+	$self->{maxTemp} = "30" unless defined $self->{maxTemp};
+	$self->{step} = "0.5" unless defined $self->{step};
 	my $result = '';
 	$result .= '<div';
-	$result .= ' data-type="thermostat" data-device="'.$self->{device}.'" data-get="'.$self->{desiredTemp}.'" data-set="'.$self->{desiredSet}.'" data-temp="'.$self->{measuredTemp}.'" data-step="0.5" ';
+	$result .= '
+		data-type="thermostat" 
+		data-device="'.$self->{device}.'" 
+		data-get="'.$self->{desiredTemp}.'" 
+		data-set="'.$self->{desiredSet}.'" 
+		data-temp="'.$self->{measuredTemp}.'" 
+		data-min="'.$self->{minTemp}.'" 
+		data-max="'.$self->{maxTemp}.'" 	
+		data-step="'.$self->{step}.'" ';
 	if($self->{size} eq "normal") {
 		$result .= 'data-width="100" data-height="80"';
 	}else{	
