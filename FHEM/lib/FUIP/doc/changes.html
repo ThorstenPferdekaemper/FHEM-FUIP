@@ -7,6 +7,9 @@
 <h1>FUIP News</h1>
 
 <h2>12.03.2019</h2>
+<h3>ShutterControl jetzt auch mit "inverted_shutter"</h3>
+Der ShutterControl-View hat jetzt einen Parameter "levelType". Man kann zwischen "shutter" und "inverted_shutter" ausw&auml;hlen. Die Funktion ist ansonsten so wie <a href="#inverted_shutter">inverted_shutter beim WeekdayTimer-View</a>.
+
 <h3>Batteries auch mit Prozentwerten im Reading "battery"</h3>
 Der Batteries-View versteht jetzt auch Prozentwerte im Reading "battery". Bisher wurde "battery" nur als Text ("ok" oder nicht "ok") ausgewertet.
 
@@ -31,7 +34,7 @@ Da war noch einiges faul. Das sollte jetzt alles gehen. Au&szlig;erdem waren noc
 Bei der Farbauswahl ("Colours" im Men&uuml;) und bei der Werthilfe f&uuml;r Icons kam es zu Fehlermeldungen wie "SecurityError" oder "cssRules cannot be accessed". (M&ouml;glicherweise tauchten die Meldungen an der Oberfl&auml;che nicht auf.) Die Farbauswahl bzw. die Icon-Liste wurde nicht richtig angezeigt bzw. hat "ewig" geladen. Das Problem sollte jetzt gel&ouml;st sein. 
 <p>Das ganze ist im Zusammenhang mit externen CSS-Dateien aufgetaucht. Bisher konnte aber noch nicht ermittelt werden, wodurch diese externen CSS-Dateien eingebunden wurden.
 
-<h3>WeekdayTimer kann jetzt "inverted_shutter"</h3>
+<h3 id="inverted_shutter">WeekdayTimer kann jetzt "inverted_shutter"</h3>
 Als "levelType" kam "inverted_shutter" hinzu. Dadurch wird die Reihenfolge der Prozentangaben umgedreht und "Auf" und "Zu" werden vertauscht. D.h. "Auf" entspricht minLevel (meistens 0) und "Zu" entspricht maxLevel (meistens 100). Das klingt im ersten Moment sehr &auml;hnlich wie beim Vertauschen von minLevel und maxLevel, allerdings ist dann auch die Zuordnung der Prozentangaben zu den Werten in FHEM umgedreht. 
 <table>
 <tr><td><b>levelType</b></td><td><b>minLevel</b></td><td><b>maxLevel</b></td><td><b>Ergebnis (Anzeige in FUIP:Wert in FHEM)</b></td></tr>
