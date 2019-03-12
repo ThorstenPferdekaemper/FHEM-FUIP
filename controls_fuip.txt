@@ -12,7 +12,7 @@ DIR FHEM/lib/FUIP/jquery-ui/images
 UPD 2019-03-10_18:14:30 108464 FHEM/42_FUIP.pm
 UPD 2019-02-07_22:35:51 12409 FHEM/lib/FUIP/Model.pm
 UPD 2019-02-13_17:15:33 11702 FHEM/lib/FUIP/View.pm
-UPD 2019-02-07_20:55:41 7143 FHEM/lib/FUIP/View/Batteries.pm
+UPD 2019-03-12_15:47:17 7983 FHEM/lib/FUIP/View/Batteries.pm
 UPD 2019-01-29_15:36:42 1522 FHEM/lib/FUIP/View/Brightness.pm
 UPD 2019-01-22_11:11:40 4393 FHEM/lib/FUIP/View/Cell.pm
 UPD 2019-03-01_22:06:01 9868 FHEM/lib/FUIP/View/Chart.pm
@@ -67,7 +67,7 @@ UPD 2019-03-10_17:59:56 1015 FHEM/lib/FUIP/css/widget_fuip_colorwheel.css
 UPD 2019-03-06_09:38:44 10574 FHEM/lib/FUIP/css/widget_fuip_wdtimer.css
 UPD 2018-12-31_15:16:21 1302 FHEM/lib/FUIP/css/widget_weatherdetail.css
 UPD 2019-03-09_22:14:06 18647 FHEM/lib/FUIP/doc/Colorwheel.png
-UPD 2019-03-11_21:44:32 4880 FHEM/lib/FUIP/doc/changes.html
+UPD 2019-03-12_15:51:54 5110 FHEM/lib/FUIP/doc/changes.html
 UPD 2019-01-23_21:22:28 1553 FHEM/lib/FUIP/fonts/nesges.css
 UPD 2015-05-26_10:04:28 5784 FHEM/lib/FUIP/fonts/nesges.woff
 UPD 2018-07-18_14:43:10 38 FHEM/lib/FUIP/images/lizenzen.txt

@@ -24,7 +24,7 @@ sub _getDevices($$){
 		};	
 	};
 	# only devices with battery, but we want the Activity reading nevertheless, if it exists
-	my $fields = ["alias"];
+	my $fields = ["alias","battery"];
 	if($deviceFilter ne "all") {
 		push(@$fields,"Activity");
 	};	
@@ -36,6 +36,7 @@ sub _getDevices($$){
 		if($device->{Attributes}{alias}) {
 			$devices{$dev}{alias} = $device->{Attributes}{alias};
 		};
+		$devices{$dev}{battery} = $device->{Readings}{battery} if $devices{$dev}{battery};
 		# own key
 		$devices{$dev}{key} = $dev;
 	};
@@ -61,6 +62,21 @@ sub _getHtmlName($) {
 };
 
 
+sub _getReadingType($$) {
+# determine type of reading:
+#	text:	ok/low etc.
+#	percentage: percentage (without the % sign)
+#	voltage:	voltage, without the V sign
+	my ($device,$reading) = @_;
+	return "percentage" if($reading eq "batteryPercent");
+	return "voltage" if($reading =~ m/^(batteryLevel|batVoltage)$/);
+	# now only "battery" is left, which usually is like ok/low etc., but can be percentage as well
+	my $value = $device->{$reading};
+	return "percentage" if($value =~ m/^\s*\d*\s*$/);	# i.e. (blanks,) digits (, blanks)
+	return "text";
+};
+
+
 sub _getHtmlBatterySymbol($) {
 	my ($device) = @_;
 	my $reading;
@@ -70,23 +86,24 @@ sub _getHtmlBatterySymbol($) {
 		last;
 	};	
 	return "" unless $reading;	
+	my $readingType = _getReadingType($device,$reading);
 	my $result = '<div style="margin-top:-26px;margin-bottom:-30px;margin-right:-10px;margin-left:-10px;" 
 					data-type="symbol" 
 					data-device="'.$device->{key}.'" 
 					data-get="'.$reading.'"'."\n";
-	if($reading eq "battery") {
+	if($readingType eq "text") {
 		$result .= 'data-icons=\'["oa-measure_battery_0 fa-rotate-90","oa-measure_battery_75 fa-rotate-90"]\''."\n";
 	}else{
 		$result .= 'data-icons=\'["oa-measure_battery_0 fa-rotate-90","oa-measure_battery_25 fa-rotate-90","oa-measure_battery_50 fa-rotate-90","oa-measure_battery_75 fa-rotate-90","oa-measure_battery_100 fa-rotate-90"]\''."\n";
 	};
-	if($reading eq "batteryPercent") {
+	if($readingType eq "percentage") {
 		$result .= 'data-states=\'["0","10","35","60","90"]\''."\n";
-	}elsif($reading eq "battery") {
+	}elsif($readingType eq "text") {
 		$result .= 'data-states=\'["((?!ok).)*","ok"]\''."\n";
 	}else{
 		$result .= 'data-states=\'["0","2.1","2.4","2.7","3.0"]\''."\n";
 	};
-	if($reading eq "battery") {
+	if($readingType eq "text") {
 		$result .= 'data-colors=\'["red","green"]\'>'."\n";
 	}else{
 		$result .= 'data-colors=\'["red","yellow","green","green","green"]\'>'."\n";
@@ -99,13 +116,16 @@ sub _getHtmlBatterySymbol($) {
 sub _getHtmlBatteryLevel($) {
 	my ($device) = @_;
 	my $result = "";
-	for my $reading (qw(batteryLevel batteryPercent batVoltage)) {
+	for my $reading (qw(batteryLevel batteryPercent battery batVoltage)) {
 		next unless exists $device->{$reading};
+		my $readingType = _getReadingType($device,$reading);
+		next if $readingType eq "text";  # we do not want to see texts, just numbers here
 		$result .= '<div data-type="label" 
 						data-device="'.$device->{key}.'" 
 						data-get="'.$reading.'" 
-						data-unit="'.($reading eq "batteryPercent" ? '%' : 'V').'"
+						data-unit="'.($readingType eq "percentage" ? '%' : 'V').'"
 						class="fuip-color"></div>'."\n";	
+		last;  # especially for those with userReadings				
 	};
 	return $result;
 };	
@@ -125,7 +145,6 @@ sub _getHtmlActivity($) {
 
 sub getHTML($){
 	my ($self) = @_;
-	# TODO: general mechanism to include view specific scripts
 	my $result = '<div  data-fuip-type="fuip-batteries" style="overflow:auto;width:100%;height:100%;">
 				<table style="border-spacing:0px;"><tr><td style="padding:0;">';
 	my $devices = _getDevices($self->{fuip}{NAME},$self->{deviceFilter});				
