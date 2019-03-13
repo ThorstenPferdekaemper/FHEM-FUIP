@@ -106,12 +106,7 @@ button.wdtimer_deleteprofile {
 	border:1px solid;
     padding: 6px 6px 6px 6px !important; 
 }
-.wdtimer_dropdowncmd.iconic {
-	font-size: 18px !important;
-	padding: 2px 0px 4px 4px !important;
-	word-spacing: -1.675em;
-	letter-spacing: 0.3em;
-}
+
 .wdtimer_checkbox {
 	position: relative;
     display: inherit;       
@@ -253,30 +248,6 @@ button.wdtimer_deleteprofile {
 .dark .wdtimer_profile:last-child > .wdtimer_buttonblock > .wdtimer_profilemove > .wdtimer_profiledown { visibility:hidden;}
 .dark .wdtimer_profile:first-child > .wdtimer_buttonblock > .wdtimer_profilemove > .wdtimer_profileup { visibility:hidden; }
 .dark .wdtimer_profile:nth-child(odd) {background: var(--fuip-color-background-hover,#404040);}
-
-.wdtimer_dropdown.iconic {
-	font-size: 18px !important;
-	padding: 2px 0px 5px 2px !important;
-	word-spacing: -1.675em;
-	letter-spacing: 0.3em;
-}
-.wdtimer_dropdown.popup_activated {
-	z-index: 9999;
-	position: relative;
-	display: inline-grid;
-	border-style: solid;
-	border-width: 1px;
-	scroll-behavior: auto;
-	overflow-y: auto;
-	overflow-x: hidden;
-	color: var(--fuip-color-foreground,#eee);
-}
-.wdtimer_dropdown.dark.popup_activated {background-color: var(--fuip-color-background,#393939); border-color: var(--fuip-color-foreground,#808080);}
-.wdtimer_dropdown.popup_activated>div {margin: 0px 0px 0px 0px;}
-.wdtimer_dropdown:not(.selected) {display: none;}
-.wdtimer_dropdown.selected {opacity: 1 !important;}
-.wdtimer_dropdown.popup_activated {opacity: 1 !important;display: inline-grid; position: absolute;}
-.wdtimer_dropdown.dark.popup_activated>div:hover {background-color: var(--fuip-color-background-hover,#007fff);}
 
 .fa.wdtimer_button {
     font-family: "Font Awesome 5 Free";

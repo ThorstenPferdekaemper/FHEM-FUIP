@@ -142,78 +142,6 @@ function depends_fuip_wdtimer (){
     return deps;
 };
 
-var mydropdown = {
-	do_onclick: function(ev, obj, hmax) {
-		var dropdown = $(obj).parent().find('.wdtimer_dropdown');
-		if (dropdown.hasClass('popup_activated')) { // popup is active, hide it
-			dropdown.removeClass('popup_activated');
-			dropdown.children().removeClass('popup_activated');
-			$(obj).removeClass('active');
-		} else { // popup is inactive, show it
-			var container = $(obj).parent().parents('.wdtimer_profilelist')
-			container.find('.wdtimer_dropdown').removeClass('popup_activated'); // hide any open dropdowns we only want to have one open at a time
-			container.find('.active').removeClass('active'); // hide any open dropdowns we only want to have one open at a time
-			var hstr = '';
-			if (hmax) { // we have hmax, so we need to reserve space for scrollbars
-				var scwidth = mydropdown.get_scrollsize().width;
-				hstr = '; height: '+hmax+'px; padding-right: '+scwidth+'px !important;';
-			}
-			dropdown.attr('style','margin-top:-1px; margin-left: 8px; overflow-y: auto;'+hstr);
-			dropdown.addClass('popup_activated');
-			dropdown.children().addClass('popup_activated');
-			dropdown.children().on('click.myelements',function(ev) {mydropdown.do_onselect(ev, this);});
-			$(obj).addClass('active');
-			$(document).on('click',function(ev) {mydropdown.check_outside(ev,dropdown,this);});
-			container.parent().on('scroll',function(ev) {mydropdown.check_outside(ev,dropdown,this);});
-		}
-	},
-	do_onselect: function(ev, obj) { // handle clicks on open dropdowns
-		$(obj).parent().removeClass('popup_activated');
-		$(obj).parent().children().removeClass('popup_activated');
-		$(obj).parent().children().removeClass('selected');
-		$(obj).parent().children().off();
-		$(obj).parent()[0].selectedIndex = parseInt(obj.attributes.index.value);
-		$(obj).addClass('selected');
-		$(obj).trigger('change');
-		var source = $(obj).parent().parent().find('.wdtimer_dropdowncmd');
-		source.children().remove();
-		$(obj).clone().appendTo(source);
-	},
-	check_outside: function(ev,dd,obj) { // check for clicks outside and hide dropdown
-		if (!$(ev.target).parent().hasClass('wdtimer_dropdowncmd')) {
-			dd.removeClass('popup_activated');
-			dd.children().removeClass('popup_activated');
-			$(obj).removeClass('active')
-		}
-	},
-	get_scrollsize: function() {
-		var css = {
-			"border":  "none",
-			"height":  "200px",
-			"margin":  "0",
-			"padding": "0",
-			"width":   "200px"
-		};
-
-		var inner = $("<div>").css($.extend({}, css));
-		var outer = $("<div>").css($.extend({
-			"left":	   "-1000px",
-			"overflow":   "scroll",
-			"position":   "absolute",
-			"top":		"-1000px"
-		}, css)).append(inner).appendTo("body")
-		.scrollLeft(1000)
-		.scrollTop(1000);
-
-		var scrollSize = {
-			"height": (outer.offset().top - inner.offset().top) || 0,
-			"width": (outer.offset().left - inner.offset().left) || 0
-		};
-
-		outer.remove();
-		return scrollSize;
-	}
-}
 
 var Modul_fuip_wdtimer = function () {
 	function wdtimer_multiArrayindexOf(arr, val) {
@@ -241,18 +169,6 @@ var Modul_fuip_wdtimer = function () {
 		return(ret.replace(/ /,''));
 	};
 
-	
-	// fix sizes of fields with (dynamic) dropdowns
-	function wdtimer_fixFieldSizes(elem) {
-		elem.find(".wdtimer_dropdowncmd").each(function() {
-			var list = $(this).parent().find(".wdtimer_dropdown");
-			list.addClass("popup_activated");
-			var width = list[0].clientWidth + 14;  // 14 for paddings and frame
-			list.removeClass("popup_activated");
-			$(this).css("width",width.toString() +"px");
-		});
-	};	
-	
 	
 	// show wdtimer within the widget itself
 	function wdtimer_showInplace(elem,config) { 
@@ -309,10 +225,6 @@ var Modul_fuip_wdtimer = function () {
 		elem.find('.wdtimer_dialog').css('width','auto');
 		
 		elem.find(".wdtimer_checkbox > input").change(wdtimer_checkboxchanged).trigger("change");
-		// fix sizes of fields with (dynamic) dropdowns
-		wdtimer_fixFieldSizes(elem);
-		// in case this is on a popup, we need to register this for when the popup appears
-		if(popup) popup.on("fadein",function() { wdtimer_fixFieldSizes(elem) } );
 		
 		elem.find('[name="wdtimer_timedd"]').on('change',function(evt) {wdtimer_showhideoptions(evt,config[2]);});
 
@@ -345,8 +257,6 @@ var Modul_fuip_wdtimer = function () {
 		
 		elem.append(wdtimer_buildwdtimer(config));
 		elem.find(".wdtimer_checkbox > input").change(wdtimer_checkboxchanged).trigger("change");
-		// fix sizes of fields with (dynamic) dropdowns
-		wdtimer_fixFieldSizes(elem);
 		
 		elem.find('[name="wdtimer_timedd"]').on('change',function(evt) {wdtimer_showhideoptions(evt,config[2]);});
 
@@ -499,49 +409,33 @@ var Modul_fuip_wdtimer = function () {
 	
 	
 	function wdtimer_buildwdtimertimedropdown(cmds, selectedval, ocmd, theme,style) {
-		var result = "";
-		result += "<div class='wdtimer_dropdown "+((style.search('noicons')<0)?'iconic oa-':'')+theme+" "+style+"' id='wdtimer_timedd' name='wdtimer_timedd' ocmd='"+ocmd+"'>";
-		var result_btn = false;
+		var result = "<select class='wdtimer_dropdowncmd " + theme + " " + style + "' id='wdtimer_timedd' name='wdtimer_timedd' ocmd='"+ocmd+"'>";
+		var selectedFound = false;
 		for (var i = 0; i < cmds.length; i++) {
-			var text = (cmds[i][3]&&style.search('noicons')<0)?wdtimer_fontNameToUnicode(cmds[i][3]):cmds[i][1];
+			result += "<option value='"+cmds[i][1]+"' " + (cmds[i][2]?("title='"+cmds[i][2]+"'"):'');
 			if (cmds[i][1] === selectedval) {
-				result += "<div value='"+cmds[i][1]+(cmds[i][2]?("' title='"+cmds[i][2]):'')+"' index='"+i+"' class='selected'>"+text+"</div>";
-				result_btn = "<div onclick='mydropdown.do_onclick(event,this);' class='wdtimer_dropdowncmd "+((style.search('noicons')<0)?'iconic oa-':'')+theme+" "+style+"' style='width:60px;'>";
-				result_btn += "<div value='"+cmds[i][1]+(cmds[i][2]?("' title='"+cmds[i][2]):'')+"' class='selected'>"+text+"</div>";
-				result_btn += "</div>";
-			} else {
-				result += "<div value='"+cmds[i][1]+(cmds[i][2]?("' title='"+cmds[i][2]):'')+"' index='"+i+"'>"+text+"</div>";
-			}
-		}
-		result += "</div>";
+				result += " selected";
+			};
+			result += ">" + cmds[i][1] + "</option>";
+		};		
 		// is it "Command"?
-		if(!result_btn && selectedval == "Command") {
-			var text = (style.search('noicons')<0)?'>_':'Cmd';
-			result_btn = "<div onclick='mydropdown.do_onclick(event,this);' class='wdtimer_dropdowncmd "+((style.search('noicons')<0)?'iconic oa-':'')+theme+" "+style+"' style='width:60px;'>";
-			result_btn += "<div value='Command' title='Perl command (read-only)' class='selected'>"+text+"</div>";
-			result_btn += "</div>";			
+		if(!selectedFound && selectedval == "Command") {
+			result += "<option value='Command' title='Perl command (read-only)' selected>Cmd</option>";
 		};	
-		result = result_btn + result;
+		result += "</select>";
 		return result;
 	};
 	
 	function wdtimer_buildwdtimercmddropdown(cmds, selectedval, theme,style) {
-		var result = "";
-
-		result += "<div class='wdtimer_dropdown "+theme+" "+style+"' name='wdtimer_cmd'>";
+		var result = "<select class='wdtimer_dropdowncmd "+theme+" "+style+"' name='wdtimer_cmd'>";
 		for (var i = 0; i < cmds.length; i++) {
-			var text = (cmds[i][3]&&style.search('noicons')<0)?wdtimer_fontNameToUnicode(cmds[i][3]):cmds[i][0];
+			result += "<option value='"+cmds[i][1]+"' " + (cmds[i][0]?("title='"+cmds[i][0]+"'"):'');
 			if (cmds[i][1] === selectedval) {
-				result += "<div value='"+cmds[i][1]+(cmds[i][0]?("' title='"+cmds[i][0]):'')+"' index='"+i+"' class='selected'>"+text+"</div>";
-				var result_btn = "<div onclick='mydropdown.do_onclick(event,this);' class='wdtimer_dropdowncmd "+theme+" "+style+"'>";
-				result_btn += "<div value='"+cmds[i][1]+(cmds[i][0]?("' title='"+cmds[i][0]):'')+"' class='selected'>"+text+"</div>";
-				result_btn += "</div>";
-			} else {
-				result += "<div value='"+cmds[i][1]+(cmds[i][0]?("' title='"+cmds[i][0]):'')+"' index='"+i+"'>"+text+"</div>";
-			}
-		}
-		result += "</div>";
-		result = result_btn + result;
+				result += " selected";
+			};
+			result += ">" + cmds[i][0] + "</option>";
+		};		
+		result += "</select>";
 		return result;
 	};
 	
@@ -660,13 +554,6 @@ var Modul_fuip_wdtimer = function () {
 		elem.find('.wdtimer_profilelist').append(profile_row);
 		elem.find('[name="wdtimer_timedd"]').on('change',function(evt) {wdtimer_showhideoptions(evt,config[2]);});
 		elem.find(".wdtimer_checkbox > input").change(wdtimer_checkboxchanged).trigger("change");
-		elem.find(".wdtimer_dropdowncmd").each(function() {
-			var list = $(this).parent().find(".wdtimer_dropdown");
-			list.addClass("popup_activated");
-			var width = list[0].clientWidth + 14;  // 14 for paddings and frame
-			list.removeClass("popup_activated");
-			$(this).css("width",width.toString() +"px");
-		});
 		
 		wdtimer_setDeleteAction(elem); //Löschen-Schalter Aktion zuweisen
 		wdtimer_setSortAction(elem);  // move up/down
@@ -1173,7 +1060,7 @@ var Modul_fuip_wdtimer = function () {
 			arr_profil.push( wdtimer_getWeekdays(weekdays,'de') );
 			//-----------------------------------------------
 			//Uhrzeit
-			var selection = $(this).find("div[name='wdtimer_timedd']").parent().children().first().children().first().attr('value');
+			var selection = $(this).find("select[name='wdtimer_timedd'] option:selected").val();
 			var tmparr = [];
 			tmparr.push(selection);
 			var frame = $(this).find("div[name='wdtimer_frame']");
@@ -1201,12 +1088,12 @@ var Modul_fuip_wdtimer = function () {
 			arr_profil.push(tmparr);
 			//-----------------------------------------------
 			//Befehl
-            var cmdid = $( this ).find(".wdtimer_profilecmd").children("div[name='wdtimer_cmd']").children('.selected')[0].attributes.index.value;
- 			arr_profil.push( cmdlist[cmdid][1] );
+            var cmd = $( this ).find("select[name='wdtimer_cmd'] option:selected").val();
+ 			arr_profil.push( cmd );
 			//-----------------------------------------------
 			//Prüfen der Profilangaben auf Gueltigkeit
 			if (arr_profil[0].indexOf(true) == -1 ) { profileError = true;} //Kein Wochentag markiert
-			if  (cmdlist[cmdid] === undefined) { profileError = true;} //Kein gültiger Befehl
+			// if  (cmdlist[cmdid] === undefined) { profileError = true;} //Kein gültiger Befehl  TODO: to be checked?
 			if (profileError === true) {
 				error = profileError;
 				$(this).addClass( "error" );
