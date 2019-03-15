@@ -1066,6 +1066,9 @@ sub renderViewTemplateMaint($$) {
 							icon: "ui-icon-calculator",
 							showLabel: false
 						});	
+						$("#viewtemplaterenamebutton").button({
+							// label: "R"
+						});
 						$("#viewtemplatedeletebutton").button({
 							icon: "ui-icon-trash",
 							showLabel: false
@@ -1115,7 +1118,11 @@ sub renderViewTemplateMaint($$) {
 					<button id="viewtemplatesettingsbutton" type="button" 
 							onclick="openSettingsDialog(\'viewtemplate\')">Settings</button>
 					<button id="viewtemplatearrangebutton" type="button" 
-							onclick="autoArrange()">Arrange views (auto layout)</button>		
+							onclick="autoArrange()">Arrange views (auto layout)</button>	
+					<button id="viewtemplaterenamebutton" type = "button"
+							onclick="viewTemplateRename(\''.$hash->{NAME}.'\',\''.$templateid.'\')"
+							title="Rename view template"
+							style="height:27.38px;"><span style="position:absolute;left:8.3px;top:5.2px;">R</span></button>			
 					<button id="viewtemplatedeletebutton" type = "button"
 							onclick="viewTemplateDelete(\''.$hash->{NAME}.'\',\''.$templateid.'\')">Delete view template</button>
 				</div></div>'."\n";
@@ -1142,6 +1149,7 @@ sub renderViewTemplateMaint($$) {
 		</div>
 		<div id="valuehelp">
 		</div>
+		<div id="inputpopup"></div>
        </body>
        </html>';
     return ("text/html; charset=utf-8", $result);
@@ -2668,6 +2676,52 @@ sub _setDelete($$) {
 };	
 
 
+sub _setRename($$) {
+	# e.g. set ui rename type=viewtemplate origintemplateid=test targettemplateid=testnew 
+	my ($hash,$h) = @_;
+	return '"set rename": unknown type' unless exists $h->{type} and $h->{type} eq "viewtemplate";
+	return '"set rename": origin template id missing' unless $h->{origintemplateid};
+	return '"set rename": target template id missing' unless $h->{targettemplateid};
+	return 'View template '.$h->{origintemplateid}.' does not exist' unless $hash->{viewtemplates}{$h->{origintemplateid}};
+	return 'View template '.$h->{targettemplateid}.' already exists' if $hash->{viewtemplates}{$h->{targettemplateid}};
+	# now we can start renaming
+	my $origin = $h->{origintemplateid};
+	my $target = $h->{targettemplateid};
+	# rename usages as views in cells
+	# in all pages
+	for my $pageid (keys %{$hash->{pages}}) { 
+		# check all cells
+		my $cells = $hash->{pages}{$pageid}{cells};
+		for my $cellid (0..$#$cells) {
+			# check all views
+			my $views = $cells->[$cellid]{views};
+			for my $viewid (0..$#$views) {
+				my $view = $views->[$viewid];
+				next unless blessed($view) eq 'FUIP::ViewTemplInstance' and $view->{templateid} eq $origin;
+				# found it!
+				$view->{templateid} = $target;
+			};
+		};
+	};	
+	# rename usages as views in view templates
+	for my $id (keys %{$hash->{viewtemplates}}) {
+		my $views = $hash->{viewtemplates}{$id}{views};
+		for my $viewid (0..$#$views) {
+			my $view = $views->[$viewid];
+			next unless blessed($view) eq 'FUIP::ViewTemplInstance' and $view->{templateid} eq $origin;
+			# found it!
+			$view->{templateid} = $target;
+		};
+	};
+	# rename the view template itself
+	$hash->{viewtemplates}{$target} = $hash->{viewtemplates}{$origin};
+	delete $hash->{viewtemplates}{$origin};
+	$hash->{viewtemplates}{$target}{id} = $target;
+	
+	return undef;  # clearly return "all good"
+};	
+
+
 sub _setConvert($$) {
 	# convert one thing into another
 	# supported:
@@ -2732,6 +2786,9 @@ sub Set($$$)
 	}elsif($cmd eq "delete") {
 		# e.g. set ui delete type=viewtemplate templateid=test
 		return _setDelete($hash,$h);	
+	}elsif($cmd eq "rename") {
+		# e.g. set ui rename type=viewtemplate origintemplateid=test targettemplateid=testnew 
+		return _setRename($hash,$h);
 	}elsif($cmd eq "resize") {
 		my $container = _getContainerForCommand($hash,$h);
 		return "\"set resize\": could not find view/cell/dialog/view template" unless $container;

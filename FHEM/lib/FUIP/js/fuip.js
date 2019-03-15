@@ -466,6 +466,40 @@ function viewTemplateDelete(name,templateid){
 		window.location.replace(location.origin + "/fhem/" + name + "/fuip/viewtemplate");
 	});	
 };
+
+
+function viewTemplateRename(name,templateid){
+	var popup = $( "#inputpopup" ).dialog({
+		autoOpen: false,
+		width: 350,
+		height: 150,
+		modal: true,
+		title: "Enter new view template id",
+		buttons: [{
+			text: 'Ok',
+			icon: 'ui-icon-check',
+			click: async function() {
+				var targettemplateid = $("#targettemplateid").val();			
+				if(!targettemplateid.length) { return; }; // we need an id
+				await asyncSendFhemCommandLocal(
+					"set " + name + " rename type=viewtemplate origintemplateid=" + templateid 
+								+ " targettemplateid=" + targettemplateid
+				);
+				window.location = "/fhem/" + name.toLowerCase() +"/fuip/viewtemplate?templateid="+targettemplateid;
+			},
+			showLabel: false },
+		  { text: 'Cancel',
+			icon: 'ui-icon-close',
+			click: function() {	popup.dialog( "close" ); },
+			showLabel: false }
+		],
+	});
+	popup.html('<form onsubmit="return false;">'+
+					'<label for="targettemplateid">New template id</label>'+
+					'<input type="text" id="targettemplateid" style="visibility:visible;" value=""/>'+
+				'</form>');
+	popup.dialog("open");
+};	
 	
 
 function gridDimensions() {
