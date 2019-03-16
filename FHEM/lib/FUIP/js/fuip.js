@@ -468,6 +468,16 @@ function viewTemplateDelete(name,templateid){
 };
 
 
+function checkViewTemplateId(templateid) {
+//	makes sure that a view template id adheres to the rules for Perl variables
+//	returns true if everything is ok, false otherwise
+	if(/^[_a-zA-Z][_a-zA-Z0-9]*$/.test(templateid)) 
+		return true; // all good	
+	popupError('View template name invalid', 'The view template name "'+templateid+'" is invalid. You can only use letters (a..b,A..B), numbers (0..9) and the underscore (_). The first character can only be a letter or the underscore. Whitespace (blanks) cannot be used.'); 
+	return false;
+};
+
+
 function viewTemplateRename(name,templateid){
 	var popup = $( "#inputpopup" ).dialog({
 		autoOpen: false,
@@ -479,13 +489,13 @@ function viewTemplateRename(name,templateid){
 			text: 'Ok',
 			icon: 'ui-icon-check',
 			click: async function() {
-				var targettemplateid = $("#targettemplateid").val();			
-				if(!targettemplateid.length) { return; }; // we need an id
+				let targettemplateid = $("#targettemplateid").val();
+				if(!checkViewTemplateId(targettemplateid)) return;	
 				await asyncSendFhemCommandLocal(
 					"set " + name + " rename type=viewtemplate origintemplateid=" + templateid 
 								+ " targettemplateid=" + targettemplateid
 				);
-				window.location = "/fhem/" + name.toLowerCase() +"/fuip/viewtemplate?templateid="+targettemplateid;
+				window.location.replace("/fhem/" + name.toLowerCase() +"/fuip/viewtemplate?templateid="+targettemplateid);
 			},
 			showLabel: false },
 		  { text: 'Cancel',
@@ -496,7 +506,7 @@ function viewTemplateRename(name,templateid){
 	});
 	popup.html('<form onsubmit="return false;">'+
 					'<label for="targettemplateid">New template id</label>'+
-					'<input type="text" id="targettemplateid" style="visibility:visible;" value=""/>'+
+					'<input type="text" id="targettemplateid" style="visibility:visible;" value="'+templateid+'"/>'+
 				'</form>');
 	popup.dialog("open");
 };	
@@ -2991,12 +3001,10 @@ async function dialogNewViewTemplateName() {
 				text: 'Ok',
 				icon: 'ui-icon-check',
 				click: function() {
-					let newname = $("#newtemplateid").val();			
-					if(newname.length) { 
+					let newname = $("#newtemplateid").val();	
+					if(checkViewTemplateId(newname)) {
 						popup.dialog( "close" );
 						resolve(newname);
-					}else{
-						popupError("Enter a name",'Enter something or hit the "Cancel" button');
 					};		
 				},
 				showLabel: false },

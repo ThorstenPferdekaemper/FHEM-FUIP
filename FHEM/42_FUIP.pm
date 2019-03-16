@@ -1083,8 +1083,16 @@ sub renderViewTemplateMaint($$) {
             <body style='text-align:left;'";
 	$result .= '>'."\n"
 				.renderUserHtmlBodyStart($hash,$currentPage)."\n"
-	.'<h1 style="text-align:left;margin-left:3em;color:var(--fuip-color-symbol-active);">'.($templateid ? 'View Template '.$templateid.($viewtemplate->{title} ? ' ('.$viewtemplate->{title}.')' : "") : 'Maintain View Templates').'</h1>
-	<div style="display:flex;flex-wrap:wrap;">'
+	.'<h1 style="text-align:left;margin-left:3em;color:var(--fuip-color-symbol-active);">'.($templateid ? 'View Template '.$templateid.($viewtemplate->{title} ? ' ('.$viewtemplate->{title}.')' : "") : 'Maintain View Templates').'</h1>';
+	# check view template id
+	if($templateid) {
+		my $msg = _checkViewTemplateId($templateid);
+		if($msg) {
+			$result .= '<p style="color:red;margin-left:20px">'.$msg.'</p>
+						<p style="color:red;margin-left:20px">This message is only a warning, but you should rename or delete this view template to avoid issues in the future.</p>';
+		};
+	};
+	$result .= '<div style="display:flex;flex-wrap:wrap;">'
 	.'<div style="margin:20px">'."\n";
 	# list of all view templates
 	$hash->{viewtemplates} = {} unless $hash->{viewtemplates};
@@ -2676,6 +2684,15 @@ sub _setDelete($$) {
 };	
 
 
+sub _checkViewTemplateId($) {
+#	makes sure that a view template id adheres to the rules for Perl variables
+#	returns undef if everything is ok, a message otherwise
+	my ($id) = @_;
+	return undef if $id =~ m/^[_a-zA-Z][_a-zA-Z0-9]*$/;	
+	return 'View template name "'.$id.'" is invalid. You can only use letters (a..b,A..B), numbers (0..9) and the underscore (_). The first character can only be a letter or the underscore. Whitespace (blanks) cannot be used.'; 
+};
+
+
 sub _setRename($$) {
 	# e.g. set ui rename type=viewtemplate origintemplateid=test targettemplateid=testnew 
 	my ($hash,$h) = @_;
@@ -2687,6 +2704,8 @@ sub _setRename($$) {
 	# now we can start renaming
 	my $origin = $h->{origintemplateid};
 	my $target = $h->{targettemplateid};
+	my $msg = _checkViewTemplateId($target);
+	return $msg if $msg;
 	# rename usages as views in cells
 	# in all pages
 	for my $pageid (keys %{$hash->{pages}}) { 
@@ -2734,6 +2753,8 @@ sub _setConvert($$) {
 	return '"set convert": origin does not exist' unless $origin;
 	my $templateid = $h->{targettemplateid};
 	return '"set convert": target already exists' if(exists($hash->{viewtemplates}{$templateid}));   
+	my $msg = _checkViewTemplateId($templateid);
+	return $msg if $msg;
 	# create new view template
 	$hash->{viewtemplates}{$templateid} = FUIP::ViewTemplate->createDefaultInstance($hash);
 	$hash->{viewtemplates}{$templateid}{id} = $templateid;
