@@ -5,7 +5,19 @@
 </head>
 <body>
 <h1>FUIP News</h1>
+<h2>18.03.2019</h2>
 
+<h3>Validierung der Namen von Variablen und "flexiblen Feldern"</h3>
+Ab jetzt ist es nicht mehr m&ouml;glich (oder zumindest sehr schwierig), Variablen (in View Templates) und "Flexible Felder" (im HTML-View) mit "problematischen" Namen anzulegen. Es gelten dieselben Einschr&auml;nkungen wie f&uuml;r Namen von View Templates (siehe den Eintrag vom 15.03.2019). Au&szlig;erdem gibt es eine Reihe von reservierten Namen, die nicht verwendet werden d&uuml;rfen. Dies sind...
+<ul>
+<li>F&uuml;r Variablen: class, defaulted, flexfields, height, id, sizing, templateid, title, variable, variables, views, width</li>
+<li>F&uuml;r Flexible Felder: class, defaulted, flexfields, height, html, popup, sizing, title, variable, variables, views, width</li>
+</ul>
+Beim HTML View kann es jetzt au&szlig;erdem zu Meldungen bez&uuml;glich Fehlern kommen, die vorher von FUIP ignoriert wurden. D.h. es waren auch bisher Fehler, aber jetzt wird es dem Benutzer explizit mitgeteilt.
+
+<h3>Fehlermeldung und Log-Eintr&auml;ge bei Fehlern in der cfg-Datei</h3>
+Die gr&ouml;&szlig;te Teil der Konfiguration eines FUIP-Device wird nicht in der Datei fhem.cfg gespeichert, sondern in einer f&uuml;r jedes FUIP-Device eigenen Datei. (Diese Datei liegt normalerweise im Verzeichnis "/opt/fhem/FHEM/lib/FUIP/config" und hei&szlig;t "FUIP_&lt;name&gt;.cfg", wobei &lt;name&gt; der Name des FUIP-Device ist.) 
+<p>Diese Datei wird beim Start von FHEM geladen bzw. bei einem expliziten "set &lt;name&gt; load". Dabei kann es zu Fehlern kommen, insbesondere aufgrund von Fehlern in FUIP selbst oder auch durch die Verwendung von "problematischen" Namen. Bisher kam es bei solchen Fehlern zu Abst&uuml;rzen oder es wurden die generierten Default-Seiten angezeigt. Insbesondere letzteres ist immer noch der Fall, aber jetzt wird in solchen F&auml;llen wenn m&ouml;glich eine Fehlermeldung angezeigt, sowie entsprechende Eintr&auml;ge im FHEM-Logfile erzeugt.  
 
 <h2>16.03.2019</h2>
 <h3>Validierung der Namen von View Templates</h3>

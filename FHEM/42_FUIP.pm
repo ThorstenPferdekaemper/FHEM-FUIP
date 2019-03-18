@@ -2329,6 +2329,9 @@ sub save($) {
 sub load($) {
 	# TODO: some form of error management
 	my ($hash) = @_;
+	# clear pages and viewtemplates
+	$hash->{pages} = {};
+	$hash->{viewtemplates} = {};
 	my $filename = "FUIP_".$hash->{NAME}.".cfg";
 	# try to read from FUIP directory
 	my ($error, @content) = main::FileRead($fuipPath."config/".$filename);	
@@ -2341,9 +2344,15 @@ sub load($) {
 	my $config = join("\n",@content);
 	# now config is sth we can "eval"
 	my $confHash = eval($config);
-	# clear pages and viewtemplates
-	$hash->{pages} = {};
-	$hash->{viewtemplates} = {};
+	if(not $confHash and $@) {
+		# i.e. something went wrong
+		# write the eval messages into logfile 
+		main::Log3($hash,1,"FUIP: Syntax error(s) in config file ".$filename);
+		for my $line (split /\R/, $@) {
+			main::Log3($hash,1,"FUIP: ".$line);
+		};
+		return "Syntax errors in config file. Check the FHEM log file for details.";
+	};
 	# version 1: only pages, directly as a hash
 	# version 2: hash with keys version, pages, viewtemplates, maybe colors
 	my $version = 1;

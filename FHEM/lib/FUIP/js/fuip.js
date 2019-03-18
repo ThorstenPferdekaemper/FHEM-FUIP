@@ -1060,15 +1060,14 @@ function popupError(title,text,onClose) {
 			click: function() { popup.dialog("close"); },
 			showLabel: false
 		}];
-	if(onClose) {
-		buttons[0].click = function() { popup.dialog("close"); onClose(); };
-	};	
-	popup.dialog({
+	let settings = {
 			title: title,
 			modal: true,
 			buttons: buttons,
 			classes: { "ui-dialog-titlebar": "ui-state-error" }
-		});
+		};
+	if(onClose) settings.close = onClose;	
+	popup.dialog(settings);
 };	
 
 							
@@ -1184,6 +1183,25 @@ function collectFieldValues(settingsDialog) {
 	});
 	return result;
 };
+
+
+function validateField(id) {
+// check whether field "id" has a valid content
+// returns true if ok
+// otherwise, issues a message to the user and returns false
+// currently checks only variables of view templates
+	if(!/-variable$/.test(id)) return true;
+	let value = $('#'+id).val();
+	if(!/^[_a-zA-Z][_a-zA-Z0-9]*$/.test(value)){
+		popupError('Variable name invalid', 'The variable name "'+value+'" is invalid. You can only use letters (a..b,A..B), numbers (0..9) and the underscore (_). The first character can only be a letter or the underscore. Whitespace (blanks) cannot be used.<p>You have to change the variable name.'); 
+		return false;
+	};
+	if(/^(class|defaulted|flexfields|height|id|sizing|templateid|title|variable|variables|views|width)$/.test(value)){
+		popupError('Variable name is reserved', 'The variable name "'+value+'" is reserved for FUIP itself. Reserved names are "class", "defaulted", "flexfields", "height", "id", "sizing", "templateid", "title", "variable", "variables", "views" and "width".<p>You have to change the variable name.');
+		return false;
+	};	
+	return true;
+};	
 	
 					
 async function acceptSettings(doneFunc) {
@@ -1211,10 +1229,14 @@ async function acceptSettings(doneFunc) {
 	});
 	// collect inputs and checkboxes
 	let flexfields = {};
+	let allFieldsOk = true;
 	$("#viewsettings input, #viewsettings textarea, #viewsettings select.fuip").each(function() {
 		// do not process hidden elements
 		if($(this).css("visibility") == "hidden") 
 			return true;
+		// field validation
+		allFieldsOk = validateField($(this).attr("id"));
+		if(!allFieldsOk) return false;  // leave .each
 		var value;
 		if($(this).attr("type") == "checkbox") {
 			value = ($(this).is(":checked") ? 1 : 0);
@@ -1251,6 +1273,10 @@ async function acceptSettings(doneFunc) {
 			};	
 		};	
 	});
+	// return if there is an issue with a field
+	// this should also make sure that the config popup stays open
+	if(!allFieldsOk) return;
+	// add flex field lists
 	for (const id of Object.keys(flexfields)) {
 		cmd += ' ' + id + '="' + flexfields[id] + '"';
 	};
@@ -2414,6 +2440,19 @@ function setDefaults(settings) {
 };	
 
 
+function flexFieldError(message,fieldString) {
+// create an error message about a flexible field definition	
+	if(!fuip.hasOwnProperty("messages")) {
+		fuip.messages = [];
+	};	
+	let errStr = fieldString.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+	fuip.messages.push({
+		title: 'Invalid Flex Field Definition',
+		description: 'The code below looks like a definition of a flexible field in an HTML view, but cannot be used by FUIP. This definition will be ignored. <p>'+message+'<p><code>'+errStr+'</code>'
+	});
+};
+
+
 function addFieldsFromHtmlView(settings){
 	// find whether this is an HTML view
 	for(let i = 0; i < settings.length; i++){
@@ -2452,11 +2491,32 @@ function addFieldsFromHtmlView(settings){
 		//		but something is wrong. Maybe proper error message and do not 
 		//		change anything
 		let fieldDef = $(fieldString);
-		if(!fieldDef) continue;
+		if(!fieldDef){
+			// It looks like this here is very unlikely. At least, I have not found a way to produce this problem.
+			// However, the check does not harm either.	
+			flexFieldError("",fieldString);
+			continue;
+		};
 		let id = fieldDef.attr("fuip-name");
-		if(!id) continue;
-		// check if this is already there (leave alone "standard" fields and duplicates)
-		if(settings.find((element) => element.id == id)) continue;
+		if(!id){
+			flexFieldError('It is missing a name (attribute "fuip-name").',fieldString);
+			continue;
+		};
+		// check field name format
+		if(!/^[_a-zA-Z][_a-zA-Z0-9]*$/.test(id)){
+			flexFieldError('The field name "'+id+'" is invalid. You can only use letters (a..b,A..B), numbers (0..9) and the underscore (_). The first character can only be a letter or the underscore. Whitespace (blanks) cannot be used.', fieldString);
+			continue;
+		};
+		// check for reserved field names
+		if(/^(class|defaulted|flexfields|height|html|popup|sizing|title|variable|variables|views|width)$/.test(id)){
+			flexFieldError('The field name "'+id+'" is reserved for FUIP itself. Reserved names are "class", "defaulted", "flexfields", "height", "html", "popup", "sizing", "title", "variable", "variables", "views" and "width".',fieldString);
+			continue;
+		};	
+		// check if this is already there 
+		// This is ok in principle, but we should not display it twice
+		if(settings.find((element) => element.id == id)){
+			continue;
+		};	
 		// not there, add it
 		let flexfield = {"id":id, "flexfield":1};
 		if(oldFlexfields.hasOwnProperty(id)) {
@@ -2775,6 +2835,7 @@ async function openSettingsDialog(type, cellid) {
 		default:
 			console.log("FUIP: openSettingsDialog failed: unknown type");
 			ftui.toast("FUIP: openSettingsDialog failed: unknown type","error");
+			fuip.messages = [];
 			return;
 	};	
 	let settingsJson = await asyncSendFhemCommandLocal(cmd);
@@ -2785,6 +2846,15 @@ async function openSettingsDialog(type, cellid) {
 	if(fieldid) {
 		settingsDialog.attr("data-fieldid",fieldid);
 	};	
+	// have we collected any messages?
+	if(fuip.hasOwnProperty("messages")) {
+		for(let msg of fuip.messages) {
+			await new Promise(function(resolve,reject){
+				popupError(msg.title,msg.description,resolve)
+			});
+		};
+		fuip.messages = [];	
+	};
 	settingsDialog.dialog("open");
 };
 			
