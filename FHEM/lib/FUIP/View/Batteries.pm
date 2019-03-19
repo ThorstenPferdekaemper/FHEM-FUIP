@@ -24,12 +24,21 @@ sub _getDevices($$){
 		};	
 	};
 	# only devices with battery, but we want the Activity reading nevertheless, if it exists
-	my $fields = ["alias","battery"];
+	# NAME is added because jsonlist2 does not return devices with Attribute ignore=1. This 
+	#	leads in Model::getDevice to an "empty" device, which could also happen if a device
+	#   simply does not have alias or battery set. NAME, however, is always there unless 
+	#	ignore=1
+	#	(In other words: jsonlist2 never returns the Attribute ignore, if it is 1.)
+	my $fields = ["alias","battery","NAME"];  
 	if($deviceFilter ne "all") {
 		push(@$fields,"Activity");
 	};	
 	for my $dev (keys(%devices)) {
 		my $device = FUIP::Model::getDevice($name,$dev,$fields);
+		unless(exists($device->{Internals}{NAME})) {
+			delete $devices{$dev};
+			next;
+		};
 		if(exists($device->{Readings}{Activity})) {
 			$devices{$dev}{Activity} = 1;
 		};
