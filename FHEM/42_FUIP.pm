@@ -2513,6 +2513,8 @@ sub setViewSettings($$$$;$) {
 		}elsif($field->{type} eq 'dialog') {
 			# special case for view template instances
 			# when variables are set
+			# ...but first update the view according to the new settings
+			setField($view,$field,[],$h,$prefix);
 			if($view->{$field->{id}} and blessed($view->{$field->{id}})) {   # only if there is already a popup
 				setViewSettings($hash, [$view->{$field->{id}}],0,$h,$prefix.$field->{id}.'-');
 			};

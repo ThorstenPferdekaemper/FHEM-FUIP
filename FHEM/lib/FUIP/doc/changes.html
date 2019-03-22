@@ -5,6 +5,15 @@
 </head>
 <body>
 <h1>FUIP News</h1>
+<h2>22.03.2019</h2>
+<h3>Repariert: LabelHumidity und LabelTemperature mit Popup</h3>
+Wenn f&uuml; ein LabelHumidity oder LabelTemperature ein Popup definiert wurde, dann ist der View selbst von der Anzeige verschwunden. Es war auch nicht m&ouml;glich, das Popup aufzurufen. Genau genommen waren die Views noch vorhanden, deren Gr&ouml;&szlig;e wurde aber vom System auf Null ge&auml;ndert. Dies wurde behoben. 
+<h3>Repariert: Verschwindende Texte auf Popups mit Style-Schema bright-mint</h3>
+Das Style-Schema "bright-mint" hatte einen Fehler, durch den Texte auf Popups unsichtbar wurden. Bei der Bearbeitung des Popups (des Dialogs) waren die Texte sichtbar, aber nicht beim Aufrufen des Popups. Dies wurde repariert. Auch auf Popups haben Texte jetzt die Farbe "foreground".
+<h3>Repariert: Einmal definierte Popups konnten nicht mehr gel&ouml;scht werden</h3>
+Bei Views, f&uuml;r die man ein Popup definieren kann, war es nicht m&ouml;glich, das Popup wieder zu l&ouml;schen. Man konnte zwar die Checkbox zum "popup"-Eintrag auf dem Konfigurations-Popups abschalten, das hatte aber keinen Effekt und beim n&auml;chsten &Ouml;ffnen des Konfigurations-Popups war die Markierung wieder gesetzt. Dies wurde behoben.
+
+
 <h2>19.03.2019</h2>
 <h3>Batteries-View: Ger&auml;te mit "ignore" werden ignoriert</h3>
 Der Batteries-View zeigt keine Ger&auml;te mehr an, bei denen das Attribute "ignore" auf einen Wert ungleich 0 gesetzt ist. 

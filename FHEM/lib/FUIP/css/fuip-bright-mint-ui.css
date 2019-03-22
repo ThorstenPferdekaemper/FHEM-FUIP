@@ -57,10 +57,6 @@ svg > text {
     fill: #444;
 }
 
-.dialog  {
-    color: var(--fuip-color-symbol-foreground);
-}
-
 i#warn {
     color: #FFFFFF;
 }
