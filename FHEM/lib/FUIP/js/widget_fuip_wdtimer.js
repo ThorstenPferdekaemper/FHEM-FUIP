@@ -440,17 +440,17 @@ var Modul_fuip_wdtimer = function () {
 	};
 	
 	function wdtimer_buildtimespec(timespec,theme,style) {
-		var t_type = (style.indexOf('nokeyboard')>-1)?"'submit'":"'text'";	
+		var t_readonly = (style.indexOf('nokeyboard')>-1) ? "readonly " : "";	
 		if (timespec[0] == 'Time') {
-			return "<input class='wdtimer_time inline "+theme+" "+style+"' type="+t_type+" tabindex='-1' name = 'wdtimer_time2' value='"+timespec[1].replace(/\"/g,"")+"' autocomplete='off' style='visibility:visible'>"; // given time value
+			return "<input "+t_readonly+"class='wdtimer_time inline "+theme+" "+style+"' type='text' tabindex='-1' name = 'wdtimer_time2' value='"+timespec[1].replace(/\"/g,"")+"' autocomplete='off' style='visibility:visible'>"; // given time value
 		} else if (timespec[0] == 'Command') {
 			return "<input class='wdtimer_text command inline "+theme+" "+style+"' type='text' name = 'wdtimer_text1' title='Perl command (read-only)' value='"+timespec[1]+"' disabled  style='visibility:visible'>"; //command as string
 		} else{   // if (profile[1][0]=='Sunrise' || profile[1][0]=='Sunset'){ 
 			var result = "";
 			result += "<input class='wdtimer_text wdtimer_horizon inline "+theme+" "+style+"' type='text' name = 'wdtimer_text2' title='Horizon (REAL, CIVIL, NAUTIC, ASTRONOMIC or degrees as a number)' value='"+timespec[1].replace(/\"/g,"")+"' style='visibility:visible'>"; //Horizon
 			result += "<input class='wdtimer_text wdtimer_offset inline "+theme+" "+style+"' type='text' name = 'wdtimer_text3' title='Offset in minutes' value='"+timespec[2].replace(/\"/g,"")+"' style='visibility:visible'>"; //offset for sunrise/sunset
-			result += "<input class='wdtimer_time inline "+theme+" "+style+"' type="+t_type+" tabindex='-1' name = 'wdtimer_time1' title='Not before...' value='"+timespec[3].replace(/\"/g,"")+"' style='visibility:visible'>"; // min time values for sunrise/sunset
-			result += "<input class='wdtimer_time inline "+theme+" "+style+"' type="+t_type+" tabindex='-1' name = 'wdtimer_time2' title='Not after...' value='"+timespec[4].replace(/\"/g,"")+"' style='visibility:visible'>"; // max time values for sunrise/sunset
+			result += "<input "+t_readonly+"class='wdtimer_time inline "+theme+" "+style+"' type='text' tabindex='-1' name = 'wdtimer_time1' title='Not before...' value='"+timespec[3].replace(/\"/g,"")+"' style='visibility:visible'>"; // min time values for sunrise/sunset
+			result += "<input "+t_readonly+"class='wdtimer_time inline "+theme+" "+style+"' type='text' tabindex='-1' name = 'wdtimer_time2' title='Not after...' value='"+timespec[4].replace(/\"/g,"")+"' style='visibility:visible'>"; // max time values for sunrise/sunset
 			return result;
 		}
 	};
@@ -684,6 +684,7 @@ var Modul_fuip_wdtimer = function () {
 				format: 'H:i',
 				//timepicker: true,
 				datepicker: false,
+				fixed: true,
 				className:  "wdtimer_datetimepicker wdtimer_datetimepicker_"+config2[0]+" "+config2[8]+" "+config2[9] /*,
 				onChangeDateTime:function(dp,$input){wdtimer_changewidth($($input),5,100);} */
 			});
