@@ -54,10 +54,6 @@ button.wdtimer_profileup, button.wdtimer_profiledown {
 	font-size:13.3333px;
 }
 
-.wdtimer_checkbox>input {
-	display: none
-}
-
 .wdtimer_buttonblock {
 	float: right;
 	height: 100%;
@@ -71,10 +67,9 @@ button.wdtimer_deleteprofile {
 }
 .wdtimer_delprofile { text-align: right;}
 .wdtimer_profilemove {text-align: left;}
-.wdtimer_profileweekdays { padding-left: 4px; padding-top:5px; margin-right: 0px !important;}
+.wdtimer_profileweekdays { padding-left: 0px; padding-top:5px; margin-right: 0px !important;}
 .wdtimer_profilecmds { vertical-align: top; margin-right: 0px !important; width:350px;}
 .wdtimer_profiletime { width: auto !important; }
-/* .wdtimer_profilecmd{ width: auto !important; } */
 .wdtimer_text.command{
 	width: auto !important;
 }
@@ -111,28 +106,14 @@ button.wdtimer_deleteprofile {
 	position: relative;
     display: inherit;       
     border: none;
-    margin-left: -6px;        
     height:35px;
     line-height: 1.6em;
     width:33px;
+	text-align:center;
+	padding-top:7px;
+	margin-bottom:1px;
+	cursor:pointer;
 }
-.wdtimer_checkbox label {
-	cursor: pointer;
-	position: absolute;
-	left: 7px;
-	top: 7px;
-}
-.wdtimer_checkbox label:after {
-	opacity: 0;
-	content: '';
-	position: absolute;
-	top: -7px;
-	left: -7px;
-	width: 35px;
-	height: 35px;    
-}
-
-/* .wdtimer_checkbox input[type=checkbox]:checked + label:after { background-color:var(--fuip-color-symbol-active); } */
  
 .wdtimer_header { text-align: center; padding-bottom: 5px; padding-top: 5px; font-size: 1.4em; }
 .wdtimer_header_icon { position: absolute; left: 8px; font-size: 1.25em !important; }
@@ -160,8 +141,6 @@ button.wdtimer_deleteprofile {
 .wdtimer_footer.round { border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; }
 .wdtimer_checkbox.begin.round { border-bottom-left-radius: 10px; border-top-left-radius: 10px; }  
 .wdtimer_checkbox.end.round { border-bottom-right-radius: 10px; border-top-right-radius: 10px; }   
-.wdtimer_checkbox.round input[type=checkbox]:checked + label.begin::after { border-bottom-left-radius: 10px; border-top-left-radius: 10px; }    
-.wdtimer_checkbox.round input[type=checkbox]:checked + label.end::after { border-bottom-right-radius: 10px; border-top-right-radius: 10px; } 
 .wdtimer_time.round { border-radius: 10px; }
 .wdtimer_dropdowncmd.round { border-radius: 10px; }
 .wdtimer_text.round { border-radius: 10px; }
@@ -180,7 +159,6 @@ button.wdtimer_deleteprofile {
 .wdtimer_datetimepicker.dark  button { background-color: var(--fuip-color-background,#393939) !important; color: var(--fuip-color-foreground,#d1eeee) !important; }
 
 .xdsoft_datetimepicker.xdsoft_fuip {
-	/* box-shadow: 0 5px 15px -5px rgba(255, 255, 255, 0.506); */
 	background: var(--fuip-color-background);
 	border: 1px solid var(--fuip-color-foreground);
 	color: var(--fuip-color-foreground);

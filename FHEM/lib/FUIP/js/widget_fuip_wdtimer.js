@@ -224,7 +224,7 @@ var Modul_fuip_wdtimer = function () {
 		elem.find('.wdtimer_dialog').css('height','calc(100% - 71px)');
 		elem.find('.wdtimer_dialog').css('width','auto');
 		
-		elem.find(".wdtimer_checkbox > input").change(wdtimer_checkboxchanged).trigger("change");
+		elem.find(".wdtimer_checkbox").click(wdtimer_checkboxclicked);
 		
 		elem.find('[name="wdtimer_timedd"]').on('change',function(evt) {wdtimer_showhideoptions(evt,config[2]);});
 
@@ -256,7 +256,7 @@ var Modul_fuip_wdtimer = function () {
 		elem.data('dialog_visible', true);
 		
 		elem.append(wdtimer_buildwdtimer(config));
-		elem.find(".wdtimer_checkbox > input").change(wdtimer_checkboxchanged).trigger("change");
+		elem.find(".wdtimer_checkbox").click(wdtimer_checkboxclicked);
 		
 		elem.find('[name="wdtimer_timedd"]').on('change',function(evt) {wdtimer_showhideoptions(evt,config[2]);});
 
@@ -457,13 +457,8 @@ var Modul_fuip_wdtimer = function () {
 
 	
 	// add/remove "checked" class to the weekday checkbox if needed
-	function wdtimer_checkboxchanged() {
-		var parent = $(this).parent();
-		if(this.checked) {
-			parent.addClass("checked");
-		}else{
-			parent.removeClass("checked");
-		};				
+	function wdtimer_checkboxclicked() {
+		$(this).toggleClass("checked");
 	};
 	
 	
@@ -472,14 +467,14 @@ var Modul_fuip_wdtimer = function () {
         result += "<div data-profile='"+id+"' id='profile"+id+"' class='sheet wdtimer_profile "+style+"'>" +
                   "<div class='col-80 wdtimer_profilerow' >"+
                   "<div class='wdtimer_profileweekdays inline'>" +
-                  "<div class='wdtimer_checkbox begin "+theme+" "+style+"'><input type='checkbox' id='checkbox_mo-reihe"+id+"' "+wdtimer_getCheckedString(profile[0][1])+"/><label class='begin' for='checkbox_mo-reihe"+id+"'>Mo</label></div>"+
-                  "<div class='wdtimer_checkbox "+theme+" "+style+"'><input type='checkbox' id='checkbox_di-reihe"+id+"' "+wdtimer_getCheckedString(profile[0][2])+"/><label for='checkbox_di-reihe"+id+"'>Di</label></div>"+
-                  "<div class='wdtimer_checkbox "+theme+" "+style+"'><input type='checkbox' id='checkbox_mi-reihe"+id+"' "+wdtimer_getCheckedString(profile[0][3])+"/><label for='checkbox_mi-reihe"+id+"'>Mi</label></div>"+
-                  "<div class='wdtimer_checkbox "+theme+" "+style+"'><input type='checkbox' id='checkbox_do-reihe"+id+"' "+wdtimer_getCheckedString(profile[0][4])+"/><label for='checkbox_do-reihe"+id+"'>Do</label></div>"+
-                  "<div class='wdtimer_checkbox "+theme+" "+style+"'><input type='checkbox' id='checkbox_fr-reihe"+id+"' "+wdtimer_getCheckedString(profile[0][5])+"/><label for='checkbox_fr-reihe"+id+"'>Fr</label></div>"+
-                  "<div class='wdtimer_checkbox "+theme+" "+style+"'><input type='checkbox' id='checkbox_sa-reihe"+id+"' "+wdtimer_getCheckedString(profile[0][6])+"/><label for='checkbox_sa-reihe"+id+"'>Sa</label></div>"+
-                  "<div class='wdtimer_checkbox "+theme+" "+style+"'><input type='checkbox' id='checkbox_so-reihe"+id+"' "+wdtimer_getCheckedString(profile[0][0])+"/><label for='checkbox_so-reihe"+id+"'>So</label></div>"+
-                  "<div class='wdtimer_checkbox end "+theme+" "+style+"'><input type='checkbox' id='checkbox_we-reihe"+id+"' "+wdtimer_getCheckedString(profile[0][7])+"/><label class='end' for='checkbox_we-reihe"+id+"'>We</label></div>"+
+                  "<div id='checkbox_mo-reihe"+id+"' class='wdtimer_checkbox begin "+theme+" "+style+" "+wdtimer_getCheckedString(profile[0][1])+"'>Mo</div>"+
+                  "<div id='checkbox_di-reihe"+id+"' class='wdtimer_checkbox "+theme+" "+style+" "+wdtimer_getCheckedString(profile[0][2])+"'>Di</div>"+
+				  "<div id='checkbox_mi-reihe"+id+"' class='wdtimer_checkbox "+theme+" "+style+" "+wdtimer_getCheckedString(profile[0][3])+"'>Mi</div>"+
+				  "<div id='checkbox_do-reihe"+id+"' class='wdtimer_checkbox "+theme+" "+style+" "+wdtimer_getCheckedString(profile[0][4])+"'>Do</div>"+
+				  "<div id='checkbox_fr-reihe"+id+"' class='wdtimer_checkbox "+theme+" "+style+" "+wdtimer_getCheckedString(profile[0][5])+"'>Fr</div>"+
+				  "<div id='checkbox_sa-reihe"+id+"' class='wdtimer_checkbox "+theme+" "+style+" "+wdtimer_getCheckedString(profile[0][6])+"'>Sa</div>"+
+				  "<div id='checkbox_so-reihe"+id+"' class='wdtimer_checkbox "+theme+" "+style+" "+wdtimer_getCheckedString(profile[0][0])+"'>So</div>"+
+				  "<div id='checkbox_we-reihe"+id+"' class='wdtimer_checkbox end "+theme+" "+style+" "+wdtimer_getCheckedString(profile[0][7])+"'>We</div>"+
                   "</div>"+
                   "<div class='wdtimer_profilecmds inline'>";
 		result += "<div class='wdtimer_profilecmd inline' name='wdtimer_frame'>";
@@ -553,7 +548,7 @@ var Modul_fuip_wdtimer = function () {
 		
 		elem.find('.wdtimer_profilelist').append(profile_row);
 		elem.find('[name="wdtimer_timedd"]').on('change',function(evt) {wdtimer_showhideoptions(evt,config[2]);});
-		elem.find(".wdtimer_checkbox > input").change(wdtimer_checkboxchanged).trigger("change");
+		elem.find(".wdtimer_checkbox").click(wdtimer_checkboxclicked);
 		
 		wdtimer_setDeleteAction(elem); //Löschen-Schalter Aktion zuweisen
 		wdtimer_setSortAction(elem);  // move up/down
@@ -1050,14 +1045,14 @@ var Modul_fuip_wdtimer = function () {
 			var profileError = false;
 			// Wochentage
 			//-----------------------------------------------
-			if ($( this ).find(".wdtimer_profileweekdays").children().children("#checkbox_mo-reihe"+profileid).prop('checked') === true) { weekdays += '1'; }
-			if ($( this ).find(".wdtimer_profileweekdays").children().children("#checkbox_di-reihe"+profileid).prop('checked') === true) { weekdays += '2'; }
-			if ($( this ).find(".wdtimer_profileweekdays").children().children("#checkbox_mi-reihe"+profileid).prop('checked') === true) { weekdays += '3'; }
-			if ($( this ).find(".wdtimer_profileweekdays").children().children("#checkbox_do-reihe"+profileid).prop('checked') === true) { weekdays += '4'; }
-			if ($( this ).find(".wdtimer_profileweekdays").children().children("#checkbox_fr-reihe"+profileid).prop('checked') === true) { weekdays += '5'; }
-			if ($( this ).find(".wdtimer_profileweekdays").children().children("#checkbox_sa-reihe"+profileid).prop('checked') === true) { weekdays += '6'; }
-			if ($( this ).find(".wdtimer_profileweekdays").children().children("#checkbox_so-reihe"+profileid).prop('checked') === true) { weekdays += '0'; }
-			if ($( this ).find(".wdtimer_profileweekdays").children().children("#checkbox_we-reihe"+profileid).prop('checked') === true) { weekdays += '7'; }
+			if ($( this ).find("#checkbox_mo-reihe"+profileid).hasClass('checked')) { weekdays += '1'; }
+			if ($( this ).find("#checkbox_di-reihe"+profileid).hasClass('checked')) { weekdays += '2'; }
+			if ($( this ).find("#checkbox_mi-reihe"+profileid).hasClass('checked')) { weekdays += '3'; }
+			if ($( this ).find("#checkbox_do-reihe"+profileid).hasClass('checked')) { weekdays += '4'; }
+			if ($( this ).find("#checkbox_fr-reihe"+profileid).hasClass('checked')) { weekdays += '5'; }
+			if ($( this ).find("#checkbox_sa-reihe"+profileid).hasClass('checked')) { weekdays += '6'; }
+			if ($( this ).find("#checkbox_so-reihe"+profileid).hasClass('checked')) { weekdays += '0'; }
+			if ($( this ).find("#checkbox_we-reihe"+profileid).hasClass('checked')) { weekdays += '7'; }
 			arr_profil.push( wdtimer_getWeekdays(weekdays,'de') );
 			//-----------------------------------------------
 			//Uhrzeit
