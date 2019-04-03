@@ -6,8 +6,13 @@ use warnings;
 use lib::FUIP::View;
 use parent -norequire, 'FUIP::View';
 
+sub getDependencies($$) {
+	return ['js/fuip_5_resize.js','js/fuip_state.js'];
+};	
 
-sub getHTML($){
+
+sub _getHTML_fixed($){
+	#"old" routine in order to keep existing layouts intact
 	my ($self) = @_;
 	# show STATE
 	my $result = "<table width='100%' class=\"fuip-color\" style='border:1px solid; border-radius:8px;'>";
@@ -27,11 +32,61 @@ sub getHTML($){
 	$result .= "</table>";
 	return $result;
 };
+
+	
+sub _getHTML_flex($){
+	#"old" routine in order to keep existing layouts intact
+	my ($self) = @_;
+	# show STATE
+	my $result = "<div data-fuip-type='fuip-state' 
+						data-fuip-lines='".$self->{lines}."'
+						class=\"fuip-color\" style='display:flex;width:100%;height:100%;border:1px solid; border-radius:8px;'>";
+	if($self->{icon}){
+		$result .= '<div style="align-self:center;">
+						<i class="fa '.$self->{icon}.' fuip-color"></i>
+					</div>';
+	};
+	$result .= "<div style='display:flex;flex-direction:column;margin-left:auto;margin-right:auto;'>
+				<div data-fuip-type='fuip-state-label' class=\"fuip-color\">".$self->{label}."</div>
+				<div data-type=\"label\" 
+					data-fuip-type='fuip-state-field'
+							 class=\"fuip-color\"
+							 style='margin-top:auto;margin-bottom:auto;'
+							 data-device=\"".$self->{device}."\">
+				</div>
+				</div>";
+	$result .= "</div>";
+	return $result;
+};		
+
+sub getHTML($){
+	my ($self) = @_;
+	$self->{sizing} = "fixed" unless $self->{sizing};
+	$self->{lines} = 3 unless $self->{lines};
+	return $self->_getHTML_fixed() if $self->{sizing} eq "fixed" and $self->{lines} == 3;
+	return $self->_getHTML_flex();	
+};	
 	
 	
 sub dimensions($;$$){
-	my $self = shift;
-	return (main::AttrVal($self->{fuip}{NAME},"baseWidth",142), 60);
+	my ($self,$width,$height) = @_;
+	$self->{sizing} = "fixed" unless $self->{sizing};
+	if($self->{sizing} eq "resizable") {
+		$self->{width} = $width if $width;
+		$self->{height} = $height if $height;
+	};
+	# do we have to determine the size?
+	# even if sizing is "auto", we at least determine an initial size
+	# either resizable and no size yet
+	# or fixed
+	if(not $self->{height} or $self->{sizing} eq "fixed") {
+		$self->{height} = 60;
+	};
+	if(not $self->{width} or $self->{sizing} eq "fixed") {
+		$self->{width} = main::AttrVal($self->{fuip}{NAME},"baseWidth",142);
+	};	
+	return ("auto","auto") if($self->{sizing} eq "auto");
+	return ($self->{width},$self->{height});
 };	
 	
 
@@ -45,6 +100,13 @@ sub getStructure($) {
 		{ id => "title", type => "text", default => { type => "field", value => "device"} },
 		{ id => "label", type => "text", default => { type => "field", value => "title"} },
 		{ id => "icon", type => "icon" },
+		{ id => "width", type => "dimension" },
+		{ id => "height", type => "dimension" },
+		{ id => "sizing", type => "sizing", options => [ "fixed", "auto", "resizable" ],
+			default => { type => "const", value => "fixed" } },
+		{ id => "lines", type => "text", 
+				default => { type => "const", value => "3" },
+				options => ["1","2","3","4","5","6"] },	
 		{ id => "popup", type => "dialog", default=> { type => "const", value => "inactive"} }	
 		];
 };

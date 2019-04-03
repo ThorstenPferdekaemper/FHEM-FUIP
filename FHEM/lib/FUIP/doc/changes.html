@@ -5,6 +5,12 @@
 </head>
 <body>
 <h1>FUIP News</h1>
+<h2>03.04.2019</h2>
+<h3>STATE View resizable</h3>
+Der View STATE kann jetzt in der Gr&ouml;&szlig;e angepasst werden ("sizing resizable" und "sizing auto"). Dabei passt FUIP sowohl die Schriftgr&ouml;&szlig;e als auch die Gr&ouml;&szlig;e des Icons (falls angegeben) an. 
+<br>Zus&auml;tzlich gibt es den neuen Parameter "lines", mit dem angegeben werden kann, wie viele Zeilen in den View passen sollen. Damit kann die Schriftgr&ouml;&szlig;e gesteuert werden: Je kleiner der Wert bei "lines", desto gr&ouml;&szlig;er die Schrift.
+<br>Wenn eine der neuen M&ouml;glichkeiten verwendet wird, dann werden auch zu lange Texte im STATE abgeschnitten. Da dieses Verhalten nicht ganz kompatibel zum bisherigen ist, wird bei "sizing fixed" und "lines 3" die bisherige Logik verwendet.    
+
 <h2>01.04.2019</h2>
 <h3>MenuItem, HomeButton resizable</h3>
 Bei den Views MenuItem und HomeButton kann jetzt auch "sizing resizable" gew&auml;hlt werden. Dies ist vor Allem dann sinnvoll, wenn die Basisbreite (Attribut baseWidth) relativ klein gesetzt wird. Es wird empfohlen, in diesem Fall nicht direkt MenuItem (bzw. HomeButton) zu verwenden, sondern ein entsprechendes View Template.
