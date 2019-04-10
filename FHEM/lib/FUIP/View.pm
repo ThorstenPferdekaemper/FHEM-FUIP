@@ -33,7 +33,61 @@ sub getDependencies($$) {
 };
 
 
-	
+# get the HTML for Cell-Like Views, i.e. Cell, ViewTemplate, Dialog
+# i.e. wrap it in a popup-widegt, if needed
+sub getViewHTML($) {
+	# $view instead of $self for "historical" reasons
+	my ($view) = @_;
+	# check whether the view has a popup, i.e. a component of type "dialog"
+	# which is actually switched on
+	my $viewStruc = $view->getStructure(); 
+	my $popupField;
+	for my $field (@$viewStruc) {
+		if($field->{type} eq "dialog") {
+			$popupField = $field;
+			last;
+		};	
+	};
+	# if we have a default as "no popup", then we might not want a popup
+	if($popupField and exists($popupField->{default})) {
+		unless(exists($view->{defaulted}) and exists($view->{defaulted}{$popupField->{id}})
+				and $view->{defaulted}{$popupField->{id}} == 0) {
+			$popupField = undef;
+		};	
+	};
+	# do we have a popup?
+	my $result = "";
+	my $dialog;
+	if($popupField) {
+		$dialog = $view->{$popupField->{id}};
+		if( not blessed($dialog) or not $dialog->isa("FUIP::Dialog")) {
+			$dialog = FUIP::Dialog->createDefaultInstance($view->{fuip});
+		};
+		my ($width,$height) = $dialog->dimensions();
+		$dialog->{position} = "screen-center" unless($dialog->{position});
+		$result .= '<div data-type="fuip_popup"
+						data-mode="fade"
+						data-height="'.$height.'px"
+						data-width="'.$width.'px"
+						data-position="'.$dialog->{position}.'">
+					<div>';
+	};
+	# the normal HTML of the view
+	$result .= $view->getHTML(); 
+	# and again some popup stuff
+	if($popupField) {
+		# dialog->getHTML: always locked as we cannot configure the popup directly
+		$result .= '</div>
+					<div class="dialog fuip-cell">
+					<header class="fuip-cell-header">'.$dialog->{title}.'</header>	
+				'.$dialog->getHTML(1).' 
+					</div>
+				</div>';
+	};			
+	return $result;
+};	
+
+
 sub getHTML($$){
 	my ($self,$locked) = @_;
 	# This is just empty, but can be filled with some text

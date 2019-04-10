@@ -2179,7 +2179,8 @@ sub CGI() {
 								$path[-1] eq "widget_fuip_wdtimer.js" or
 								$path[-1] eq "widget_fuip_wdtimer.css" or
 								$path[-1] eq "widget_fuip_colorwheel.js" or
-								$path[-1] eq "widget_fuip_colorwheel.css"
+								$path[-1] eq "widget_fuip_colorwheel.css" or
+								$path[-1] eq "widget_fuip_popup.js"
 								)) {
 		unshift(@path,"fuip");
 	};

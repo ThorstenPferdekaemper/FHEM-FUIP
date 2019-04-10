@@ -19,56 +19,6 @@ sub dimensions($;$$){
 };	
 	
 	
-sub _getViewHTML($) {
-	my ($view) = @_;
-	# check whether the view has a popup, i.e. a component of type "dialog"
-	# which is actually switched on
-	my $viewStruc = $view->getStructure(); 
-	my $popupField;
-	for my $field (@$viewStruc) {
-		if($field->{type} eq "dialog") {
-			$popupField = $field;
-			last;
-		};	
-	};
-	# if we have a default as "no popup", then we might not want a popup
-	if($popupField and exists($popupField->{default})) {
-		unless(exists($view->{defaulted}) and exists($view->{defaulted}{$popupField->{id}})
-				and $view->{defaulted}{$popupField->{id}} == 0) {
-			$popupField = undef;
-		};	
-	};
-	# do we have a popup?
-	my $result = "";
-	my $dialog;
-	if($popupField) {
-		$dialog = $view->{$popupField->{id}};
-		if( not blessed($dialog) or not $dialog->isa("FUIP::Dialog")) {
-			$dialog = FUIP::Dialog->createDefaultInstance($view->{fuip});
-		};
-		my ($width,$height) = $dialog->dimensions();
-		$result .= '<div data-type="popup"
-						data-mode="fade"
-						data-height="'.$height.'px"
-						data-width="'.$width.'px">
-					<div>';
-	};
-	# the normal HTML of the view
-	$result .= $view->getHTML(); 
-	# and again some popup stuff
-	if($popupField) {
-		# dialog->getHTML: always locked as we cannot configure the popup directly
-		$result .= '</div>
-					<div class="dialog fuip-cell">
-					<header class="fuip-cell-header">'.$dialog->{title}.'</header>	
-				'.$dialog->getHTML(1).' 
-					</div>
-				</div>';
-	};			
-	return $result;
-};	
-	
-	
 sub getHTML($$){
 	my ($self,$locked) = @_;
 	my $views = $self->{views};
@@ -87,7 +37,7 @@ sub getHTML($$){
 			$result .= 'width:'.$width.'px;';
 			$result .= 'height:'.$height.'px;';
 		};
-		$result .= 'z-index:10">'._getViewHTML($view);
+		$result .= 'z-index:10">'.$view->getViewHTML();
 		if( not $locked and $self->{fuip}{editOnly}) {
 			my $title = ($view->{title} ? $view->{title} : '');
 			$title .= ' ('.blessed($view).')';

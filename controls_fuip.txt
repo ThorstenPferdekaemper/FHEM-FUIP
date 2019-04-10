@@ -9,16 +9,16 @@ DIR FHEM/lib/FUIP/js
 DIR FHEM/lib/FUIP/View
 DIR FHEM/lib/FUIP/jquery-ui
 DIR FHEM/lib/FUIP/jquery-ui/images
-UPD 2019-03-22_13:38:55 112216 FHEM/42_FUIP.pm
+UPD 2019-04-07_21:20:51 112263 FHEM/42_FUIP.pm
 UPD 2019-02-07_23:35:51 12409 FHEM/lib/FUIP/Model.pm
-UPD 2019-02-13_18:15:33 11702 FHEM/lib/FUIP/View.pm
+UPD 2019-04-10_15:34:34 13432 FHEM/lib/FUIP/View.pm
 UPD 2019-03-19_22:26:03 8434 FHEM/lib/FUIP/View/Batteries.pm
 UPD 2019-01-29_16:36:42 1522 FHEM/lib/FUIP/View/Brightness.pm
-UPD 2019-01-22_12:11:40 4393 FHEM/lib/FUIP/View/Cell.pm
+UPD 2019-04-10_15:30:59 2942 FHEM/lib/FUIP/View/Cell.pm
 UPD 2019-03-01_23:06:01 9868 FHEM/lib/FUIP/View/Chart.pm
 UPD 2019-02-07_21:59:24 1901 FHEM/lib/FUIP/View/Clock.pm
 UPD 2019-03-10_19:15:44 2339 FHEM/lib/FUIP/View/Colorwheel.pm
-UPD 2018-12-25_12:29:36 3289 FHEM/lib/FUIP/View/Dialog.pm
+UPD 2019-04-10_15:31:52 1988 FHEM/lib/FUIP/View/Dialog.pm
 UPD 2019-01-15_12:58:25 1696 FHEM/lib/FUIP/View/DwdWebLink.pm
 UPD 2018-12-09_19:05:16 3791 FHEM/lib/FUIP/View/HeatingControl.pm
 UPD 2018-04-14_21:19:11 4330 FHEM/lib/FUIP/View/HeatingOverview.pm
@@ -45,8 +45,8 @@ UPD 2018-07-20_21:11:22 1906 FHEM/lib/FUIP/View/Sysmon.pm
 UPD 2019-03-11_22:34:14 4352 FHEM/lib/FUIP/View/Thermostat.pm
 UPD 2019-01-29_17:14:57 2604 FHEM/lib/FUIP/View/Title.pm
 UPD 2018-12-09_17:28:50 2060 FHEM/lib/FUIP/View/UpStopDown.pm
-UPD 2018-12-26_16:12:50 3112 FHEM/lib/FUIP/View/ViewTemplInstance.pm
-UPD 2019-01-14_23:09:27 15527 FHEM/lib/FUIP/View/ViewTemplate.pm
+UPD 2019-04-07_21:03:02 3112 FHEM/lib/FUIP/View/ViewTemplInstance.pm
+UPD 2019-04-10_15:31:26 14076 FHEM/lib/FUIP/View/ViewTemplate.pm
 UPD 2018-11-28_15:24:11 4160 FHEM/lib/FUIP/View/WeatherDetail.pm
 UPD 2018-11-28_15:24:25 4049 FHEM/lib/FUIP/View/WeatherOverview.pm
 UPD 2019-01-08_23:03:01 1277 FHEM/lib/FUIP/View/WebLink.pm
@@ -67,8 +67,9 @@ UPD 2019-03-10_18:59:56 1015 FHEM/lib/FUIP/css/widget_fuip_colorwheel.css
 UPD 2019-03-25_19:26:58 8750 FHEM/lib/FUIP/css/widget_fuip_wdtimer.css
 UPD 2018-12-31_16:16:21 1302 FHEM/lib/FUIP/css/widget_weatherdetail.css
 UPD 2019-03-09_23:14:06 18647 FHEM/lib/FUIP/doc/Colorwheel.png
+UPD 2019-04-10_16:02:52 42416 FHEM/lib/FUIP/doc/PopupPosition.png
 UPD 2019-03-15_21:30:01 5774 FHEM/lib/FUIP/doc/RenameViewTemplate.png
-UPD 2019-04-03_21:37:33 12903 FHEM/lib/FUIP/doc/changes.html
+UPD 2019-04-10_16:13:56 13902 FHEM/lib/FUIP/doc/changes.html
 UPD 2019-01-23_22:22:28 1553 FHEM/lib/FUIP/fonts/nesges.css
 UPD 2015-05-26_11:04:28 5784 FHEM/lib/FUIP/fonts/nesges.woff
 UPD 2018-07-18_15:43:10 38 FHEM/lib/FUIP/images/lizenzen.txt
@@ -94,6 +95,7 @@ UPD 2018-03-17_23:57:55 106396 FHEM/lib/FUIP/js/jquery.tablesorter.js
 UPD 2018-03-17_23:57:55 125594 FHEM/lib/FUIP/js/jquery.tablesorter.widgets.js
 UPD 2019-01-15_13:06:58 1847 FHEM/lib/FUIP/js/widget_dwdweblink.js
 UPD 2019-03-10_19:02:09 20821 FHEM/lib/FUIP/js/widget_fuip_colorwheel.js
+UPD 2019-04-10_15:39:17 10377 FHEM/lib/FUIP/js/widget_fuip_popup.js
 UPD 2019-03-25_19:12:56 90201 FHEM/lib/FUIP/js/widget_fuip_wdtimer.js
 UPD 2019-02-01_18:27:02 4934 FHEM/lib/FUIP/js/widget_readingsgroup.js
 UPD 2018-12-02_21:21:10 25541 FHEM/lib/FUIP/js/widget_weatherdetail.js

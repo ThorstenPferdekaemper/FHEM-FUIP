@@ -1,0 +1,289 @@
+/* FTUI Plugin
+ * Copyright (c) 2015-2016 Mario Stephan <mstephan@shared-files.de>
+ * Under MIT License (http://www.opensource.org/licenses/mit-license.php)
+ */
+/* FUIP Version 2019
+*  Thorsten Pferdekaemper 
+*/
+ 
+ 
+/* global ftui:true, Modul_widget:true */
+
+"use strict";
+
+function depends_fuip_popup() {
+        return [ftui.config.basedir + "lib/jquery-ui.min.js"];
+}
+
+var Modul_fuip_popup = function () {
+
+	function showModal(active) {
+		if(active) {
+            $("#fuip-popup-shade").fadeIn(ftui.config.fadeTime);
+		}else{
+			$("#fuip-popup-shade").fadeOut(ftui.config.fadeTime);
+		};
+	};
+
+    function hide(dialog, mode) {
+        switch (mode) {
+            case 'animate':
+                dialog.animate({
+                    height: 0,
+                    width: 0,
+                    top: dialog.options.start_top,
+                    left: dialog.options.start_left,
+                    opacity: 0
+                }, 500, "swing", function () {
+                    showModal(false);
+                    dialog.trigger('fadeout');
+                });
+                break;
+            case 'animateTop':
+                dialog.animate({
+                    top: dialog.options.start_top,
+                    left: dialog.options.start_left,
+                }, 500, "swing", function () {
+                    showModal(false);
+                    dialog.trigger('fadeout');
+                });
+                break;
+            default:
+
+                dialog.fadeOut(500, function () {
+                    showModal(false);
+                    dialog.trigger('fadeout');
+                });
+        }
+    }
+
+    function show(dialog, starter, mode, position) {
+        dialog.detach();
+        $('body').append(dialog);
+        if (dialog.options.shade) {
+            showModal(true);
+        }
+        switch (mode) {
+            case 'animate':
+                dialog.show();
+                dialog.animate({
+                    height: dialog.options.height,
+                    width: dialog.options.width,
+                    top: dialog.options.end_top,
+                    left: dialog.options.end_left,
+                    opacity: 1
+                }, 500, "swing", function () {
+                    dialog.trigger('fadein');
+                });
+                break;
+            case 'animateTop':
+                dialog.show();
+                dialog.animate({
+                    top: dialog.options.end_top,
+                    left: dialog.options.end_left,
+                }, 500, "swing", function () {
+                    dialog.trigger('fadein');
+                });
+                break;
+            default:
+                dialog.css({
+                    height: dialog.options.height,
+                    width: dialog.options.width,
+                    //top: dialog.options.end_top,
+                    //left: dialog.options.end_left,
+                });
+				if(position == 'screen-center') {
+					dialog.css({
+						top: dialog.options.end_top,
+						left: dialog.options.end_left,
+					});
+				};	
+				dialog.fadeIn(500);
+				if(position == 'starter-area') {
+					dialog.position({
+						my: "left top",
+						at: "center center",
+						of: starter
+					});	
+				};
+                dialog.trigger('fadein');
+        }
+    }
+
+    function init_attr(elem) {
+        elem.initData('get', 'STATE');
+        elem.initData('get-on', 'on');
+        elem.initData('get-off', 'off');
+        elem.initData('height', '300px');
+        elem.initData('width', '400px');
+		elem.initData('position','screen-center');
+        elem.initData('mode', 'animate');
+        elem.initData('starter', null);
+        elem.initData('draggable', true);
+        elem.initData('return-time', 0);
+
+        me.addReading(elem, 'get');
+    }
+
+    function init() {
+
+		/* make a shade for modal popup if it does not exist yet */
+		if(!$('#fuip-popup-shade').length) {
+			$("<div id='fuip-popup-shade' style='position:fixed;z-index:1001;background-color:#000000;opacity:0.5;height:100%;width:100%;top:0px;left:0px;'/>")
+				.prependTo('body').hide();
+		};
+	
+        me.elements = $('div[data-type="' + me.widgetname + '"]:not([data-ready])', me.area);
+        me.elements.each(function (index) {
+            var elem = $(this);
+            elem.attr("data-ready", "");
+            
+            me.init_attr(elem);
+
+            var id = [me.widgetname, me.area, index].join('_');
+            var dialog = elem.find('.dialog').first();
+            var starter = (elem.data('starter')) ? $(document).find(elem.data('starter')) : elem.children(":first");
+            if (starter.hasClass('dialog')) {
+                starter = $('<div/>', {
+                    class: 'dialog-starter'
+                }).prependTo(elem);
+            } else
+                starter.addClass('dialog-starter');
+
+            var close = $('<div/>', {
+                class: 'dialog-close',
+                id: elem.attr('id')
+            }).html('x').appendTo(dialog);
+
+            if (dialog && close && starter) {
+                elem.attr('data-id', id);
+                dialog.attr('data-id', id);
+                starter.attr('data-id', id);
+                close.attr('data-id', id);
+
+                if (elem.data('draggable')) {
+                    if ($.fn.draggable)
+                        dialog.draggable();
+                    else {
+                        console.log("widget_fuip_popup: tried to become draggable, but failed");
+                    }
+                }
+
+                if (elem.hasClass('interlock')) {
+                    close.hide();
+                    dialog.addClass('interlock');
+                }
+
+                dialog.css({
+                    'height': elem.data('height'),
+                    'width': elem.data('width')
+                });
+                starter.css({
+                    'cursor': 'pointer'
+                });
+                elem.closest('.gridster>ul>li').css({
+                    overflow: 'visible'
+                });
+                dialog.options = {};
+                dialog.options.shade = !elem.hasClass('noshade');
+
+                //prepare events
+                $(window).resize(function () {
+                    var width = elem.data('width');
+                    var height = elem.data('height');
+                    if (String(elem.data('width')).indexOf('%') > 0) {
+                        dialog.options.end_left = (elem.isValidData('left')) ? elem.data('left') : ((100 - parseInt(width)) / 2) + '%';
+                    } else {
+                        dialog.options.end_left = (elem.isValidData('left')) ? elem.data('left') : ($(window).width() - parseInt(width)) / 2;
+                    }
+                    if (String(elem.data('height')).indexOf('%') > 0) {
+                        dialog.options.end_top = (elem.isValidData('top')) ? elem.data('top') : ((100 - parseInt(height)) / 2) + '%';
+                    } else {
+                        dialog.options.end_top = (elem.isValidData('top')) ? elem.data('top') : ($(window).height() - parseInt(height)) / 2;
+                    }
+
+                    dialog.options.height = height;
+                    dialog.options.width = width;
+
+                    if (elem.data('mode') === 'animateTop') {
+                        dialog.options.start_top = 0 - parseInt(dialog.options.height);
+                        dialog.options.start_left = dialog.options.end_left;
+                        dialog.css({
+                            top: dialog.options.start_top,
+                            left: dialog.options.start_left,
+                        });
+                    } else {
+                        dialog.options.start_top = (ftui.isValid(starter)) ? starter.offset().top + parseInt(dialog.options.height) / 2 : 0;
+                        dialog.options.start_left = (ftui.isValid(starter)) ? starter.offset().left + parseInt(dialog.options.width) / 2 : 0;
+                        dialog.css({
+                            height: 0,
+                            width: 0,
+                            top: dialog.options.start_top,
+                            left: dialog.options.start_left,
+                        });
+
+                    }
+                });
+
+                close.on('click', function (e) {
+                    hide(dialog, elem.data('mode'));
+                });
+
+				$('#fuip-popup-shade').click(function (e) {
+                    if ($('.dialog.interlock:visible').length === 0) {
+                        hide(dialog, elem.data('mode'));
+                    }
+                });
+
+                starter.on('clicked click', function (e) {
+                    e.preventDefault();
+                    show(dialog, starter, elem.data('mode'), elem.data('position'));
+                    elem.trigger('fadein');
+                    var waitUntilReturn = elem.data('return-time');
+                    if (waitUntilReturn > 0 ) {
+                        ftui.log(1, 'Close popup in : ' + waitUntilReturn + ' seconds');
+                        setTimeout(function () {
+                            hide(dialog, elem.data('mode'));
+                        }, waitUntilReturn * 1000);
+                    }
+
+                    return false;
+                });
+            }
+        });
+        $(window).resize();
+    }
+
+    function update(dev, par) {
+
+        me.elements.filterDeviceReading('get', dev, par)
+            .each(function (index) {
+                var elem = $(this);
+                var value = elem.getReading('get').val;
+                var state = ftui.getPart(value, elem.data('part'));
+                if (ftui.isValid(state)) {
+                    var id = elem.data('id');
+
+                    if (elem.matchingState('get', state) === 'on') {
+                        $('div[data-id="' + id + '"].dialog-starter').trigger('click');
+                    }
+                    if (elem.matchingState('get', state) === 'off') {
+                        showModal(false);
+                        $('div[data-id="' + id + '"].dialog-close').trigger('click');
+                    }
+                }
+            });
+    }
+
+    // public
+    // inherit all public members from base class
+    var me = $.extend(new Modul_widget(), {
+        //override or own public members
+        widgetname: 'fuip_popup',
+        init: init,
+        init_attr: init_attr,
+        update: update,
+    });
+
+    return me;
+};
