@@ -2433,7 +2433,7 @@ sub setField($$$$$) {
 	};
 	$refIntoView->{$compName} = main::urlDecode($values->{$nameInValues}) if(defined($values->{$nameInValues}));
 	# should this be an array?
-	if($field->{type} eq "setoptions") {
+	if($field->{type} =~ m/^(setoptions|devices)$/) {
 		# this can be an array reference, something that evaluates to an array or a comma separated list
 		my $options = $refIntoView->{$compName};
 		# not an ARRAY ref, maybe evaluates to an array (-ref)?

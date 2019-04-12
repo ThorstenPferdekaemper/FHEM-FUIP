@@ -13,8 +13,10 @@ sub getDependencies($$) {
 };
 	
 
-sub _getDevices($$){
-	my ($name,$deviceFilter) = @_;
+sub _getDevices($){
+	my ($self) = @_;
+	my $name = $self->{fuip}{NAME};
+	my $deviceFilter = $self->{deviceFilter};
 	my %devices;
 	my @readings = qw(battery batteryLevel batVoltage batteryPercent);
 	push(@readings,"Activity") if($deviceFilter eq "all");
@@ -33,6 +35,11 @@ sub _getDevices($$){
 	if($deviceFilter ne "all") {
 		push(@$fields,"Activity");
 	};	
+	# exclude devices?
+	$self->{exclude} = [] unless $self->{exclude};
+	for my $excl (@{$self->{exclude}}) {
+		delete $devices{$excl};
+	};
 	for my $dev (keys(%devices)) {
 		my $device = FUIP::Model::getDevice($name,$dev,$fields);
 		unless(exists($device->{Internals}{NAME})) {
@@ -156,7 +163,7 @@ sub getHTML($){
 	my ($self) = @_;
 	my $result = '<div  data-fuip-type="fuip-batteries" style="overflow:auto;width:100%;height:100%;">
 				<table style="border-spacing:0px;"><tr><td style="padding:0;">';
-	my $devices = _getDevices($self->{fuip}{NAME},$self->{deviceFilter});				
+	my $devices = $self->_getDevices();				
 	my $numDevs = @$devices;				
 	my $count = 0;
 	use integer;
@@ -196,7 +203,7 @@ sub dimensions($;$$){
 	# either resizable and no size yet
 	# or fixed
 	if(not $self->{height} or $self->{sizing} eq "fixed") {
-		my $devices = _getDevices($self->{fuip}{NAME},$self->{deviceFilter});
+		my $devices = $self->_getDevices();
 		use integer;
 		my $numDevs = @$devices;
 		$self->{height} = 19 * ($numDevs / 2 + $numDevs % 2) + 8;
@@ -234,6 +241,7 @@ sub getStructure($) {
 		{ id => "title", type => "text", default => { type => "const", value => "Batteries"} },
 		{ id => "deviceFilter", type => "text", options => [ "all", "battery"], 
 			default => { type => "const", value => "all" } }, 
+		{ id => "exclude", type => "devices", default => { type => "const", value => [] } },	
 		{ id => "width", type => "dimension" },
 		{ id => "height", type => "dimension" },
 		{ id => "sizing", type => "sizing", options => [ "fixed", "auto", "resizable" ],

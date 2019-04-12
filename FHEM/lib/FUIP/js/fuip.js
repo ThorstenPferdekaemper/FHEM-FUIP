@@ -1746,12 +1746,12 @@ function getFullRefName(fieldname,reftype) {
 	
 async function valueHelp(fieldName,type) {
 	// device help has its own function
-	if(type == "device" || type == "device-reading" && fieldName.match(/-device$/) ) {
+	if(type == "device" || type == "devices" || type == "device-reading" && fieldName.match(/-device$/) ) {
 		valueHelpForDevice(fieldName, 
 			function(value) {
 				$('#'+fieldName).val(value);
 				$('#'+fieldName).trigger("input");
-			},false);
+			},(type == "devices"));
 		return;
 	};	
 	// setoptions
@@ -1974,15 +1974,28 @@ function valueHelpForDevice(fieldTitle, callbackFunction, multiSelect) {
 		html += "<th class=\"filter-select filter-onlyAvail\">Type</th><th>Room(s)</th></tr></thead>";
 		html += "<tbody>";
 		var roomFilters = {};
+ 		// (also works for single selection)
+		let selected = $("#"+fieldTitle).val();
+		if(selected) {
+			selected = selected.split(",");
+		}else{
+			selected = [];
+		};	
 		for(var i = 0; i < deviceList.length; i++){
 			if(deviceList[i].room == "") {
 				deviceList[i].room = "unsorted";
 			};	
-			html += "<tr id='valuehelp-row-"+i+"' data-selected='' data-key='"+deviceList[i].NAME+"'><td>"+deviceList[i].NAME+"</td>";
+			let isSel = '';
+			let style = '';
+			if(selected.indexOf(deviceList[i].NAME) > -1) {
+				isSel = 'X';
+				style = " style='background:#F39814;color:black;'";
+			};	
+			html += "<tr id='valuehelp-row-"+i+"' data-selected='"+isSel+"' data-key='"+deviceList[i].NAME+"'><td"+style+">"+deviceList[i].NAME+"</td>";
 			if(aliasUsed) {
-				html += "<td>"+deviceList[i].alias+"</td>";
+				html += "<td"+style+">"+deviceList[i].alias+"</td>";
 			};
-			html += "<td>"+deviceList[i].TYPE+"</td><td>"+deviceList[i].room+"</td></tr>";
+			html += "<td"+style+">"+deviceList[i].TYPE+"</td><td"+style+">"+deviceList[i].room+"</td></tr>";
 			var rooms = deviceList[i].room.split(",");
 			for(var j = 0; j < rooms.length; j++) {
 				roomFilters[rooms[j]] = valueHelpFilterRoom;
@@ -2145,7 +2158,7 @@ function hasValueHelp(settings,fieldNum) {
 	//       always have a refdevice. Maybe issue error message.
 	let field = settings[fieldNum];
 	// device, device-reading, icon always have a value help
-	if(field.type == "device" || field.type == "device-reading" || field.type == "icon" ) {
+	if(field.type == "device" || field.type == "devices" || field.type == "device-reading" || field.type == "icon" ) {
 		return true;
 	};	
 	// reading and set needs a refdevice
