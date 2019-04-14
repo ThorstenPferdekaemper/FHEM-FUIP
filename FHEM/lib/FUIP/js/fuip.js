@@ -468,47 +468,18 @@ function viewTemplateDelete(name,templateid){
 };
 
 
-function checkViewTemplateId(templateid) {
-//	makes sure that a view template id adheres to the rules for Perl variables
-//	returns true if everything is ok, false otherwise
-	if(/^[_a-zA-Z][_a-zA-Z0-9]*$/.test(templateid)) 
-		return true; // all good	
-	popupError('View template name invalid', 'The view template name "'+templateid+'" is invalid. You can only use letters (a..b,A..B), numbers (0..9) and the underscore (_). The first character can only be a letter or the underscore. Whitespace (blanks) cannot be used.'); 
-	return false;
-};
-
-
-function viewTemplateRename(name,templateid){
-	var popup = $( "#inputpopup" ).dialog({
-		autoOpen: false,
-		width: 350,
-		height: 150,
-		modal: true,
-		title: "Enter new view template id",
-		buttons: [{
-			text: 'Ok',
-			icon: 'ui-icon-check',
-			click: async function() {
-				let targettemplateid = $("#targettemplateid").val();
-				if(!checkViewTemplateId(targettemplateid)) return;	
-				await asyncSendFhemCommandLocal(
-					"set " + name + " rename type=viewtemplate origintemplateid=" + templateid 
-								+ " targettemplateid=" + targettemplateid
-				);
-				window.location.replace("/fhem/" + name.toLowerCase() +"/fuip/viewtemplate?templateid="+targettemplateid);
-			},
-			showLabel: false },
-		  { text: 'Cancel',
-			icon: 'ui-icon-close',
-			click: function() {	popup.dialog( "close" ); },
-			showLabel: false }
-		],
-	});
-	popup.html('<form onsubmit="return false;">'+
-					'<label for="targettemplateid">New template id</label>'+
-					'<input type="text" id="targettemplateid" style="visibility:visible;" value="'+templateid+'"/>'+
-				'</form>');
-	popup.dialog("open");
+async function viewTemplateRename(name,templateid){
+	try{
+		let targettemplateid = await dialogNewViewTemplateName({
+					defaultName: templateid,
+					title: "Enter new view template id"
+				});
+		await asyncSendFhemCommandLocal(
+			"set " + name + " rename type=viewtemplate origintemplateid=" + templateid 
+					+ " targettemplateid=" + targettemplateid
+			);
+		window.location.replace("/fhem/" + name.toLowerCase() +"/fuip/viewtemplate?templateid="+targettemplateid);
+	}catch(e){}; // we can ignore this, usually only user input error 
 };	
 	
 
@@ -2872,90 +2843,63 @@ async function openSettingsDialog(type, cellid) {
 };
 			
 			
-function copyCurrentPage() {
+async function copyCurrentPage() {
 	// get current name and page id
 	var name = $("html").attr("data-name");
 	var pageid = $("html").attr("data-pageid");
-	// create popup to input new page id
-	var popup;	
-	popup = $( "#inputpopup01" ).dialog({
-		autoOpen: false,
-		width: 400,
-		height: 250,
-		modal: true,
-		title: "Enter name of new page",
-		buttons: [{
-			text: 'Ok',
-			icon: 'ui-icon-check',
-			click: function() {
-				var newname = $("#newpagename").val();			
-				if(!newname.length) { return; }; // page needs a name
-				// TODO: This allows overwriting page "home". Is this good?
-				sendFhemCommandLocal("set " + name + " pagecopy " + pageid + " " + newname)
-					.done(function() {
-						window.location = "/fhem/" + name.toLowerCase() +"/page/"+newname;
-					});	
-			},
-			showLabel: false },
-		  { text: 'Cancel',
-			icon: 'ui-icon-close',
-			click: function() {	popup.dialog( "close" ); },
-			showLabel: false }
-		],
-	});
-	popup.html('<form onsubmit="return false;">'+
-					'<label for="newpagename">New page name</label>'+
-					'<input type="text" id="newpagename" style="visibility:visible;" value="'+pageid+'_copy"/>'+
-				'</form>');
-	popup.dialog("open");
+	// get new page id
+	try{
+		let newname = await dialogNewName({
+				title: "Enter name of new page",
+				label: "New page name",
+				defaultName: pageid+"_copy",
+				checkFunc: function(name) { return name.length; }
+			});
+		// TODO: This allows overwriting page "home". Is this good?
+		sendFhemCommandLocal("set " + name + " pagecopy " + pageid + " " + newname)
+			.done(function() {
+				window.location = "/fhem/" + name.toLowerCase() +"/page/"+newname;
+			});	
+	}catch(e){
+		return; // we ignore this in principle. A message should have been sent already.
+	};  		
 };	
 			
 
-function importAsNewPage(content) {
+async function importAsNewPage(content) {
 	// get current name and page id
 	var name = $("html").attr("data-name");
 	// create popup to input new page id
-	var popup;	
-	popup = $( "#inputpopup01" ).dialog({
-		autoOpen: false,
-		width: 400,
-		height: 250,
-		modal: true,
-		title: "Import page: enter name of new page",
-		buttons: [{
-			text: 'Ok',
-			icon: 'ui-icon-check',
-			click: function() {
-				var newname = $("#newpagename").val();			
-				if(!newname.length) { return; }; // page needs a name
-				// TODO: This allows overwriting any page. Is this good?
-				postImportCommand(content,false,newname)
-					.done(function(msg) {
-						if(msg == "OK") {
-							window.location = "/fhem/" + name.toLowerCase() + "/page/"+newname;
-						}else{	
-							popupError("Import page: Error",msg, function() { popup.dialog("close"); } );
-						};
-					});	
-			},
-			showLabel: false },
-		  { text: 'Cancel',
-			icon: 'ui-icon-close',
-			click: function() {	popup.dialog( "close" ); },
-			showLabel: false }
-		],
-	});
-	popup.html('<form onsubmit="return false;">'+
-					'<label for="newpagename">New page name</label>'+
-					'<input type="text" id="newpagename" style="visibility:visible;" value=""/>'+
-				'</form>');
-	popup.dialog("open");
+	try{
+		let newname = await dialogNewName({
+				title: "Import page: enter name of new page",
+				label: "New page name",
+				checkFunc: function(name) { return name.length; }
+			});
+		// TODO: This allows overwriting any page. Is this good?
+		postImportCommand(content,false,newname)
+			.done(function(msg) {
+				if(msg == "OK") {
+					window.location = "/fhem/" + name.toLowerCase() + "/page/"+newname;
+				}else{	
+					popupError("Import page: Error",msg, function() { popup.dialog("close"); } );
+				};
+			});		
+	}catch(e){
+		return; // we ignore this in principle. A message should have been sent already.
+	};  		
 };	
 
 
 function exportPage() { 
 	location.href = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() 
 			+ '/fuip/export?pageid=' + $("html").attr("data-pageid"); 
+};
+
+
+function exportViewTemplate() { 
+	location.href = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() 
+			+ '/fuip/export?templateid=' + $("html").attr("data-viewtemplate"); 
 };
 
 
@@ -3066,7 +3010,39 @@ function copyCurrentCell() {
 };	
 
 
-async function dialogNewViewTemplateName() {
+async function dialogNewViewTemplateName(config) {
+	let conf = {			
+			title: "Enter name of new view template",
+			label: "New template id",
+			checkFunc: function(templateid) {
+				//	makes sure that a view template id adheres to the rules for Perl variables
+				//	returns true if everything is ok, false otherwise
+				if(/^[_a-zA-Z][_a-zA-Z0-9]*$/.test(templateid)) 
+					return true; // all good	
+				popupError('View template name invalid', 'The view template name "'+templateid+'" is invalid. You can only use letters (a..b,A..B), numbers (0..9) and the underscore (_). The first character can only be a letter or the underscore. Whitespace (blanks) cannot be used.'); 
+				return false;
+			}
+	}; 
+	if(config)
+		$.extend(conf,config);
+	return dialogNewName(conf);
+};
+
+
+async function dialogNewName(config) {
+	// config object with (all optional) fields:
+	//		title: defaults to "Enter new name"
+	//		label: defaults to "New name"
+	//		defaultName: defaults to ""
+	//		checkFunc: defaults to "always return true"
+	let conf = { 
+			title: "Enter new name",
+			label: "New name",
+			defaultName: "",
+			checkFunc: function(name) { return true; }
+		};
+	if(config) 
+		$.extend(conf,config);	
 	return new Promise(function(resolve,reject) {
 		// create popup to input new view template name
 		let popup = $("#inputpopup");
@@ -3079,13 +3055,13 @@ async function dialogNewViewTemplateName() {
 			width: 350,
 			height: 150,
 			modal: true,
-			title: "Enter name of new view template",
+			title: conf.title,
 			buttons: [{
 				text: 'Ok',
 				icon: 'ui-icon-check',
 				click: function() {
-					let newname = $("#newtemplateid").val();	
-					if(checkViewTemplateId(newname)) {
+					let newname = $("#newname").val();	
+					if(conf.checkFunc(newname)) {
 						popup.dialog( "close" );
 						resolve(newname);
 					};		
@@ -3101,8 +3077,8 @@ async function dialogNewViewTemplateName() {
 			],
 		});
 		popup.html('<form onsubmit="return false;">'+
-					'<label style="margin-right:1em;" for="newtemplateid">New template id</label>'+
-					'<input type="text" id="newtemplateid" style="visibility:visible;" value=""/>'+
+					'<label style="margin-right:1em;" for="newname">'+conf.label+'</label>'+
+					'<input type="text" id="newname" style="visibility:visible;" value="'+conf.defaultName+'"/>'+
 				'</form>');
 		popup.dialog("open");
 	});

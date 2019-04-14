@@ -5,6 +5,18 @@
 </head>
 <body>
 <h1>FUIP News</h1>
+<h2>14.04.2019</h2>
+<h3>View Templates auf Popups in View Templates</h3>
+Beim Aufruf einer FUIP-Seite, insbesondere der &Uuml;bersicht der View Templates, konnte es zu einem FHEM-Absturz kommen, ggf. mit einem Eintrag im FHEM-Logfile wie etwa:<br>
+<code>Can't call method "getStructure" on unblessed reference at ./FHEM/lib/FUIP/View/ViewTemplInstance.pm</code><br>
+Der Fehler war m&ouml;glicherweise nicht klar reproduzierbar und erschien beinahe zuf&auml;llig. Das Problem hing mit Popups in View Templates zusammen, welche wiederum selbst View Templates verwenden. (Also View Templates auf Popups in View Templates.) Dies wurde korrigiert.
+<h3>Verbesserte Fehlerbehandlung bei fehlenden View Templates</h3>
+F&uuml;r die Analyse von Fehlern wie oben beschrieben wurde die Fehlerbehandlung an dieser Stelle verbessert. Jetzt wird bei fehlenden View Templates eine Meldung sowie ein Stacktrace ins FHEM-Log geschrieben. (...auch wenn das jetzt hoffentlich nicht mehr passiert.)
+<h3>Export von View Templates</h3>
+View Templates k&ouml;nnen jetzt in eine Datei exportiert werden. (&Auml;hnlich wie Seiten und Zellen.) Allerdings gibt es bisher noch keine Import-Funktion. 
+<h3>Vereinheitlichung der "Neuer Name"-Dialoge</h3>
+Die Dialoge (Popups) zum Eingeben neuer Namen von Seiten und View Templates wurden vereinheitlicht. Dadurch kann es zu kleinen &Auml;nderungen im Aussehen und im Ablauf beim Anlegen, Kopieren, Importieren und Umbenennen kommen.   
+
 <h2>12.04.2019</h2>
 <h3>Batteries View: Ger&auml;te explizit herausnehmen</h3>
 Der View Batteries bietet jetzt die M&ouml;glichkeit, unerw&uuml;nschte Ger&auml;te explizit herauszunehmen. Dazu gibt es den neuen Parameter "exclude", der eine Komma-separierte Liste von Ger&auml;te-Namen (Device Keys) akzeptiert. Wie &uuml;blich gibt es auch eine Werthilfe. 

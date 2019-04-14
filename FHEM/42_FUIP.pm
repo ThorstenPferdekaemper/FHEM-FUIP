@@ -1066,6 +1066,10 @@ sub renderViewTemplateMaint($$) {
 							icon: "ui-icon-calculator",
 							showLabel: false
 						});	
+						$("#viewtemplateexportbutton").button({
+							icon: "ui-icon-arrowstop-1-s",
+							showLabel: false
+						});	
 						$("#viewtemplaterenamebutton").button({
 							// label: "R"
 						});
@@ -1127,6 +1131,8 @@ sub renderViewTemplateMaint($$) {
 							onclick="openSettingsDialog(\'viewtemplate\')">Settings</button>
 					<button id="viewtemplatearrangebutton" type="button" 
 							onclick="autoArrange()">Arrange views (auto layout)</button>	
+					<button id="viewtemplateexportbutton" type="button" 
+							onclick="exportViewTemplate()">Export view template</button>			
 					<button id="viewtemplaterenamebutton" type = "button"
 							onclick="viewTemplateRename(\''.$hash->{NAME}.'\',\''.$templateid.'\')"
 							title="Rename view template"
@@ -2030,7 +2036,7 @@ sub settingsExport($$) {
 	# get pageid and cellid
 	my $urlParams = urlParamsGet($request);
 	# TODO: error management
-	return undef unless exists $urlParams->{pageid};
+	return undef unless exists $urlParams->{pageid} or exists $urlParams->{templateid};
 	my $result = "";
 	my $filename = "";
 	if(exists $urlParams->{fieldid}) {
@@ -2041,6 +2047,10 @@ sub settingsExport($$) {
 		# export cell
 		$result = $hash->{pages}{$urlParams->{pageid}}{cells}[$urlParams->{cellid}]->serialize(); 	
 		$filename = $hash->{NAME}."_".$urlParams->{pageid}."_".$urlParams->{cellid};
+	}elsif(exists $urlParams->{templateid}) {
+		# export view template
+		$result = $hash->{viewtemplates}{$urlParams->{templateid}}->serialize(); 	
+		$filename = $hash->{NAME}."_".$urlParams->{templateid};
 	}else{	
 		# export page
 		$result = $hash->{pages}{$urlParams->{pageid}}->serialize(); 	
@@ -2380,14 +2390,7 @@ sub load($) {
 	};
 	# there might be view templates, which use other view templates, but "reconstructed"
 	# in opposite order...
-	for my $id (keys %{$hash->{viewtemplates}}) {
-		my $viewtemplate = $hash->{viewtemplates}{$id};
-		for my $view (@{$viewtemplate->{views}}){
-			next unless blessed($view) eq "FUIP::ViewTemplInstance";
-			next if($view->{viewtemplate});
-			$view->{viewtemplate} = $hash->{viewtemplates}{$view->{templateid}};
-		};		
-	};
+	FUIP::ViewTemplInstance::fixInstancesWithoutTemplates();
 	# now the pages
 	for my $pageid (keys %$cPages) {
 		my $pageConf = $cPages->{$pageid};

@@ -46,12 +46,18 @@ sub getStructure($) {
 	# instance method (!)
 	# returns general structure of the view without real instance values
 	my ($self) = @_;
-	unless(blessed($self)) {
+	return $self->{viewtemplate}->getStructure() if(blessed($self) and $self->{viewtemplate} and blessed($self->{viewtemplate}));
+	# something went wrong if we come here
+	# the following error handling is a bit more complex as there have been multiple issues here
+	if(not blessed($self)) {
 		main::Log3(undef, 1, "FUIP ERROR: ViewTemplInstance::getStructure called for non-blessed");
-		use Carp;
-		Carp::confess("Problem:");
+	}elsif(not $self->{viewtemplate}){
+		main::Log3(undef, 1, "FUIP ERROR: ViewTemplInstance without View Template");
+	}else{  # not blessed($self->{viewtemplate})
+		main::Log3(undef, 1, "FUIP ERROR: ViewTemplInstance with non-blessed View Template");
 	};
-	return $self->{viewtemplate}->getStructure();
+	use Carp;
+	Carp::confess("Problem:");
 };
 
 
@@ -95,6 +101,7 @@ sub serialize($;$) {
 	return $result;
 }
 
+my @instancesWithoutTemplates;
 
 sub reconstruct($$$) {
 	my ($class,$conf,$fuip) = @_;
@@ -104,9 +111,27 @@ sub reconstruct($$$) {
 	$self->{fuip} = $fuip;
 	weaken($self->{fuip});
 	# get the view template instance back
-	$self->{viewtemplate} = $fuip->{viewtemplates}{$self->{templateid}};
+	if(exists $fuip->{viewtemplates}{$self->{templateid}}) {
+		$self->{viewtemplate} = $fuip->{viewtemplates}{$self->{templateid}};
+	}else{
+		# Remember the instance in case the view template is not loaded
+		# yet. This happens for templates, which are used in templates,
+		# including usage on popups (on popups...), which are part of templates.
+		push(@instancesWithoutTemplates,$self);
+	};	
 	return bless($self,$class);
 };
 
+
+# To be called after all templates have been loaded, so that 
+# the missing ones can be set. 
+# TODO: Error management for those which stay missing.
+#	(However, this should not happen.)
+sub fixInstancesWithoutTemplates() {
+	for my $inst (@instancesWithoutTemplates) {
+		$inst->{viewtemplate} = $inst->{fuip}{viewtemplates}{$inst->{templateid}};	
+	};
+	@instancesWithoutTemplates = ();
+};
 
 1;	
