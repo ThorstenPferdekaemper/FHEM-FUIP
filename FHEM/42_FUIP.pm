@@ -2148,7 +2148,7 @@ sub settingsImport($$) {
 #
 # here we answer any request to http://host:port/fhem/$infix and below
 
-sub CGI() {
+sub CGI($) {
 
   my ($request) = @_;   # /$infix/filename
   
@@ -2388,9 +2388,6 @@ sub load($) {
 		$hash->{viewtemplates}{$id} = $class->reconstruct($conf,$hash);
 		$hash->{viewtemplates}{$id}{id} = $id;
 	};
-	# there might be view templates, which use other view templates, but "reconstructed"
-	# in opposite order...
-	FUIP::ViewTemplInstance::fixInstancesWithoutTemplates();
 	# now the pages
 	for my $pageid (keys %$cPages) {
 		my $pageConf = $cPages->{$pageid};
@@ -2398,6 +2395,10 @@ sub load($) {
 		delete($pageConf->{class});
 		$hash->{pages}{$pageid} = $class->reconstruct($pageConf,$hash);
 	};
+	# there might be view templates, which use other view templates, but "reconstructed"
+	# in opposite order...
+	# In addition, there might be erroneous (non-existing) view templates.
+	FUIP::ViewTemplInstance::fixInstancesWithoutTemplates();
 	# colors
 	if(defined($confHash->{colors})) {
 		$hash->{colors} = $confHash->{colors};
@@ -2708,6 +2709,52 @@ sub _checkViewTemplateId($) {
 };
 
 
+# sub _setRename($$) {
+	# # e.g. set ui rename type=viewtemplate origintemplateid=test targettemplateid=testnew 
+	# my ($hash,$h) = @_;
+	# return '"set rename": unknown type' unless exists $h->{type} and $h->{type} eq "viewtemplate";
+	# return '"set rename": origin template id missing' unless $h->{origintemplateid};
+	# return '"set rename": target template id missing' unless $h->{targettemplateid};
+	# return 'View template '.$h->{origintemplateid}.' does not exist' unless $hash->{viewtemplates}{$h->{origintemplateid}};
+	# return 'View template '.$h->{targettemplateid}.' already exists' if $hash->{viewtemplates}{$h->{targettemplateid}};
+	# # now we can start renaming
+	# my $origin = $h->{origintemplateid};
+	# my $target = $h->{targettemplateid};
+	# my $msg = _checkViewTemplateId($target);
+	# return $msg if $msg;
+	# # rename usages as views in cells
+	# # in all pages
+	# for my $pageid (keys %{$hash->{pages}}) { 
+		# # check all cells
+		# my $cells = $hash->{pages}{$pageid}{cells};
+		# for my $cellid (0..$#$cells) {
+			# # check all views
+			# my $views = $cells->[$cellid]{views};
+			# for my $viewid (0..$#$views) {
+				# my $view = $views->[$viewid];
+				# next unless blessed($view) eq 'FUIP::ViewTemplInstance' and $view->{templateid} eq $origin;
+				# # found it!
+				# $view->{templateid} = $target;
+			# };
+		# };
+	# };	
+	# # rename usages as views in view templates
+	# for my $id (keys %{$hash->{viewtemplates}}) {
+		# my $views = $hash->{viewtemplates}{$id}{views};
+		# for my $viewid (0..$#$views) {
+			# my $view = $views->[$viewid];
+			# next unless blessed($view) eq 'FUIP::ViewTemplInstance' and $view->{templateid} eq $origin;
+			# # found it!
+			# $view->{templateid} = $target;
+		# };
+	# };
+	# # rename the view template itself
+	# $hash->{viewtemplates}{$target} = $hash->{viewtemplates}{$origin};
+	# delete $hash->{viewtemplates}{$origin};
+	# $hash->{viewtemplates}{$target}{id} = $target;
+	
+	# return undef;  # clearly return "all good"
+# };	
 sub _setRename($$) {
 	# e.g. set ui rename type=viewtemplate origintemplateid=test targettemplateid=testnew 
 	my ($hash,$h) = @_;
@@ -2721,37 +2768,17 @@ sub _setRename($$) {
 	my $target = $h->{targettemplateid};
 	my $msg = _checkViewTemplateId($target);
 	return $msg if $msg;
-	# rename usages as views in cells
-	# in all pages
-	for my $pageid (keys %{$hash->{pages}}) { 
-		# check all cells
-		my $cells = $hash->{pages}{$pageid}{cells};
-		for my $cellid (0..$#$cells) {
-			# check all views
-			my $views = $cells->[$cellid]{views};
-			for my $viewid (0..$#$views) {
-				my $view = $views->[$viewid];
-				next unless blessed($view) eq 'FUIP::ViewTemplInstance' and $view->{templateid} eq $origin;
-				# found it!
+	# rename usages in all views, which are View Template Instances
+	my $cb = sub ($$) {
+				my (undef, $view) = @_;
+				return unless blessed($view) eq 'FUIP::ViewTemplInstance' and $view->{templateid} eq $origin;
 				$view->{templateid} = $target;
-			};
 		};
-	};	
-	# rename usages as views in view templates
-	for my $id (keys %{$hash->{viewtemplates}}) {
-		my $views = $hash->{viewtemplates}{$id}{views};
-		for my $viewid (0..$#$views) {
-			my $view = $views->[$viewid];
-			next unless blessed($view) eq 'FUIP::ViewTemplInstance' and $view->{templateid} eq $origin;
-			# found it!
-			$view->{templateid} = $target;
-		};
-	};
+	_traverseViews($hash,$cb);
 	# rename the view template itself
 	$hash->{viewtemplates}{$target} = $hash->{viewtemplates}{$origin};
 	delete $hash->{viewtemplates}{$origin};
-	$hash->{viewtemplates}{$target}{id} = $target;
-	
+	$hash->{viewtemplates}{$target}{id} = $target;	
 	return undef;  # clearly return "all good"
 };	
 
@@ -2971,6 +2998,71 @@ sub _getDeviceList($) {
 };
 
 
+sub _traverseViews($$;$$); # recursion
+sub _traverseViews($$;$$) {
+	my ($hash,$func,$startkey,$startobj) = @_;
+	# traverse all views starting with object $start if given
+	# if there is no $start, traverse all views of FUIP device in $hash
+	# $func has parameters ($key,$view)
+	#	$key: key of view (see sub _getContainerForCommand)
+	#	$view: the view currently "traversed"
+	# $key 
+	#	views in cells: pageid, cellid, viewid
+	#	views on popups in cells: pageid, cellid, fieldid, viewid 
+	#	views on popups in viewtemplates: templateid, fieldid, viewid
+	#	views in viewtemplates:	templateid, viewid
+	# types: 
+	#	page, cell, dialog, viewtemplate, view
+	
+	unless($startkey) {  # i.e. when we start from scratch
+		# views in cells in pages
+		for my $pageid (sort keys %{$hash->{pages}}) { 
+			_traverseViews($hash,$func,{type => "page", pageid => $pageid},$hash->{pages}{$pageid});
+		};
+		# views in view templates
+		for my $id (sort keys %{$hash->{viewtemplates}}) {
+			_traverseViews($hash,$func,{type => "viewtemplate", templateid => $id},$hash->{viewtemplates}{$id});
+		};
+		return;
+	};	
+	my $key = { %$startkey };
+	# traverse single page
+	if($startkey->{type} eq "page") { 
+		my $cells = $startobj->{cells};
+		$key->{type} = "cell";
+		for my $cellid (0..$#$cells) {
+			$key->{cellid} = $cellid;
+			_traverseViews($hash,$func,$key, $cells->[$cellid]);
+		};
+	# traverse single cell, dialog or viewtemplate
+	}elsif($startkey->{type} =~ m/^cell|dialog|viewtemplate/) {
+		$key->{type} = "view";
+		my $views = $startobj->{views};
+		for my $viewid (0..$#$views) {
+			my $view = $views->[$viewid];
+			$key->{viewid} = $viewid;
+			_traverseViews($hash,$func,$key,$view);
+		}
+	# "traverse" single view
+	}elsif($startkey->{type} eq "view") {
+		# callback
+		&$func($key,$startobj);
+		# check for dialogs (popups)
+		for my $fieldname (keys %$startobj) { 
+			next unless blessed($startobj->{$fieldname}) and $startobj->{$fieldname}->isa("FUIP::Dialog");
+			$key->{type} = "dialog";
+			if($key->{fieldid}) {
+				$key->{fieldid} .= "-";
+			}else{	
+				$key->{fieldid} = "";
+			};
+			$key->{fieldid} .= "views-".$key->{viewid}."-".$fieldname;  # views-1-popup-views-3-popup...	
+			_traverseViews($hash,$func,$key,$startobj->{$fieldname});
+		};
+	};	
+};
+
+
 sub _getWhereUsedList($$;$); # recursion
 sub _getWhereUsedList($$;$) {
 	# determine where-used-list, currently only for view templates
@@ -2990,41 +3082,31 @@ sub _getWhereUsedList($$;$) {
 	my $templateid = $h->{templateid};
 	return "[]" unless $templateid;
 	$result = [] unless $result;
+	
 	unless($h->{"filter-type"} and $h->{"filter-type"} ne "view") {
 		# usage in views in cells in pages
-		for my $pageid (sort keys %{$hash->{pages}}) { 
-			# check all cells
-			my $cells = $hash->{pages}{$pageid}{cells};
-			for my $cellid (0..$#$cells) {
-				# check all views
-				my $views = $cells->[$cellid]{views};
-				for my $viewid (0..$#$views) {
-					my $view = $views->[$viewid];
-					next unless blessed($view) eq 'FUIP::ViewTemplInstance' and $view->{templateid} eq $templateid;
-					# found it!
-					push(@$result, {type => "view", pageid => $pageid, cellid => $cellid, viewid => $viewid}); 
+		my $cb = sub ($$) {
+					my ($key, $view) = @_;
+					return unless blessed($view) eq 'FUIP::ViewTemplInstance' and $view->{templateid} eq $templateid;
+					push(@$result, {%$key}); 
 				};
-			};
+		for my $pageid (sort keys %{$hash->{pages}}) { 
+			_traverseViews($hash,$cb,{type => "page", pageid => $pageid},$hash->{pages}{$pageid});
 		};	
 	};
 	unless($h->{"filter-type"} and $h->{"filter-type"} ne "viewtemplate") {
 		# usage in other view templates
-		for my $id (sort keys %{$hash->{viewtemplates}}) {
-			my $views = $hash->{viewtemplates}{$id}{views};
-			for my $viewid (0..$#$views) {
-				my $view = $views->[$viewid];
-				next unless blessed($view) eq 'FUIP::ViewTemplInstance' and $view->{templateid} eq $templateid;
-				# found it!
-				# do not re-add if already there (view templates can use the same view type multiple times)
-				# also to avoid endless recursion
-				unless ( grep { $_->{type} eq "viewtemplate" and $_->{templateid} eq $id} @$result ){
-					push(@$result, {type => "viewtemplate", templateid => $id}); 
+		my $cb = sub ($$) {
+					my ($key, $view) = @_;
+					return unless blessed($view) eq 'FUIP::ViewTemplInstance' and $view->{templateid} eq $templateid;
+					push(@$result, {type => "viewtemplate", templateid => $key->{templateid}}); 
 					if($h->{recursive}) {
-						_getWhereUsedList($hash,{type => "viewtemplate", templateid => $id, 
+						_getWhereUsedList($hash,{type => "viewtemplate", templateid => $key->{templateid}, 
 												"filter-type" => $h->{"filter-type"}, recursive => 1},$result);
 					};
 				};
-			};
+		for my $id (sort keys %{$hash->{viewtemplates}}) {
+			_traverseViews($hash,$cb,{type => "viewtemplate", templateid => $id},$hash->{viewtemplates}{$id});
 		};
 	};	
 	return $result;

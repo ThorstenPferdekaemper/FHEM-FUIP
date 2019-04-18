@@ -5,6 +5,16 @@
 </head>
 <body>
 <h1>FUIP News</h1>
+<h2>18.04.2019</h2>
+<h3>Umbenennen von View Templates mit Verwendung auf Popups</h3>
+Beim Umbenennen von View Templates wurden Views auf Dialogen ignoriert. Deshalb blieb bei View Template Instanzen auf Popups der alte Name stehen und es kam nach einem Neustart von FHEM oder einem "set load" zum Absturz wie am 14.04.2019 beschrieben. Dabei war es egal, ob das Popup Teil eines (anderen) View Templates war oder direkt durch einen View in einer Zelle ausgelöst wurde. Dieses Problem sollte jetzt nicht mehr auftreten.     
+<h3>Verwendungsnachweis auch f&uuml;r View Templates auf Dialogen</h3>
+Im Verwendungsnachweis ("Where-used list") von View Templates wurden ebenfalls Views auf Dialogen ignoriert. Deshalb konnten auch View Templates gel&ouml;scht werden, wenn diese nur auf Popups verwendet wurden. 
+<h3>Verwendungsnachweis f&uuml;r View Templates "kompakter"</h3>
+Bisher wurden Seiten (oder View Templates) mit mehrfachen Verwendungen eines View Templates in dessen "Where-used list" mehrfach angezeigt. Das ist jetzt nicht mehr der Fall. 
+<h3>Kein Absturz mehr bei fehlenden View Templates</h3>
+Es erfolgt jetzt (hoffentlich) kein Absturz mehr, wenn ein View Template zwar verwendet wird, aber nicht (mehr) definiert ist. Statt dessen wird jetzt an Stelle der fehlerhaften View Template Instanz eine Fehlermeldung angezeigt. 
+
 <h2>14.04.2019</h2>
 <h3>View Templates auf Popups in View Templates</h3>
 Beim Aufruf einer FUIP-Seite, insbesondere der &Uuml;bersicht der View Templates, konnte es zu einem FHEM-Absturz kommen, ggf. mit einem Eintrag im FHEM-Logfile wie etwa:<br>

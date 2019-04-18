@@ -424,14 +424,23 @@ function renderWhereUsedLists() {
 			let html = '<h3 style="text-align:left;margin-top:0;margin-bottom:0.3em;color:var(--fuip-color-symbol-active);">Where-used list</h3>';
 			if(whereusedlist.length){
 				html += '<ul>';	
+				// the where-used-list comes back more detailed than we need
+				// make sure that each page/viewtemplate is only shown once
+				let shown = { pages: {}, viewtemplates: {} };	
 				for(let i = 0; i < whereusedlist.length; i++) {
+					// already shown?
+					if(whereusedlist[i].type == "view" && shown.pages[whereusedlist[i].pageid] ||
+						whereusedlist[i].type == "viewtemplate" && shown.viewtemplates[whereusedlist[i].templateid])
+							continue;
 					html += '<li style="list-style-type:circle;color:var(--fuip-color-symbol-active);">';
 					switch(whereusedlist[i].type) {
 						case "view":
+							shown.pages[whereusedlist[i].pageid] = true;
 							html += '<a href="/fhem/' + name.toLowerCase() + '/page/' + whereusedlist[i].pageid + '">Page ' 
 									+ whereusedlist[i].pageid + '</a>';
 							break;
 						case "viewtemplate":
+							shown.viewtemplates[whereusedlist[i].templateid] = true;
 							html += '<a href="/fhem/' + name.toLowerCase() + '/fuip/viewtemplate?templateid=' 
 								+ whereusedlist[i].templateid + '">View template ' + whereusedlist[i].templateid + '</a>';
 							break;

@@ -54,7 +54,9 @@ sub getStructure($) {
 	}elsif(not $self->{viewtemplate}){
 		main::Log3(undef, 1, "FUIP ERROR: ViewTemplInstance without View Template");
 	}else{  # not blessed($self->{viewtemplate})
-		main::Log3(undef, 1, "FUIP ERROR: ViewTemplInstance with non-blessed View Template");
+		my $id = $self->{templateid} ? $self->{templateid} : "<empty>"; 
+		main::Log3(undef, 1, "FUIP ERROR: ViewTemplInstance with non-blessed View Template ".$id);
+		
 	};
 	use Carp;
 	Carp::confess("Problem:");
@@ -129,7 +131,22 @@ sub reconstruct($$$) {
 #	(However, this should not happen.)
 sub fixInstancesWithoutTemplates() {
 	for my $inst (@instancesWithoutTemplates) {
-		$inst->{viewtemplate} = $inst->{fuip}{viewtemplates}{$inst->{templateid}};	
+		if(exists $inst->{fuip}{viewtemplates}{$inst->{templateid}} and blessed($inst->{fuip}{viewtemplates}{$inst->{templateid}})) {
+			$inst->{viewtemplate} = $inst->{fuip}{viewtemplates}{$inst->{templateid}};	
+		}else{		
+			main::Log3(undef,1,"FUIP ".$inst->{fuip}{NAME}.": View Template does not exist: ".$inst->{templateid});
+			$inst->{viewtemplate} = FUIP::ViewTemplate->createDefaultInstance($inst->{fuip});
+			$inst->{viewtemplate}{id} = "<ERROR>";
+			$inst->{title} = "Error ".$inst->{templateid} unless $inst->{title};
+			$inst->{defaulted}{title} = '0';
+			my $view = "FUIP::View"->createDefaultInstance($inst->{fuip});
+			$view->{content} = "View template ".$inst->{templateid}." does not exist.";
+			$view->{defaulted}{content} = '0';
+			$view->{width} = 150;
+			$view->{height} = 50;
+			$view->position(0,0);
+			push(@{$inst->{viewtemplate}{views}},$view);
+		};	
 	};
 	@instancesWithoutTemplates = ();
 };
