@@ -5,6 +5,10 @@
 </head>
 <body>
 <h1>FUIP News</h1>
+<h2>20.04.2019</h2>
+<h3>Batteries View auf Popups: Ger&auml;tenamen wieder lesbar</h3>
+Beim View "Batteries" kam es bei der Ermittlung der L&auml;nge der Ger&auml;tenamen zu einem Fehler, wenn der View auf einem Popup verwendet wurde. Dadurch war der Ger&auml;tename extrem verk&uuml;rzt, selbst wenn noch genug Platz zur Verf&uuml;gung stand. Dies wurde korrigiert.
+
 <h2>18.04.2019</h2>
 <h3>Umbenennen von View Templates mit Verwendung auf Popups</h3>
 Beim Umbenennen von View Templates wurden Views auf Dialogen ignoriert. Deshalb blieb bei View Template Instanzen auf Popups der alte Name stehen und es kam nach einem Neustart von FHEM oder einem "set load" zum Absturz wie am 14.04.2019 beschrieben. Dabei war es egal, ob das Popup Teil eines (anderen) View Templates war oder direkt durch einen View in einer Zelle ausgelöst wurde. Dieses Problem sollte jetzt nicht mehr auftreten.     

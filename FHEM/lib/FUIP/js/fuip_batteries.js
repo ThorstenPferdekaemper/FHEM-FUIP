@@ -3,6 +3,9 @@ function fuip_batteries_resize(id) {
 	// called when the widget is resized (this is the idea...)
 	// console.log("resize: " + id);	
 	var elem = $("#"+id);
+	// only if visible, i.e. not on inactive popups
+	// otherwise, the sizing will be based on a "zero size" element
+	if(elem.is(":hidden")) return;
 	// set max text len if not set yet
 	if(!elem.attr("data-maxtextlen")){
 		var maxtextlen = 0;
