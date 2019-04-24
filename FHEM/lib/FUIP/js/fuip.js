@@ -469,7 +469,7 @@ function viewTemplateDelete(name,templateid){
 	let cmd = "set " + name + " delete type=viewtemplate templateid=" + templateid;	
 	sendFhemCommandLocal(cmd).done(function(message) {
 		if(message) {
-			ftui.toast("FUIP: " + message,"error");
+			popupError("Cannot delete " + templateid,message);
 			return;
 		};
 		window.location.replace(location.origin + "/fhem/" + name + "/fuip/viewtemplate");
@@ -1050,7 +1050,7 @@ function popupError(title,text,onClose) {
 	popup.dialog(settings);
 };	
 
-							
+
 function sendFhemCommandLocal(cmdline) {
 	cmdline = cmdline.replace('  ', ' ');
 	return $.ajax({

@@ -5,6 +5,17 @@
 </head>
 <body>
 <h1>FUIP News</h1>
+<h2>24.04.2019</h2>
+<h3>Toast-Messages abschaltbar</h3>
+Die Meldungen, die z.B. bei Schaltvorg&auml;ngen normalerweise links unten auftauchen, sind jetzt konfigurierbar. Dazu gibt es das neue Attribut <i>toastMessages</i> so lange man das Attribut nicht verwendet, bleibt alles wie vorher (auch selbstgebastelte Konfigurationen &uuml;ber HTML-Views m&uuml;ssten noch funktionieren). Das Attribut kann die folgenden Werte annehmen:
+<ul>
+<li><b>all</b>: Alles bleibt im Prinzip wie vorher, d.h. alle Meldungen werden angezeigt. Selbstgebastelte Toast-Konfigurationen funktionieren damit aber wahrscheinlich nicht.</li>
+<li><b>errors</b>: Es werden nur noch Fehlermeldungen (also die roten Popups) angezeigt. Meldungen wie "set xy on" kommen nicht mehr.</li>
+<li><b>off</b>: Es werden keine Meldungen mehr angezeigt, au&szlig;er Fehlermeldungen, die von FUIP im &Auml;nderungsmodus (<i>locked = 0</i>) erzeugt werden. D.h. Lebenspartner oder andere Mitbewohner sehen wahrscheinlich tats&auml;chlich gar keine Meldungen mehr.</li>  
+</ul>
+<h3>Meldung beim L&ouml;schen verwendeter View-Templates</h3>
+View-Templates, welche verwendet werden, k&ouml;nnen nicht gel&ouml;scht werden. Die dazugeh&ouml;rige Fehlermeldung gibt es schon eine Weile, sie wurde jetzt jedoch von "Toast" auf "Popup" umgestellt. Das bedeutet auch, dass sie vom Benutzer explizit quittiert werden muss.
+
 <h2>20.04.2019</h2>
 <h3>Batteries View auf Popups: Ger&auml;tenamen wieder lesbar</h3>
 Beim View "Batteries" kam es bei der Ermittlung der L&auml;nge der Ger&auml;tenamen zu einem Fehler, wenn der View auf einem Popup verwendet wurde. Dadurch war der Ger&auml;tename extrem verk&uuml;rzt, selbst wenn noch genug Platz zur Verf&uuml;gung stand. Dies wurde korrigiert.

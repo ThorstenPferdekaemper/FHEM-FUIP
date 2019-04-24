@@ -48,7 +48,7 @@ my $currentPage = "";
 # possible values of attributes can change...
 sub setAttrList($) {
 	my ($hash) = @_;
-    $hash->{AttrList}  = "layout:gridster,flex locked:0,1 fhemwebUrl baseWidth baseHeight pageWidth styleSchema:default,blue,green,mobil,darkblue,darkgreen,bright-mint styleColor viewportUserScalable:yes,no viewportInitialScale gridlines:show,hide snapTo:gridlines,halfGrid,quarterGrid,nothing styleBackgroundImage:";
+    $hash->{AttrList}  = "layout:gridster,flex locked:0,1 fhemwebUrl baseWidth baseHeight pageWidth styleSchema:default,blue,green,mobil,darkblue,darkgreen,bright-mint styleColor viewportUserScalable:yes,no viewportInitialScale gridlines:show,hide snapTo:gridlines,halfGrid,quarterGrid,nothing toastMessages:all,errors,off styleBackgroundImage:";
 	my $imageNames = getImageNames();
 	$hash->{AttrList} .= join(",",@$imageNames);
 	my $cssNames = getUserCssFileNames();
@@ -456,7 +456,8 @@ sub getViewDependencies($$$) {
 sub renderHeaderHTML($$) {
 	my ($hash,$pageId) = @_;
 	my $dependencies = getViewDependencies($hash,$pageId,"js");
-	my $result = "";
+	# common script parts
+	my $result = '<script src="/fhem/'.lc($hash->{NAME}).'/fuip/js/fuip_common.js"></script>'."\n";
 	for my $dep (@$dependencies) {
 		$result .= '<script src="/fhem/'.lc($hash->{NAME}).'/fuip/'.$dep.'"></script>'."\n";
 	};
@@ -608,6 +609,14 @@ sub renderCommonCss($) {
 };
 
 
+sub renderToastSetting($) {
+	my $hash = shift;
+	my $toast = main::AttrVal($hash->{NAME},"toastMessages",0);
+	return "" unless $toast;
+	return ' data-fuip-toast="'.$toast.'"';
+};
+
+
 sub renderPage($$$) {
 	my ($hash,$currentLocation,$locked) = @_;
 	# falls $locked, dann werden die Editierfunktionen nicht mit gerendert
@@ -623,7 +632,7 @@ sub renderPage($$$) {
 	my $userScalable = main::AttrVal($hash->{NAME},"viewportUserScalable","yes");
   	my $result = 
 	   "<!DOCTYPE html>
-		<html".($locked ? "" : " data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"".$layout."\"").">
+		<html".($locked ? "" : " data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"".$layout."\"").renderToastSetting($hash).">
 			<head>
 				<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
 				<meta name=\"viewport\" content=\"width=device-width, initial-scale=".$initialScale.", user-scalable=".$userScalable."\" />
@@ -707,7 +716,7 @@ sub renderPageFlex($$) {
 	my $userScalable = main::AttrVal($hash->{NAME},"viewportUserScalable","no");
   	my $result = 
 	   '<!DOCTYPE html>
-		<html>
+		<html'.renderToastSetting($hash).'>
 			<head>
 				<meta http-equiv="X-UA-Compatible" content="IE=edge">'.
 				'<meta name="viewport" content="width=device-width, initial-scale='.$initialScale.', user-scalable='.$userScalable.'" />'.
@@ -795,12 +804,14 @@ sub renderPageFlexMaint($$) {
 	my $userScalable = main::AttrVal($hash->{NAME},"viewportUserScalable","no");
   	my $result = 
 	   "<!DOCTYPE html>
-		<html data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"flex\">
+		<html data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"flex\"".renderToastSetting($hash).">
 			<head>
 				<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
 				<meta name=\"viewport\" content=\"width=device-width, initial-scale=".$initialScale.", user-scalable=".$userScalable."\" />
 				<meta name=\"mobile-web-app-capable\" content=\"yes\">
 				<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">".
+				#<meta name=\"toast\" content=\"0\">".
+				
 				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
             "
 				<script type=\"text/javascript\">
@@ -927,7 +938,7 @@ sub renderPopupMaint($$) {
 		$result .= 'data-viewtemplate="'.$urlParams->{templateid}.'" ';
 	};	
 	$result .= "data-fieldid=\"".$urlParams->{fieldid}."\"
-				data-editonly=\"".$hash->{editOnly}."\">
+				data-editonly=\"".$hash->{editOnly}."\"".renderToastSetting($hash).">
 			<head>
 	            <title>".$title."</title>"
 				.renderCommonCss($hash->{NAME})
@@ -1021,7 +1032,7 @@ sub renderViewTemplateMaint($$) {
   	my $result = 
 	   "<!DOCTYPE html>
 		<html data-name=\"".$hash->{NAME}."\" data-viewtemplate=\"".$templateid."\" 
-				data-editonly=\"".$hash->{editOnly}."\">
+				data-editonly=\"".$hash->{editOnly}."\"".renderToastSetting($hash).">
 			<head>
 				<script type=\"text/javascript\">
 					// when using browser back or so, we should reload
