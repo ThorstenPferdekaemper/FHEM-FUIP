@@ -26,12 +26,16 @@ sub _getDevices($){
 		};	
 	};
 	# only devices with battery, but we want the Activity reading nevertheless, if it exists
-	# NAME is added because jsonlist2 does not return devices with Attribute ignore=1. This 
+	# NAME is always added because jsonlist2 does not return devices with Attribute ignore=1. This 
 	#	leads in Model::getDevice to an "empty" device, which could also happen if a device
 	#   simply does not have alias or battery set. NAME, however, is always there unless 
 	#	ignore=1
 	#	(In other words: jsonlist2 never returns the Attribute ignore, if it is 1.)
-	my $fields = ["alias","battery","NAME"];  
+	my $fields = ["battery","NAME"];
+	# add fields for the label rule
+	$self->{labelRule} = "alias,NAME" unless defined $self->{labelRule};	
+	my @labelFields = split(/,/,$self->{labelRule});
+	push(@$fields,@labelFields);
 	if($deviceFilter ne "all") {
 		push(@$fields,"Activity");
 	};	
@@ -49,8 +53,13 @@ sub _getDevices($){
 		if(exists($device->{Readings}{Activity})) {
 			$devices{$dev}{Activity} = 1;
 		};
-		if($device->{Attributes}{alias}) {
-			$devices{$dev}{alias} = $device->{Attributes}{alias};
+		# fields to form label
+		for my $field (@labelFields) {
+			for my $area (qw(Attributes Internals Readings)) {
+				next unless $device->{$area}{$field};
+				$devices{$dev}{$field} = $device->{$area}{$field};
+				last;
+			};
 		};
 		$devices{$dev}{battery} = $device->{Readings}{battery} if $devices{$dev}{battery};
 		# own key
@@ -68,13 +77,19 @@ sub _getDevices($){
 };	
 	
 	
-sub _getHtmlName($) {
-	my ($device) = @_;
+sub _getHtmlName($$) {
+	my ($self,$device) = @_;
+	$self->{labelRule} = "alias,NAME" unless defined $self->{labelRule};	
+	my @labelFields = split(/,/,$self->{labelRule});
+	my $name = $device->{key};
+	for my $field (@labelFields) {
+		next unless $device->{$field};
+		$name = $device->{$field};
+		last;
+	};
 	return '<div
 		style="text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" 
-		class="fuip-color fuip-devname">'
-			.($device->{alias} ? $device->{alias} :$device->{key})
-		.'</div>';
+		class="fuip-color fuip-devname">'.$name.'</div>';
 };
 
 
@@ -179,7 +194,7 @@ sub getHTML($){
 		}  
 		$count++;
 		$result.= '<tr>
-					<td>'._getHtmlName($device).'</td>
+					<td>'._getHtmlName($self,$device).'</td>
 					<td><div style="width:42px;">'._getHtmlBatterySymbol($device).'</div></td>
 					<td><div style="width:30px">'._getHtmlBatteryLevel($device).'</div></td>
 					<td style="padding-left:5px"><div style="width:54px">'._getHtmlActivity($device).'</div></td>
@@ -247,7 +262,8 @@ sub getStructure($) {
 		{ id => "sizing", type => "sizing", options => [ "fixed", "auto", "resizable" ],
 			default => { type => "const", value => "auto" } },
 		{ id => "columns", type => "text", options => [1,2,3,4], 
-			default => { type => "const", value => 2 } }
+			default => { type => "const", value => 2 } },
+		{ id => "labelRule", type => "text", default => { type => "const", value => "alias,NAME" } }	
 		];
 };
 

@@ -5,6 +5,15 @@
 </head>
 <body>
 <h1>FUIP News</h1>
+<h2>25.04.2019</h2>
+<h3>Batteries: Flexibleres Label</h3>
+Beim View "Batteries" kann man jetzt einstellen, wie das Label (also der dargestellte Name) zu jedem Ger&auml;t ermittelt wird. Dazu hat der View einen neuen Parameter <i>labelRule</i>. Man kann hier eine durch Komma getrennte Liste von Attributen, Internals und Readings der betreffenden Ger&auml;te eingeben. Das erste Attribut/Reading/Internal, welches beim jeweiligen Ger&auml;t existiert und auch einen Inhalt hat, wird dann als Label benutzt. Falls nichts gefunden wird, dann wird der Ger&auml;tename (also das Internal <i>NAME</i>) benutzt. Hier ein paar Beispiele. Angegeben ist jeweils der Inhalt des Felds <i>labelRule</i> und was es bewirkt.
+<ul>
+<li><b>alias,NAME</b>: Das ist die Voreinstellung. Damit ist alles so wie vorher: Falls ein Alias gesetzt ist, wird es benutzt, anonsten der Name.</li>
+<li><b>gassistantName,assistantName,alias,NAME</b>: Damit wird zuerst nach einem <i>gassistantName</i> geschaut, dann nach einem <i>assistantName</i>. Ist beides nicht vorhanden, dann geht es weiter wie bei der Voreinstellung.</li>
+<li><b>NAME,alias</b>: Damit wird immer der Ger&auml;tename (Internal <i>NAME</i>) benutzt, da dieser immer existiert. Dasselbe ist der Fall, wenn <i>labelRule</i> leer ist und meistens auch bei Tippfehlern.</li>
+</ul>
+
 <h2>24.04.2019</h2>
 <h3>Toast-Messages abschaltbar</h3>
 Die Meldungen, die z.B. bei Schaltvorg&auml;ngen normalerweise links unten auftauchen, sind jetzt konfigurierbar. Dazu gibt es das neue Attribut <i>toastMessages</i> so lange man das Attribut nicht verwendet, bleibt alles wie vorher (auch selbstgebastelte Konfigurationen &uuml;ber HTML-Views m&uuml;ssten noch funktionieren). Das Attribut kann die folgenden Werte annehmen:
