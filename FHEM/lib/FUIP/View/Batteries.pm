@@ -31,7 +31,7 @@ sub _getDevices($){
 	#   simply does not have alias or battery set. NAME, however, is always there unless 
 	#	ignore=1
 	#	(In other words: jsonlist2 never returns the Attribute ignore, if it is 1.)
-	my $fields = ["battery","NAME"];
+	my $fields = ["battery","NAME","TYPE"];
 	# add fields for the label rule
 	$self->{labelRule} = "alias,NAME" unless defined $self->{labelRule};	
 	my @labelFields = split(/,/,$self->{labelRule});
@@ -50,6 +50,7 @@ sub _getDevices($){
 			delete $devices{$dev};
 			next;
 		};
+		$devices{$dev}{TYPE} = $device->{Internals}{TYPE};  # this should always exist
 		if(exists($device->{Readings}{Activity})) {
 			$devices{$dev}{Activity} = 1;
 		};
@@ -100,6 +101,7 @@ sub _getReadingType($$) {
 #	voltage:	voltage, without the V sign
 	my ($device,$reading) = @_;
 	return "percentage" if($reading eq "batteryPercent");
+	return "percentage" if($reading eq "batteryLevel" and $device->{TYPE} eq "PRESENCE"); 
 	return "voltage" if($reading =~ m/^(batteryLevel|batVoltage)$/);
 	# now only "battery" is left, which usually is like ok/low etc., but can be percentage as well
 	my $value = $device->{$reading};
