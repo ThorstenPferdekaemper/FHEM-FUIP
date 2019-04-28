@@ -55,42 +55,34 @@ sub _getDevices($){
 			$devices{$dev}{Activity} = 1;
 		};
 		# fields to form label
+		# determine name here already, as we need it for sorting
 		for my $field (@labelFields) {
 			for my $area (qw(Attributes Internals Readings)) {
 				next unless $device->{$area}{$field};
-				$devices{$dev}{$field} = $device->{$area}{$field};
+				$devices{$dev}{fuipName} = $device->{$area}{$field};
 				last;
 			};
+			last if $devices{$dev}{fuipName};
 		};
+		$devices{$dev}{fuipName} = $dev unless $devices{$dev}{fuipName};
 		$devices{$dev}{battery} = $device->{Readings}{battery} if $devices{$dev}{battery};
 		# own key
 		$devices{$dev}{key} = $dev;
 	};
 	# we need a sorted array as a result
-	# sort by alias (if exists), otherwise by key (NAME)
+	# sort by displayed name 
 	# sort case-insensitive
 	my @result = 
-		sort {
-			my $a_key = exists($a->{alias}) ? $a->{alias} : $a->{key};
-			my $b_key = exists($b->{alias}) ? $b->{alias} : $b->{key};
-			return CORE::fc($a_key) cmp CORE::fc($b_key); } values %devices;
+		sort { return CORE::fc($a->{fuipName}) cmp CORE::fc($b->{fuipName}); } values %devices;
 	return \@result;
 };	
 	
 	
-sub _getHtmlName($$) {
-	my ($self,$device) = @_;
-	$self->{labelRule} = "alias,NAME" unless defined $self->{labelRule};	
-	my @labelFields = split(/,/,$self->{labelRule});
-	my $name = $device->{key};
-	for my $field (@labelFields) {
-		next unless $device->{$field};
-		$name = $device->{$field};
-		last;
-	};
+sub _getHtmlName($) {
+	my $device = shift;
 	return '<div
 		style="text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" 
-		class="fuip-color fuip-devname">'.$name.'</div>';
+		class="fuip-color fuip-devname">'.$device->{fuipName}.'</div>';
 };
 
 
@@ -196,7 +188,7 @@ sub getHTML($){
 		}  
 		$count++;
 		$result.= '<tr>
-					<td>'._getHtmlName($self,$device).'</td>
+					<td>'._getHtmlName($device).'</td>
 					<td><div style="width:42px;">'._getHtmlBatterySymbol($device).'</div></td>
 					<td><div style="width:30px">'._getHtmlBatteryLevel($device).'</div></td>
 					<td style="padding-left:5px"><div style="width:54px">'._getHtmlActivity($device).'</div></td>
