@@ -363,6 +363,20 @@ var Modul_weatherdetail = function() {
 		return myHtml;
 	}
 	
+	
+	function getImgPath() {
+		// try to make this safe if someone omits trailing "/"
+		// or fhemDir is completely empty
+		var fhemDir = ftui.config.fhemDir;
+		if(fhemDir.length) {
+			if(fhemDir.slice(-1) != "/") 
+				fhemDir += "/";
+		}else{
+			fhemDir = "/";
+		};	
+		return fhemDir + "images/default/weather/";
+	};	
+	
 
 	function addWeatherRow(elem, res, token, name, icon, unit) {
 		var colsPerDay = 8;
@@ -375,8 +389,7 @@ var Modul_weatherdetail = function() {
 					var icon = getImgFilename(res.Readings['fc' + token + '_weather' + toStr2(i * 3) + 'Icon'].Value, false);
 					myHtml += "<div class='weather'><div class='weather-icon meteocons' data-icon='" + icon + "'></div></div>"
 				} else {
-					var pathImage = ftui.config.fhemDir + "images/default/weather/";
-					var imgFile = pathImage + getImgFilename(res.Readings['fc' + token + '_weather' + toStr2(i * 3) + 'Icon'].Value, true);
+					var imgFile = getImgPath() + getImgFilename(res.Readings['fc' + token + '_weather' + toStr2(i * 3) + 'Icon'].Value, true);
 					myHtml += "<img class='ftuiWeatherdetailSymbolDetail' src='" + imgFile + "'/>"
 				}
 			} else if (name=='windDir') {
@@ -400,7 +413,7 @@ var Modul_weatherdetail = function() {
 	function update(device, reading) {
 		// we need only updates for our device, so filter out all other widgets
 		me.elements.filter('div[data-device="' + device + '"]').each(function(index) {
-			var pathImage = ftui.config.fhemDir + "images/default/weather/";
+			var pathImage = getImgPath();
 			var elem = $(this);
 			var myHtml = elem.data('detail').length ? "<div class='ftuiWeatherdetailTab' style='white-space:nowrap;text-align:left;'>" : "<div style='white-space:nowrap;height:100%;float:left'>";
 			var fhemJSON = ftui.sendFhemCommand("jsonlist2 WEB," + device + strDaten).done(function(fhemJSON) {
