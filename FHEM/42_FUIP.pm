@@ -48,7 +48,7 @@ my $currentPage = "";
 # possible values of attributes can change...
 sub setAttrList($) {
 	my ($hash) = @_;
-    $hash->{AttrList}  = "layout:gridster,flex locked:0,1 fhemwebUrl baseWidth baseHeight pageWidth styleSchema:default,blue,green,mobil,darkblue,darkgreen,bright-mint styleColor viewportUserScalable:yes,no viewportInitialScale gridlines:show,hide snapTo:gridlines,halfGrid,quarterGrid,nothing toastMessages:all,errors,off styleBackgroundImage:";
+    $hash->{AttrList}  = "layout:gridster,flex locked:0,1 fhemwebUrl baseWidth baseHeight cellMargin:0,1,2,3,4,5,6,7,8,9,10 pageWidth styleSchema:default,blue,green,mobil,darkblue,darkgreen,bright-mint styleColor viewportUserScalable:yes,no viewportInitialScale gridlines:show,hide snapTo:gridlines,halfGrid,quarterGrid,nothing toastMessages:all,errors,off styleBackgroundImage:";
 	my $imageNames = getImageNames();
 	$hash->{AttrList} .= join(",",@$imageNames);
 	my $cssNames = getUserCssFileNames();
@@ -239,8 +239,19 @@ sub Attr ($$$$) {
 			return "pageWidth must be a number between 100 and 2500";
 		}	
 	};
+	if($cmd eq "set" and $attrName eq "cellMargin") {
+		if($attrValue < 0 or $attrValue > 10) {
+			return "cellMargin must be a number between 0 and 10";
+		}	
+	};
 	return undef;
 }
+
+
+sub getCellMargin($) {
+	my $hash = shift;
+	return main::AttrVal($hash->{NAME},"cellMargin",5);	
+};
 
 
 sub createRoomsMenu($$) {
@@ -332,7 +343,7 @@ sub determineMaxCols($;$) {
 	#should be compatible to what we did before
 	return $default unless $pageWidth;
 	use integer;
-	my $maxCols = $pageWidth / ($baseWidth + 10);
+	my $maxCols = $pageWidth / ($baseWidth + getCellMargin($hash) * 2);
 	no integer;
 	return 1 unless $maxCols > 1;  # 0 or negative cols do not make sense
 	return $maxCols;
@@ -352,6 +363,7 @@ sub renderFuipInit($;$) {
   			<script>
 				fuipInit({	baseWidth:".$baseWidth.",
 							baseHeight:".$baseHeight.",
+							cellMargin:".getCellMargin($hash).",
 							maxCols:".determineMaxCols($hash,99).",
 							gridlines:\"".$gridlines."\",
 							snapTo:\"".$snapto."\" })
@@ -639,7 +651,8 @@ sub renderPage($$$) {
 				<meta name=\"mobile-web-app-capable\" content=\"yes\">
 				<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">
 				<meta name=\"widget_base_width\" content=\"".$baseWidth."\">
-				<meta name=\"widget_base_height\" content=\"".$baseHeight."\">".
+				<meta name=\"widget_base_height\" content=\"".$baseHeight."\">
+				<meta name=\"widget_margin\" content=\"".getCellMargin($hash)."\">".
 				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
 				($locked ? '<meta name="gridster_disable" content="1">' : "").
             "
@@ -708,8 +721,6 @@ sub renderPageFlex($$) {
 	my $title = $hash->{pages}{$currentLocation}{title};
 	$title = main::urlDecode($currentLocation) unless $title;
 	$title = "FHEM Tablet UI by FUIP" unless $title;
-	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
-	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
 	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","var(--fuip-color-foreground,#808080)");
 	my $pageWidth = main::AttrVal($hash->{NAME},"pageWidth",undef);
 	my $initialScale = main::AttrVal($hash->{NAME},"viewportInitialScale","1.0");
@@ -721,11 +732,8 @@ sub renderPageFlex($$) {
 				<meta http-equiv="X-UA-Compatible" content="IE=edge">'.
 				'<meta name="viewport" content="width=device-width, initial-scale='.$initialScale.', user-scalable='.$userScalable.'" />'.
 				'<meta name="mobile-web-app-capable" content="yes">
-				<meta name="apple-mobile-web-app-capable" content="yes">
-				<meta name="widget_base_width" content="'.$baseWidth.'">
-				<meta name="widget_base_height" content="'.$baseHeight.'">'.
+				<meta name="apple-mobile-web-app-capable" content="yes">'.
 				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
-				'<meta name="gridster_disable" content="1">'.
             "
 				<script type=\"text/javascript\">
 					// when using browser back or so, we should reload
@@ -774,7 +782,7 @@ sub renderPageFlex($$) {
 				.'</head>
             <body>'
 				.renderUserHtmlBodyStart($hash,$currentLocation)."\n"	
-                .'<div style="margin:5px;display:flex;"';
+                .'<div style="display:flex;"';
 	# TODO: does the following make any sense?
 	#if($pageWidth) {
 	#	$result .= ' style="width:'.$pageWidth.'px"';
@@ -809,9 +817,7 @@ sub renderPageFlexMaint($$) {
 				<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
 				<meta name=\"viewport\" content=\"width=device-width, initial-scale=".$initialScale.", user-scalable=".$userScalable."\" />
 				<meta name=\"mobile-web-app-capable\" content=\"yes\">
-				<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">".
-				#<meta name=\"toast\" content=\"0\">".
-				
+				<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">".		
 				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
             "
 				<script type=\"text/javascript\">
@@ -835,14 +841,14 @@ sub renderPageFlexMaint($$) {
 		                color: ".$styleColor.";
                     }
 					.fuip-flex-region {
-						margin:4px;
+						margin:".(getCellMargin($hash)-1)."px;
 						border:solid;
 						border-width:1px;
 						border-color:var(--fuip-color-foreground,#808080);
 						display:grid;
 						grid-auto-columns:".$baseWidth."px;
 						grid-auto-rows:".$baseHeight."px;
-						grid-gap:10px;
+						grid-gap:".(getCellMargin($hash)*2)."px;
 						place-content:start;
 					}
 					".renderCommonEditStyles($hash).	
@@ -1186,7 +1192,6 @@ sub defaultPageIndex($) {
 	my @cells;
 	# home button and rooms menu
 	addStandardCells($hash, \@cells, "home");
-	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
 	# get "room views" 
 	my @rooms = FUIP::Model::getRooms($hash->{NAME});
 	foreach my $room (@rooms) {
@@ -1212,7 +1217,7 @@ sub defaultPageIndex($) {
 		if(@switches) {
 			if(@$views) {
 				my $spacer = FUIP::View::Spacer->createDefaultInstance($hash);
-				$spacer->dimensions($baseWidth * 2 + 10, 5);
+				$spacer->dimensions(cellWidthToPixels($hash,2), 5);
 				push(@$views,$spacer);
 			};
 			push(@$views,@switches);
@@ -1220,7 +1225,7 @@ sub defaultPageIndex($) {
 		if(@others) {
 			if(@$views) {
 				my $spacer = FUIP::View::Spacer->createDefaultInstance($hash);
-				$spacer->dimensions($baseWidth * 2 + 10, 5);
+				$spacer->dimensions(cellWidthToPixels($hash,2), 5);
 				push(@$views,$spacer);
 			};
 			push(@$views,@others);
@@ -1682,6 +1687,24 @@ sub flexMaintFindRegion($$) {
 };
 
 
+sub cellWidthToPixels($$) {
+	my ($hash,$sizeX) = @_;
+	$sizeX = ceil($sizeX);
+	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
+	my $cellSpacing = getCellMargin($hash) * 2;
+	return $sizeX * ($baseWidth + $cellSpacing) - $cellSpacing; 
+};
+
+
+sub cellHeightToPixels($$) {
+	my ($hash,$sizeY) = @_;
+	$sizeY = ceil($sizeY);
+	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
+	my $cellSpacing = getCellMargin($hash) * 2;
+	return $sizeY * ($baseHeight + $cellSpacing) - $cellSpacing; 
+};
+
+
 sub cellSizeToPixels($;$$) {
 	my ($hash,$sizeX,$sizeY) = @_;
 	unless(defined($sizeX)) {
@@ -1689,12 +1712,7 @@ sub cellSizeToPixels($;$$) {
 		($sizeX,$sizeY) = $cell->dimensions();
 		$hash = $cell->{fuip};
 	};
-	$sizeX = ceil($sizeX);
-	$sizeY = ceil($sizeY);
-	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
-	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
-	return ($sizeX * ($baseWidth + 10) - 10, 
-			$sizeY * ($baseHeight + 10) - 10); 
+	return (cellWidthToPixels($hash,$sizeX), cellHeightToPixels($hash,$sizeY)); 
 };
 
 
@@ -1800,7 +1818,7 @@ sub renderCellsFlex($$) {
 		$cellHtml .= ";height:".$height."px;position:relative;border:0;
 									order:".($row*100+$col).";";
 		$cellHtml .= '				flex:auto;' if($cell->{region} eq "menu" and $row == $lastMenuRow or $cell->{region} eq "main" or $cell->{region} eq "title" and $col == 0);
-		$cellHtml .= '				margin:5px;">';
+		$cellHtml .= '				margin:'.getCellMargin($hash).'px;">';
 		$cell->applyDefaults();
 		# if there is no title and it is locked, we do not display a header
 		# header, if needed
@@ -2109,6 +2127,7 @@ sub settingsImport($$) {
 			file does not seem to be a FUIP export file at all."); 
 	};
 	my $newObject = $class->reconstruct($confHash,$hash);
+	my $cellSpacing = 2 * getCellMargin($hash);
 	if(exists($urlParams->{fieldid})) {
 		# importing (as) a dialog
 		# This means that what we import will replace the current one
@@ -2118,8 +2137,10 @@ sub settingsImport($$) {
 		$dialog->{defaulted} = $newObject->{defaulted};
 		# If we import from a cell, remove position and convert size
 		if($class eq "FUIP::Cell") {
-			$dialog->{width} = 	$newObject->{width} * main::AttrVal($hash->{NAME},"baseWidth",142) + 2;
-			$dialog->{height} = $newObject->{height} * main::AttrVal($hash->{NAME},"baseHeight",108) + 25;	
+			$newObject->{width} = 1 if $newObject->{width} <= 0;
+			$newObject->{height} = 1 if $newObject->{height} <= 0;
+			$dialog->{width} = 	cellWidthToPixels($hash,$newObject->{width}) + 2;
+			$dialog->{height} = cellHeightToPixels($hash,$newObject->{height}) + 3;	
 		}else{
 			# must be Dialog now
 			$dialog->{width} =  $newObject->{width};
@@ -2137,10 +2158,9 @@ sub settingsImport($$) {
 			$newObject->{defaulted} = $dialog->{defaulted};
 			my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
 			my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);
-			use integer;
-			$newObject->{width} = $dialog->{width} / $baseWidth + ($dialog->{width} % $baseWidth ? 1 : 0);
-			$newObject->{height} = $dialog->{height} / $baseHeight + ($dialog->{height} % $baseHeight ? 1 : 0);
-			no integer;
+			my $cellSpacing = getCellMargin($hash)*2;
+			$newObject->{width} = ceil(($dialog->{width} + $cellSpacing)/($baseWidth + $cellSpacing));
+			$newObject->{height} = ceil(($dialog->{height} + $cellSpacing)/($baseHeight + $cellSpacing));
 			$newObject->{width} = 1 unless($newObject->{width} > 0);
 			$newObject->{height} = 1 unless($newObject->{height} > 0);
 		}else{
@@ -2155,11 +2175,43 @@ sub settingsImport($$) {
 };
 
 
+sub finishCgiAnswer($$) {
+	# this is more or less copied from FW_finishRead of FHEMWEB
+	my ($rettype, $data) = @_;	
+	my $compressed = "";
+	if($rettype =~ m/(text|xml|json|svg|script)/i &&
+			$main::FW_httpheader{"Accept-Encoding"} &&
+			$main::FW_httpheader{"Accept-Encoding"} =~ m/gzip/ &&
+			$main::FW_use{zlib}) {
+		utf8::encode($data) if(utf8::is_utf8($data) && $data =~ m/[^\x00-\xFF]/ );
+		eval { $data = Compress::Zlib::memGzip($data); };
+		if($@) {
+			main::Log 1, "memGzip: $@"; 
+			$data = ""; #Forum #29939
+		}else{
+			$compressed = "Content-Encoding: gzip\r\n";
+		}
+	}
+	my $length = length($data);
+	# TODO: caching for some static pieces? ...or for everything in "locked" mode?
+	#my $expires = ($cacheable ?
+    #     "Expires: ".FmtDateTimeRFC1123($main::FW_chash->{LASTACCESS}+900)."\r\n" : 
+    #     "Cache-Control: no-cache, no-store, must-revalidate\r\n");
+	my $expires = "Cache-Control: no-cache, no-store, must-revalidate\r\n";
+	main::FW_addToWritebuffer($main::defs{$main::FW_cname},
+           "HTTP/1.1 200 OK\r\n" .
+           "Content-Length: $length\r\n" .
+           $expires . $compressed . # $main::FW_headerlines .
+           "Content-Type: $rettype\r\n\r\n" .
+           $data, undef, 1);
+}
+
+
 ##################
 #
 # here we answer any request to http://host:port/fhem/$infix and below
 
-sub CGI($) {
+sub CGI_inner($) {
 
   my ($request) = @_;   # /$infix/filename
   
@@ -2271,6 +2323,16 @@ sub CGI($) {
     return("text/plain; charset=utf-8", "Illegal request: $request");
   }
 }  
+
+
+sub CGI($) {
+	# the following avoids the FHEMWEB overhead (like f18 style data)
+	# and allows for own control over HTTP headers etc.
+	my ($request) = @_;   # /$infix/filename
+	my ($rettype, $data) = CGI_inner($request); 
+	finishCgiAnswer($rettype, $data);
+	return (undef,undef);
+};	
 
 
 # serializes all pages and views in order to save them
@@ -2584,9 +2646,7 @@ sub autoArrange($) {
 	# (This assumes we already have a width.)
 	my $width;
 	if($cell->isa("FUIP::Cell")) {
-		my ($w,$h) = $cell->dimensions();
-		my $baseWidth = main::AttrVal($cell->{fuip}{NAME},"baseWidth",142);
-		$width = $w * ($baseWidth + 10) -10;
+		($width,undef) = cellSizeToPixels($cell);
 	}else{	
 		($width,undef) = $cell->dimensions();
 	};	
@@ -2619,8 +2679,7 @@ sub autoArrangeNewViews($) {
 	my $cellHeight;
 	if($cell->isa("FUIP::Cell")) {
 		($cellWidth,$cellHeight) = $cell->dimensions();
-		my $baseWidth = main::AttrVal($cell->{fuip}{NAME},"baseWidth",142);
-		$width = $cellWidth * ($baseWidth + 10) -10;
+		($width,$height) = cellSizeToPixels($cell);
 	}else{	
 		($width,$height) = $cell->dimensions();
 	};	
@@ -2668,9 +2727,9 @@ sub autoArrangeNewViews($) {
 	# resize the cell itself in case we have added something "below", which does not anyway fit
 	if($cell->isa("FUIP::Cell")) {
 		my $baseHeight = main::AttrVal($cell->{fuip}{NAME},"baseHeight",108);
-		my $sizeY = $cellHeight * ($baseHeight + 10) - 10; 
-		if($nextPosY + 22 > $sizeY) {
-			$cellHeight = ceil(($nextPosY +32)/($baseHeight+10));
+		my $cellSpacing = getCellMargin($cell->{fuip})*2;
+		if($nextPosY + 22 > $height) {
+			$cellHeight = ceil(($nextPosY + $cellSpacing + 22)/($baseHeight+$cellSpacing));
 			$cell->dimensions($cellWidth,$cellHeight);
 		};
 	}else{
@@ -2720,52 +2779,6 @@ sub _checkViewTemplateId($) {
 };
 
 
-# sub _setRename($$) {
-	# # e.g. set ui rename type=viewtemplate origintemplateid=test targettemplateid=testnew 
-	# my ($hash,$h) = @_;
-	# return '"set rename": unknown type' unless exists $h->{type} and $h->{type} eq "viewtemplate";
-	# return '"set rename": origin template id missing' unless $h->{origintemplateid};
-	# return '"set rename": target template id missing' unless $h->{targettemplateid};
-	# return 'View template '.$h->{origintemplateid}.' does not exist' unless $hash->{viewtemplates}{$h->{origintemplateid}};
-	# return 'View template '.$h->{targettemplateid}.' already exists' if $hash->{viewtemplates}{$h->{targettemplateid}};
-	# # now we can start renaming
-	# my $origin = $h->{origintemplateid};
-	# my $target = $h->{targettemplateid};
-	# my $msg = _checkViewTemplateId($target);
-	# return $msg if $msg;
-	# # rename usages as views in cells
-	# # in all pages
-	# for my $pageid (keys %{$hash->{pages}}) { 
-		# # check all cells
-		# my $cells = $hash->{pages}{$pageid}{cells};
-		# for my $cellid (0..$#$cells) {
-			# # check all views
-			# my $views = $cells->[$cellid]{views};
-			# for my $viewid (0..$#$views) {
-				# my $view = $views->[$viewid];
-				# next unless blessed($view) eq 'FUIP::ViewTemplInstance' and $view->{templateid} eq $origin;
-				# # found it!
-				# $view->{templateid} = $target;
-			# };
-		# };
-	# };	
-	# # rename usages as views in view templates
-	# for my $id (keys %{$hash->{viewtemplates}}) {
-		# my $views = $hash->{viewtemplates}{$id}{views};
-		# for my $viewid (0..$#$views) {
-			# my $view = $views->[$viewid];
-			# next unless blessed($view) eq 'FUIP::ViewTemplInstance' and $view->{templateid} eq $origin;
-			# # found it!
-			# $view->{templateid} = $target;
-		# };
-	# };
-	# # rename the view template itself
-	# $hash->{viewtemplates}{$target} = $hash->{viewtemplates}{$origin};
-	# delete $hash->{viewtemplates}{$origin};
-	# $hash->{viewtemplates}{$target}{id} = $target;
-	
-	# return undef;  # clearly return "all good"
-# };	
 sub _setRename($$) {
 	# e.g. set ui rename type=viewtemplate origintemplateid=test targettemplateid=testnew 
 	my ($hash,$h) = @_;

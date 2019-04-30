@@ -5,6 +5,7 @@ var fuip = {};
 function fuipInit(conf) { //baseWidth, baseHeight, maxCols, gridlines, snapTo
 	fuip.baseWidth = conf.baseWidth;
 	fuip.baseHeight = conf.baseHeight;
+	fuip.cellMargin = conf.cellMargin;
 	fuip.snapTo = conf.snapTo;
 	$( function() {
 		// csrf token
@@ -84,7 +85,7 @@ function fuipInit(conf) { //baseWidth, baseHeight, maxCols, gridlines, snapTo
 	if($("html").attr("data-layout") == "gridster") {
 		fuipGridster =  $(".gridster ul").gridster({
 			widget_base_dimensions: [conf.baseWidth,conf.baseHeight],
-			widget_margins: [5, 5],
+			widget_margins: [conf.cellMargin,conf.cellMargin],
 			autogrow_cols: true,
 			max_cols: conf.maxCols,
 			resize: {
@@ -497,11 +498,12 @@ function gridDimensions() {
 	// with about 30 px distance, but have a gridline at the 
 	// left border of each cell and at the lower border of the header
 	// of each cell
-	var nH = Math.round((fuip.baseHeight + 10) / 30.0);
-	var nW = Math.round((fuip.baseWidth + 10) / 30.0);
+	let cellSpacing = 2 * fuip.cellMargin;
+	let nH = Math.round((fuip.baseHeight + cellSpacing) / 30.0);
+	let nW = Math.round((fuip.baseWidth + cellSpacing) / 30.0);
 	return { 
-		gridHeight: (fuip.baseHeight + 10) / nH,
-		gridWidth : (fuip.baseWidth + 10) / nW };
+		gridHeight: (fuip.baseHeight + cellSpacing) / nH,
+		gridWidth : (fuip.baseWidth + cellSpacing) / nW };
 };	
 
 
@@ -516,7 +518,7 @@ function gridStart() {
 	}else if($("html").attr("data-viewtemplate")) {
 		offset = $("#templatecontent").offset();
 	}else {
-		offset = {left:5,top:27};
+		offset = {left: fuip.cellMargin, top: 22 + fuip.cellMargin};
 	};	
 	// move grid so that it fits offset	
 	let dim = gridDimensions();
@@ -749,19 +751,20 @@ function onFlexMaintResize(e,ui) {
 	// do "gridster effect"
 	// width = (baseWidth + 10) * sizeX - 10
 	// sizeX = (width + 10) / (baseWidth + 10) 
-	var width = ui.size.width;
-	var height = ui.size.height;
-	var sizeX = Math.floor((width + 10 + 0.9 * fuip.baseWidth) / (fuip.baseWidth +10));
-	var fakeWidth = sizeX * (fuip.baseWidth + 10) - 10;
-	var sizeY = Math.floor((height + 10 + 0.9 * fuip.baseHeight) / (fuip.baseHeight + 10));
-	var fakeHeight = sizeY * (fuip.baseHeight + 10) - 10;
-	var fakeElem = ui.element.parent();
+	let cellSpacing = 2 * fuip.cellMargin;
+	let width = ui.size.width;
+	let height = ui.size.height;
+	let sizeX = Math.floor((width + cellSpacing + 0.9 * fuip.baseWidth) / (fuip.baseWidth +cellSpacing));
+	let fakeWidth = sizeX * (fuip.baseWidth + cellSpacing) - cellSpacing;
+	let sizeY = Math.floor((height + cellSpacing + 0.9 * fuip.baseHeight) / (fuip.baseHeight + cellSpacing));
+	let fakeHeight = sizeY * (fuip.baseHeight + cellSpacing) - cellSpacing;
+	let fakeElem = ui.element.parent();
 	fakeElem.width(fakeWidth).height(fakeHeight);
 	// set new grid element size
 	// ...but first store old size
-	var oldArea = flexMaintGetArea(fakeElem);
-	var oldSizeX = oldArea.col_end - oldArea.col_start;
-	var oldSizeY = oldArea.row_end - oldArea.row_start;
+	let oldArea = flexMaintGetArea(fakeElem);
+	let oldSizeX = oldArea.col_end - oldArea.col_start;
+	let oldSizeY = oldArea.row_end - oldArea.row_start;
 	if(oldSizeY != sizeY || oldSizeX != sizeX) {	
 		fakeElem.css({"grid-column-end":"span "+sizeX, "grid-row-end":"span "+sizeY});
 		if(sizeY > oldSizeY  || sizeX > oldSizeX) {
@@ -833,14 +836,15 @@ function flexMaintGetMaxRow(grid) {
 function onFlexMaintDrag(e,ui) {
 	// ui.position: relative to parent
 	// ui.offset: relative to page
-	var id = ui.helper.attr("id");
+	let id = ui.helper.attr("id");
 	id = id.replace("cell","fake"); 
-	var fakeElem = $("#"+id);
-	var area = fuip.drag_start_area;
+	let fakeElem = $("#"+id);
+	let area = fuip.drag_start_area;
+	let cellSpacing = 2 * fuip.cellMargin;
 	// move by 1 cell if moved by 50% of the baseWidth/Height
-	var moveX = Math.round(ui.position.left / (fuip.baseWidth + 10));
-	var moveY = Math.round(ui.position.top  / (fuip.baseHeight + 10));
-	var region = fakeElem.parent().attr("id");
+	let moveX = Math.round(ui.position.left / (fuip.baseWidth + cellSpacing));
+	let moveY = Math.round(ui.position.top  / (fuip.baseHeight + cellSpacing));
+	let region = fakeElem.parent().attr("id");
 	if(region == "fuip-flex-main") {
 		if(area.col_start + moveX + fuip.drag_colzero < 1){
 			// "main" -> "menu"

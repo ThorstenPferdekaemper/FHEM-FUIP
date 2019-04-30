@@ -5,6 +5,16 @@
 </head>
 <body>
 <h1>FUIP News</h1>
+<h2>30.04.2019</h2>
+<h3>Attribut <i>cellMargin</i> f&uuml;r Zellzwischenr&auml;ume</h3>
+Mit dem Attribut <i>cellMargin</i> kann man jetzt den Platz zwischen den Zellen festlegen. Der Wert muss zwischen 0 und 10 liegen, der Standardwert ist 5. Um jede Zelle herum werden <i>cellMargin</i> Pixel frei gehalten. D.h. zwischen zwei Zellen ist zweimal so viel Platz (in Pixel) wie durch <i>cellMargin</i> festgelegt. Der Rand um den ganzen Anzeigebereich herum ist <i>cellMargin</i> Pixel breit.
+
+<h3>Rand korrigiert bei <i>layout</i>=flex</h3>
+Bei Verwendung des flex-Layouts war der Rand um den Anzeigebereich zu groß. Dies wurde korrigiert.
+
+<h3>FHEMWEB-Overhead entfernt</h3>
+Diese &Auml;nderung sollte (fast) keine sichtbaren Auswirkungen haben, au&szlig;er ggf. etwas k&uuml;rzeren Ladezeiten. Es wird jetzt kein FHEMWEB-Overhead (wie z.B. f18-Style Daten) mehr hinzugef&uuml;gt und die HTTP-Header werden komplett von FUIP selbst kontrolliert.     
+
 <h2>29.04.2019</h2>
 <h3>Wetter-Icons bei "Remote FHEM"</h3>
 Bei den Views WeatherDetail und WeatherOverview wurden die Wetter-Icons nicht richtig angezeigt, wenn das Attribut <i>fhemwebUrl</i> verwendet wurde, aber dessen Inhalt am Ende keinen "/" hatte. Das sollte jetzt nicht mehr passieren.
