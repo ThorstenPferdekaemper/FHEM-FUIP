@@ -35,10 +35,11 @@ sub getHTML($){
 		};
 		$levelStr .= ',"Zu":"'.$levels[$inverted ? 10 : 0].'"';
 	};
+	$self->{timeInput} = "dropdownOnly" unless $self->{timeInput};
 	my $result = '
 				<div data-type="fuip_wdtimer" 
 					data-device="'.$self->{device}.'"    
-					data-style="round noicons" 
+					data-style="round noicons'.($self->{timeInput} eq "dropdownOnly" ? ' nokeyboard':'').'" 
 					data-theme="dark" 
 					data-title="'.($self->{label} ? $self->{label} : $self->{title}).'"  
 					data-sortcmdlist="MANUELL" ';
@@ -88,6 +89,8 @@ sub getStructure($) {
 				default => { type => "const", value => "shutter" }},
 		{ id => "minLevel", type => "text", default => { type => "const", value => "0" } },
 		{ id => "maxLevel", type => "text", default => { type => "const", value => "100" } },
+		{ id => "timeInput", type => "text", options => [ "keyboardAllowed", "dropdownOnly" ], 				
+				default => { type => "const", value => "dropdownOnly" }},
 		{ id => "width", type => "dimension" },
 		{ id => "height", type => "dimension" },
 		{ id => "sizing", type => "sizing", options => [ "fixed", "auto", "resizable" ],

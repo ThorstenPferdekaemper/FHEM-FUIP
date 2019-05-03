@@ -50,7 +50,7 @@ UPD 2019-05-02_16:04:02 14108 FHEM/lib/FUIP/View/ViewTemplate.pm
 UPD 2018-11-28_15:24:11 4160 FHEM/lib/FUIP/View/WeatherDetail.pm
 UPD 2018-11-28_15:24:25 4049 FHEM/lib/FUIP/View/WeatherOverview.pm
 UPD 2019-01-08_23:03:01 1277 FHEM/lib/FUIP/View/WebLink.pm
-UPD 2019-03-22_22:05:22 3541 FHEM/lib/FUIP/View/WeekdayTimer.pm
+UPD 2019-05-03_15:37:36 3822 FHEM/lib/FUIP/View/WeekdayTimer.pm
 UPD 2019-02-08_17:02:37 2964 FHEM/lib/FUIP/View/Window.pm
 UPD 2019-01-18_23:26:39 1054 FHEM/lib/FUIP/css/fuip-blue-ui.css
 UPD 2019-03-21_23:00:39 3770 FHEM/lib/FUIP/css/fuip-bright-mint-ui.css
@@ -70,7 +70,7 @@ UPD 2019-03-09_23:14:06 18647 FHEM/lib/FUIP/doc/Colorwheel.png
 UPD 2019-05-03_13:55:19 11824 FHEM/lib/FUIP/doc/ImportViewTemplate.png
 UPD 2019-04-10_16:02:52 42416 FHEM/lib/FUIP/doc/PopupPosition.png
 UPD 2019-03-15_21:30:01 5774 FHEM/lib/FUIP/doc/RenameViewTemplate.png
-UPD 2019-05-03_14:32:44 24204 FHEM/lib/FUIP/doc/changes.html
+UPD 2019-05-03_15:48:11 24743 FHEM/lib/FUIP/doc/changes.html
 UPD 2019-01-23_22:22:28 1553 FHEM/lib/FUIP/fonts/nesges.css
 UPD 2015-05-26_11:04:28 5784 FHEM/lib/FUIP/fonts/nesges.woff
 UPD 2018-07-18_15:43:10 38 FHEM/lib/FUIP/images/lizenzen.txt
