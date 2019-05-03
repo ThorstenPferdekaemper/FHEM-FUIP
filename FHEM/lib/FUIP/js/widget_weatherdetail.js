@@ -186,9 +186,7 @@ var Modul_weatherdetail = function() {
 		elem.find(".ftuiWeatherdetailSymbolOverview").width(picWidth);
 		elem.find(".ftuiWeatherdetailSymbolDetail").width(picHeight < maxDetSymHeight ? picWidth : maxDetSymHeight * 175 / 120)
 												.height(picHeight < maxDetSymHeight ? picHeight : maxDetSymHeight);	
-		var iterations = 0;										
 		while(true) {
-			iterations++;
 			// how big is it currently?
 			var actDim = getElemDims(elem);
 			// console.log("resize: " + actDim.width.toString() + "  " + actDim.height.toString());
@@ -220,7 +218,6 @@ var Modul_weatherdetail = function() {
 			}else {
 				break; 
 			}
-			console.log(id + " resize iteration " + iterations.toString() + " picHeight " + picHeight.toString());
 		};	
 		// line to "close" the tabs
 		var h = elem.find(".ftuiWeatherdetailTablinks").outerHeight();
@@ -229,7 +226,6 @@ var Modul_weatherdetail = function() {
 			if(w < 0) w = 0;
 			elem.find(".ftuiWeatherDetailSpacerLine").height(h).width(w);
 		};	
-		console.log( id + " resize iterations " + iterations.toString());
 	};	
 
 	

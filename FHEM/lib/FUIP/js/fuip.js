@@ -1114,30 +1114,33 @@ async function asyncSendFhemCommandLocal(cmdline) {
 };
 
 
-function postImportCommand(content,isCell,pageid) {
-	var data = encodeURIComponent(content);
-	var url = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() + '/fuip/import?pageid=' + pageid;
-	if(isCell) { 
-		url += '&cellid=' + $("#viewsettings").attr("data-viewid");
-	};	
-	var fieldid = $("#viewsettings").attr("data-fieldid");
-	if(fieldid) {
-		url += '&fieldid=' + fieldid;		
-	};	
-	return $.ajax({
-		async: true,
-		cache: false,
-		method: 'POST',
-		dataType: 'text',
-		url: url,
-		// username: ftui.config.username,
-		// password: ftui.config.password,
-		data: 'content=' + data,
-		error: function (jqXHR, textStatus, errorThrown) {
-			console.log("FUIP: File import failed: " + textStatus + ": " + errorThrown);
-			ftui.toast("FUIP: File import failed: " + textStatus + ": " + errorThrown,"error");
-		}
-	});
+async function asyncPostImportCommand(content,type,pageid) {
+	return new Promise(function(resolve,reject) {
+		let data = encodeURIComponent(content);
+		let url = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() + '/fuip/import?type='+type;
+		if(type != "viewtemplate") {
+			url += '&pageid=' + pageid;
+		};	
+		if(type == "cell" || type == "dialog") { 
+			url += '&cellid=' + $("#viewsettings").attr("data-viewid");
+		};	
+		if(type == "dialog") {
+			url += '&fieldid=' + $("#viewsettings").attr("data-fieldid");		
+		};	
+		$.ajax({
+			async: true,
+			cache: false,
+			method: 'POST',
+			dataType: 'text',
+			url: url,
+			data: 'content=' + data,
+			error: function (jqXHR, textStatus, errorThrown) {
+				console.log("FUIP: File import failed: " + jqXHR.status + " " + textStatus + ": " + errorThrown);
+				ftui.toast("FUIP: File import failed: " + jqXHR.status + " " + textStatus + ": " + errorThrown,"error");
+				reject(new Error("FUIP: File import failed: " + jqXHR.status + " " + textStatus + " " + errorThrown));
+			}
+		}).done(resolve);
+	});	
 };
 					
 					
@@ -2669,31 +2672,52 @@ function exportCellOrDialog() {
 
 // the following attaches the input field for the file dialog to this function itself
 // it seems that otherwise, it happens that the garbage collector deletes variable "input"
-function importCellOrDialog() { 
-	fuip.fileInput = $('<input type="file">');
-	fuip.fileInput.on("change",function(evt){
-		fuip.fileInput = undefined;  // not needed anymore
-		var reader = new FileReader();
-		reader.onload = function(e) {
-			// TODO: error handling when sending command
-			postImportCommand(e.target.result,true,$("html").attr("data-pageid"))
-				.done(function(msg) {
-					if(msg == "OK") {
-						location.reload(true);
-					}else{	
-						popupError("Import " + (fieldId ? 'dialog' : 'cell') + ": Error",msg);
-					};
-			});		
-		};	
-		reader.readAsText(evt.target.files[0]);
-	});
-	fuip.fileInput.click();
-	// for some (unknown to me) reason, this does not work with the usual construct
+async function importCellOrDialog() { 
+	let targettype = $("html").attr("data-fieldid") ? "dialog" : "cell";
+	// for some (unknown to me) reason, acceptSettings does not work with the usual construct
 	// however, the import of a cell does not change the cell or the content of the
 	// config popup anyway, so we can just do it "afterwards"
-	if(!$("html").attr("data-fieldid")){ // for dialog, we anyway overwrite the current state
+	if(targettype == "cell"){ // for dialog, we anyway overwrite the current state
 		acceptSettings( function() {} );  // avoid immediate reload
 	};	
+	try {
+		let content = await dialogFileUpload();
+		let msg = await asyncPostImportCommand(content,targettype,$("html").attr("data-pageid"));
+		if(msg == "OK") {
+			location.reload(true);
+		}else{	
+			popupError("Import " + targettype + ": Error",msg);
+		};
+	}catch(e){};  // ignore as messages have already been sent to the user		
+};	
+
+
+async function dialogFileUpload() {
+	return new Promise(function(resolve,reject) {
+		fuip.fileInput = $('<input type="file">');
+		fuip.fileInput.on("change",function(evt){
+			fuip.fileInput = undefined;
+			let reader = new FileReader();
+			reader.onload = function(e) {
+				resolve(e.target.result);
+			};	
+			reader.readAsText(evt.target.files[0]);
+		});
+		fuip.fileInput.click();
+	});	
+};
+
+
+async function dialogImportViewTemplate() { 
+	try {
+		let content = await dialogFileUpload();
+		let msg = await asyncPostImportCommand(content,"viewtemplate","");
+		if(msg.slice(0,2) == "OK") {  // OK<templateid>
+			window.location.replace("/fhem/" + $("html").attr("data-name").toLowerCase() +"/fuip/viewtemplate?templateid="+msg.slice(2));
+		}else{	
+			popupError("Import View Template: Error",msg);
+		};
+	}catch(e){};  // ignore errors, as popups have already been sent	
 };	
 
 								
@@ -2879,31 +2903,6 @@ async function copyCurrentPage() {
 };	
 			
 
-async function importAsNewPage(content) {
-	// get current name and page id
-	var name = $("html").attr("data-name");
-	// create popup to input new page id
-	try{
-		let newname = await dialogNewName({
-				title: "Import page: enter name of new page",
-				label: "New page name",
-				checkFunc: function(name) { return name.length; }
-			});
-		// TODO: This allows overwriting any page. Is this good?
-		postImportCommand(content,false,newname)
-			.done(function(msg) {
-				if(msg == "OK") {
-					window.location = "/fhem/" + name.toLowerCase() + "/page/"+newname;
-				}else{	
-					popupError("Import page: Error",msg, function() { popup.dialog("close"); } );
-				};
-			});		
-	}catch(e){
-		return; // we ignore this in principle. A message should have been sent already.
-	};  		
-};	
-
-
 function exportPage() { 
 	location.href = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() 
 			+ '/fuip/export?pageid=' + $("html").attr("data-pageid"); 
@@ -2923,22 +2922,22 @@ async function repairPage() {
 };	
 			
 	
-function importPage() {
-	// the following attaches the input field for the file dialog to this function itself
-	// it seems that otherwise, it happens that the garbage collector deletes variable "input"
-	toggleCellPage.input = $('<input type="file">');
-	toggleCellPage.input.on("change",function(evt){
-		toggleCellPage.input = undefined;  // not needed anymore
-		var reader = new FileReader();
-		reader.onload = function(e) {
-			//var	cmd = "set uilocal import bla_001 " + e.target.result; 
-			// TODO: error handling when sending command
-			importAsNewPage(e.target.result);
-		};	
-		reader.readAsText(evt.target.files[0]);
-	});
-	toggleCellPage.input.click();
+async function importPage() {
 	acceptPageSettings(function(){});  // avoid page reload
+	try {
+		let content = await dialogFileUpload();
+		let newname = await dialogNewName({
+				title: "Import page: enter name of new page",
+				label: "New page name",
+				checkFunc: function(name) { return name.length; }
+			});
+		let msg = await asyncPostImportCommand(content,"page",newname);
+		if(msg == "OK") {
+			window.location = "/fhem/" + $("html").attr("data-name").toLowerCase() + "/page/"+newname;
+		}else{	
+			popupError("Import page: Error",msg);
+		};
+	}catch(e){};  // ignore errors, as popups have already been sent	
 };
 
 			

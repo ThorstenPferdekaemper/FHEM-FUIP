@@ -140,7 +140,7 @@ sub fixInstancesWithoutTemplates() {
 			$inst->{title} = "Error ".$inst->{templateid} unless $inst->{title};
 			$inst->{defaulted}{title} = '0';
 			my $view = "FUIP::View"->createDefaultInstance($inst->{fuip});
-			$view->{content} = "View template ".$inst->{templateid}." does not exist.";
+			$view->{content} = "View template <b>".$inst->{templateid}."</b> does not exist.";
 			$view->{defaulted}{content} = '0';
 			$view->{width} = 150;
 			$view->{height} = 50;

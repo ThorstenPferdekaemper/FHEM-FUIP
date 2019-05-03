@@ -406,22 +406,22 @@ sub getConfigFields($) {
 
 
 # TODO: this can be deleted again
-sub reconstruct($$$) {
-	my ($class,$conf,$fuip) = @_;
-	# this expects that $conf is already hash reference
-	# and key "class" is already deleted
-	my $self = FUIP::View::reconstructRec($conf,$fuip);
-	$self->{fuip} = $fuip;
-	weaken($self->{fuip});
-	if(ref($self->{variables}) eq "HASH") {
-		my $asHash = $self->{variables};
-		$self->{variables} = [];
-		for my $var (keys %$asHash) {
-			push(@{$self->{variables}},{name => $var, fields => $asHash->{$var}});
-		};
-	};
-	return bless($self,$class);
-};
+# sub reconstruct($$$) {
+	# my ($class,$conf,$fuip) = @_;
+	# # this expects that $conf is already hash reference
+	# # and key "class" is already deleted
+	# my $self = FUIP::View::reconstructRec($conf,$fuip);
+	# $self->{fuip} = $fuip;
+	# weaken($self->{fuip});
+	# if(ref($self->{variables}) eq "HASH") {
+		# my $asHash = $self->{variables};
+		# $self->{variables} = [];
+		# for my $var (keys %$asHash) {
+			# push(@{$self->{variables}},{name => $var, fields => $asHash->{$var}});
+		# };
+	# };
+	# return bless($self,$class);
+# };
 
 	
 1;	

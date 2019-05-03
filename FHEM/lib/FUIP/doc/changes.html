@@ -5,6 +5,23 @@
 </head>
 <body>
 <h1>FUIP News</h1>
+<h2>02.05.2019</h2>
+<h3>View Templates importieren</h3>
+<img src="ImportViewTemplate.png" style="float:left;margin-right:10px" width=287px height=150px>Man kann exportierte View Templates jetzt auch importieren. Die Funktion is ein bisschen versteckt auf der Seite "Maintain View Templates". Der Name des neuen View Templates wird aus der importierten Datei genommen, falls noch kein View Template mit demselben Namen existiert. Ansonsten wird ein neuer Name automatisch erzeugt. Bei einem erfolgreichen Import wird man direkt auf die Bearbeitungsseite des neuen View Templates weitergeleitet.<br>
+Im Rahmen der daf&uuml;r gemachten &Auml;nderungen wurden auch die anderen Import-Funktionen (f&uuml;r Popups, Zellen und Seiten) &uuml;berarbeitet. Dies d&uuml;rfte aber kaum Auswirkungen auf die Benutzung haben, au&szlig;er vielleicht bei der Fehlerbehandlung.
+<p style="clear:left;height:0.5em;"></p>
+
+<h3>Fehlerbehandlung beim Import mit fehlenden View Templates</h3>
+Beim Import gab es bisher keine Fehlerbehandlung f&uuml;r fehlende View Templates. D.h. beim Import eines Objekts (Popup, Zelle oder Seite), welches ein View Template verwendet, dessen Definition im Zielsystem nicht existiert, kam es meistens zu einem kompletten FHEM-Absturz. Dies wurde behoben. Jetzt wird an Stelle des fehlenden View Templates ein spezieller View generiert, der eine Fehlermeldung anzeigt. Dieser View kann dann mit den normalen Bearbeitungsfunktionen durch etwas passendes ersetzt werden.<br>
+Das gleiche gilt auch f&uuml;r importierte View Templates. 
+
+<h3>Absturz im Konfigurationspopup bei fehlenden View Templates</h3>
+Bei Verwendung eines nicht existerenden View Templates gab es einen FHEM-Absturz beim Schlie&szlig;en des Konfigurations-Popups (z.B. einer Zelle). Dieses Szenario war zwar bisher sehr unwahrscheinlich, der Fehler musste aber wegen der Fehlerbehandlung beim Import sowieso repariert werden.
+
+<h3>Wetter-Views: Unn&ouml;tige Meldungen in Developer-Konsole</h3>
+Die Views WeatherDetail und WeatherOverview haben viele Meldungen in der Developer-Konsole (Javascript-Konsole) des Browsers erzeugt. Das ist f&uuml;r den Endbenutzer zwar meistens egal, hat aber bei der Fehlersuche gest&ouml;rt. Die Meldungen werden jetzt nicht mehr geschrieben. 
+
+
 <h2>30.04.2019</h2>
 <h3>Attribut <i>cellMargin</i> f&uuml;r Zellzwischenr&auml;ume</h3>
 Mit dem Attribut <i>cellMargin</i> kann man jetzt den Platz zwischen den Zellen festlegen. Der Wert muss zwischen 0 und 10 liegen, der Standardwert ist 5. Um jede Zelle herum werden <i>cellMargin</i> Pixel frei gehalten. D.h. zwischen zwei Zellen ist zweimal so viel Platz (in Pixel) wie durch <i>cellMargin</i> festgelegt. Der Rand um den ganzen Anzeigebereich herum ist <i>cellMargin</i> Pixel breit.
