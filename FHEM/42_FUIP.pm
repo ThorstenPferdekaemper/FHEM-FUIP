@@ -2092,28 +2092,6 @@ sub settingsExport($$) {
 };
 
 
-# sub getMissingViews($$$) {
-	# # determine missing view definitions (i.e. built-in views or view templates) in 
-	# # a dialog, cell, page or view template 
-	# # returns an array reference with the missing definitions in the FUIP::View/VTempl::name syntax
-	# my ($hash,$key,$obj) = @_;
-	# my @result;	
-	# my $cb = sub ($$) {
-				# my ($key, $view) = @_;
-				
-				
-				# return unless blessed($view) eq 'FUIP::ViewTemplInstance' and $view->{templateid} eq $templateid;
-					# push(@$result, {%$key}); 
-				# };
-		# for my $pageid (sort keys %{$hash->{pages}}) { 
-			# _traverseViews($hash,$cb,{type => "page", pageid => $pageid},$hash->{pages}{$pageid});
-		# };	
-
-	
-
-# };
-
-
 sub settingsImport($$) {
 	my ($hash,$request) = @_;
 	# get pageid and cellid
@@ -2238,7 +2216,7 @@ sub finishCgiAnswer($$) {
 		eval { $data = Compress::Zlib::memGzip($data); };
 		if($@) {
 			main::Log 1, "memGzip: $@"; 
-			$data = ""; #Forum #29939
+			$data = ""; 
 		}else{
 			$compressed = "Content-Encoding: gzip\r\n";
 		}
@@ -2249,12 +2227,14 @@ sub finishCgiAnswer($$) {
     #     "Expires: ".FmtDateTimeRFC1123($main::FW_chash->{LASTACCESS}+900)."\r\n" : 
     #     "Cache-Control: no-cache, no-store, must-revalidate\r\n");
 	my $expires = "Cache-Control: no-cache, no-store, must-revalidate\r\n";
-	main::FW_addToWritebuffer($main::defs{$main::FW_cname},
+	my $client = $main::defs{$main::FW_cname};
+	$client->{inform}{devices => {}} unless $client->{inform};  # hack to keep connection open
+	main::FW_addToWritebuffer($client,
            "HTTP/1.1 200 OK\r\n" .
            "Content-Length: $length\r\n" .
            $expires . $compressed . # $main::FW_headerlines .
            "Content-Type: $rettype\r\n\r\n" .
-           $data, undef, 1);
+           $data, sub ($) {my $hash = shift; delete $hash->{inform}; main::FW_closeConn($hash);} , 1);
 }
 
 
