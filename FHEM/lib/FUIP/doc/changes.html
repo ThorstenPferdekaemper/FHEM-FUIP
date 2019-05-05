@@ -5,6 +5,10 @@
 </head>
 <body>
 <h1>FUIP News</h1>
+<h2>05.05.2009</h2>
+<h3>"Kaputte" WeekdayTimer in FHEM</h3>
+Die Views WeekdayTimer, ShutterTimer und ShutterControl k&ouml;nnen mit WeekdayTimer-Devices angelegt werden, die in FHEM nicht existieren. Die Views funktionieren dann auch im Prinzip, aber beim Speichern der Schaltzeiten wurde bisher in FHEM ein WeekdayTimer-Device erzeugt, das sich auf das Ger&auml;t "undefined" bezieht. Dies wurde korrigiert, so dass jetzt gar kein WeekdayTimer-Device mehr automatisch angelegt wird. Statt dessen erfolgt eine Fehlermeldung und man muss das WeekdayTimer-Device manuell in FHEM anlegen.
+
 <h2>04.05.2009</h2>
 <b style="color:red;">Happy Star Wars Day!</b>
 <h3>Leere Seite wenn closeConn gesetzt und auf Apple-Ger&auml;ten</h3>

@@ -562,6 +562,11 @@ var Modul_fuip_wdtimer = function () {
 	
 	
 	function wdtimer_saveProfile(elem, config) { /*Ändert das DEF des WeekdayTimers und/oder ändert den Disable-Status des WeekdayTimers */
+		if(!config[2][1]) {
+			// if there is no "target" device, then most likely, the WeekdayTimer device has not yet been created in FHEM
+			ftui.toast("Cannot change WeekdayTimer " + config[2][0] + ", because it probably does not exist. First create or correct WeekdayTimer "+ config[2][0] + " in FHEM.","error");
+			return false;	
+		};	
 		var cmd = "";
 		var wdtimer_state = true;
 		var device = config[2][0];
