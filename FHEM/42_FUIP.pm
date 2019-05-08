@@ -2228,13 +2228,12 @@ sub finishCgiAnswer($$) {
     #     "Cache-Control: no-cache, no-store, must-revalidate\r\n");
 	my $expires = "Cache-Control: no-cache, no-store, must-revalidate\r\n";
 	my $client = $main::defs{$main::FW_cname};
-	$client->{inform}{devices => {}} unless $client->{inform};  # hack to keep connection open
 	main::FW_addToWritebuffer($client,
            "HTTP/1.1 200 OK\r\n" .
            "Content-Length: $length\r\n" .
            $expires . $compressed . # $main::FW_headerlines .
            "Content-Type: $rettype\r\n\r\n" .
-           $data, sub ($) {my $hash = shift; delete $hash->{inform}; main::FW_closeConn($hash);} , 1);
+           $data, undef , 1);
 }
 
 

@@ -5,6 +5,10 @@
 </head>
 <body>
 <h1>FUIP News</h1>
+<h2>08.05.2009</h2>
+<h3>Fix vom 04.05.2019 wieder ausgebaut (Probleme mit closeConn bzw. Apple)</h3>
+Die Korrektur (aka "der Hack") wurde wieder ausgebaut, da das Problem inzwischen in FHEM (genauer: FHEMWEB) behoben wurde. D.h. es ist jetzt ein "update" notwendig, falls das Problem (wieder) auftritt.
+
 <h2>05.05.2009</h2>
 <h3>"Kaputte" WeekdayTimer in FHEM</h3>
 Die Views WeekdayTimer, ShutterTimer und ShutterControl k&ouml;nnen mit WeekdayTimer-Devices angelegt werden, die in FHEM nicht existieren. Die Views funktionieren dann auch im Prinzip, aber beim Speichern der Schaltzeiten wurde bisher in FHEM ein WeekdayTimer-Device erzeugt, das sich auf das Ger&auml;t "undefined" bezieht. Dies wurde korrigiert, so dass jetzt gar kein WeekdayTimer-Device mehr automatisch angelegt wird. Statt dessen erfolgt eine Fehlermeldung und man muss das WeekdayTimer-Device manuell in FHEM anlegen.
