@@ -5,6 +5,11 @@
 </head>
 <body>
 <h1>FUIP News</h1>
+<h2>13.05.2009</h2>
+<h3>Autosave</h3>
+FUIP speichert jetzt jede &Auml;nderung automatisch ab. Dadurch entstehen f&uuml;r jedes FUIP-Device bis zu 5 Autosave-Dateien im Ordner &lt;fhem&gt;/FHEM/lib/FUIP/config/autosave. (&lt;fhem&gt; ist normalerweise /opt/fhem) Das Kommando <i>set...load</i> akzeptiert daf&uuml;r jetzt einen Parameter, &uuml;ber den angegeben werden kann, ob man die normal abgespeicherte Konfiguration laden will (<i>lastSaved</i> oder einfach leer lassen) oder eine der Autosave-Dateien. Dabei ist ersichtlich, von wann die jeweilige Autosave-Datei stammt.<br>
+Wenn man &Auml;nderungen in FUIP gemacht hat und FHEM beendet, ohne vorher ein <i>set...save</i> ausgef&uuml;hrt zu haben, dann wird nach dem n&auml;chsten Start eine entsprechende Meldung angezeigt. Diese Meldung erscheint in der FUIP-Konfigurationsoberfläche und in der Detailanzeige des FUIP-Device in FHEMWEB. Dabei ist egal, wie FHEM beendet wurde. Es funktioniert also auch f&uuml;r Abst&uuml;rze und &auml;hnliches. 
+
 <h2>08.05.2009</h2>
 <h3>Fix vom 04.05.2019 wieder ausgebaut (Probleme mit closeConn bzw. Apple)</h3>
 Die Korrektur (aka "der Hack") wurde wieder ausgebaut, da das Problem inzwischen in FHEM (genauer: FHEMWEB) behoben wurde. D.h. es ist jetzt ein "update" notwendig, falls das Problem (wieder) auftritt.

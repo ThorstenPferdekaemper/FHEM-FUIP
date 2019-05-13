@@ -20,6 +20,12 @@ FUIP_Initialize($) {
 	FUIP::setAttrList($hash);
 	$hash->{AttrFn}    = "FUIP::Attr";
 	$hash->{parseParams} = 1;	
+	# For FHEMWEB
+	$hash->{'FW_detailFn'}    = 'FUIP::fhemwebShowDetail';
+	# The following line means that the overview is shown
+	# as header, even though there is a FW_detailFn
+	$hash->{'FW_deviceOverview'} = 1;
+
     return undef;
  }
 
@@ -214,6 +220,8 @@ sub Define($$$) {
   $main::attr{$name}{layout} = "gridster";
   # load old definition, if exists
   load($hash);
+  $hash->{autosave} = "none";  # in case config file does not yet exist
+  checkForAutosave($hash);
   return undef;
 }
 
@@ -708,7 +716,8 @@ sub renderPage($$$) {
 				<div data-type="symbol" data-icon="wi-day-rain-mix" class="hide"></div>
 				<div data-type="symbol" data-icon="fs-ampel_aus" class="hide"></div>').	
 			'<div id="inputpopup01">
-			</div>	
+			</div>
+			'.renderCrashedMessage($hash,$locked).'			
        </body>
        </html>';
     return ("text/html; charset=utf-8", $result);
@@ -876,7 +885,8 @@ sub renderPageFlexMaint($$) {
 				<div data-type="symbol" data-icon="wi-day-rain-mix" class="hide"></div>
 				<div data-type="symbol" data-icon="fs-ampel_aus" class="hide"></div>	
 			<div id="inputpopup01">
-			</div>	
+			</div>
+			'.renderCrashedMessage($hash,0).'	
        </body>
        </html>';
     return ("text/html; charset=utf-8", $result);
@@ -1006,6 +1016,7 @@ sub renderPopupMaint($$) {
 		</div>
 		<div id="valuehelp">
 		</div>
+		'.renderCrashedMessage($hash,0).'
        </body>
        </html>';
     return ("text/html; charset=utf-8", $result);
@@ -1182,6 +1193,7 @@ sub renderViewTemplateMaint($$) {
 		<div id="valuehelp">
 		</div>
 		<div id="inputpopup"></div>
+		'.renderCrashedMessage($hash,0).'
        </body>
        </html>';
     return ("text/html; charset=utf-8", $result);
@@ -1894,6 +1906,8 @@ sub FW_setPositionsAndDimensions($$$) {
 		# flex layout?
 		$page->[$i]{region} = $cells->[$i]->{region} if defined $cells->[$i]->{region}; 
 	};
+	# autosave
+	save($hash,1); # TODO: error handling? 
 };
 
 
@@ -2425,10 +2439,126 @@ sub serialize($) {
 }
 
 
-sub save($) {
+sub getAutosaveFiles($) {
+	my $hash = shift;
+	my $cfgPath = $fuipPath."config/autosave";
+	my $pattern = '^FUIP_'.$hash->{NAME}.'_(.*)\.cfg$';
+	my @result;
+	return \@result unless opendir(DH, $cfgPath);
+	foreach my $fName (sort {$b cmp $a} readdir(DH)) {
+		next unless $fName =~ m/$pattern/;
+		push(@result,"autosave_".$1);
+	}
+	closedir(DH);
+	return \@result;
+};
+
+
+sub getConfigFiles($) {
+	my $hash = shift;
+	my $result = getAutosaveFiles($hash);
+	my $fName = $fuipPath."config/FUIP_".$hash->{NAME}.".cfg";
+	unshift(@$result,"latestSave") if(-e $fName);
+	return $result;
+};
+
+
+sub checkForAutosave($) {
+	# Checks whether the autosave is newer than the manually saved
+	# config. If yes, returns the "ending" of the newest autosave file.
+	# get the newest autosave file
+	my $hash = shift;
+	my $cfgPath = $fuipPath."config/autosave";
+	return unless opendir(DH, $cfgPath);
+	my $pattern = '^FUIP_'.$hash->{NAME}.'_(.*)\.cfg$';
+	my $autoFileName;
+	my $ending;
+	foreach my $fName (sort {$b cmp $a} readdir(DH)) {
+		next unless $fName =~ m/$pattern/;
+		$ending = $1;
+		$autoFileName = $fName;
+		last;
+	}
+	closedir(DH);
+	# no autosave file -> no issue
+	return unless $autoFileName;
+	$autoFileName = $fuipPath."config/autosave/".$autoFileName;
+	my $confFileName = $fuipPath.'config/FUIP_'.$hash->{NAME}.'.cfg';
+	# if (manually) saved file exists and is newer, then no issue
+	if(-e $confFileName) {
+		return if(-M $autoFileName >= -M $confFileName);
+	};
+	# now we know that either no manually saved file exists, but an auto file
+	# or both exist and the auto file is newer
+	$hash->{autosave} = $ending;
+	return;
+};
+
+
+sub checkCrashedMessage($) {
 	my ($hash) = @_;
+	return "" if $hash->{autosave} eq "none";
+    return "It looks like you have not saved your work before FHEM was shut down the last time. You can restore the state from before the last shutdown (or crash) using \"set ".$hash->{NAME}." load autosave_".$hash->{autosave}."\" or get rid of this message by \"set ".$hash->{NAME}." save\"";
+};
+
+
+sub fhemwebShowDetail($$$) {
+	my ($fwName, $name, $roomName) = @_;
+	my $hash = $main::defs{$name};
+	my $message = checkCrashedMessage($hash);
+	return "" unless $message;
+	return "<div style='color:red'>".$message."</div>";
+};
+
+
+sub renderCrashedMessage($$) {
+	my ($hash,$locked) = @_;
+	return "" if $locked;
+	my $message = checkCrashedMessage($hash);
+	return "" unless $message;
+	return 
+		"<fuip-message style='display:none;'>
+			<title>Unsaved data</title>
+			<text>
+				".$message."
+			</text>
+		</fuip-message>";		
+};
+
+
+sub cleanAutosave($) {
+	my $hash = shift;
+	my $cfgPath = $fuipPath."config/autosave";
+	my $pattern = '^FUIP_'.$hash->{NAME}.'.*\.cfg';
+	## get files with their age
+	return unless opendir(DH, $cfgPath);
+	# my @fNames;
+	# just keep 4 "newest" files
+	my $num = 0;
+	foreach my $fName (sort {$b cmp $a} readdir(DH)) {
+		next unless $fName =~ m/$pattern/;
+		$num++;
+		next unless $num > 4;
+		unlink $cfgPath.'/'.$fName;
+		#my $t = time() - (stat($cfgPath.'/'.$fName))[9];
+		# main::Log3(undef,1,"File ".$fName.' time: '.$t);
+		#push(@fNames, { name => $cfgPath.'/'.$fName, age => $t });
+	}
+	closedir(DH);
+};
+
+
+sub save($;$) {
+	my ($hash,$autosave) = @_;
 	my $config = serialize($hash);   
-	my $filename = "FUIP_".$hash->{NAME}.".cfg";
+	my $filename = "FUIP_".$hash->{NAME};
+	if($autosave) {
+		my $dateTime = main::TimeNow();
+		$dateTime =~ s/ /_/g;
+		$dateTime =~ s/(:|-)//g;
+		$filename .= '_'.$dateTime;
+	};
+	$filename .= '.cfg';	
     my @content = split(/\n/,$config);
 	# make sure config directory exists
 	my $cfgPath = $fuipPath."config";
@@ -2436,17 +2566,41 @@ sub save($) {
 		mkdir($cfgPath);
 		# we do not check for errors here as anyway the FileWrite will fail
 	};
-	return main::FileWrite($cfgPath."/".$filename,@content);		
+	if($autosave) {
+		$cfgPath .= '/autosave';
+		if(not(-d $cfgPath)) {
+			mkdir($cfgPath);
+		};
+	};
+	cleanAutosave($hash);
+	my $result = main::FileWrite($cfgPath."/".$filename,@content);		
+	return $result if $result;
+	$hash->{autosave} = "none";
+	return undef;
 };
 
 
-sub load($) {
+sub version2filename($$) {
+	my ($hash,$version) = @_;
+	$version = "latestSave" unless $version;
+	return "FUIP_".$hash->{NAME}.".cfg" if $version eq "latestSave";
+	if($version =~ m/^autosave_(.*)$/) {
+		return "autosave/FUIP_".$hash->{NAME}."_".$1.".cfg";
+	};
+	return undef;  # something wrong
+};
+
+
+sub load($;$) {
 	# TODO: some form of error management
-	my ($hash) = @_;
+	my ($hash,$fVersion) = @_;
+	my $filename = version2filename($hash,$fVersion);
+	unless($filename) {
+		return "Version ".$fVersion." unknown. You might want to do \"load latestSave\" in order to load the latest (manually) saved version."; 
+	};
 	# clear pages and viewtemplates
 	$hash->{pages} = {};
 	$hash->{viewtemplates} = {};
-	my $filename = "FUIP_".$hash->{NAME}.".cfg";
 	# try to read from FUIP directory
 	my ($error, @content) = main::FileRead($fuipPath."config/".$filename);	
 	if($error) {
@@ -2508,6 +2662,7 @@ sub load($) {
 	}else{
 		$hash->{colors} = { };
 	};	
+	$hash->{autosave} = "none";
 	return undef;
 };
 
@@ -2880,7 +3035,7 @@ sub _setRepair($$) {
 }
 
 
-sub Set($$$)
+sub _innerSet($$$)
 {
 	my ( $hash, $a, $h ) = @_;
 
@@ -2891,7 +3046,7 @@ sub Set($$$)
 	if($cmd eq "save"){
 		return save($hash);
 	}elsif($cmd eq "load"){
-		return load($hash);
+		return load($hash,(exists $a->[2] ? $a->[2] : undef));
 	}elsif($cmd eq "settings") {
 		# type=cell|dialog|viewtemplate
 		# cell:
@@ -2990,9 +3145,23 @@ sub Set($$$)
 	}else{
 		# redetermine attribute values
 		setAttrList($main::modules{FUIP});
-		return "Unknown argument $cmd, choose one of save:noArg load:noArg viewsettings viewaddnew viewdelete viewposition autoarrange refreshBuffer pagedelete:".join(',',sort keys %{$hash->{pages}});
+		my $files = getConfigFiles($hash);
+		return "Unknown argument $cmd, choose one of save:noArg".
+				($files ? " load:".join(',',@$files) : "").
+				" viewsettings viewaddnew viewdelete viewposition autoarrange refreshBuffer pagedelete:".join(',',sort keys %{$hash->{pages}});
 	}
 	return undef;  # i.e. all good
+}
+
+
+sub Set($$$) {
+	my ( $hash, $a, $h ) = @_;
+	my $result = _innerSet($hash,$a,$h);
+	return $result if $result;  # error message
+	my $cmd = $a->[1]; # this exists, otherwise _innerSet returns error
+	return if $cmd =~ m/^save|load$/;  # no auto-save for save and load
+	save($hash,1); # TODO: error handling? 
+	return undef;  # all good
 }
 
 

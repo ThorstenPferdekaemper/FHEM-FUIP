@@ -101,6 +101,12 @@ function fuipInit(conf) { //baseWidth, baseHeight, maxCols, gridlines, snapTo
 	if(conf.gridlines == "show") drawGrid();   
 	// render where-used-list(s)
 	renderWhereUsedLists();
+		// show messages
+		$("fuip-message").each(function() {
+			let title = $(this).children("title").html();
+			let text = $(this).children("text").html();
+			popupError(title,text);
+		});
 	});
 };
 	
