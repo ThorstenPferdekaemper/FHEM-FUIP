@@ -6,6 +6,7 @@ var fuip_resizers = [];
 
 function fuip_resize_all() {
 	for(var i = 0; i < fuip_resizers.length; i++) {
+		if(!fuip_resizers[i].initialized) continue;  // not yet initialized
 		$('[data-fuip-type="' + fuip_resizers[i].fuipType + '"]').each(function() {
 			fuip_resizers[i].resizeFunc($(this).attr("id"));	
 		});
@@ -21,6 +22,19 @@ function fuip_resize_init() {
 			$(fuip_resize_init); // i.e. do it a bit later
 			return;
 		};	
+	};	
+	// do we have uninitialized swipers?
+	var initialized = true;
+	$('[data-type="swiper"]').each(function() {
+		if(!$(this).hasClass('swiper-container')) {
+			initialized = false;
+			return false;
+		};	
+	});
+	if(!initialized) {
+		console.log("not initialized - trying later");
+		$(fuip_resize_init); // i.e. do it a bit later
+		return;		
 	};	
 	// now really do it
 	for(var i = 0; i < fuip_resizers.length; i++) {

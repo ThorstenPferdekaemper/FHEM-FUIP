@@ -3014,7 +3014,9 @@ sub _setConvert($$) {
 	# create a deep copy of the cell
 	my $instanceStr = $origin->serialize();
 	my $instance = "FUIP::Cell"->reconstruct(eval($instanceStr),$hash);
-	$hash->{viewtemplates}{$templateid}{views} = $instance->{views};
+	for my $comp (qw(layout autoplay navbuttons pagination views)) {
+		$hash->{viewtemplates}{$templateid}{$comp} = $instance->{$comp};
+	};
 	$hash->{viewtemplates}{$templateid}->dimensions(cellSizeToPixels($instance));
 	return undef;  # show caller that everything is ok
 };

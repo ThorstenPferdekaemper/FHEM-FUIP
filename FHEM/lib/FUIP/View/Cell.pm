@@ -41,10 +41,58 @@ sub dimensions($;$$){
 	};
 	return ($self->{width},$self->{height});
 };	
-	
-	
+
+
+sub getHTML_swiper($$){
+	my ($self,$locked) = @_;
+	my $views = $self->{views};
+	my @classes;
+	push(@classes, "navbuttons") if($self->{navbuttons} eq "on");
+	push(@classes, "nopagination") if($self->{pagination} eq "off");
+	my $result = 
+		'<div data-type="swiper" style="position:absolute;top:22px;left:0px;height:calc(100% - 22px);" data-height="calc(100% - 22px)" data-autoplay="'.$self->{autoplay}.'" class="'.join(' ',@classes).'">
+			<ul>';
+	my $i = 0;
+	for my $view (@$views) {
+		my ($width,$height) = $view->dimensions();
+		my $resizable = ($view->isResizable() ? " fuip-resizable" : "");
+		# TODO: hardcode 22px headers?
+		$result .= '
+		<li>
+			<div style="position:absolute;left:'.($self->{navbuttons} eq "on" ? '37' : '0').'px;width:'.($self->{navbuttons} eq "on" ? 'calc(100% - 74px)' : '100%').';">
+				<div data-viewid="'.$i.'"'.($locked ? '' : ' class="fuip-draggable'.$resizable.'"').' style="';
+		my (undef, $cellHeight) = FUIP::cellSizeToPixels($self);
+		if($width eq "auto") {
+			$result .= 'width:100%;';
+			# It seems that the swiper widget does some funny computations for the height, so 100% and calculations do not 
+			# work directly. I.e. we need to find out the height of the cell and determine from there
+			$result .= 'height:'.($cellHeight - ($self->{pagination} eq "on" ? 47 : 22)).'px;'; 
+		}else{
+			$result .= 'width:'.$width.'px;';
+			$result .= 'height:'.$height.'px;';
+			$result .= 'margin:auto;';
+			$result .= 'top:'.(($cellHeight - ($self->{pagination} eq "on" ? 25 : 0) - $height)/2).'px;';
+		};
+		$result .= 'z-index:10;position:relative;"><div style="position:absolute;width:100%;height:100%;">'.$view->getViewHTML().'</div>';
+		if( not $locked and $self->{fuip}{editOnly}) {
+			my $title = ($view->{title} ? $view->{title} : '');
+			$title .= ' ('.blessed($view).')';
+			$result .= '<div title="'.$title.'" style="position:absolute;left:0;top:0;width:100%;height:100%;z-index:11;background:var(--fuip-color-editonly,rgba(255,255,255,.1));"></div>';
+		};
+		$result .= '</div></div></li>';
+		$i++;
+	};
+	$result .= '</ul>';
+	$result .= '</div>';
+	return $result;	
+};
+
+		
 sub getHTML($$){
 	my ($self,$locked) = @_;
+	if($self->{layout} and $self->{layout} eq "swiper") {
+		return getHTML_swiper($self,$locked);
+	};	
 	my $views = $self->{views};
 	my $result = "";
 
@@ -82,6 +130,17 @@ sub getStructure($) {
 	return [
 		{ id => "class", type => "class", value => $class },
 		{ id => "title", type => "text" },
+		{ id => "layout", type => "text", options => ["position","swiper"], 
+			default => { type => "const", value => "position" } },
+		{ id => "autoplay", type => "text", 
+			default => { type => "const", value => "0" }, 
+			depends => { field => "layout", value => "swiper" } },
+		{ id => "navbuttons", type => "text", options => ["on","off"], 
+			default => { type => "const", value => "on" }, 
+			depends => { field => "layout", value => "swiper" } },
+		{ id => "pagination", type => "text", options => ["on","off"], 
+			default => { type => "const", value => "on" }, 
+			depends => { field => "layout", value => "swiper" } },
 		{ id => "views", type => "viewarray" }
 		];
 };

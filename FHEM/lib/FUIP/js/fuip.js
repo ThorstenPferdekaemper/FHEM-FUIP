@@ -36,6 +36,17 @@ function fuipInit(conf) { //baseWidth, baseHeight, maxCols, gridlines, snapTo
 				start: function(e,ui) {
 					fuip.drag_start_left = ui.offset.left - ui.position.left;
 					fuip.drag_start_top = ui.offset.top - ui.position.top;
+					// if this is part of a swiper, we need to get the element out 
+					// of the swiper as it won't be visible while moving to another 
+					// cell otherwise
+					let swiperElem = ui.helper.closest("[data-type='swiper']");
+					if(swiperElem.length) {
+						let swiper = swiperElem.data('swiper');
+						swiper.detachEvents();  // stop swiper from moving slides while dragging
+						// move the dragged view out
+						ui.helper.insertBefore(swiperElem);
+						// we don't have to put it back, as end of dragging does a reload anyway
+					};	
 				},	
 				drag: function(e,ui) {
 					if(fuip.snapTo == "nothing") return;
@@ -990,10 +1001,10 @@ async function onDragStop(cell,ui) {
 	switch(type) {
 		case 'cellmove':
 			cmd += 'newcellid="' + newCellId + '" ';
-			let oldCellPos = view.closest("[data-cellid]").offset();
 			let newCellPos = cell.offset();
-			cmd += 'x=' + (ui.position.left + oldCellPos.left - newCellPos.left) 
-					+ ' y=' + (ui.position.top + oldCellPos.top - newCellPos.top - 22);
+			let newElemPos = ui.helper.offset();
+			cmd += 'x=' + (newElemPos.left - newCellPos.left) 
+					+ ' y=' + (newElemPos.top - newCellPos.top - 22);		
 			break;		
 		case 'viewtemplate':
 			cmd += 'x=' + ui.position.left + ' y=' + ui.position.top;
@@ -1462,6 +1473,19 @@ function inputChanged(inputElem,influencedFields) {
 		// default, set default value
 		$('#' + influencedFields[i] + '-check').trigger("change");
 	};
+	for(let i = 0; i < influencedFields.length; i++) {
+		// get influenced field
+		let infField = $('#' + influencedFields[i]);
+		// does it have a "depends"?
+		let depFieldName = infField.attr("data-depends-field");
+		if(!depFieldName) continue;
+		let depValue = infField.attr("data-depends-value");
+		if(depValue == $(inputElem).val()) {
+			infField.closest("tr").css("display","");	
+		}else{
+			infField.closest("tr").css("display","none");	
+		};		
+	};
 };
 					
 					
@@ -1552,10 +1576,17 @@ function getInfluencedParts(field,parentName,myName) {
 		case 'device-reading':
 			return getInfluencedParts(field.device,parentName,myName + '-device').concat(getInfluencedParts(field.reading,parentName,myName + '-reading'));
 		default:
-			if(!field.hasOwnProperty("default")) { return []; };
-			if(field.default.type == "const") { return []; };
-			if(field.default.value != parentName) { return []; };
-			return [ myName ];
+			if(field.hasOwnProperty("default")) { 
+				if(field.default.type == "field" && field.default.value == parentName) { 
+					return [ myName ];
+				};
+			};	
+			if(field.hasOwnProperty("depends")) { 
+				if(field.depends.field == parentName) { 
+					return [ myName ];
+				};
+			};	
+			return [];
 	};
 };
 		
@@ -2270,6 +2301,13 @@ function createField(settings, fieldNum, component,prefix) {
 					};	
 				};	
 			};	
+		};	
+		if(fieldComp.hasOwnProperty("depends")) {
+			result += "data-depends-field='" + fieldComp.depends.field + "' data-depends-value='" + fieldComp.depends.value + "' ";
+			let fName = prefix + fieldComp.depends.field;		
+			$(function() {
+				inputChanged($('#'+fName),[fieldName]);
+			});
 		};	
 		result += "value='" + fieldValue + "' " 
 				+ fieldStyle + " oninput='inputChanged(this," + JSON.stringify(influencedFields) +")' >";

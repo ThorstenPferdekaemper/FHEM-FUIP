@@ -5,6 +5,19 @@
 </head>
 <body>
 <h1>FUIP News</h1>
+<h2>19.05.2019</h2>
+<h3>Swiper</h3>
+<img src="Swiper.png" style="float:left;margin-right:10px" width=322px height=298px><span style="color:red">Achtung: Dieses Feature ist momentan noch ein bisschen experimentell. Es sind zwar momentan (also am 19.Mai um 17:00) keine echten Probleme bekannt, aber es ist halt brandneu. Au&szlig;erdem k&ouml;nnen sich einzelne Feinheiten noch &auml;ndern, wie z.B. die genaue Positionierung der Views im Swiper oder das Verhalten im flex-Layout (also die "Responsiveness").</span><p>
+FUIP bietet jetzt die M&ouml;glichkeit, Views in einen Swiper (oder auch Slider) zu packen. Dazu gibt es im Konfigurations-Popup f&uuml;r Zellen und View Templates das neue Feld <i>layout</i>. W&auml;hlt man hier "slider", dann kann man keine Views mehr direkt positionieren. Statt dessen liegen dann alle Views in einem Swiper-Widget und k&ouml;nnen "durchgebl&auml;ttert" bzw. "gewischt" werden.<p>
+<b>drag&drop</b>: Es ist weiterhin m&ouml;glich, Views aus einer Zelle mit Swiper-Layout heraus- bzw. hineinzuziehen. Beim "in den Swiper Fallenlassen" wird die View momentan als letzte "Slide" angef&uuml;gt. D.h. es sieht im ersten Moment so aus, als ob die View verschwindet, sie ist aber nur ganz hinten.<br> 
+<b>autoplay</b>: Wenn hier ein Wert ungleich 0 eingegeben wird, dann werden die einzelnen Views automatisch weitergeschaltet. Der bei <i>autoplay</i> angegebene Wert ist die Zeit in Millisekunden, nachdem zur n&auml;chsten View weitergschaltet wird.<br> 
+<b>navbuttons</b>:Damit k&ouml;nnen die Navigationspfeile rechts und links ein- bzw. ausgeschaltet werden.<br> 
+<b>pagination</b>:Damit k&ouml;nnen die Punkte unterhalb ein- bzw. ausgeschaltet werden.<p>
+Man kann immer nur die ganze Zelle (oder das ganze View Template) in einen Swiper umwandeln. Wenn man eine Zelle braucht, die au&szlig;er dem Swiper noch andere Views enth&auml;lt, dann muss man den Umweg &uuml;ber ein View Template gehen. D.h. man definiert ein View Template mit Swiper-Layout und verwendet dies dann in der Zelle.<br>
+&Auml;hnliches gilt, wenn man eine Slide innerhalb des Swipers braucht, die aus mehreren Views besteht. Das geht nicht direkt, sondern auch nur &uuml;ber View Templates.<br>
+Ein Popup kann kein Swiper-Layout haben. Man kann allerdings ein View Template mit einem Swiper-Layout auf einem Popup verwenden. 
+<p style="clear:left;height:0.5em;"></p>
+
 <h2>13.05.2009</h2>
 <h3>Autosave</h3>
 FUIP speichert jetzt jede &Auml;nderung automatisch ab. Dadurch entstehen f&uuml;r jedes FUIP-Device bis zu 5 Autosave-Dateien im Ordner &lt;fhem&gt;/FHEM/lib/FUIP/config/autosave. (&lt;fhem&gt; ist normalerweise /opt/fhem) Das Kommando <i>set...load</i> akzeptiert daf&uuml;r jetzt einen Parameter, &uuml;ber den angegeben werden kann, ob man die normal abgespeicherte Konfiguration laden will (<i>lastSaved</i> oder einfach leer lassen) oder eine der Autosave-Dateien. Dabei ist ersichtlich, von wann die jeweilige Autosave-Datei stammt.<br>
