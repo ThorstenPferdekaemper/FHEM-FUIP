@@ -686,7 +686,10 @@ sub renderPage($$$) {
 					<style type=\"text/css\">
 	                .fuip-color {
 		                color: ".$styleColor.";
-                    }\n";
+                    }
+					.swiper-wrapper > .swiper-slide { 
+						position: relative;
+					} \n";
 	$result .= renderCommonEditStyles($hash) unless $locked;				
 	$result .= "</style>\n"
 				.renderHeaderHTML($hash,$currentLocation)
