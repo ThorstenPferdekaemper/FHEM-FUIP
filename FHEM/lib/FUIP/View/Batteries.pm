@@ -93,7 +93,7 @@ sub _getReadingType($$) {
 #	voltage:	voltage, without the V sign
 	my ($device,$reading) = @_;
 	return "percentage" if($reading eq "batteryPercent");
-	return "percentage" if($reading eq "batteryLevel" and $device->{TYPE} eq "PRESENCE"); 
+	return "percentage" if($reading eq "batteryLevel" and $device->{TYPE} =~ m/^(PRESENCE|Arlo)$/); 
 	return "voltage" if($reading =~ m/^(batteryLevel|batVoltage)$/);
 	# now only "battery" is left, which usually is like ok/low etc., but can be percentage as well
 	my $value = $device->{$reading};
