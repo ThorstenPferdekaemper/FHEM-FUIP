@@ -3020,6 +3020,9 @@ sub _setConvert($$) {
 	for my $comp (qw(layout autoplay navbuttons pagination views)) {
 		$hash->{viewtemplates}{$templateid}{$comp} = $instance->{$comp};
 	};
+	for my $comp (qw(layout autoplay navbuttons pagination)) {
+		$hash->{viewtemplates}{$templateid}{defaulted}{$comp} = $instance->{defaulted}{$comp};
+	};
 	$hash->{viewtemplates}{$templateid}->dimensions(cellSizeToPixels($instance));
 	return undef;  # show caller that everything is ok
 };

@@ -5,6 +5,17 @@
 </head> 
 <body>
 <h1>FUIP News</h1>
+<h2>21.05.2019</h2>
+<img src="VariablenImViewTemplate.png" style="float:left;margin-right:10px;margin-bottom:10px" width=377px height=206px>
+<h3>Variablen in View Templates mit Swiper</h3>
+Variablen in View Templates f&uuml;r die Felder <i>layout</i>, <i>autoplay</i>, <i>navbuttons</i> und <i>pagination</i> haben nicht funktioniert. Variablen f&uuml;r diese Felder sind einfach "verschwunden", waren aber sozusagen unsichtbar noch vorhanden. Dies hat dazu gef&uuml;hrt, dass bei bei der Verwendung des View Templates dort gesetzte Werte ignoriert wurden. Dies wurde korrigiert. Variablen funktionieren jetzt auch bei diesen Feldern.
+
+<h3>Defaults f&uuml;r Variablen auf Feldern mit Defaultwert</h3>
+Wenn in einem View Template eine Variable definiert wurde f&uuml;r ein Feld, das einen Defaultwert hat, dann wurde bei der Verwendung des View Templates der urspr&uuml;ngliche Default-Wert verwendet, und nicht der im View Template angegebene Wert.<br>
+Beispiel: Der Default-Wert f&uuml;r <i>autoplay</i> beim Swiper-Layout ist "0" (also kein Autoplay). Setzt man nun im View Template einen Wert von "2000", dann wurde dies <b>nicht</b> &uuml;bernommen, wenn f&uuml;r <i>autoplay</i> eine Variable definiert ist. Statt dessen wurde immer noch der Wert "0" verwendet, au&szlig;er dies wurde in der Instanz (also bei der Verwendung) explizit &uuml;berschrieben.<br>
+Dieses Verhalten war nicht gerade intuitiv und wurde so ge&auml;ndert, dass in diesem Fall der im View Template gesetzte Wert als Default verwendet wird (also "2000" im Beispiel).
+<p style="clear:left;height:0.5em;"></p>
+
 <h2>19.05.2019</h2>
 <h3>Batteries und Arlo-Ger&auml;te</h3>
 Bei Arlo-Ger&auml;ten ist das Reading <i>batteryLevel</i> ein Prozentsatz. Das wird jetzt vom Batteries-View richtig interpretiert. 

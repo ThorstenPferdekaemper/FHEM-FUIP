@@ -147,6 +147,28 @@ sub getStructure($) {
 					$field->{default}{value} = _findVariableForReffield($self->{variables},$basePath,$field->{default}{value});
 					delete $field->{default} unless $field->{default}{value};
 				};
+				# default const -> use value from template field
+				if(exists($field->{default}) and $field->{default}{type} eq "const") {
+					$field->{default}{value} = $field->{value};
+				};
+				# depends
+				if(exists($field->{depends})) {
+					# find a variable for the field this one depends on
+					my $depVar = _findVariableForReffield($self->{variables},$basePath,$field->{depends}{field});
+					# if there is such a variable, use it as depends-field
+					if($depVar) {
+						$field->{depends}{field} = $depVar;
+					}else{
+						# otherwise, check the content of the original field and
+						# remove the depends-part or the whole field
+						my $depField = $self->_findReffield($conf,$basePath,$field->{depends}{field});
+						if($depField->{value} eq $field->{depends}{value}) {
+							delete $field->{depends};
+						}else{
+							next;  # do not use this field
+						};	
+					};
+				};
 				# reading of device-reading
 				# if there is no type, this is probably a part of device-reading
 				if($type eq 'device-reading') {
@@ -281,7 +303,7 @@ sub removeOldVariables($;$$) {
 			# and $field should be like views-<i>-<field> or views-<i>-<field>-<device/reading>
 			# otherwise we do not delete
 			my @parts = split(/-/,$field);
-			next unless(scalar(@parts) == 3 or scalar(@parts) == 4);
+			next unless(scalar(@parts) == 1 or scalar(@parts) == 3 or scalar(@parts) == 4);
 			# probably we do not need to check more. If the field belongs to a next level popup,
 			# then $field would look like views-<i>-popup-views-<i>-<field>(-...)
 			# i.e. we can safely delete the field here
@@ -417,6 +439,15 @@ sub _findVariableForReffield($$$) {
 	return undef;
 };	
 	
+	
+sub _findReffield($$$) {
+	my ($self,$conf,$fieldpath,$reffield) = @_;
+	my @path = split(/-/,$fieldpath);
+	pop(@path);
+	push(@path,$reffield);
+	$self->_findField($conf,join('-',@path));
+};	
+	
 
 sub getConfigFieldsSetVariables($$;$) {
 	my ($self,$conf,$fieldid) = @_;
@@ -433,7 +464,7 @@ sub getConfigFieldsSetVariables($$;$) {
 			};
 			# we do not fill fields of popups in popups
 			my @parts = split(/-/,$fieldpath);
-			next unless(scalar(@parts) == 3 or scalar(@parts) == 4); 		
+			next unless(scalar(@parts) == 1 or scalar(@parts) == 3 or scalar(@parts) == 4); 		
 			my $field = $self->_findField($conf,$fieldpath);
 			next unless $field;
 			$field->{variable} = $variable->{name};
