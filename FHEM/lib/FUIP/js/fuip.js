@@ -407,9 +407,15 @@ function toggleConfigMenu(){
 				+	'<li><div onclick="importPage()"><span class="ui-icon ui-icon-arrowstop-1-n"></span>Import</div></li>'
 				+	'<li><div onclick="acceptPageSettings(repairPage)"><span class="ui-icon ui-icon-wrench"></span>Repair</div></li>';
 		};	
+		let acceptFunc = (mode == "cell" ? "acceptSettings" : "acceptPageSettings");
 		html +=	'<li class="ui-widget-header"><div>General</div></li>'
 			+ '<li onclick="coloursChangeDialog()"><div>Colours</div></li>'
-			+ '<li onclick="openChangeLog()"><div>FUIP News</div></li>';
+			+ '<li onclick="openChangeLog()"><div>FUIP News</div></li>'
+			+ '<li><div><span class="ui-icon ui-icon-locked"></span>Lock</div>'
+			+ '	<ul style="width:125px;">'
+			+ '		<li><div onclick="'+acceptFunc+'(function(){setLock(\'client\')})">This client</div></li>'
+			+ '		<li><div onclick="'+acceptFunc+'(function(){setLock(\'all\')})">All clients</div></li>'
+			+ ' </ul></li>';
 		html += '</ul>';
 		menu = $(html);
 		menu.hover(() => 0, toggleConfigMenu);
@@ -1053,7 +1059,7 @@ function onViewResizeStop(event,ui) {
 
 // show dialog with an error text 
 // text can be almost arbitrary html
-function popupError(title,text,onClose) {
+function popupError(title,text,onClose,messageType) {
 	var popup = $("<div>"+text+"</div>");
 	var buttons = [{
 			text: "Ok",
@@ -1065,8 +1071,9 @@ function popupError(title,text,onClose) {
 			title: title,
 			modal: true,
 			buttons: buttons,
-			classes: { "ui-dialog-titlebar": "ui-state-error" }
 		};
+	if(!messageType || messageType == "error") 
+		settings.classes = { "ui-dialog-titlebar": "ui-state-error" };
 	if(onClose) settings.close = onClose;	
 	popup.dialog(settings);
 };	
@@ -1169,6 +1176,19 @@ async function autoArrange() {
 	await asyncSendFhemCommandLocal(cmd);
 	location.reload(true);
 };
+	
+	
+async function setLock(range) {
+	// lock for this client (range = client) or for all (range = all)
+	let name = $("html").attr("data-name");
+	let cmd = "set " + name + " lock " + range;  
+	await asyncSendFhemCommandLocal(cmd);
+	let rngText = (range == "client" ? "this client" : "all clients");
+	let onThisClient = (range == "client" ? " on this client" : "");
+	popupError("Locked " + rngText,
+		'You have locked '+rngText+'. This means that you cannot edit your FUIP pages any more'+onThisClient+'. If you want to unlock again, issue one of the following commands directly in FHEM: "set '+name+' unlock", "set '+name+' unlock all"  or "attr '+name+' locked 0".',	
+		function(){location.reload(true)}, "information");
+};	
 	
 
 function collectFieldValues(settingsDialog) {
@@ -2992,7 +3012,7 @@ function toggleCellPage() {
 	settingsDialog.html("Just a moment...");
 	if(mode == "page") {
 		// switch to "cell"
-		openSettingsDialog($("html").attr("data-name"),"cell",settingsDialog.attr("data-viewid"));
+		openSettingsDialog("cell",settingsDialog.attr("data-viewid"));
 	}else if(mode == "cell") {
 		settingsDialog.dialog("option","title", "Settings page " + $("html").attr("data-pageid"));
 		settingsDialog.attr("data-mode","page");

@@ -252,6 +252,10 @@ sub Attr ($$$$) {
 			return "cellMargin must be a number between 0 and 10";
 		}	
 	};
+	if($attrName eq "locked") {
+		# "locked" changed -> remove "set" locks
+		delete $main::defs{$name}->{lockIPs};	
+	};
 	return undef;
 }
 
@@ -1941,7 +1945,7 @@ sub createPage($$) {
 sub getFuipPage($$) {
 	my ($hash,$path) = @_;
 	
-	my $locked = main::AttrVal($hash->{NAME},"locked",0);
+	my $locked = _getLock($hash);
 	my ($pageid,$preview) = split(/\?/,$path);
 	# preview?
 	if($preview and $preview eq "preview") {
@@ -3043,6 +3047,85 @@ sub _setRepair($$) {
 }
 
 
+sub _getLock($;$) {
+	my ($hash,$ip) = @_;
+	if(not $ip) {
+		my $client = $main::defs{$main::FW_cname};
+		$ip = $client->{PEER};
+	};
+	if($hash->{lockIPs}) {
+		for my $entry (split(/,/,$hash->{lockIPs})) {
+			my @entry = split(/:/,$entry);
+			return $entry[1] if($entry[0] eq $ip or $entry[0] eq "all");
+		};
+	};
+	return main::AttrVal($hash->{NAME},"locked",0);
+};
+
+
+sub _setLock($$) {
+	my ($hash,$a) = @_;
+	# Internal lock: List of explicitly (un)locked IP-Addresses or "all"
+	#		127.0.0.1:0,192.168.178.45:0 - "home" is unlocked, ...45 is unlocked
+	#		all:0 - all unlocked
+	#		all:1,127.0.0.1:0 - all locked except home
+	# What exactly happens depends on attribute "locked". Entries in internal "lock"
+	# are normally the opposite of attribute "locked". Otherwise, they are deleted.
+	
+	# get attribute "locked"
+	my $attrLocked = main::AttrVal($hash->{NAME},"locked",0);
+	# get target state
+	my $newState = $a->[1] eq "lock" ? 1 : 0;
+	# get target IP
+	# defaulting: if locked via attribute, then default of unlock is "client", of lock is "all"
+	#			  if unlocked via attribute, then vice versa	
+	my $ip = $newState == $attrLocked ? "all" : "client";
+	if(exists($a->[2])) {
+		$ip = $a->[2];
+		# The following does not really make sure that the ip 
+		# address is valid. However, it makes sure that it is good 
+		# enough not to create further issues.
+		if ( not $ip =~ m/^all$|^client$|^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/ ){
+			return 'set (un)lock: argument must be a valid ip address or \"all\" or \"client\"';
+		};
+	};	
+	if($ip eq "client") {
+		my $client = $main::defs{$main::FW_cname};
+		return 'set (un)lock client: no (FHEMWEB) client found' unless $client;
+		$ip = $client->{PEER};
+	};
+	# now $ip should be a proper ip address or "all"
+	if($ip eq "all") {
+		if($newState == $attrLocked) {
+			delete $hash->{lockIPs};
+		}else{
+			$hash->{lockIPs} = "all:".$newState;
+		};
+	}else{
+		return 'set (un)lock: ignored, won\'t change anything' if _getLock($hash,$ip) == $newState;
+		my @ips;
+		my $done = 0;
+		if($hash->{lockIPs}) {
+			for my $entry (split(/,/,$hash->{lockIPs})) {
+				my @entry = split(/:/,$entry);
+				if($entry[0] eq $ip and $entry[1] != $newState) {
+					$done = 1;
+				}else{	
+					push(@ips,$entry);
+				};		
+			};
+		};
+		unshift(@ips,$ip.":".$newState) unless $done; 
+		if(@ips) {
+			$hash->{lockIPs} = join(",",@ips);
+		}else{
+			delete $hash->{lockIPs};
+		};	
+	};
+	return undef;
+};	
+
+
 sub _innerSet($$$)
 {
 	my ( $hash, $a, $h ) = @_;
@@ -3150,13 +3233,15 @@ sub _innerSet($$$)
 				$hash->{colors}{$key} = $h->{$key};
 			};
 		};	
+	}elsif($cmd =~ m/^(lock|unlock)$/) {
+		return _setLock($hash,$a);
 	}else{
 		# redetermine attribute values
 		setAttrList($main::modules{FUIP});
 		my $files = getConfigFiles($hash);
 		return "Unknown argument $cmd, choose one of save:noArg".
 				($files ? " load:".join(',',@$files) : "").
-				" viewsettings viewaddnew viewdelete viewposition autoarrange refreshBuffer pagedelete:".join(',',sort keys %{$hash->{pages}});
+				" lock unlock viewsettings viewaddnew viewdelete viewposition autoarrange refreshBuffer pagedelete:".join(',',sort keys %{$hash->{pages}});
 	}
 	return undef;  # i.e. all good
 }
@@ -3167,7 +3252,7 @@ sub Set($$$) {
 	my $result = _innerSet($hash,$a,$h);
 	return $result if $result;  # error message
 	my $cmd = $a->[1]; # this exists, otherwise _innerSet returns error
-	return if $cmd =~ m/^save|load$/;  # no auto-save for save and load
+	return undef if $cmd =~ m/^(save|load|lock|unlock)$/;  # no auto-save for save and load
 	save($hash,1); # TODO: error handling? 
 	return undef;  # all good
 }

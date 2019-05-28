@@ -5,6 +5,22 @@
 </head> 
 <body>
 <h1>FUIP News</h1>
+<h2>28.05.2019</h2>
+<h3>Lock/Unlock per set-Befehl und &uuml;ber's Men&uuml;</h3>
+Der Mechanismus zum Sperren/Entsperren (das Attribut <i>locked</i>) wurde erweitert. Man kann jetzt &uuml;ber den Befehl <i>set &lt;fuip-device&gt; lock</i> sperren und mittels <i>set &lt;fuip-device&gt; unlock</i> entsperren. Der dadurch ge&auml;nderte Zustand wird in einem Internal gespeichert, d.h. es ist keine "strukturelle" &Auml;nderung. (Bei "Save config" erscheint kein rotes Fragezeichen.)<br>
+Standardm&auml;&szlig;ig wirken sich die neuen Befehle erst einmal nur auf den aktuellen Client aus (also auf den Rechner, vor dem man sitzt). Dadurch kann man z.B. auf dem Tablet/Telefon nachsehen, wie sich eine &Auml;nderung tats&auml;chlich auswirkt. Au&szlig;erdem bekommen Familienmitglieder niemals die Zahnr&auml;dchen angezeigt. Man kann das (Ent)Sperren auch explizit f&uuml;r eine bestimmte IP-Adresse durchf&uuml;hren, indem man die IP-Adresse als Argument verwendet, also in etwa <i>set &lt;fuip-device&gt; lock 192.168.178.45</i>.<br>
+Das war jetzt die Kurzfassung. In Wirklichkeit ist es ein bisschen komplexer, da das Attribut <i>locked</i> und die neuen <i>set</i>-Befehle zusammenpassen müssen. Das ganze wurde so gebaut, dass folgendes Vorgehen m&ouml;glich (und hoffentlich sinnvoll) ist:
+<ul>
+<li>Nach dem Anlegen eines neuen FUIP-Device ist alles "offen". D.h. das Attribut <i>locked</i> ist nicht vorhanden und wird damit wie 0 behandelt, also entsperrt. Man kann also auf jedem Client alles &auml;ndern.</li>
+<li>Insbesondere wenn man das Flex-Layout (Attribut <i>layout</i> sitzt auf "flex".) verwendet, kann das tats&auml;chliche (also "locked") Aussehen von der &Auml;nderungsansicht abweichen. Hier ist es dann sinnvoll, von Zeit zu Zeit zu sperren (<i>set &lt;fuip-device&gt; lock</i>), um sich den Zustand anzuschauen. M&ouml;glicherweise "entwickelt" man auch f&uuml;r andere Ger&auml;te auf einem gr&ouml;&szlig;eren Bildschirm. In dem Fall kann man die "anderen" sperren mittels <i>set &lt;fuip-device&gt; lock &lt;ip-address&gt;</i>. 
+<li>Sobald das ganze einen verwendbaren Stand erreicht hat, schaltet man sozusagen auf "im Prinzip gesperrt" um, also <i>attr &lt;fuip-device&gt; locked 1</i>. Falls weitere &Auml;nderungen zu machen sind, kann man dann auf dem jeweiligen "Entwicklungs-Client" entsperren mittels <i>set &lt;fuip-device&gt; unlock</i>.</li>
+</ul>
+Der Zustand der Sperren (also das, was mit den neuen Befehlen gemacht wird), wird im Internal <i>lockIPs</i> gespeichert. Das bedeutet auch, dass der Zustand nicht gespeichert wird und nach einem FHEM-Neustart wieder auf den Zustand des Attributs <i>locked</i> zur&uuml;ckgesetzt wird.<br>
+Im Konfigurations-Popup f&uuml;r Zellen und Seiten gibt es auch einen neuen Eintrag "Lock", wobei man "This client" oder "All clients" w&auml;hlen kann. Ein "Unlock" gibt es nicht, da es im gesperrten Zustand kein Konfigurations-Popup gibt.
+     
+<h3>Wechsel zu "Cell config" vom Konfig-Popup f&uuml;r Seiten</h3>
+Bei der Auswahl von "Cell config" im Konfigurations-Popup f&uuml;r Seiten kam es zu einer Fehlermeldung. Das wurde behoben.
+	 
 <h2>21.05.2019</h2>
 <img src="VariablenImViewTemplate.png" style="float:left;margin-right:10px;margin-bottom:10px" width=377px height=206px>
 <h3>Variablen in View Templates mit Swiper</h3>

@@ -9,7 +9,7 @@ DIR FHEM/lib/FUIP/js
 DIR FHEM/lib/FUIP/View
 DIR FHEM/lib/FUIP/jquery-ui
 DIR FHEM/lib/FUIP/jquery-ui/images
-UPD 2019-05-20_22:01:19 123539 FHEM/42_FUIP.pm
+UPD 2019-05-27_16:36:34 126149 FHEM/42_FUIP.pm
 UPD 2019-02-07_23:35:51 12409 FHEM/lib/FUIP/Model.pm
 UPD 2019-04-10_15:34:34 13432 FHEM/lib/FUIP/View.pm
 UPD 2019-05-19_21:54:59 9233 FHEM/lib/FUIP/View/Batteries.pm
@@ -72,7 +72,7 @@ UPD 2019-04-10_16:02:52 42416 FHEM/lib/FUIP/doc/PopupPosition.png
 UPD 2019-03-15_21:30:01 5774 FHEM/lib/FUIP/doc/RenameViewTemplate.png
 UPD 2019-05-19_16:29:14 25890 FHEM/lib/FUIP/doc/Swiper.png
 UPD 2019-05-21_22:16:03 19252 FHEM/lib/FUIP/doc/VariablenImViewTemplate.png
-UPD 2019-05-21_22:19:18 31610 FHEM/lib/FUIP/doc/changes.html
+UPD 2019-05-28_21:25:48 34727 FHEM/lib/FUIP/doc/changes.html
 UPD 2019-01-23_22:22:28 1553 FHEM/lib/FUIP/fonts/nesges.css
 UPD 2015-05-26_11:04:28 5784 FHEM/lib/FUIP/fonts/nesges.woff
 UPD 2018-07-18_15:43:10 38 FHEM/lib/FUIP/images/lizenzen.txt
@@ -86,7 +86,7 @@ UPD 2018-03-21_13:10:11 4632 FHEM/lib/FUIP/jquery-ui/images/ui-icons_cc0000_256x
 UPD 2018-03-21_13:10:11 6313 FHEM/lib/FUIP/jquery-ui/images/ui-icons_ffffff_256x240.png
 UPD 2018-03-21_13:10:11 37326 FHEM/lib/FUIP/jquery-ui/jquery-ui.css
 UPD 2017-12-18_22:55:39 253669 FHEM/lib/FUIP/jquery-ui/jquery-ui.min.js
-UPD 2019-05-18_22:12:58 108860 FHEM/lib/FUIP/js/fuip.js
+UPD 2019-05-27_22:23:12 110022 FHEM/lib/FUIP/js/fuip.js
 UPD 2019-05-16_21:44:44 1806 FHEM/lib/FUIP/js/fuip_5_resize.js
 UPD 2019-04-20_20:09:04 1421 FHEM/lib/FUIP/js/fuip_batteries.js
 UPD 2019-02-07_22:00:49 897 FHEM/lib/FUIP/js/fuip_clock.js
