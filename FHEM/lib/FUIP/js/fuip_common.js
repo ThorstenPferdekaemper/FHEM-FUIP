@@ -35,3 +35,26 @@ if($('html').data('fuipToast')) {
 		});
 	};
 };
+
+
+// auto-return (or rather auto-navigation)
+if($('html').data('fuipReturnAfter')) {
+	var fuipReturnTimer;
+	
+	function fuipReturn() {
+		var name = $("html").attr("data-name");
+		var newPage = $("html").data('fuipReturnTo');
+		window.location = "/fhem/" + name.toLowerCase() +"/page/"+newPage;
+	}
+	
+	function fuipResetTimer() {
+		clearTimeout(fuipReturnTimer);
+		fuipReturnTimer = setTimeout(fuipReturn, $('html').data('fuipReturnAfter') * 1000);
+	}
+		
+	$(window).on("load", fuipResetTimer); 
+	$(document).on("mousemove", fuipResetTimer);
+	$(document).on("keypress", fuipResetTimer);
+	$(document).on("click", fuipResetTimer);
+	$(document).on("mousedown", fuipResetTimer);
+};

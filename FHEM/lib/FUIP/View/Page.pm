@@ -17,6 +17,14 @@ sub getStructure($) {
 	return [
 		{ id => "class", type => "class", value => $class },
 		{ id => "title", type => "text" },
+		{ id => "autoReturn", type => "text", options => ["on","off"], 
+			default => { type => "const", value => "off" } },
+		{ id => "returnAfter", type => "text", 
+			default => { type => "const", value => "30" }, 
+			depends => { field => "autoReturn", value => "on" } },
+		{ id => "returnTo", type => "pageid",  
+			default => { type => "const", value => "home" }, 
+			depends => { field => "autoReturn", value => "on" } }
 		];
 };
 

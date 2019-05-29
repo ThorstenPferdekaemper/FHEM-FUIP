@@ -6,6 +6,14 @@
 <body>
 <h1>FUIP News</h1>
 <h2>29.05.2019</h2>
+<img src="AutoReturn.png" style="float:left;margin-right:10px;margin-bottom:10px" width=428px height=197px>
+<h3>Auto-Navigation / Return Home</h3>
+Man kann jetzt pro Seite einstellen, dass automatisch nach einer gewissen Zeit auf eine andere (FUIP-)Seite gewechselt werden soll. Damit kann man zum Beispiel ein automatisches "return home" implementieren. (Deshalb haben die neuen Felder ein "return" im Namen.)<br>
+Im Konfigurations-Popup für Seiten ("Page config") gibt es ein neues Feld <i>autoReturn</i>. Wenn man hier "on" w&auml;hlt, dann erscheinen die Felder <i>returnAfter</i> und <i>returnTo</i>. Bei <i>returnAfter</i> gibt man die Zeit (in Sekunden) ein, nach der automatisch die Seite gewechselt werden soll. Bei <i>returnTo</i> w&auml;hlt man die Seite aus, zu der navigiert werden soll. Es sind nur Seiten desselben FUIP-Device vorgesehen. Diese k&ouml;nnen &uuml;ber eine Werthilfe eingegeben werden.<br>
+Die automatische Navigation erfolgt nur bei Inaktivit&auml;t. Der Timer wird zur&uuml;ckgesetzt wenn der Benutzer die Maus bewegt, auf etwas klickt oder eine Taste dr&uuml;ckt.<br>
+Diese Einstellung wirkt sich auch auf den Bearbeitungsmodus (also <i>locked</i> = 0) aus. Allerdings k&ouml;nnte dadurch die Bearbeitung einer Seite unm&ouml;glich werden, wenn man <i>returnAfter</i> auf 0 oder 1 setzt. Daher wird im Bearbeitungsmodus immer erst nach mindestens 5 Sekunden wegnavigiert.  
+<p style="clear:left;height:0.5em;"></p>
+
 <h3>Window-View mit Zahlen in openstate/closedstate</h3>
 Wenn beim Window-View Zahlen als <i>openstate</i> bzw. <i>closedstate</i> verwendet wurden, dann hat das ganze nicht richtig funktioniert. Es kam zu keiner Fehlermeldung, aber der angezeigte Zustand war nicht immer korrekt. Das wurde behoben.
 

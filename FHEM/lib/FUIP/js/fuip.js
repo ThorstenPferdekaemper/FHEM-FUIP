@@ -1364,7 +1364,7 @@ function getKeyForCommand(prefix) {
 function acceptPageSettings(doneFunc) {
 	var cmd = '';
 	// collect inputs and checkboxes
-	$("#viewsettings input").each(function() {
+	$("#viewsettings input, #viewsettings select.fuip").each(function() {
 		var value;
 		if($(this).attr("type") == "checkbox") {
 			value = ($(this).is(":checked") ? 1 : 0);
@@ -2202,7 +2202,7 @@ function hasValueHelp(settings,fieldNum) {
 	//       always have a refdevice. Maybe issue error message.
 	let field = settings[fieldNum];
 	// device, device-reading, icon always have a value help
-	if(field.type == "device" || field.type == "devices" || field.type == "device-reading" || field.type == "icon" ) {
+	if(field.type == "device" || field.type == "devices" || field.type == "device-reading" || field.type == "icon" || field.type == "pageid") {
 		return true;
 	};	
 	// reading and set needs a refdevice

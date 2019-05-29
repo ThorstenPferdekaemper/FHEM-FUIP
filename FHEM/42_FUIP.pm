@@ -641,10 +641,22 @@ sub renderToastSetting($) {
 };
 
 
+sub renderAutoReturn($$) {
+	my ($page,$locked) = @_;
+	return "" unless $page->{autoReturn} and $page->{autoReturn} eq "on";
+	my $seconds = $page->{returnAfter} + 0;  # make sure it's a number
+	# if we are in maint mode, make sure the page stays long enough to do anything
+	$seconds = 5 if(not $locked and $seconds < 5);
+	$page->{returnTo} = "" unless $page->{returnTo}; # avoid undef
+	return ' data-fuip-return-after='.$seconds.' data-fuip-return-to="'.$page->{returnTo}.'"';
+};
+
+
 sub renderPage($$$) {
 	my ($hash,$currentLocation,$locked) = @_;
 	# falls $locked, dann werden die Editierfunktionen nicht mit gerendert
-	my $title = $hash->{pages}{$currentLocation}{title};
+	my $page = $hash->{pages}{$currentLocation};
+	my $title = $page->{title};
 	$title = main::urlDecode($currentLocation) unless $title;
 	$title = "FHEM Tablet UI by FUIP" unless $title;
 	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
@@ -656,7 +668,7 @@ sub renderPage($$$) {
 	my $userScalable = main::AttrVal($hash->{NAME},"viewportUserScalable","yes");
   	my $result = 
 	   "<!DOCTYPE html>
-		<html".($locked ? "" : " data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"".$layout."\"").renderToastSetting($hash).">
+		<html data-name=\"".$hash->{NAME}."\"".($locked ? "" : " data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"".$layout."\"").renderToastSetting($hash).renderAutoReturn($page,$locked).">
 			<head>
 				<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
 				<meta name=\"viewport\" content=\"width=device-width, initial-scale=".$initialScale.", user-scalable=".$userScalable."\" />
@@ -734,7 +746,8 @@ sub renderPage($$$) {
 sub renderPageFlex($$) {
 	my ($hash,$currentLocation) = @_;
 	# falls $locked, dann werden die Editierfunktionen nicht mit gerendert
-	my $title = $hash->{pages}{$currentLocation}{title};
+	my $page = $hash->{pages}{$currentLocation};
+	my $title = $page->{title};
 	$title = main::urlDecode($currentLocation) unless $title;
 	$title = "FHEM Tablet UI by FUIP" unless $title;
 	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","var(--fuip-color-foreground,#808080)");
@@ -743,7 +756,7 @@ sub renderPageFlex($$) {
 	my $userScalable = main::AttrVal($hash->{NAME},"viewportUserScalable","no");
   	my $result = 
 	   '<!DOCTYPE html>
-		<html'.renderToastSetting($hash).'>
+		<html data-name="'.$hash->{NAME}.'"'.renderToastSetting($hash).renderAutoReturn($page,1).'>
 			<head>
 				<meta http-equiv="X-UA-Compatible" content="IE=edge">'.
 				'<meta name="viewport" content="width=device-width, initial-scale='.$initialScale.', user-scalable='.$userScalable.'" />'.
@@ -817,7 +830,8 @@ sub renderPageFlex($$) {
 
 sub renderPageFlexMaint($$) {
 	my ($hash,$currentLocation) = @_;
-	my $title = $hash->{pages}{$currentLocation}{title};
+	my $page = $hash->{pages}{$currentLocation};
+	my $title = $page->{title};
 	$title = main::urlDecode($currentLocation) unless $title;
 	$title = "FHEM Tablet UI by FUIP" unless $title;
 	my $baseWidth = main::AttrVal($hash->{NAME},"baseWidth",142);
@@ -828,7 +842,7 @@ sub renderPageFlexMaint($$) {
 	my $userScalable = main::AttrVal($hash->{NAME},"viewportUserScalable","no");
   	my $result = 
 	   "<!DOCTYPE html>
-		<html data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"flex\"".renderToastSetting($hash).">
+		<html data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"flex\"".renderToastSetting($hash).renderAutoReturn($page,0).">
 			<head>
 				<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
 				<meta name=\"viewport\" content=\"width=device-width, initial-scale=".$initialScale.", user-scalable=".$userScalable."\" />
