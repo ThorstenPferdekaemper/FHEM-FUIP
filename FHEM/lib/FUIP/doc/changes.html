@@ -5,6 +5,10 @@
 </head> 
 <body>
 <h1>FUIP News</h1>
+<h2>29.05.2019</h2>
+<h3>Window-View mit Zahlen in openstate/closedstate</h3>
+Wenn beim Window-View Zahlen als <i>openstate</i> bzw. <i>closedstate</i> verwendet wurden, dann hat das ganze nicht richtig funktioniert. Es kam zu keiner Fehlermeldung, aber der angezeigte Zustand war nicht immer korrekt. Das wurde behoben.
+
 <h2>28.05.2019</h2>
 <h3>Lock/Unlock per set-Befehl und &uuml;ber's Men&uuml;</h3>
 Der Mechanismus zum Sperren/Entsperren (das Attribut <i>locked</i>) wurde erweitert. Man kann jetzt &uuml;ber den Befehl <i>set &lt;fuip-device&gt; lock</i> sperren und mittels <i>set &lt;fuip-device&gt; unlock</i> entsperren. Der dadurch ge&auml;nderte Zustand wird in einem Internal gespeichert, d.h. es ist keine "strukturelle" &Auml;nderung. (Bei "Save config" erscheint kein rotes Fragezeichen.)<br>

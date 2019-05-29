@@ -9,14 +9,27 @@ use parent -norequire, 'FUIP::View';
 	
 sub getHTML($){
 	my ($self) = @_;
+	my @states = ($self->{openstate},$self->{closedstate});
+	my @icons = ($self->{openicon},$self->{closedicon});
+	my @colors = ("red","green");
+	# at least numerical states need to be sorted
+	# suppress "not a number" warnings
+	no warnings;
+	my $gt = ($states[0] > $states[1]);
+	use warnings;
+	if($gt) {
+		@states = ($states[1], $states[0]);
+		@icons = ($icons[1], $icons[0]);
+		@colors = ($colors[1], $colors[0]);
+	};
 	return '
 		<div data-type="symbol" class="compressed '.$self->{iconsize}.'" 
 			style="margin: 5px 5px 5px 5px;"
 			data-device="'.$self->{device}.'"'."\n". 
 			($self->{reading} and $self->{reading} ne "STATE" ? 'data-get="'.$self->{reading}.'"'."\n" : '')
-			.'data-states=\'["'.$self->{openstate}.'","'.$self->{closedstate}.'"]\' 
-			data-icons=\'["'.$self->{openicon}.'","'.$self->{closedicon}.'"]\' 
-			data-colors=\'["red","green"]\' >
+			.'data-states=\'["'.$states[0].'","'.$states[1].'"]\' 
+			data-icons=\'["'.$icons[0].'","'.$icons[1].'"]\' 
+			data-colors=\'["'.$colors[0].'","'.$colors[1].'"]\' >
 		</div>'.
 		($self->{label} ? '
 			<div class="fuip-color">'.$self->{label}.'</div>' : ''); 
