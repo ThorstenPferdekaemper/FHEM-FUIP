@@ -5,6 +5,11 @@
 </head> 
 <body>
 <h1>FUIP News</h1>
+<h2>03.06.2019</h2>
+<h3>Autosave-Dateien und die ConfigDB</h3>
+Der Autosave-Mechanismus (siehe FUIP News vom 13.05.2019) war problematisch bei Verwendung der ConfigDB. Die Dateien wurden nicht mehr aus der Datenbank gel&ouml;scht. Außerdem hat die Werthilfe f&uuml;r <i>set load</i> in FHEMWEB nichts angezeigt. Im Prinzip war es damit fast unm&ouml;glich, automatisch gesicherte Zust&auml;nde zu finden und zu laden.</br>
+Diese Probleme sollten jetzt behoben sein. Die Autosave-Dateien werden jetzt immer ins Dateisystem geschrieben, auch wenn die ConfigDB benutzt wird.   
+
 <h2>29.05.2019</h2>
 <img src="AutoReturn.png" style="float:left;margin-right:10px;margin-bottom:10px" width=428px height=197px>
 <h3>Auto-Navigation / Return Home</h3>

@@ -2479,7 +2479,9 @@ sub getConfigFiles($) {
 	my $hash = shift;
 	my $result = getAutosaveFiles($hash);
 	my $fName = $fuipPath."config/FUIP_".$hash->{NAME}.".cfg";
-	unshift(@$result,"latestSave") if(-e $fName);
+	# with config DB, always add "latestSave", as it is a bit unclear how to 
+	# test file existence (without reading it)
+	unshift(@$result,"latestSave") if(-e $fName or main::configDBUsed());
 	return $result;
 };
 
@@ -2594,7 +2596,10 @@ sub save($;$) {
 		};
 	};
 	cleanAutosave($hash);
-	my $result = main::FileWrite($cfgPath."/".$filename,@content);		
+	# no config DB for autosave files
+	my $param = { FileName => $cfgPath."/".$filename };
+	$param->{ForceType} = "file" if $autosave;
+	my $result = main::FileWrite($param,@content);		
 	return $result if $result;
 	$hash->{autosave} = "none";
 	return undef;
@@ -2622,12 +2627,17 @@ sub load($;$) {
 	# clear pages and viewtemplates
 	$hash->{pages} = {};
 	$hash->{viewtemplates} = {};
+	
+	# no config DB for autosave files
+	my $param = { FileName => $fuipPath."config/".$filename };
+	$param->{ForceType} = "file" if $filename =~ m/^autosave/;
 	# try to read from FUIP directory
-	my ($error, @content) = main::FileRead($fuipPath."config/".$filename);	
+	my ($error, @content) = main::FileRead($param);	
 	if($error) {
 		# not found or other issue => try to read from main fhem directory (old location for this file)
 		my $err2;
-		($err2, @content) = main::FileRead($filename);
+		$param->{FileName} = $filename;
+		($err2, @content) = main::FileRead($param);
 		return $error if($err2);  # return $error, even though second read failed. This is to avoid confusing error messages.
 	};	
 	my $config = join("\n",@content);
