@@ -277,7 +277,7 @@ sub createRoomsMenu($$) {
 	for my $room (@rooms) {
 		my $menuItem = FUIP::View::MenuItem->createDefaultInstance($hash);
 		$menuItem->{text} = $room;
-		$menuItem->{link} = "room/".$room;
+		$menuItem->{pageid} = "room/".$room;
 		$menuItem->{active} = "0";
 		my @parts = split('/',$pageid);
 		if(@parts > 1) {

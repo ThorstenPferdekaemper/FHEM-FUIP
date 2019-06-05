@@ -1510,6 +1510,7 @@ function inputChanged(inputElem,influencedFields) {
 					
 					
 function defaultCheckChanged(id,defaultDef,fieldType) {
+	if(defaultDef.type == "none") return;
 	var inputField = $("#" + id);
 	if($("#" + id + "-check").is(":checked")) {
 		if(fieldType == "dialog") {

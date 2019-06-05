@@ -5,7 +5,23 @@
 </head> 
 <body>
 <h1>FUIP News</h1>
-<h2>03.06.2019</h2>
+<h2>05.06.2019</h2>
+<h3>MenuItem: Navigationsziel aus Reading holen (etc.)</h3>
+Im View MenuItem (und damit auch HomeButton) ist die Ermittlung des Navigationsziels flexibler (und hoffentlich klarer) geworden. Daf&uuml;r gibt es das neue Feld <i>linkType</i> mit den Optionen "fuip-page", "ftui-link" und "fhem-reading". Im Einzelnen...
+<ul>
+<li><b>fuip-page</b> bedeutet, dass das Navigationsziel eine Seite desselben FUIP-Device ist. Wenn man "fuip-page" ausw&auml;hlt, dann erscheint das Feld <i>pageid</i> mit einer Werthilfe, die alle (bereits generierten) Seiten des aktuellen FUIP-Device anzeigt. "fuip-page" ist sozusagen der Normalfall f&uuml;r ein Men&uuml; und damit auch die Voreinstellung.</li>
+<li><b>ftui-link</b> bedeutet, dass das Navigationsziel ein allgemeiner Link ist, wie man ihn auch im Tablet-UI (ohne FUIP) verwenden k&ouml;nnte. Wenn man "ftui-link" ausw&auml;hlt, dann erscheint das Feld <i>link</i>. Der Wert in diesem Feld kann dann zum Beispiel folgendes bedeuten:
+	<ul>
+	<li>Alles, was mit einem "/" beginnt, wird relativ zum FHEM-Server (auf dem FUIP l&auml;uft) interpretiert. Der Eintrag "/fhem?room=kitchen" w&uuml;rde FHEMWEB aufrufen und den Raum "kitchen" anzeigen.<br>
+	Man kann damit auch zu Seiten anderer FUIP-Instanzen springen. Der Eintrag "/fhem/ui2/page/room/kitchen" w&uuml;rde zur Seite "room/kitchen" der FUIP-Instanz "ui2" springen.</li>
+	<li>Relative links, die nicht mit "/" beginnen, rufen Dateien aus dem Tablet-UI	Installationsverzeichnis auf. Der Eintrag "demo_ftui.html" startet (zumindest bei mir) die Tablet-UI Demoseite.</i>
+	<li>Komplette URLs werden einfach so aufgerufen, wie sie sind. Man kann z.B. "http://google.de" eingeben und erh&auml;lt... (Ja was wohl?)</li>
+	</ul>
+<li><b>fhem-reading</b> ermittelt das Navigationsziel aus einem Reading eines FHEM-Devices. Wenn man "fhem-reading" ausw&auml;hlt, dann erscheinen die Felder <i>device</i> und <i>reading</i> mit den &uuml;blichen Werthilfen. Das hier gew&auml;hlte Reading muss einen Link wie oben unter "ftui-link" beschrieben enthalten. Das bedeutet, dass man nicht einfach den Namen einer FUIP-Seite eintragen kann (wie z.B. "room/kitchen"). Statt dessen muss der ganze Pfad inklusive FUIP-Device im Reading stehen, also z.B. "/fhem/ui/page/room/kitchen".</li>
+</ul>
+Bisherige Verwendungen von MenuItem und HomeButton m&uuml;ssen nicht angepasst werden. FUIP ermittelt f&uuml;r "alte" Seiten automatisch die richtige Kategorie. (Zumindest sollte das so sein.)
+
+<h2>03.06.2019</h2> 
 <h3>Autosave-Dateien und die ConfigDB</h3>
 Der Autosave-Mechanismus (siehe FUIP News vom 13.05.2019) war problematisch bei Verwendung der ConfigDB. Die Dateien wurden nicht mehr aus der Datenbank gel&ouml;scht. Außerdem hat die Werthilfe f&uuml;r <i>set load</i> in FHEMWEB nichts angezeigt. Im Prinzip war es damit fast unm&ouml;glich, automatisch gesicherte Zust&auml;nde zu finden und zu laden.</br>
 Diese Probleme sollten jetzt behoben sein. Die Autosave-Dateien werden jetzt immer ins Dateisystem geschrieben, auch wenn die ConfigDB benutzt wird.   
