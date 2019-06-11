@@ -23,7 +23,9 @@ sub getHTML($){
 	$result .= "<tr><td><div data-type=\"label\" 
 							 class=\"fuip-color\"
 							 data-device=\"".$self->{reading}{device}."\"
-							 data-get=\"".$self->{reading}{reading}."\">
+							 data-get=\"".$self->{reading}{reading}."\"".
+							 ($self->{unit} ? ' data-post-text="'.$self->{unit}.'"' : '').
+							 ">
 				</div></td></tr>"	if $self->{content} =~ m/^value|both$/;
 	$result .= "<tr><td><div data-type=\"label\" 
 							 class=\"fuip-color timestamp\"
@@ -79,6 +81,7 @@ sub getStructure($) {
 		{ id => "icon", type => "icon" },
 		{ id => "content", type => "text", options => [ "value", "timestamp", "both" ],
 			default => { type => "const", value => "value" } },	
+		{ id => "unit", type => "unit" },	
 		{ id => "border", type => "text", options => [ "solid", "none" ], 
 			default => { type => "const", value => "solid" } }, 
 		{ id => "popup", type => "dialog", default=> { type => "const", value => "inactive"} }		

@@ -1817,6 +1817,13 @@ async function valueHelp(fieldName,type) {
 			},false);	
 		return;	
 	};	
+	if(type == "unit") {
+		valueHelpForUnit(fieldName,function(selected) {
+			$('#'+fieldName).val(selected);
+			$('#'+fieldName).trigger("input");	
+		});
+		return;
+	};	
 	// all others
 	var name = $("html").attr("data-name");
 	createValueHelpDialog(function(){
@@ -2091,6 +2098,109 @@ function valueHelpForDevice(fieldTitle, callbackFunction, multiSelect) {
 };	
 
 
+function valueHelpForUnit(fieldTitle, callbackFunction) {
+	createValueHelpDialog(function(){
+		let result = "";
+		$("td[data-selected='X']").each(function(){
+			result = $(this).html();
+			if($(this).data("col") == 2) result = " " + result;
+		});	
+		$( "#valuehelp" ).dialog("close");
+		callbackFunction(result);
+	});
+	var valueDialog = $( "#valuehelp" );
+	valueDialog.dialog("option","title","Possible values for " + fieldTitle); 
+	valueDialog.html("Please wait...");
+	valueDialog.dialog("open");
+
+	var unitList = [
+		[ 'Beleuchtungsstärke','lx','Lux'],
+		[ 'Energie','J','Joule'],
+		[ 'Energie','kWh','Kilowattstunde(n)'],
+		[ 'Fl&auml;che','m\u00B2','Quadratmeter'],
+		[ 'Frequenz','Hz','Hertz'],
+		[ 'Frequenz','kHz','Kilohertz'],
+		[ 'L&auml;nge','m','Meter'],
+		[ 'Leistung','W','Watt'],
+		[ 'Leistung','kW','Kilowatt'],
+		[ 'Lichtst&auml;rke','cd','Candela'],
+		[ 'Lichtstrom','lm','Lumen'],
+		[ 'Masse','g','Gramm'],
+		[ 'Masse','kg','Kilogramm'],
+		[ 'Massenstrom','kg/s','Kilogramm pro Sekunde'],
+		[ 'Spannung','V','Volt'],
+		[ 'Stromst&auml;rke','mA','Milliampere'],
+		[ 'Stromst&auml;rke','A','Ampere'],
+		[ 'Temperatur','\u2103','Grad Celsius'],
+		[ 'Temperatur','\u2109','Grad Fahrenheit'],
+		[ 'Temperatur','K','Kelvin'],
+		[ 'Verh&auml;ltnis','%','Prozent'],
+		[ 'Verh&auml;ltnis','\u2030','Promille'],
+		[ 'Volumen','l','Liter'],
+		[ 'Volumen','m\u00B3','Kubikmeter'],
+		[ 'Volumenstrom','l/s','Liter pro Sekunde'],
+		[ 'Zeit','s','Sekunde(n)' ],
+		[ 'Zeit','min','Minute(n)' ],
+		[ 'Zeit','h','Stunde(n)' ],
+		[ 'Zeit','d','Tag(e)' ]
+		];
+
+
+	var html = "<table id='valuehelptable' class='tablesorter'><thead><tr><th>Gr&ouml;&szlig;e</th>";
+	html += "<th>Einheit</th><th>Einheit (lang)</th></tr></thead>";
+	html += "<tbody>";
+ 	// (also works for single selection)
+	let selected = $("#"+fieldTitle).val().trim();
+	for(var i = 0; i < unitList.length; i++){
+		html += "<tr id='valuehelp-row-"+i+"'><td data-col=0>"+unitList[i][0]+"</td><td data-col=1";
+		if(selected == unitList[i][1]) {
+			html += " data-selected='X' style='background:#F39814;color:black;' ";
+		};	
+		html += ">"+unitList[i][1]+"</td><td data-col=2";
+		if(selected == unitList[i][2]) {
+			html += " data-selected='X' style='background:#F39814;color:black;' ";
+		};	
+		html += ">"+unitList[i][2]+"</td></tr>";
+	};
+	html += "</tbody></table>";
+	valueDialog.dialog("option","width",400);
+	valueDialog.dialog("option","height",500);			
+	valueDialog.html(html);
+	$(function() {
+		$(".tablesorter").tablesorter({
+			theme: "blue",
+			widgets: ["filter","resizable"],
+			widgetOptions : {
+				resizable: false,
+				resizable_widths : [ '35%', '5%', '60%' ]
+			}
+		});
+		$( "#valuehelptable tbody tr td" ).on( "click", function() {
+			// anything changes?
+			let col = $(this).data("col");
+			let selCell = $(this);
+			if(col == 0) {
+				// any cell in this row already selected? return
+				let already = false;
+				selCell.parent().children().each(function() {
+					if($(this).attr("data-selected") == "X") 
+						already = true;	
+				});
+				if(already) return;
+				selCell = selCell.parent().children('[data-col=1]');
+			};	
+			// single select
+			$("td[data-selected='X']").each(function(){
+				$(this).attr('data-selected','');
+				$(this).removeAttr("style"); 							
+			});
+			selCell.attr('data-selected','X');					
+			selCell.attr("style", "background: #F39814;color:black;");
+		});	
+	});
+};
+
+
 function valueHelpForOptions(fieldName, callbackFunction,multiSelect) {
 	var name = $("html").attr("data-name");
 	createValueHelpDialog(function(){
@@ -2203,9 +2313,8 @@ function hasValueHelp(settings,fieldNum) {
 	//       always have a refdevice. Maybe issue error message.
 	let field = settings[fieldNum];
 	// device, device-reading, icon always have a value help
-	if(field.type == "device" || field.type == "devices" || field.type == "device-reading" || field.type == "icon" || field.type == "pageid") {
+	if(/^(device|devices|device-reading|icon|pageid|unit)$/.test(field.type)) 
 		return true;
-	};	
 	// reading and set needs a refdevice
 	if(field.type == "reading" || field.type == "set") {
 		return field.hasOwnProperty("refdevice");
