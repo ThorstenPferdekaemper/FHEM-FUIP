@@ -6,8 +6,44 @@ use warnings;
 use lib::FUIP::View;
 use parent -norequire, 'FUIP::View';
 
+sub getDependencies($$) {
+	return ['js/fuip_5_resize.js','js/fuip_labelreading.js'];
+};	
 
-sub getHTML($){
+sub _getHTML_flex($){
+	my ($self) = @_;
+	my $result = "<div data-fuip-type='fuip-labelreading' 
+						class=\"fuip-color\" style='display:flex;width:100%;height:100%;";
+	$result .= 'border:1px solid; border-radius:8px;' if(not $self->{border} or $self->{border} eq "solid");
+	$result .= "'>\n";					
+	if($self->{icon}){
+		$result .= '<div style="align-self:center;">
+						<i class="fa '.$self->{icon}.' fuip-color"></i>
+					</div>';
+	};
+	$result .= "<div style='display:flex;flex-direction:column;margin-left:auto;margin-right:auto;'>";
+	$result .= "<div data-fuip-type='fuip-labelreading-label' class=\"fuip-color\">".$self->{label}."</div>" if($self->{label});
+	
+	$result .= "<div data-type=\"label\" 
+					data-fuip-type='fuip-labelreading-reading'
+					class=\"fuip-color\"
+					data-device=\"".$self->{reading}{device}."\"
+					data-get=\"".$self->{reading}{reading}."\"".
+					($self->{unit} ? ' data-post-text="'.$self->{unit}.'"' : '').
+					"></div>" if $self->{content} =~ m/^value|both$/;
+	$result .= "<div data-type=\"label\" 
+					data-fuip-type='fuip-labelreading-timestamp'
+					class=\"fuip-color timestamp\"
+					data-substitution=\"toDate().ddmmhhmm()\"
+					data-device=\"".$self->{reading}{device}."\"
+					data-get=\"".$self->{reading}{reading}."\" ></div>" if $self->{content} =~ m/^timestamp|both$/;		
+	$result .= "</div>";
+	$result .= "</div>";
+	return $result;
+};		
+
+
+sub _getHTML_fixed($){
 	my ($self) = @_;
 	$self->{content} = "value" unless $self->{content};
 	# show reading
@@ -39,10 +75,23 @@ sub getHTML($){
 	$result .= "</table>";
 	return $result;
 };
+
+
+sub getHTML($){
+	my ($self) = @_;
+	$self->{sizing} = "fixed" unless $self->{sizing};
+	return $self->_getHTML_fixed() if $self->{sizing} eq "fixed";
+	return $self->_getHTML_flex();	
+};	
 	
 	
 sub dimensions($;$$){
-	my $self = shift;
+	my ($self,$width,$height) = @_;
+	$self->{sizing} = "fixed" unless $self->{sizing};
+	if($self->{sizing} eq "resizable") {
+		$self->{width} = $width if $width;
+		$self->{height} = $height if $height;
+	};
 	$self->{content} = "value" unless $self->{content};
 	# none: 17
 	# border: 19
@@ -57,15 +106,25 @@ sub dimensions($;$$){
 	# label => 34
 	# else icon => 28
 	# else 17
-
-	my $height = 17;
-	$height += 17 if $self->{content} eq "both";
-	$height += 17 if $self->{label};
-	$height = 28 if $height < 28 and $self->{icon};
-	$height += 2 if(not $self->{border} or $self->{border} eq "solid");	
-	return (main::AttrVal($self->{fuip}{NAME},"baseWidth",142), $height);
+	# do we have to determine the size?
+	# even if sizing is "auto", we at least determine an initial size
+	# either resizable and no size yet
+	# or fixed
+	if(not $self->{height} or $self->{sizing} eq "fixed") {
+		my $height = 17;
+		$height += 17 if $self->{content} eq "both";
+		$height += 17 if $self->{label};
+		$height = 28 if $height < 28 and $self->{icon};
+		$height += 2 if(not $self->{border} or $self->{border} eq "solid");	
+		$self->{height} = $height;
+	};	
+	if(not $self->{width} or $self->{sizing} eq "fixed") {
+		$self->{width} = main::AttrVal($self->{fuip}{NAME},"baseWidth",142);
+	};	
+	return ("auto","auto") if($self->{sizing} eq "auto");
+	return ($self->{width},$self->{height});
 };	
-	
+
 
 sub getStructure($) {
 	# class method
@@ -84,6 +143,10 @@ sub getStructure($) {
 		{ id => "unit", type => "unit" },	
 		{ id => "border", type => "text", options => [ "solid", "none" ], 
 			default => { type => "const", value => "solid" } }, 
+		{ id => "width", type => "dimension" },
+		{ id => "height", type => "dimension" },
+		{ id => "sizing", type => "sizing", options => [ "fixed", "auto", "resizable" ],
+			default => { type => "const", value => "fixed" } },	
 		{ id => "popup", type => "dialog", default=> { type => "const", value => "inactive"} }		
 		];
 };

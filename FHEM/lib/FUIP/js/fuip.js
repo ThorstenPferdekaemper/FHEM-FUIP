@@ -2131,8 +2131,8 @@ function valueHelpForUnit(fieldTitle, callbackFunction) {
 		[ 'Spannung','V','Volt'],
 		[ 'Stromst&auml;rke','mA','Milliampere'],
 		[ 'Stromst&auml;rke','A','Ampere'],
-		[ 'Temperatur','\u2103','Grad Celsius'],
-		[ 'Temperatur','\u2109','Grad Fahrenheit'],
+		[ 'Temperatur','°C','Grad Celsius'],  //'\u2103' is too tall
+		[ 'Temperatur','°F','Grad Fahrenheit'], //'\u2109' is too tall
 		[ 'Temperatur','K','Kelvin'],
 		[ 'Verh&auml;ltnis','%','Prozent'],
 		[ 'Verh&auml;ltnis','\u2030','Promille'],
