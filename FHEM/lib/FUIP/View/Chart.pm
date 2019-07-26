@@ -267,6 +267,13 @@ sub getHTML($){
 };
 	
 	
+sub getDevicesForValueHelp($) {
+	# Return devices with TYPE SVG
+	my ($fuipName) = @_;
+	return FUIP::_toJson(FUIP::Model::getDevicesForType($fuipName,"SVG"));
+}	
+	
+	
 sub getStructure($) {
 # class method
 # returns general structure of the view without instance values
@@ -274,7 +281,7 @@ sub getStructure($) {
 	my @timeranges = map {$_->[0]} @possibleTimeranges;
 	return [
 		{ id => "class", type => "class", value => $class },
-		{ id => "device", type => "device" },
+		{ id => "device", type => "device", filterfunc => "FUIP::View::Chart::getDevicesForValueHelp" },
 		{ id => "title", type => "text", default => { type => "field", value => "device"} },
 		{ id => "width", type => "dimension", value => 200},
 		{ id => "height", type => "dimension", value => 100 },

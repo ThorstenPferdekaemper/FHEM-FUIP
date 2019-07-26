@@ -96,6 +96,13 @@ sub reconstruct($$$) {
 	};	
 	return $self;
 };
+
+	
+sub getDevicesForValueHelp($) {
+	# Return devices with TYPE PROPLANTA
+	my ($fuipName) = @_;
+	return FUIP::_toJson(FUIP::Model::getDevicesForType($fuipName,"PROPLANTA"));
+}	
 	
 	
 sub getStructure($) {
@@ -104,7 +111,7 @@ sub getStructure($) {
 	my ($class) = @_;
 	return [
 		{ id => "class", type => "class", value => $class },
-		{ id => "device", type => "device" },
+		{ id => "device", type => "device", filterfunc => "FUIP::View::WeatherOverview::getDevicesForValueHelp" },
 		{ id => "title", type => "text", default => { type => "field", value => "device"} },
 		{ id => "startday", type => "text", 
 				options => [0,1,2,3,4,5,6,7,8,9,10,11,12,13],

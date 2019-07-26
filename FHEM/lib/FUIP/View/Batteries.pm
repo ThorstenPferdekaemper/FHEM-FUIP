@@ -241,6 +241,24 @@ sub reconstruct($$$) {
 };
 	
 	
+sub getDevicesForValueHelp($) {
+	# Return all devices which might appear in the view
+	# TODO: combine with _getDevices
+	my ($fuipName) = @_;
+	my %devices;
+	my @readings = qw(battery batteryLevel batVoltage batteryPercent Activity);
+	# TODO: deviceFilter?
+	# push(@readings,"Activity") if($deviceFilter eq "all");
+	for my $reading (@readings) {
+		for my $dev (@{FUIP::Model::getDevicesForReading($fuipName,$reading)}) {
+			$devices{$dev} = 1;
+		};	
+	};
+	my @result = keys %devices;
+	return FUIP::_toJson(\@result);
+};	
+	
+	
 sub getStructure($) {
 	# class method
 	# returns general structure of the view without instance values
@@ -250,7 +268,8 @@ sub getStructure($) {
 		{ id => "title", type => "text", default => { type => "const", value => "Batteries"} },
 		{ id => "deviceFilter", type => "text", options => [ "all", "battery"], 
 			default => { type => "const", value => "all" } }, 
-		{ id => "exclude", type => "devices", default => { type => "const", value => [] } },	
+		{ id => "exclude", type => "devices", default => { type => "const", value => [] }, 
+					filterfunc => "FUIP::View::Batteries::getDevicesForValueHelp" },	
 		{ id => "width", type => "dimension" },
 		{ id => "height", type => "dimension" },
 		{ id => "sizing", type => "sizing", options => [ "fixed", "auto", "resizable" ],

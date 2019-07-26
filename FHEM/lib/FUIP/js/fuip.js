@@ -1166,7 +1166,18 @@ async function asyncPostImportCommand(content,type,pageid) {
 		}).done(resolve);
 	});	
 };
-					
+		
+
+async function callBackendFunc(funcname,args) {
+	let argstr = '"' + $("html").attr("data-name") + '"';
+	if(args.length) {
+		argstr += ',"' + args.join('","') + '"';
+	};	
+	let cmd = '{' + funcname + '(' + argstr + ')}';
+	let result = await sendFhemCommandLocal(cmd);	
+	return json2object(result);	
+};	
+		
 					
 async function autoArrange() {
 	let name = $("html").attr("data-name");
@@ -1271,7 +1282,8 @@ async function acceptSettings(doneFunc) {
 		value = '"' + value + '"'; 
 		cmd += " " + $(this).attr("id") + "=" + value;
 		// is this a flex field?
-		if($(this).attr("data-flexfield") == "1") {
+		let settings = $(this).data("settings");
+		if(settings && settings.hasOwnProperty("flexfield") && settings.flexfield == "1") {
 			let id = $(this).attr('id');
 			let parts = id.split('-');
 			let name = parts.pop();
@@ -1282,18 +1294,27 @@ async function acceptSettings(doneFunc) {
 				flexfields[flexfieldsId] = name;
 			};
 			// flex field attributes
-			for (let attribute of ["type", "default-type", "default-value", "default-suffix"]) {
-				let val = $(this).attr("fuip-" + attribute);
-				if(typeof val !== "undefined") cmd += ' ' + id + '-' + attribute + '="' + val + '"';	
+			// field type
+			if(settings.hasOwnProperty("fieldType")) {
+				cmd += ' ' + id + '-type="' + settings.fieldType + '"';
+			};	
+			// default settings
+			if(settings.hasOwnProperty("default")) {
+				let defaultSettings = settings.default;
+				for (let attribute of ["type", "value", "suffix"]) {
+					if(defaultSettings.hasOwnProperty(attribute)) {
+						cmd += ' ' + id + '-default-' + attribute + '="' + defaultSettings[attribute] + '"';
+					};	
+				};
 			};
-			for (let attribute of ["refdevice", "refset", "options"]) {
-				let val = $(this).attr("data-" + attribute);
-				if(typeof val !== "undefined") cmd += ' ' + id + '-' + attribute + '="' + val + '"';	
+			// reffields
+			for (let attribute of ["refdevice", "refset"]) {
+				if(settings.hasOwnProperty(attribute)) {
+					cmd += ' ' + id + '-' + attribute + '="' + settings[attribute] + '"';
+				};	
 			};
-			let val = $(this).attr("data-options");
-			if(typeof val !== "undefined"){
-				val = json2object(val);
-				cmd += ' ' + id + '-options="' + val.join(',') + '"';	
+			if(settings.hasOwnProperty("options")) {
+				cmd += ' ' + id + '-options="' + settings.options.join(',') + '"';
 			};	
 		};	
 	});
@@ -1414,9 +1435,9 @@ function viewAddKnownToArray(arrayName,viewSettings,title) {
 	var length = parseInt(accordion.attr('data-length'));
 	var nextindex = parseInt(accordion.attr('data-nextindex'));
 	var elemName = arrayName + '-' + nextindex;
-	var html = '<div class="group" id="' + elemName + '"><h3>';
-	html += 'New ' + title + '</h3><div>' + createSettingsTable(viewSettings, elemName + '-') + '</div>';
-	accordion.append(html);
+	let newEntry = $('<div class="group" id="' + elemName + '"><h3>New ' + title + '</h3></div>');
+	newEntry.append(createSettingsTable(viewSettings, elemName + '-'));
+	accordion.append(newEntry);
 	accordion.attr('data-length',length+1);
 	accordion.attr('data-nextindex',nextindex+1);
 	accordion.accordion('refresh');
@@ -1496,11 +1517,11 @@ function inputChanged(inputElem,influencedFields) {
 	for(let i = 0; i < influencedFields.length; i++) {
 		// get influenced field
 		let infField = $('#' + influencedFields[i]);
+		let settings = infField.data("settings");
 		// does it have a "depends"?
-		let depFieldName = infField.attr("data-depends-field");
-		if(!depFieldName) continue;
-		let depValue = infField.attr("data-depends-value");
-		if(depValue == $(inputElem).val()) {
+		if(!settings.hasOwnProperty("depends")) 
+			return;
+		if(settings.depends.value == $(inputElem).val()) {
 			infField.closest("tr").css("display","");	
 		}else{
 			infField.closest("tr").css("display","none");	
@@ -1653,10 +1674,10 @@ function classChanged(classField) {
 				classChangedCopyOldValue(settings[i],oldValues,fieldName);
 			};	
 		};
-		var html = '<h3>';
-		var title = 'New ' + classField.value;
-		html += title + '</h3><div>' + createSettingsTable(settings, elemName + '-') + '</div>';
-		settingsDialog.html(html);
+		let newContent = [ $('<h3>New ' + classField.value + '</h3>'),
+						$('<div/>').append(createSettingsTable(settings, elemName + '-')) ];
+		settingsDialog.empty();
+		settingsDialog.append(newContent);
 		var accordion = settingsDialog.parent();
 		var active = accordion.accordion('option','active');
 		accordion.accordion('refresh');
@@ -1781,8 +1802,12 @@ function valueHelpFilterRoom(e, n, f, i, $r, c, data) {
 
 // determine full reference field name (e.g. from refdevice for field type set)	
 function getFullRefName(fieldname,reftype) {	
-	var shortRefName = $('#'+fieldname).attr("data-"+reftype);  // this is the short name
-	if(!shortRefName) { return false; };
+	let settings = $('#'+fieldname).data("settings");
+	if(!settings.hasOwnProperty(reftype)) 
+		return false;
+	let shortRefName = settings[reftype];
+	if(!shortRefName) 
+		return false; 
 	var nameArray = fieldname.split("-").slice(0,-1);
 	nameArray.push(shortRefName);
 	return nameArray.join("-");
@@ -1989,7 +2014,108 @@ async function valueHelp(fieldName,type) {
 };	
 
 
-function valueHelpForDevice(fieldTitle, callbackFunction, multiSelect) {
+function createValueHelpTable(tabDef,selected,multiSelect) {
+// create the table for value help
+// tabDef has the following structure:
+//	colDef: table of 
+//		title: text, optional if type is set	
+//		type: optional, if set then "type" or "rooms"
+//		display: "none", "always" or "ifDifferent" 
+//	keyCol: number of column which contains the key
+//	rowData: table of table of values 
+//			the inner table must have as many entries as colDef	
+
+	let valueDialog = $( "#valuehelp" );
+//	TODO: implement colDef.display = ifDifferent/always
+//	TODO: implement colDef.type	(type, rooms)
+	let table = $("<table id='valuehelptable' class='tablesorter' />");
+	let headerRow = $("<tr />");
+//  by default, the first field is the key field
+	if(!tabDef.hasOwnProperty("keyCol"))
+		tabDef.keyCol = 0;	
+	for(let i = 0; i < tabDef.colDef.length;i++) {
+		let col = tabDef.colDef[i];
+		col.maxLength = 0;
+		if(!col.hasOwnProperty("display")) 
+			col.display = "ifDifferent";
+		if(!col.hasOwnProperty("type")) 
+			col.type = "";
+		if(!col.hasOwnProperty("title")) {
+			switch(col.type) {
+				case "type": col.title = "Type"; break;
+				case "rooms": col.title = "Room(s)"; break;
+				default: col.title = "";
+			};	
+		};
+		if(col.display == "none") 
+			continue;
+		headerRow.append($("<th>"+col.title+"</th>"));
+	};	
+	table.append($("<thead />").append(headerRow));
+	// now the table has <thead>, but no <tbody>
+	let tbody = $("<tbody />");
+	// append row data
+	for(let i = 0; i < tabDef.rowData.length; i++){
+		let row = tabDef.rowData[i];
+		// is this row selected?
+		let keyValue = row[tabDef.keyCol];
+		let isSel = '';
+		if(selected.indexOf(keyValue) > -1) 
+			isSel = 'X';
+		let bodyRow = $("<tr id='valuehelp-row-"+i+"' data-selected='"+isSel+"' data-key='"+keyValue+"' />");
+		// add fields
+		for(let j = 0; j < tabDef.colDef.length; j++) {
+			if(tabDef.colDef[j].display == "none") 
+				continue;
+			if(tabDef.colDef[j].type == "rooms" && !row[j])
+				row[j] = "unsorted";
+			let field = $("<td>"+row[j]+"</td>");	
+			if(isSel)
+				field.css({background:'#F39814',color:'black'});
+			bodyRow.append(field);
+			// determine width of the popup
+			if(tabDef.colDef[j].maxLength < row[j].length)
+				tabDef.colDef[j].maxLength = row[j].length;
+		};
+		tbody.append(bodyRow);		
+	};
+	table.append(tbody);
+	// determine width
+	let width = tabDef.colDef.reduce((total,entry) => total + entry.maxLength);
+	if(width < 10) width = 10;
+	if(width > 80) width = 80;
+	width *= 10;
+	valueDialog.dialog("option","width",width);
+	valueDialog.dialog("option","height",500);			
+	valueDialog.empty();
+	valueDialog.append(table);
+	table.tablesorter({
+		theme: "blue",
+		widgets: ["filter"],
+	});
+	table.find("tbody tr").on( "click", function() {
+		if(multiSelect) {
+			if($(this).attr('data-selected') == 'X') {
+				$(this).attr('data-selected','');
+				$(this).children("td").removeAttr("style"); 	
+			}else{
+				$(this).attr('data-selected','X');
+				$(this).children("td").attr("style", "background:#F39814;color:black;");
+				};				
+		}else{  // single select
+			$("tr[data-selected='X']").each(function(){
+				$(this).attr('data-selected','');
+				$(this).children("td").removeAttr("style"); 							
+			});
+			$(this).attr('data-selected','X');					
+			$(this).children("td").attr("style", "background: #F39814;color:black;");
+		};	
+	});
+};	
+
+
+
+async function valueHelpForDevice(fieldTitle, callbackFunction, multiSelect) {
 	var name = $("html").attr("data-name");
 	createValueHelpDialog(function(){
 		var resultArray = [];
@@ -2007,9 +2133,32 @@ function valueHelpForDevice(fieldTitle, callbackFunction, multiSelect) {
 	valueDialog.dialog("option","title","Possible values for " + fieldTitle); 
 	valueDialog.html("Please wait...");
 	valueDialog.dialog("open");
+	// do we have a device filter from the view?
+	let field = $("#"+fieldTitle);
+	let allDevices = true;
+	let deviceFilter = [];
+	if(field.length) {
+		let fieldSettings = field.data("settings");
+		if(fieldSettings && fieldSettings.hasOwnProperty("filterfunc")) {
+			deviceFilter = await callBackendFunc(fieldSettings.filterfunc,[]);
+			allDevices = false;
+		};
+	};	
+	
 	var cmd = "get " + name + " devicelist";
 	sendFhemCommandLocal(cmd).done(function(deviceListJson){
 		var deviceList = json2object(deviceListJson);
+		// filter, if needed
+		// TODO: in principle, we only need to get the filter list details, 
+		//       i.e. not all devices when filtered
+		if(!allDevices) {
+			let fullList = deviceList;
+			deviceList = [];
+			for(let i = 0; i < fullList.length; i++){
+				if(deviceFilter.indexOf(fullList[i].NAME) > -1)
+					deviceList.push(fullList[i]);	
+			};	
+		};
 		var valueDialog = $( "#valuehelp" );
 		// check whether alias is used at all
 		var aliasUsed = false;
@@ -2201,7 +2350,7 @@ function valueHelpForUnit(fieldTitle, callbackFunction) {
 };
 
 
-function valueHelpForOptions(fieldName, callbackFunction,multiSelect) {
+async function valueHelpForOptions(fieldName, callbackFunction,multiSelect) {
 	var name = $("html").attr("data-name");
 	createValueHelpDialog(function(){
 		var resultArray = [];
@@ -2221,64 +2370,63 @@ function valueHelpForOptions(fieldName, callbackFunction,multiSelect) {
 	valueDialog.dialog("open");
 	
 	var innerValueHelp = function(fName,options) {
-		var valueDialog = $( "#valuehelp" );
-		var html = "<table id='valuehelptable'><thead><tr><th>Name</th></tr></thead>";
-		html += "<tbody>";
 		// which of the options are set?
 		// the following is partially for compatibility with earlier versions
-		var selected = json2object($("#"+fName).val());
+		let selected = json2object($("#"+fName).val());
 		if(!(selected instanceof Array)) {
 			// new coding (also works for single selection)
 			selected = $("#"+fName).val().split(",");
 		};	
-		for(var i = 0; i < options.length; i++){
-			var isSel = '';
-			var style = '';
-			if(selected.length == 0 || selected.indexOf(options[i]) > -1) {
-				isSel = 'X';
-				style = " style='background:#F39814;color:black;'";
-			};	
-			html += "<tr id='valuehelp-row-"+i+"' data-selected='"+isSel+"' data-key='"+options[i]+"'><td"+style+">"+options[i]+"</td></tr>";
-		};
-		html += "</tbody></table>";
-		valueDialog.dialog("option","width",120);
-		valueDialog.dialog("option","height",300);			
-		valueDialog.html(html);
-		$( "#valuehelptable tbody tr" ).on( "click", function() {
-			if(multiSelect) {
-				if($(this).attr('data-selected') == 'X') {
-					$(this).attr('data-selected','');
-					$(this).children("td").removeAttr("style"); 	
-				}else{
-					$(this).attr('data-selected','X');
-					$(this).children("td").attr("style", "background: #F39814;color:black;");
+		let tabDef;
+		if(options.hasOwnProperty("colDef")) {
+			tabDef = options;
+		}else{	
+			tabDef = {
+				colDef : [ 	{ display: "none" },
+							{ title: "Name" } ],
+				rowData : [] };				
+			for(var i = 0; i < options.length; i++){
+				let option = options[i];
+				if(typeof option === 'object') {
+					tabDef.rowData.push([option.value,option.label]);
+				}else{	
+					tabDef.rowData.push([option,option]);
 				};
-			}else{  // single select
-					$("tr[data-selected='X']").each(function(){
-						$(this).attr('data-selected','');
-						$(this).children("td").removeAttr("style"); 							
-					});
-					$(this).attr('data-selected','X');					
-					$(this).children("td").attr("style", "background: #F39814;color:black;");					
-			};				
-		});		
+			};
+		};	
+		createValueHelpTable(tabDef,selected,multiSelect);
 	};	
 	
 	// get set name and device name
-    var refSetFullName = getFullRefName(fieldName,"refset");
-	if(refSetFullName) {  // i.e. we have a "refset"
-		var refDeviceFullName = getFullRefName(refSetFullName, "refdevice");
-		var cmd = "get " + name + " sets " + $("#"+refDeviceFullName).val();
-		sendFhemCommandLocal(cmd).done(function(json){
-			var sets = json2object(json);
-			innerValueHelp(fieldName,sets[$("#"+refSetFullName).val()]);
-		});
+	// reference function to call? (Get options from backend function.)
+	let settings = $('#'+fieldName).data("settings");
+	if(settings.hasOwnProperty("reffunc")) {
+		let args = [];
+		if(settings.hasOwnProperty("refparms")) {
+			for(let i = 0; i < settings.refparms.length; i++) {
+				let nameArray = fieldName.split("-").slice(0,-1);
+				nameArray.push(settings.refparms[i]);
+				let fullRefName = nameArray.join("-");
+				args.push($("#"+fullRefName).val());
+			};	
+		};	
+		let opts = await callBackendFunc(settings.reffunc,args);
+		innerValueHelp(fieldName,opts);
 	}else{
-		// fixed list of options?
-		var opts = $('#'+fieldName).attr("data-options");
-		if(opts) {
-			innerValueHelp(fieldName,json2object(opts));
-		};		
+		var refSetFullName = getFullRefName(fieldName,"refset");
+		if(refSetFullName) {  // i.e. we have a "refset"
+			var refDeviceFullName = getFullRefName(refSetFullName, "refdevice");
+			var cmd = "get " + name + " sets " + $("#"+refDeviceFullName).val();
+			sendFhemCommandLocal(cmd).done(function(json){
+				var sets = json2object(json);
+				innerValueHelp(fieldName,sets[$("#"+refSetFullName).val()]);
+			});
+		}else{
+			// fixed list of options?
+			if(settings.hasOwnProperty("options")) {
+				innerValueHelp(fieldName,settings.options);
+			};		
+		};
 	};	
 };	
 
@@ -2322,6 +2470,7 @@ function hasValueHelp(settings,fieldNum) {
 	// setoption(s) need options or refset, which in turn has a refdevice 
 	if(field.type == "setoption" || field.type == "setoptions") {	
 		if(field.hasOwnProperty("options")) return true;
+		if(field.hasOwnProperty("reffunc")) return true;
 		if(!field.hasOwnProperty("refset")) return false;
 		// find refset field
 		for(let refsetfield of settings) {
@@ -2376,92 +2525,77 @@ function createField(settings, fieldNum, component,prefix) {
 		influencedFields[i] = prefix + influencedFields[i];
 	};
 	var fieldNameInBrackets = '"' + fieldName + '"';
-	var result = "<input type='checkbox' id='" + fieldName + "-check' style='visibility: " + checkVisibility + ";'" 
+	// the result is an array of JQuery elements
+	let result = $("<td style='text-align:left;' />");
+	// 1. element: the "default" checkbox (always there, but might be hidden)
+	result.append($("<input type='checkbox' id='" + fieldName + "-check' style='visibility: " + checkVisibility + ";'" 
 			+ ' title="change (don\'t use default)"'
-			+ checkValue + " onchange='defaultCheckChanged(" + fieldNameInBrackets + "," + defaultDef + ",\"" + field.type + "\")'>";
+			+ checkValue + " onchange='defaultCheckChanged(" + fieldNameInBrackets + "," + defaultDef + ",\"" + field.type + "\")'>"));
 	// popups are a bit special
+	// in this case, the second element is just a pushbutton with not much else
 	if(field.type == "dialog" && (checkValue || !fieldComp.hasOwnProperty("default"))) {
-		$(function() {
-			$('#' + fieldName).button({
+		let popupMaintButton = $("<button id='" + fieldName + "' type='button' " +
+				"onclick='acceptSettings(function() { callPopupMaint(\""+fieldName+"\");})'" +
+				">Configure popup</button>");
+		popupMaintButton.button({
 				icon: 'ui-icon-pencil',
 				showLabel: true
-			});		
 		});		
-		result += "<button id='" + fieldName + "' type='button' " +
-				"onclick='acceptSettings(function() { callPopupMaint(\""+fieldName+"\");})'" +
-				">Configure popup</button>";
-		return result;		
+		result.append(popupMaintButton);
+		return [result];
 	};
 
+	// 2. element: the field itself (textarea, select or input) always there	
+	let theFieldElem;
 	if(field.type == "longtext") {
-		result += "<textarea rows='5' cols='50' name='" + fieldName + "' id='" + fieldName + "' " 
+		theFieldElem = $("<textarea rows='5' cols='50' name='" + fieldName + "' id='" + fieldName + "' " 
 			+ fieldStyle + " oninput='inputChanged(this," + JSON.stringify(influencedFields) +")' >"
-			+ fieldValue + "</textarea>";
+			+ fieldValue + "</textarea>");
 	// special case of sizing fixed to "resizable" (or any other single value)		
 	}else if(field.type == "sizing" && fieldComp.hasOwnProperty("options") && fieldComp.options.length == 1){		
-		result += "<input type='text'";
-		result += " name='" + fieldName + "' id='" + fieldName + "' ";
-		result += "value='" + fieldComp.options[0] + "' style='visibility: visible;background-color:#EBEBE4;width:79px' readonly >";
+		theFieldElem = $("<input type='text'"
+						+ " name='" + fieldName + "' id='" + fieldName + "' "
+				+ "value='" + fieldComp.options[0] + "' style='visibility: visible;background-color:#EBEBE4;width:79px' readonly >");
 	}else{
 		if(fieldComp.hasOwnProperty("options") && field.type != "setoptions" && field.type != "setoption"){
-			result += "<select class='fuip'";
+			theFieldElem = $("<select class='fuip' " + fieldStyle + " />");
 			if(fieldComp.hasOwnProperty("default") && parseInt(fieldComp.default.used)) {
-				result += " disabled";
+				theFieldElem.attr("disabled","disabled");
+			};	
+			for(var i = 0; i < fieldComp.options.length; i++) {
+				let optionElem = $("<option class='fuip' value='" + fieldComp.options[i] + "'>" + fieldComp.options[i] + "</option>");
+				if(fieldComp.options[i] == fieldValue) {
+					optionElem.attr("selected","selected");
+				};
+				theFieldElem.append(optionElem);	
 			};	
 		}else{
-			result += "<input type='text'";
+			theFieldElem = $("<input type='text' " + fieldStyle + " />");
 		};		
-		result += " name='" + fieldName + "' id='" + fieldName + "' ";
-		if(fieldComp.hasOwnProperty("refdevice")){
-			result += "data-refdevice='" + fieldComp.refdevice + "' ";
-		};	
-		if(fieldComp.hasOwnProperty("refset")){
-			result += "data-refset='" + fieldComp.refset + "' ";
-		};	
-		if(fieldComp.hasOwnProperty("options")) {
-			result += "data-options='"+JSON.stringify(fieldComp.options)+"' ";
-		};	
-		if(fieldComp.hasOwnProperty("flexfield")) {
-			result += "data-flexfield='" + fieldComp.flexfield + "' "
-					+ "fuip-type='" + field.type + "' ";
-			if(fieldComp.hasOwnProperty("default")) {
-				for (let attribute of ["type", "value", "suffix"]) {
-					if(fieldComp.default.hasOwnProperty(attribute)) {
-						result += "fuip-default-" + attribute + "='" + fieldComp.default[attribute] + "' ";
-					};	
-				};	
-			};	
-		};	
+		theFieldElem.attr({name: fieldName, id: fieldName});
+		// add the settings object
+		fieldComp.fieldType = field.type;
+		theFieldElem.data("settings",fieldComp);
+		// set attributes for "dependent" fields 
 		if(fieldComp.hasOwnProperty("depends")) {
-			result += "data-depends-field='" + fieldComp.depends.field + "' data-depends-value='" + fieldComp.depends.value + "' ";
-			let fName = prefix + fieldComp.depends.field;		
 			$(function() {
-				inputChanged($('#'+fName),[fieldName]);
+				inputChanged($('#' + prefix + fieldComp.depends.field),[fieldName]);
 			});
 		};	
-		result += "value='" + fieldValue + "' " 
-				+ fieldStyle + " oninput='inputChanged(this," + JSON.stringify(influencedFields) +")' >";
-		// are there options to show? (dropdown)
-		if(fieldComp.hasOwnProperty("options") && field.type != "setoptions" && field.type != "setoption"){
-			for(var i = 0; i < fieldComp.options.length; i++) {
-				result += "<option ";
-				if(fieldComp.options[i] == fieldValue) {
-					result += "selected ";
-				};	
-				result += "class='fuip' value='" + fieldComp.options[i] + "'>" + fieldComp.options[i] + "</option>";
-			};	
-			result += "</select>";
-		};	
+		theFieldElem.attr({value: fieldValue, oninput: 'inputChanged(this,' + JSON.stringify(influencedFields) +')' });
 	};	
+	result.append(theFieldElem);
+	// 3. element: value help (optional)
 	// do we have a value help?
 	if(hasValueHelp(settings,fieldNum)) {
-		result += '<span id="' + fieldName + '-value" class="ui-icon ui-icon-triangle-1-s" onclick="valueHelp(\''+fieldName+'\',\''+field.type+'\')" title="Possible values" style="background-color:#F6F6F6;border: 1px solid #c5c5c5;color:#454545;'; 
+		let valueHelpElem = $('<span id="' + fieldName + '-value" class="ui-icon ui-icon-triangle-1-s" onclick="valueHelp(\''+fieldName+'\',\''+field.type+'\')" title="Possible values" style="background-color:#F6F6F6;border: 1px solid #c5c5c5;color:#454545;" />');; 
 		// value help invisible?
 		if(checkVisibility == "visible" && checkValue != " checked") {
-			result += "visibility:hidden;";
+			valueHelpElem.css("visibility","hidden");
 		};	
-		result += '"></span>';
+		result.append(valueHelpElem);
 	};	
+	// 4./5. element: sizing fields (width/height) optional
 	// for sizing fields, add width and height (if resizable)
 	// TODO: do we need proper default values?
 	if(field.type == "sizing") {
@@ -2475,19 +2609,19 @@ function createField(settings, fieldNum, component,prefix) {
 				height = settings[i].value;
 			};	
 		};
-		result += "<input type='text' style='margin-left:5px;width:35px;' name='" + prefix + "width' id='" + prefix + "width' ";
-		result += "value='" + width + "'>";
-		result += "<span id='"+fieldName+"-x'>x</span>";
-		result += "<input type='text' style='width:35px;' name='" + prefix + "height' id='" + prefix + "height' ";
-		result += "value='" + height + "'>";
+		result.append($("<input type='text' style='margin-left:5px;width:35px;' name='" + prefix + "width' id='" + prefix + "width' value='" + width + "'>"));
+		result.append($("<span id='"+fieldName+"-x'>x</span>"));
+		result.append($("<input type='text' style='width:35px;' name='" + prefix + "height' id='" + prefix + "height' value='" + height + "'>"));
+		theFieldElem.on("input",function() {
+			sizingChanged(fieldName,prefix+"width",prefix+"height");
+		});
 		$(function() {
-			$("#"+fieldName).on("input",function() {
-				sizingChanged(fieldName,prefix+"width",prefix+"height");
-			});
 			sizingChanged(fieldName,prefix+"width",prefix+"height");
 		});	
 	};	
+	// 6./7. element: variable definition for view templates
 	// if this is a view template, add variable definition
+	result = [ result ];
 	if($("html").attr("data-viewtemplate") && field.type != "sizing" && field.type != "dialog" && fieldName != "title" && field.type != "longtext") {
 		let checkValue = "";
 		let value;
@@ -2496,12 +2630,12 @@ function createField(settings, fieldNum, component,prefix) {
 			value = fieldComp.variable;
 		}else{
 			 value = fieldNameWoPrefix.replace(/-/g, "_");
-		};	 
-		result += "\n</td><td style='text-align:left;white-space:nowrap;'>" +
-					"\n<input type='checkbox' id='" + fieldName + "-varcheck' title='make this a variable'" 
+		};
+		result[1] = $("<td />");	
+		result[1].append($("<input type='checkbox' id='" + fieldName + "-varcheck' title='make this a variable'" 
 					+ checkValue 
-					+ " onchange='varCheckChanged(\"" + fieldName + "\")'>" +
-					"\n<input type='text' id='" + fieldName + "-variable' value='" + value + "'>";	
+					+ " onchange='varCheckChanged(\"" + fieldName + "\")'>"));
+		result[1].append($("<input type='text' id='" + fieldName + "-variable' value='" + value + "'>"));	
 		$(function(){varCheckChanged(fieldName)});				
 	};
 	return result;
@@ -2511,32 +2645,31 @@ function createField(settings, fieldNum, component,prefix) {
 function createViewArray(field,prefix) {
     var items = field.value;
 	// the current number of items and the (so far) highest item number is stored in the accordion itself
-	var result = '<table><tr><td class="ui-widget-content" style="border-width: 1px;"><div id="' + prefix + field.id + '-accordion" data-length="' + items.length + '" data-nextindex="' + items.length + '">';
+	let accordion = $('<div id="' + prefix + field.id + '-accordion" data-length="' + items.length + 
+						'" data-nextindex="' + items.length + '">');
 	for(var i = 0; i < items.length; i++) {
-		result += '<div class="group" id="' + prefix + field.id + '-' + i + '"><h3>';
-		var title = '' + i + ' ';
-		for(var j = 0; j < items[i].length; j++) {
+		let entry = $('<div class="group" id="' + prefix + field.id + '-' + i + '" />');
+		let title = '' + i + ' ';
+		for(let j = 0; j < items[i].length; j++) {
 			if(items[i][j].id == 'title') {
 				title = items[i][j].value;
 				break;
 			};								
 		};
-		var fieldNameWithTicks = "'" + prefix + field.id + '-' + i + "'";
-		result += title + '<button id="' + prefix + field.id + '-' + i + '-delete" onclick="viewDeleteFromArray('+fieldNameWithTicks+')" type="button" style="position:absolute;right:0;">Delete view from ' + field.id + '</button></h3><div>' + createSettingsTable(items[i], prefix + field.id + '-' + i + '-') + '</div></div>';
-		$(function() {
-			for(var j = 0; j < items.length; j++) {
-				$('#' + prefix + field.id + '-' + j + '-delete').button({
+		let titleElem = $('<h3>' + title + '</h3>');
+		let fieldNameWithTicks = "'" + prefix + field.id + '-' + i + "'";
+		let button = $('<button id="' + prefix + field.id + '-' + i + '-delete" onclick="viewDeleteFromArray('+fieldNameWithTicks+')" type="button" style="position:absolute;right:0;">Delete view from ' + field.id + '</button>');
+		button.button({
 					icon: 'ui-icon-trash',
 					showLabel: false
 				});		
-			};
-		});
+		titleElem.append(button);
+		entry.append(titleElem);
+		entry.append($('<div/>').append(createSettingsTable(items[i], prefix + field.id + '-' + i + '-')));
+		accordion.append(entry);
 	};
-	result += '</div></td></tr></table>';
 	// make this a JQuery Accordion
-	$( function() {
-		$( "#" + prefix + field.id + "-accordion" )
-			.accordion({
+	accordion.accordion({
 				header: "> div > h3",
 				collapsible: true,
 				active: false,
@@ -2552,10 +2685,11 @@ function createViewArray(field,prefix) {
 						// Refresh accordion to handle new order
 						$( this ).accordion( "refresh" ); 
 					  } 
-			});
-		$(".ui-accordion-content").css("padding-left","10px").css("padding-right","10px");
-		$(".ui-accordion").css("min-width","350px");	
-	});
+			});	
+	let result = $('<table/>').append($('<tr/>').append($('<td class="ui-widget-content" style="border-width: 1px;" />').append(accordion)));
+	// some formatting 
+	accordion.find(".ui-accordion-content").css("padding-left","10px").css("padding-right","10px");
+	accordion.css("min-width","350px");	
 	return result;
 };
 					
@@ -2741,14 +2875,15 @@ function createSettingsTable(settings,prefix) {
 	addFieldsFromHtmlView(settings);
 	// do the defaulting
 	setDefaults(settings);
-	var html = "<table>";
+	let resultTab = $("<table/>");
+	let vArray = false;
 	for(var i = 0; i < settings.length; i++){
 		if(settings[i].type != 'class') { continue; }; 
 		if(	settings[i].value == 'FUIP::Cell' || 
 			settings[i].value == 'FUIP::Page' || 
 			settings[i].value == 'FUIP::Dialog' ||
 			settings[i].value == 'FUIP::ViewTemplate') { break; };
-		html += createClassField(settings[i].value,prefix);
+		resultTab.append($(createClassField(settings[i].value,prefix)));
 		break;
 	};
 	for(var i = 0; i < settings.length; i++){
@@ -2756,28 +2891,32 @@ function createSettingsTable(settings,prefix) {
 		if(settings[i].type == 'dimension') { continue; };
 		if(settings[i].type == 'variables') { continue; };
 		if(settings[i].type == 'flexfields') { continue; };
-		let fieldName = prefix + settings[i].id;		
+		let fieldName = prefix + settings[i].id;	
+		let html = "";	
 		switch(settings[i].type) {
 			case 'device-reading':
-				html += "<tr><td";
-				if($("html").attr("data-viewtemplate")) html += ' rowspan="2"'; 
-				html += " style='text-align:left'><label for='" + fieldName + "'>" + settings[i].id + "</label></td><td style='text-align:left;white-space:nowrap;'>";
-				html += createField(settings, i, ["device"],prefix) + '</td>';
+				let labelHtml = "<td";
+				if($("html").attr("data-viewtemplate")) labelHtml += ' rowspan="2"'; 
+				labelHtml += " style='text-align:left'><label for='" + fieldName + "'>" + settings[i].id + "</label></td>";
+				let deviceElem = createField(settings, i, ["device"],prefix);
+				deviceElem[0].css("white-space","nowrap");
+				let readingElem = createField(settings, i, ["reading"],prefix)
+				readingElem[0].css("white-space","nowrap");
 				if($("html").attr("data-viewtemplate")) {
-					html += '</tr><tr>';
-				};
-				html += '<td style="text-align:left;white-space:nowrap;">' + createField(settings, i, ["reading"],prefix);
+					resultTab.append($('<tr />').append([$(labelHtml),...deviceElem]));
+					resultTab.append($('<tr />').append(readingElem));
+				}else{
+					resultTab.append($('<tr />').append([$(labelHtml),...deviceElem,...readingElem]));
+				};	
 				break;
 			case 'viewarray':
-				html += '</table>';
-				html += '<div style="text-align:left;">';
+				html = '<div style="text-align:left;">';
 				var fieldNameInTicks = '"' + fieldName + '"'; 
 				html += '<div id="fuip-viewarraybuttons" style="margin-top:10px;margin-left:20px;">' + 
 					"<button id='" + fieldName + "-add' onclick='viewAddNewToArray("+fieldNameInTicks+")' type='button' title='Add view'>Add view</button>" + 
 					"<button id='" + fieldName + "-addByDevice' onclick='viewAddNewByDevice("+fieldNameInTicks+")' type='button' title='Add views by device'>Add views by device</button>" 
-					+ '</div>';
-				html += createViewArray(settings[i],prefix) 
-						+ '</div><table>';
+					+ '</div></div>';
+				vArray = $(html).append(createViewArray(settings[i],prefix));
 				// make the button a jquery ui button
 				$(function() {
 					$('#' + fieldName + '-add').button({
@@ -2794,15 +2933,18 @@ function createSettingsTable(settings,prefix) {
 				});
 				break;
 			default:
-				html += "<tr><td style='text-align:left'><label for='" + fieldName + "'>" + settings[i].id + "</label></td><td style='text-align:left'";
-				if(settings[i].type == "longtext") html += ' colspan="4"';
-				html += ">";
-				html += createField(settings, i,[],prefix);
+				let labelElem = $("<td style='text-align:left'><label for='" + fieldName + "'>" + settings[i].id + "</label></td>");
+				let fieldElem = createField(settings, i,[],prefix);
+				if(settings[i].type == "longtext") fieldElem[0].attr("colspan","4");
+				let rowElem = $('<tr />').append(labelElem).append(fieldElem);
+				resultTab.append(rowElem);
 		};
-		html += "</td></tr>";
 	};
-	html += "</table>";
-	return html;
+	if(vArray) {
+		return [resultTab,vArray];
+	}else{
+		return resultTab;
+	};	
 };
 
 
@@ -2916,7 +3058,8 @@ function changeSettingsDialog(settingsJson,type,cellid,fieldid) {
 			title += type + " ???";
 	};		
 	var settings = json2object(settingsJson);
-	var html = "<form onsubmit='return false'>" + createSettingsTable(settings,"") + "</form>";
+	settingsDialog.empty();
+	settingsDialog.append($("<form onsubmit='return false' />").append(createSettingsTable(settings,"")));
 	for(var i = 0; i < settings.length; i++){
 		if(settings[i].id == "title") {
 			title += " (" + settings[i].value + ")"; 
@@ -2924,7 +3067,6 @@ function changeSettingsDialog(settingsJson,type,cellid,fieldid) {
 		};			
 	};
 	settingsDialog.dialog("option","title",title); 
-	settingsDialog.html(html);
 	var buttons = 
 		[{
 			text: 'Ok',
@@ -3145,8 +3287,8 @@ function toggleCellPage() {
 		var cmd = "get " + $("html").attr("data-name") + " pagesettings " + $("html").attr("data-pageid");
 		sendFhemCommandLocal(cmd).done(function(settingsJson){
 			var settings = json2object(settingsJson);
-			var html = "<form onsubmit='return false'>" + createSettingsTable(settings,"") + "</form>";
-			settingsDialog.html(html);
+			settingsDialog.empty();
+			settingsDialog.append($("<form onsubmit='return false' />").append(createSettingsTable(settings,"")));
 		});	
 	};
 };	

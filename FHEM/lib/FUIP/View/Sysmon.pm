@@ -43,7 +43,13 @@ sub dimensions($;$$){
 	return (650, 116);
 };	
 
-	
+
+sub getDevicesForValueHelp($) {
+	# Return devices with TYPE WeekdayTimer
+	my ($fuipName) = @_;
+	return FUIP::_toJson(FUIP::Model::getDevicesForType($fuipName,"SYSMON"));
+}		
+
 	
 sub getStructure($) {
 	# class method
@@ -51,7 +57,7 @@ sub getStructure($) {
 	my ($class) = @_;
 	return [
 		{ id => "class", type => "class", value => $class },
-		{ id => "device", type => "device" },
+		{ id => "device", type => "device", filterfunc => "FUIP::View::Sysmon::getDevicesForValueHelp" },
 		{ id => "title", type => "text", default => { type => "field", value => "device"} }	];
 };
 

@@ -5,6 +5,35 @@
 </head> 
 <body>
 <h1>FUIP News</h1>
+<h2>26.07.2019</h2>
+<h3>Neuer View "HueSceneSelect" zum Auswählen von Hue-Szenen</h3>
+Der View HueSceneSelect sieht aus wie ein "normaler" Select View (bzw. das FTUI select widget), ist aber speziell auf Szenen des Hue-Systems abgestimmt.<br>
+Die Zuordnung der Szenen zu Ger&auml;ten und Gruppen (R&auml;umen) ist mehr an die Hue-App (Android) angepasst und weicht bei der Benutzung m&ouml;glicherweise etwas von HUEDevice bzw. HUEBridge in FHEM ab. Die wesentlichen Felder sind <i>device</i> und <i>scenes</i>:
+<ul>
+<li><b>device</b>: Hier k&ouml;nnen Hue-Gruppen ausgew&auml;hlt werden, also HUEDevice-Ger&auml;te, die einer Gruppe (z.B. einem Raum) in der Hue-Bridge entsprechen. Au&szlig;erdem kann die Hue-Bridge selbst ausgew&auml;hlt werden. Einzelne Hue-Ger&auml;te k&ouml;nnen nicht benutzt werden. Wenn man eine Szene einem einzelnen Ger&auml;t (also normalerweise einer Lampe) zugeordnet hat, dann muss man hier die Hue-Bridge w&auml;hlen.</li>
+<li><b>scenes</b>: Hier kann man die Szenen ausw&auml;hlen, die man dem Benutzer zur Verf&uuml;gung stellen will. (Also die nachher im Select-Widget auftauchen.) Das Feld selbst zeigt die internen IDs der Szenen an, daher sollte man die anzuzeigenden Szenen &uuml;ber die Werthilfe ausw&auml;hlen. Dort werden entweder die zur gew&auml;hlten Gruppe passenden Szenen angezeigt oder alle Szenen, falls man die Hue-Bridge als <i>device</i> ausgew&auml;hlt hat.</li>
+</ul> 
+
+<h3>Vorauswahl bei Werthilfe zu Device-Feldern</h3>
+Bei einigen Views sind nur bestimmte Ger&auml;te ("Devices") sinnvoll, aber bisher sind immer (fast) alle in FHEM definierten Ger&auml;te in der zugeh&ouml;rigen Werthilfe aufgetaucht. Jetzt gibt es hier in einigen Views eine Vorauswahl, so dass nur noch sinnvolle Ger&auml;te angeboten werden. Dies betrifft die folgenden Views:
+<ul>
+<li>HueSceneSelect: Siehe oben.</li>
+<li>Batteries: Die Auswahl gilt hier f&uuml;r das Feld <i>exclude</i>. Es werden nur noch Ger&auml;te angeboten, die im Prinzip im Batteries-View auftauchen k&ouml;nnen.</li>
+<li>Chart: Nur SVG-Devices werden angeboten.</i>
+<li>DwdWebLink: Nur DWD_OpenData_Weblink-Devices werden angeboten.</i>
+<li>ReadingsGroup: Nur readingsGroup-Devices werden angeboten.</i>
+<li>ShutterTimer: Nur WeekdayTimer-Devices werden angeboten.</i>
+<li>Sysmon: Nur SYSMON-Devices werden angeboten.</i>
+<li>WeatherDetail: Nur PROPLANTA-Devices werden angeboten.</i>
+<li>WeatherOverview: Nur PROPLANTA-Devices werden angeboten.</i>
+<li>WebLink: Nur weblink-Devices werden angeboten.</i>
+<li>WeekdayTimer: Nur WeekdayTimer-Devices werden angeboten.</i>
+</ul>
+
+<h3>Aufr&auml;um- und Optimierungsarbeiten im Coding</h3>
+Vor Allem im Coding zum Konfigurations-Popup wurde relativ viel aufger&auml;umt, umgebaut und vereinfacht. Wahrscheinlich (oder besser: hoffentlich) merkt man davon gar nichts...
+
+
 <h2>07.07.2019</h2>
 <h3>LabelReading: Jetzt kann auch die Gr&ouml;&szlig;e eingestellt werden</h3>
 Der View LabelReading hat jetzt auch das Feld <i>sizing</i> mit den "&uuml;blichen" Optionen. Das ganze funktioniert analog zu den Views LabelTemperature, LabelHumidity und STATE. 

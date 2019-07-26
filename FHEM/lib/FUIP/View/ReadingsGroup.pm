@@ -30,6 +30,13 @@ sub getHTML($){
 				style="text-align:left;"></div>'; 
 };
 	
+
+sub getDevicesForValueHelp($) {
+	# Return devices with TYPE readingsGroup
+	my ($fuipName) = @_;
+	return FUIP::_toJson(FUIP::Model::getDevicesForType($fuipName,"readingsGroup"));
+}	
+	
 	
 sub getStructure($) {
 # class method
@@ -37,7 +44,7 @@ sub getStructure($) {
 	my ($class) = @_;
 	return [
 		{ id => "class", type => "class", value => $class },
-		{ id => "device", type => "device" },
+		{ id => "device", type => "device", filterfunc => "FUIP::View::ReadingsGroup::getDevicesForValueHelp"  },
 		{ id => "title", type => "text", default => { type => "field", value => "device"} },
 		{ id => "columns", type => "text", default => { type => "const", value => "1"}, options => ["1","2","3","4"] }, 
 		{ id => "width", type => "dimension", value => 300},

@@ -24,13 +24,20 @@ sub getHTML($){
 };
 	
 	
+sub getDevicesForValueHelp($) {
+	# Return devices with TYPE weblink
+	my ($fuipName) = @_;
+	return FUIP::_toJson(FUIP::Model::getDevicesForType($fuipName,"weblink"));
+}		
+	
+	
 sub getStructure($) {
 # class method
 # returns general structure of the view without instance values
 	my ($class) = @_;
 	return [
 		{ id => "class", type => "class", value => $class },
-		{ id => "device", type => "device" },
+		{ id => "device", type => "device", filterfunc => "FUIP::View::WebLink::getDevicesForValueHelp" },
 		{ id => "title", type => "text", default => { type => "field", value => "device"} },
 		{ id => "width", type => "dimension", value => 300},
 		{ id => "height", type => "dimension", value => 100 },

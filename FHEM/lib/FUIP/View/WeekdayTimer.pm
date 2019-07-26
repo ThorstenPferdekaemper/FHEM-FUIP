@@ -72,6 +72,13 @@ sub dimensions($;$$){
 	return ("auto","auto") if($self->{sizing} eq "auto");
 	return ($self->{width},$self->{height});
 };	
+
+	
+sub getDevicesForValueHelp($) {
+	# Return devices with TYPE WeekdayTimer
+	my ($fuipName) = @_;
+	return FUIP::_toJson(FUIP::Model::getDevicesForType($fuipName,"WeekdayTimer"));
+}	
 	
 	
 sub getStructure($) {
@@ -80,7 +87,7 @@ sub getStructure($) {
 	my ($class) = @_;
 	return [
 		{ id => "class", type => "class", value => $class },
-		{ id => "device", type => "device" },
+		{ id => "device", type => "device", filterfunc => "FUIP::View::WeekdayTimer::getDevicesForValueHelp" },
 		{ id => "title", type => "text", default => { type => "field", value => "device"} },
 		{ id => "label", type => "text", default => { type => "field", value => "title"} },
 		{ id => "saveconfig", type => "text", options => [ "yes", "no" ], 

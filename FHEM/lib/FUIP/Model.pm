@@ -100,6 +100,40 @@ sub _sendRemoteCommand($$$) {
 };
 
 
+sub callCoding($$;$) {
+	my ($fuipName, $codingLines, $forceLocal) = @_;
+	# $fuipName: Name of the FUIP instance, usually something like "ui"
+	# $codingLines: Coding as an array of lines without ";" (or ";;")
+	# it is expected that the coding returns something which works with Dumper
+	my $url = $forceLocal ? undef : getFhemwebUrl($fuipName);
+	my $result;
+	if($url) {
+		# make an anonymous sub, call it and return something eval'uable
+		my $coding = '{ my $func = sub { '
+					.join(";;",@$codingLines)
+					.' };;
+					return Dumper(&$func());; }';
+		my $resultStr = _sendRemoteCommand($fuipName,$url,$coding);
+		# older versions of Dumper start with "$VAR..."
+		if($resultStr =~ m/^\$/) {
+			$resultStr = substr($resultStr,8);
+		};	
+		$result = eval($resultStr);
+		if($@) {
+			main::Log3(undef,1,"FUIP::Model::callCoding: ".$@);
+			main::Log3(undef,1,"FUIP::Model::callCoding: ".$resultStr);
+		};
+	}else{
+		my $coding = join(";",@$codingLines);
+		$result = eval($coding);
+		if($@) {
+			main::Log3(undef,1,"FUIP::Model::callCoding: ".$@);
+		};
+	}
+	return $result;
+};
+	
+
 sub getDeviceKeys($) {
 # get the names of all devices
 	my ($name) = @_;
@@ -107,23 +141,13 @@ sub getDeviceKeys($) {
 	return $buffer{$name}{devicekeys} if(defined($buffer{$name}{devicekeys}));
 	# not buffered, determine
 	
-	my @devices;
-	my $url = getFhemwebUrl($name);
-	if($url) {
-		my $devicesStr = _sendRemoteCommand($name,$url,
-			'{  
-				return join(",",(keys %defs));;
-			}');
-		@devices = split(/,/, $devicesStr);
-		# for some reason, this has trailing whitespaces
-		for(my $i = 0; $i < @devices; $i++) {
-			$devices[$i] =~ s/\s+$//;
-		};	
-	}else{
-		@devices = (keys %main::defs);
-	};
-	$buffer{$name}{devicekeys} = \@devices;
-	return \@devices;
+	my $coding = [
+		'my @devices = (keys %main::defs)',
+		'return \@devices'
+	];
+	my $devices = callCoding($name,$coding);	
+	$buffer{$name}{devicekeys} = $devices;
+	return $devices;
 };	
 
 
@@ -133,38 +157,23 @@ sub getRooms($) {
 	# buffered?
 	return @{$buffer{$name}{rooms}} if(exists($buffer{$name}{rooms}));
 	# not buffered, determine rooms
-	my @rooms;
-	my $url = getFhemwebUrl($name);
-	if($url) {
-		my $roomsStr = _sendRemoteCommand($name,$url,
-			'{
-				my %rooms;;
-				foreach my $d (keys %defs ) {
-					foreach my $r (split(",", AttrVal($d, "room", "hidden"))) {
-						next if $r =~ /^(hidden|CUL_HM|HM485|)$/;;
-						$rooms{$r} = 1;;
-					}
-				};;
-				return join(",",keys(%rooms))
-			}');
-		@rooms = sort(split(/,/, $roomsStr));
-		# for some reason, this has trailing whitespaces
-		for(my $i = 0; $i < @rooms; $i++) {
-			$rooms[$i] =~ s/\s+$//;
-		};	
-	}else{
-		my %rooms;
-		foreach my $d (keys %main::defs ) {
-			# we do not return "hidden" or "Unsorted"
-			foreach my $r (split(",", main::AttrVal($d, "room", "hidden"))) {
-				# TODO: Rooms to be ignored should be configurable
-				# the following also ignores the "empty string" room
-				next if $r =~ /^(hidden|CUL_HM|HM485|)$/;
-				$rooms{$r} = 1;
-			}
-		};
-		@rooms = sort(keys(%rooms));
-	};
+
+	# we do not return the room "hidden" or "Unsorted"
+	# the following also ignores the "empty string" room
+	# TODO: Rooms to be ignored should be configurable	
+	my $coding = [
+		'my %rooms',
+		'foreach my $d (keys %main::defs ) {',
+		'	foreach my $r (split(",", main::AttrVal($d, "room", "hidden"))) {',
+		'		next if $r =~ /^(hidden|CUL_HM|HM485|)$/',
+		'		$rooms{$r} = 1',
+		'	}',
+		'}',
+		'my @rooms = keys(%rooms)',
+		'return \@rooms'
+	];
+	my $unsortedRooms = callCoding($name,$coding);
+	my @rooms = sort(@$unsortedRooms);
 	$buffer{$name}{rooms} = \@rooms;
 	return @rooms;
 };
@@ -173,27 +182,14 @@ sub getRooms($) {
 sub getReadingsOfDevice($$) {
 # get all readings of a device (only the reading names, without values)
 	my ($name,$device) = @_;
-	# TODO: buffering
-	my @readings;
-	my $url = getFhemwebUrl($name);
-	if($url) {
-		my $readingsStr = _sendRemoteCommand($name,$url,
-			'{  
-				return "" unless defined $defs{"'.$device.'"};;
-				return join(",",(keys($defs{"'.$device.'"}{READINGS})));;
-			}');
-		@readings = split(/,/, $readingsStr);
-		# for some reason, this has trailing whitespaces
-		for(my $i = 0; $i < @readings; $i++) {
-			$readings[$i] =~ s/\s+$//;
-		};	
-	}else{
-		if(defined($main::defs{$device})) {
-			@readings = keys(%{$main::defs{$device}{READINGS}});
-		};
-	};
-	@readings = sort(@readings);
-	return \@readings;
+	my $coding = [
+		'return [] unless defined $main::defs{"'.$device.'"}',
+		'my @result = (keys(%{$main::defs{"'.$device.'"}{READINGS}}))',
+		'return \@result'
+	];
+	my $readings = callCoding($name,$coding);
+	@$readings = sort(@$readings);
+	return $readings;
 };		
 	
 	
@@ -204,32 +200,18 @@ sub getDevicesForRoom($$) {
 	return $buffer{$name}{"room-device"}{$room} if(defined($buffer{$name}{"room-device"}{$room}));
 	# not buffered, determine
 	
-	my @devices;
-	my $url = getFhemwebUrl($name);
-	if($url) {
-		my $devicesStr = _sendRemoteCommand($name,$url,
-			'{  
-				my @devices;;
-				foreach my $d (keys %defs ) {
-					next unless grep {$_ eq "'.$room.'";;} split(",", main::AttrVal($d, "room", "Unsorted"));;
-					push(@devices,$d);;
-				};;		
-				return join(",",@devices);;
-			}');
-		@devices = sort(split(/,/, $devicesStr));
-		# for some reason, this has trailing whitespaces
-		for(my $i = 0; $i < @devices; $i++) {
-			$devices[$i] =~ s/\s+$//;
-		};	
-	}else{
-		foreach my $d (keys %main::attr ) {
-			next unless grep {$_ eq $room;} split(",", main::AttrVal($d, "room", "Unsorted"));
-					push(@devices,$d);
-		};	
-		@devices = sort(@devices);
-	};
-	$buffer{$name}{"room-device"}{$room} = \@devices;
-	return \@devices;
+	my $coding = [
+		'my @devices',
+		'foreach my $d (keys %main::attr ) {',
+		'	next unless grep {$_ eq "'.$room.'"} split(",", main::AttrVal($d, "room", "Unsorted"))',
+		'	push(@devices,$d)',
+		'}',
+		'return \@devices'	
+	];
+	my $devices = callCoding($name,$coding);
+	@$devices = sort(@$devices);
+	$buffer{$name}{"room-device"}{$room} = $devices;
+	return $devices;
 };	
 	
 	
@@ -295,17 +277,8 @@ sub getSetsOfDevice($$) {
 	# buffered?
 	return $buffer{$fuipName}{devicesets}{$devName} if(defined($buffer{$fuipName}{devicesets}{$devName}));
 	# not buffered, determine
-	my $url = getFhemwebUrl($fuipName);
-	my $resultStr;
-	$DB::single = 1;
-	if($url) {
-		$resultStr = _sendRemoteCommand($fuipName,$url,
-			'{  
-				return getAllSets("'.$devName.'");;
-			}');
-	}else{
-		$resultStr = main::getAllSets($devName);
-	};
+	my $coding = [ 'return main::getAllSets("'.$devName.'")' ];
+	my $resultStr = callCoding($fuipName,$coding);
 	# split into sets
 	my %result;
 	for my $setStr (split(" ",$resultStr)) {
@@ -324,92 +297,68 @@ sub getDevicesForReading($$) {
 	# buffered?
 	return $buffer{$name}{"reading-device"}{$reading} if(defined($buffer{$name}{"reading-device"}{$reading}));
 	# not buffered, determine
-	my @devices;
-	my $url = getFhemwebUrl($name);
-	if($url) {
-		my $devicesStr = _sendRemoteCommand($name,$url,
-			'{  
-				return join(",", grep { defined $defs{$_}{READINGS}{"'.$reading.'"} } keys %defs) 
-			}');
-		# avoid stuff like [""]
-		$devicesStr =~ s/\s+$//;
-		@devices = split(/,/, $devicesStr) if($devicesStr);
-		# for some reason, this has trailing whitespaces
-		for(my $i = 0; $i < @devices; $i++) {
-			$devices[$i] =~ s/\s+$//;
-		};	
-	}else{
-		@devices = grep { defined $main::defs{$_}{READINGS}{$reading} } keys %main::defs;
-	};
-	@devices = sort(@devices);
-	$buffer{$name}{"reading-device"}{$reading} = \@devices;
-	return \@devices;
+	my $coding = [ 
+		'my @devices = grep { defined $main::defs{$_}{READINGS}{"'.$reading.'"} } keys %main::defs',
+		'return \@devices'
+	];
+	my $devices = callCoding($name,$coding);	
+	@$devices = sort(@$devices);
+	$buffer{$name}{"reading-device"}{$reading} = $devices;
+	return $devices;
 };	
 	
-	
+
 sub getGplot($$) {
 	my ($name,$device) = @_;
-	my $url = getFhemwebUrl($name);
-	if($url) {
-		my $resultStr = _sendRemoteCommand($name,$url,
-			'{	my $filename = $main::defs{"'.$device.'"}{GPLOTFILE};; 
-				return undef unless $filename;;
-				$filename = $main::FW_gplotdir."/".$filename.".gplot";;  
-				my ($err, $cfg, $plot, $srcDesc) = main::SVG_readgplotfile("'.$device.'",$filename,"SVG");; 
-				my %conf = main::SVG_digestConf($cfg,$plot);;  
-				return Dumper({ srcDesc => $srcDesc, conf => \%conf });;
-			}');
-			# main::Log3(undef,1,"getGplot remote: ".($resultStr ? $resultStr : "error"));
-			return eval(substr($resultStr,8));
-	}else{
-		my $filename = $main::defs{$device}{GPLOTFILE}; 
-		return undef unless $filename;
-		$filename = $main::FW_gplotdir."/".$filename.".gplot";  
-		my ($err, $cfg, $plot, $srcDesc) = main::SVG_readgplotfile($device,$filename,"SVG"); 
-		my %conf = main::SVG_digestConf($cfg,$plot);  
-		return { srcDesc => $srcDesc, conf => \%conf };
-	};
-
+	my $coding = [	
+		'my $filename = $main::defs{"'.$device.'"}{GPLOTFILE}', 
+		'return undef unless $filename',
+		'$filename = $main::FW_gplotdir."/".$filename.".gplot"',  
+		'my ($err, $cfg, $plot, $srcDesc) = main::SVG_readgplotfile("'.$device.'",$filename,"SVG")', 
+		'my %conf = main::SVG_digestConf($cfg,$plot)',  
+		'return { srcDesc => $srcDesc, conf => \%conf }'
+	];
+	return callCoding($name,$coding);
 };	
 	
 	
 sub readTextFile($$;$) {
 	my ($name,$filename,$forceLocal) = @_;
-	my $url = $forceLocal ? undef : getFhemwebUrl($name);
-	if($url) {
-		return _sendRemoteCommand($name,$url,
-			'{  main::Log3(undef,1,$main::attr{global}{modpath}."/'.$filename.'");;
-				open(FILE, $main::attr{global}{modpath}."/'.$filename.'") or return "";;
-				my @result = <FILE>;;
-				close(FILE);;
-				return join("",@result);;
-			}');
-	}else{
-		open(FILE, $main::attr{global}{modpath}.'/'.$filename) or return "";
-		my @result = <FILE>;
-		close(FILE);
-		return join("",@result);
-	};
+	my $coding = [
+		'open(FILE, $main::attr{global}{modpath}."/'.$filename.'") or return []',
+		'my @result = <FILE>',
+		'close(FILE)',
+		'return \@result'
+	];
+	my $result = callCoding($name,$coding,$forceLocal);
+	return join("",@$result);
 };	
 
 
 sub getStylesheetPrefix($) {
 	my ($name) = @_;
-	my $url = getFhemwebUrl($name);
-	my $stylesheetPrefix;
-	if($url) {
-		$stylesheetPrefix = _sendRemoteCommand($name,$url,
-			'{  return "" unless $main::FW_wname;; 
-				return main::AttrVal($main::FW_wname,"stylesheetPrefix", "");;
-			}');	
-		# for some reason, this has trailing whitespaces
-		$stylesheetPrefix =~ s/\s+$//;	
-	}else{
-		return "" unless $main::FW_wname;  #this should in principle not happen...
-		$stylesheetPrefix = main::AttrVal($main::FW_wname,"stylesheetPrefix", "");
-	};	
+	my $coding = [
+		'return "" unless $main::FW_wname',
+		'return main::AttrVal($main::FW_wname,"stylesheetPrefix", "")'
+	];
+	my $stylesheetPrefix = callCoding($name,$coding);
 	$stylesheetPrefix = "" if $stylesheetPrefix eq "default";
 	return $stylesheetPrefix;
 };
+
+
+sub getDevicesForType($$) {
+	# Return devices with TYPE SVG
+	my ($fuipName,$type) = @_;
+	my $coding = [
+		'my @result',
+		'for my $dev (keys %main::defs) {',
+		'	my $device = $main::defs{$dev}',
+		'	push(@result,$dev) if($device->{TYPE} eq "'.$type.'")',
+		'}',
+		'return \@result'
+	];
+	return FUIP::Model::callCoding($fuipName,$coding);	
+}	
 	
 1;

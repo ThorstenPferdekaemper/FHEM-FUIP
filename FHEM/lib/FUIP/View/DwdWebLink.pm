@@ -32,6 +32,13 @@ sub getHTML($){
 	my ($self) = @_; 
 	return '<div data-type="dwdweblink" data-device="'.$self->{device}.'"></div>'
 };
+
+	
+sub getDevicesForValueHelp($) {
+	# Return devices with TYPE DWD_OpenData_Weblink
+	my ($fuipName) = @_;
+	return FUIP::_toJson(FUIP::Model::getDevicesForType($fuipName,"DWD_OpenData_Weblink"));
+}	
 	
 	
 sub getStructure($) {
@@ -40,7 +47,7 @@ sub getStructure($) {
 	my ($class) = @_;
 	return [
 		{ id => "class", type => "class", value => $class },
-		{ id => "device", type => "device" },
+		{ id => "device", type => "device", filterfunc => "FUIP::View::DwdWebLink::getDevicesForValueHelp" },
 		{ id => "title", type => "text", default => { type => "field", value => "device"} },
 		{ id => "width", type => "dimension", value => 800},
 		{ id => "height", type => "dimension", value => 125 },
