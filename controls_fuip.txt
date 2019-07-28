@@ -15,7 +15,7 @@ UPD 2019-04-10_15:34:34 13432 FHEM/lib/FUIP/View.pm
 UPD 2019-07-21_22:02:39 9824 FHEM/lib/FUIP/View/Batteries.pm
 UPD 2019-01-29_16:36:42 1522 FHEM/lib/FUIP/View/Brightness.pm
 UPD 2019-05-18_22:56:00 5779 FHEM/lib/FUIP/View/Cell.pm
-UPD 2019-07-21_22:21:29 10092 FHEM/lib/FUIP/View/Chart.pm
+UPD 2019-07-28_19:24:04 10139 FHEM/lib/FUIP/View/Chart.pm
 UPD 2019-02-07_21:59:24 1901 FHEM/lib/FUIP/View/Clock.pm
 UPD 2019-03-10_19:15:44 2339 FHEM/lib/FUIP/View/Colorwheel.pm
 UPD 2019-04-10_15:31:52 1988 FHEM/lib/FUIP/View/Dialog.pm
@@ -75,7 +75,7 @@ UPD 2019-03-15_21:30:01 5774 FHEM/lib/FUIP/doc/RenameViewTemplate.png
 UPD 2019-05-19_16:29:14 25890 FHEM/lib/FUIP/doc/Swiper.png
 UPD 2019-06-11_17:58:03 8100 FHEM/lib/FUIP/doc/Units.png
 UPD 2019-05-21_22:16:03 19252 FHEM/lib/FUIP/doc/VariablenImViewTemplate.png
-UPD 2019-07-26_15:57:50 43782 FHEM/lib/FUIP/doc/changes.html
+UPD 2019-07-28_20:12:25 44176 FHEM/lib/FUIP/doc/changes.html
 UPD 2019-01-23_22:22:28 1553 FHEM/lib/FUIP/fonts/nesges.css
 UPD 2015-05-26_11:04:28 5784 FHEM/lib/FUIP/fonts/nesges.woff
 UPD 2018-07-18_15:43:10 38 FHEM/lib/FUIP/images/lizenzen.txt

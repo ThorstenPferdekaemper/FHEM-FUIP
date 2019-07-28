@@ -85,7 +85,7 @@ sub getHTML($){
 		# (4:HM_21F923.measured-temp\\x3a::, 4:HM_21F923.desired-temp\\x3a::, 4:HM_21F923.actuator\\x3a::')
 		my $i = 0;
 		for my $lspec (@lspecs) {
-			# main::Log3(undef,1,$lspec);	
+			#main::Log3(undef,1,$lspec);	
 			my $dev = "";
 			if($ldev->{Internals}{TYPE} eq "DbLog") {
 				($dev,undef) = split(/:/,$lspec,2);
@@ -99,6 +99,7 @@ sub getHTML($){
 			push(@logdevices,$logdevice);
 			$lspec =~ s/\\/\\\\/g;  	# \ -> \\
 			$lspec =~ s/\"/\\\"/g;	# " -> \"
+			$lspec =~ s/'/&#39;/g;	# escape single quote
 			push(@colspecs,$lspec); #$col.':'.$reading);
 			push(@svgidx,$gplot->{srcDesc}{rev}{$gplot->{srcDesc}{src}{$logdevice}{num}}{$i});
 			$i++;
