@@ -761,7 +761,7 @@ sub renderPageFlex($$) {
 				<meta http-equiv="X-UA-Compatible" content="IE=edge">'.
 				'<meta name="viewport" content="width=device-width, initial-scale='.$initialScale.', user-scalable='.$userScalable.'" />'.
 				'<meta name="mobile-web-app-capable" content="yes">
-				<meta name="apple-mobile-web-app-capable" content="yes">'.
+				<meta name="apple-mobile-web-app-capable" content="yes">'.  
 				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
             "
 				<script type=\"text/javascript\">
@@ -1956,6 +1956,23 @@ sub createPage($$) {
 };
 
 
+sub decodePageid($$) {
+	# for weird characters in page names etc., URLs are encoded
+	# and the page keys also need to be stored encoded. However, 
+	# at least one version of FUIP stored decoded keys. I.e. if 
+	# there is no "encoded" page, but a "decoded" one, we need to 
+	# display this page.
+	# The second parameter (pageid) might be changed.
+	my ($hash,$pageid) = @_;
+	if(not exists($hash->{pages}{$pageid})) {
+		my $decodedPageid = main::urlDecode($pageid);
+		if(exists($hash->{pages}{$decodedPageid})) {
+			$_[1] = $decodedPageid;
+		};
+	};	
+};	
+
+
 sub getFuipPage($$) {
 	my ($hash,$path) = @_;
 	
@@ -1975,17 +1992,8 @@ sub getFuipPage($$) {
 		$pageid = "home";
 	};	
 
-	# for weird characters in page names etc., URLs are encoded
-	# and the page keys also need to be stored encoded. However, 
-	# at least one version of FUIP stored decoded keys. I.e. if 
-	# there is no "encoded" page, but a "decoded" one, we need to 
-	# display this page.
-	if(not exists($hash->{pages}{$pageid})) {
-		my $decodedPageid = main::urlDecode($pageid);
-		if(exists($hash->{pages}{$decodedPageid})) {
-			$pageid = $decodedPageid;
-		};
-	};	
+	# see comment in decodePageid
+	decodePageid($hash,$pageid);
 
 	$currentPage = $pageid;  # might be needed for subsequent GET requests
 	
@@ -2102,6 +2110,8 @@ sub settingsExport($$) {
 	my $urlParams = urlParamsGet($request);
 	# TODO: error management
 	return undef unless exists $urlParams->{pageid} or exists $urlParams->{templateid};
+	# see comment in decodePageid
+	decodePageid($hash,$urlParams->{pageid});
 	my $result = "";
 	my $filename = "";
 	if(exists $urlParams->{fieldid}) {

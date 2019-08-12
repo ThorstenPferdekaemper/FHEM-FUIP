@@ -9,7 +9,7 @@ DIR FHEM/lib/FUIP/js
 DIR FHEM/lib/FUIP/View
 DIR FHEM/lib/FUIP/jquery-ui
 DIR FHEM/lib/FUIP/jquery-ui/images
-UPD 2019-06-05_20:19:27 127233 FHEM/42_FUIP.pm
+UPD 2019-08-12_15:52:25 127474 FHEM/42_FUIP.pm
 UPD 2019-07-21_22:19:47 10852 FHEM/lib/FUIP/Model.pm
 UPD 2019-04-10_15:34:34 13432 FHEM/lib/FUIP/View.pm
 UPD 2019-07-21_22:02:39 9824 FHEM/lib/FUIP/View/Batteries.pm
@@ -75,7 +75,7 @@ UPD 2019-03-15_21:30:01 5774 FHEM/lib/FUIP/doc/RenameViewTemplate.png
 UPD 2019-05-19_16:29:14 25890 FHEM/lib/FUIP/doc/Swiper.png
 UPD 2019-06-11_17:58:03 8100 FHEM/lib/FUIP/doc/Units.png
 UPD 2019-05-21_22:16:03 19252 FHEM/lib/FUIP/doc/VariablenImViewTemplate.png
-UPD 2019-07-28_20:12:25 44176 FHEM/lib/FUIP/doc/changes.html
+UPD 2019-08-12_17:51:53 44408 FHEM/lib/FUIP/doc/changes.html
 UPD 2019-01-23_22:22:28 1553 FHEM/lib/FUIP/fonts/nesges.css
 UPD 2015-05-26_11:04:28 5784 FHEM/lib/FUIP/fonts/nesges.woff
 UPD 2018-07-18_15:43:10 38 FHEM/lib/FUIP/images/lizenzen.txt
