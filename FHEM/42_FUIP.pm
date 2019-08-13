@@ -633,6 +633,20 @@ sub renderCommonCss($) {
 };
 
 
+sub renderCommonMetas($) {
+	my $hash = shift;
+	my $initialScale = main::AttrVal($hash->{NAME},"viewportInitialScale","1.0");
+	my $userScalable = main::AttrVal($hash->{NAME},"viewportUserScalable","yes");
+	my $fhemweburl = main::AttrVal($hash->{NAME},"fhemwebUrl",undef);
+	return '<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+			<meta name="viewport" content="width=device-width, initial-scale='.$initialScale.', user-scalable='.$userScalable.'" />
+			<meta name="mobile-web-app-capable" content="yes" />
+			<meta name="apple-mobile-web-app-capable" content="yes" />
+			<meta name="longpoll_type" content="ajax" />'. 
+			($fhemweburl ? '<meta name="fhemweb_url" content="'.$fhemweburl.'" />' : '');
+};
+
+
 sub renderToastSetting($) {
 	my $hash = shift;
 	my $toast = main::AttrVal($hash->{NAME},"toastMessages",0);
@@ -664,20 +678,14 @@ sub renderPage($$$) {
 	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","var(--fuip-color-foreground,#808080)");
 	my $pageWidth = main::AttrVal($hash->{NAME},"pageWidth",undef);
 	my $layout = main::AttrVal($hash->{NAME},"layout","gridster");
-	my $initialScale = main::AttrVal($hash->{NAME},"viewportInitialScale","1.0");
-	my $userScalable = main::AttrVal($hash->{NAME},"viewportUserScalable","yes");
   	my $result = 
 	   "<!DOCTYPE html>
 		<html data-name=\"".$hash->{NAME}."\"".($locked ? "" : " data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"".$layout."\"").renderToastSetting($hash).renderAutoReturn($page,$locked).">
 			<head>
-				<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
-				<meta name=\"viewport\" content=\"width=device-width, initial-scale=".$initialScale.", user-scalable=".$userScalable."\" />
-				<meta name=\"mobile-web-app-capable\" content=\"yes\">
-				<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">
+				".renderCommonMetas($hash)."
 				<meta name=\"widget_base_width\" content=\"".$baseWidth."\">
 				<meta name=\"widget_base_height\" content=\"".$baseHeight."\">
 				<meta name=\"widget_margin\" content=\"".getCellMargin($hash)."\">".
-				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
 				($locked ? '<meta name="gridster_disable" content="1">' : "").
             "
 			<script type=\"text/javascript\">
@@ -752,18 +760,11 @@ sub renderPageFlex($$) {
 	$title = "FHEM Tablet UI by FUIP" unless $title;
 	my $styleColor = main::AttrVal($hash->{NAME},"styleColor","var(--fuip-color-foreground,#808080)");
 	my $pageWidth = main::AttrVal($hash->{NAME},"pageWidth",undef);
-	my $initialScale = main::AttrVal($hash->{NAME},"viewportInitialScale","1.0");
-	my $userScalable = main::AttrVal($hash->{NAME},"viewportUserScalable","no");
   	my $result = 
 	   '<!DOCTYPE html>
 		<html data-name="'.$hash->{NAME}.'"'.renderToastSetting($hash).renderAutoReturn($page,1).'>
 			<head>
-				<meta http-equiv="X-UA-Compatible" content="IE=edge">'.
-				'<meta name="viewport" content="width=device-width, initial-scale='.$initialScale.', user-scalable='.$userScalable.'" />'.
-				'<meta name="mobile-web-app-capable" content="yes">
-				<meta name="apple-mobile-web-app-capable" content="yes">'.  
-				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
-            "
+				'.renderCommonMetas($hash)."
 				<script type=\"text/javascript\">
 					// when using browser back or so, we should reload
 					if(performance.navigation.type == 2){
@@ -844,12 +845,7 @@ sub renderPageFlexMaint($$) {
 	   "<!DOCTYPE html>
 		<html data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"flex\"".renderToastSetting($hash).renderAutoReturn($page,0).">
 			<head>
-				<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">
-				<meta name=\"viewport\" content=\"width=device-width, initial-scale=".$initialScale.", user-scalable=".$userScalable."\" />
-				<meta name=\"mobile-web-app-capable\" content=\"yes\">
-				<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">".		
-				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
-            "
+				".renderCommonMetas($hash)."
 				<script type=\"text/javascript\">
 					// when using browser back or so, we should reload
 					if(performance.navigation.type == 2){

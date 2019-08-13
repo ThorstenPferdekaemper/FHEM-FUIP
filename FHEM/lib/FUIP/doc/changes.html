@@ -5,6 +5,10 @@
 </head> 
 <body>
 <h1>FUIP News</h1>
+<h2>13.08.2019</h2>
+<h3>Umstellung von Websocket auf Longpoll</h3>
+Im "FTUI-Kernel" gibt es einen Fehler, der dafür sorgt, dass Readings nach einer gewissen Zeit nicht mehr aktualisiert werden. Dies passiert bei der Verwendung von Websocket und insbesondere auf manchen Telefonen und Tablets. Da es nicht danach aussieht, dass dieser Fehler bald behoben wird, wurde auf den "alten" Longpoll-Mechanismus (Ajax) umgestellt.
+
 <h2>12.08.2019</h2>
 <h3>Absturz beim Export behoben</h3>
 Beim Exportieren von Seiten oder Zellen konnte es zu einen kompletten FHEM-Absturz kommen, wenn der Seitenname (die Page-Id) Sonderzeichen enthalten hat. Dies wurde behoben.
