@@ -5,6 +5,15 @@
 </head> 
 <body>
 <h1>FUIP News</h1>
+<h2>14.08.2019</h2>
+<h3>Clock View korrigiert</h3>
+Beim View "Clock" wurden zwei Fehler korrigiert:
+<ol>
+<li>Es wurde oft (aber nicht immer) die Client-Zeit anstatt der Server-Zeit angezeigt.</li>
+<li>Wenn der Browser wieder sichtbar wurde, dann konnte es vorkommen, dass es bis zu einer Minute dauert, bis die aktuelle Zeit angezeigt wird. (z.B. wenn das Telefon/Tablet wieder "aufgeweckt" wurde)</li>  
+</ol>
+Beide Probleme wurden behoben. FUIP verwendet jetzt ein eigenes Clock-Widget (fuip_clock anstatt clock).
+
 <h2>13.08.2019</h2>
 <h3>Umstellung von Websocket auf Longpoll</h3>
 Im "FTUI-Kernel" gibt es einen Fehler, der dafür sorgt, dass Readings nach einer gewissen Zeit nicht mehr aktualisiert werden. Dies passiert bei der Verwendung von Websocket und insbesondere auf manchen Telefonen und Tablets. Da es nicht danach aussieht, dass dieser Fehler bald behoben wird, wurde auf den "alten" Longpoll-Mechanismus (Ajax) umgestellt.

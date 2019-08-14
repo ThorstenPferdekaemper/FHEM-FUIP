@@ -36,8 +36,8 @@ sub dimensions($;$$){
 
 sub getHTML($){
 	return '<div data-fuip-type="fuip-clock" style="width:100%;height:100%;">
-			<div data-type="clock" data-format="H:i" style="font-size:200%" class="fuip-color-foreground"></div> 
-            <div data-type="clock" data-format="d.M Y" style="font-size:100%" class="cell fuip-color-foreground"></div>
+			<div data-type="fuip_clock" data-format="H:i" style="font-size:200%" class="fuip-color-foreground"></div> 
+            <div data-type="fuip_clock" data-format="d.M Y" style="font-size:100%" class="cell fuip-color-foreground"></div>
 			</div>'; 			
 };
 	
