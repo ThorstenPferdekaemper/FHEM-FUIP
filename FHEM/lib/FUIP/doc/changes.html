@@ -5,6 +5,45 @@
 </head> 
 <body>
 <h1>FUIP News</h1>
+
+<h2>04.11.2019</h2>
+<h3>Verbindung zum "Backend" stabilisiert</h3>
+Da die Umstellung auf Longpoll (Ajax) vom 13.08.2019 nicht wirklich viel gebracht hat, wurde wieder auf Websocket umgestellt und der komplette Connect/Disconnect/Reconnect-Mechanismus &uuml;berarbeitet. Dabei wurden insbesondere den Seltsamkeiten bei schlafenden Mobilger&auml;ten Beachtung geschenkt. Leider musste daf&uuml;r der "FTUI-Kernel" (also die Datei fhem-tablet-ui.js) &uuml;bernommen und stark modifiziert werden. (D.h. eine Kopie davon. FUIP ver&auml;ndert keine fremden Dateien.)
+
+<h3>Fehler-Overlay bei Verbindungsabbruch</h3>
+Wenn die Verbindung zum Backend (also zu FHEM) abbricht, dann wird ein (momentan rotes) Overlay mit einer entsprechenden Meldung &uuml;ber die Oberfl&auml;che gelegt. Dies bleibt bestehen, bis die Verbindung wieder komplett wiederhergestellt ist. 
+ 
+<h3>Neues Trace- bzw. Log-Konzept</h3> 
+Um insbesondere den Besonderheiten auf Mobilger&auml;ten auf die Spur zu kommen, wurde ein neues Log-Konzept f&uuml;r das Frontend entwickelt. Daf&uuml;r gibt es drei neue Attribute im FUIP-Device:
+<ul>
+<li><b>loglevel</b> kann die Werte 0 bis 5 annehmen. Bei 0 wird kein Log geschrieben, bei 5 ein sehr detailliertes. Der Defaultwert ist 0.</li>
+<li><b>logareas</b> steuert, aus welchem Bereich Logeintr&auml;ge geschrieben werden. Es kann eine Komma-separierte Liste angegeben werden mit den folgenden Werten als Inhalt:
+<ul>
+<li><b>base.init</b> f&uuml;r die Initialisierungsphase</li>
+<li><b>base.poll</b> f&uuml;r alles rund um den Lebenszyklus der Verbindung zum Backend</li>
+<li><b>base.update</b> f&uuml;r die Aktualisierung der Werte am Frontend</li>
+<li><b>base.widget</b> f&uuml;r die Widget-Basis</li>
+<li><b>unknown</b>  f&uuml;r alle Meldungen, die momentan keine "Area" angeben. Das sind insbesondere alle Log-Eintr&auml;ge, die von den Widgets selbst kommen.</li>
+</ul>
+Der Defaultwert ist eine leere Liste, wodurch Meldungen zu allen Bereichen geschrieben werden. 
+<li><b>logtype</b> steuert, wohin das Log geschrieben wird. Es kann die folgenden Werte annehmen:
+<ul>
+<li><b>console</b> bedeutet, dass das Log auf die Javascript-Konsole geschrieben wird. D.h. es erscheint in den Entwicklerwerkzeugen/Developer Tools des Browsers. Dies ist der Defaultwert.</li>
+<li><b>localstorage</b> bedeutet, dass das Log zuerst in den lokalen Speicher des Browsers geschrieben wird. (localStorage in JavaScript) Beim Aufruf der n&auml;chsten FUIP-Seite (bzw. Neuladen der Seite) wird das Log dann zu FHEM &uuml;bertragen, welches es dann in eine Datei im Verzeichnis &lt;fhem&gt;/FHEM/lib/FUIP/log schreibt.<br>
+Der Dateiname enth&auml;lt den Namen des FUIP-Device, die IP-Adresse des Frontends (also z.B. des Mobilger&auml;ts) sowie ein Zeitstempel. So kann leicht zugeordnet werden, woher das Log kommt.</li>
+</ul>  
+</ul>
+
+<h3>Icon-Liste entfernt</h3>
+Es gab eine M&ouml;glichkeit, sich alle verwendbaren Icons &uuml;ber eine spezielle URL anzeigen zu lassen. Dies wurde entfernt. Wo Icons ben&ouml;tigt werden kann man sie sich &uuml;ber die Werthilfe auflisten lassen.
+ 
+<h3>Timing beim Widget-Resizing optimiert</h3>
+Beim Laden einer Seite kann die Gr&ouml;&szlig;e mancher Widgets erst dann angepasst werden, wenn bestimmte andere Elemente bereits geladen und initialisiert sind. Das "Warten" darauf war etwas ungeschickt programmiert und hat dadurch zu viele Systemressourcen verbraucht. Dies wurde korrigiert.
+  
+<h3>Thermostat-View: HTML-Fehler</h3>
+Beim Thermostat-View hat ein schlie&szlig;endes "&gt;" gefehlt. Dies wurde korrigiert.  
+  
+
 <h2>14.08.2019</h2>
 <h3>Clock View korrigiert</h3>
 Beim View "Clock" wurden zwei Fehler korrigiert:

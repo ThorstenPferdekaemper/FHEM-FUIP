@@ -106,7 +106,7 @@ sub getHTML($){
 		}else{
 			$result .= $self->{size};
 		};
-		$result .= '"
+		$result .= '">
 					</div> 
 				</td>'; 
 	};

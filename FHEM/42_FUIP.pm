@@ -65,6 +65,7 @@ sub setAttrList($) {
 	if(@$htmlNames) {
 		$hash->{AttrList} .= " userHtmlBodyStart:".join(",",@$htmlNames);
 	};	
+	$hash->{AttrList} .= " loglevel:0,1,2,3,4,5 logtype:console,localstorage logareas";
 }
 
 
@@ -638,12 +639,18 @@ sub renderCommonMetas($) {
 	my $initialScale = main::AttrVal($hash->{NAME},"viewportInitialScale","1.0");
 	my $userScalable = main::AttrVal($hash->{NAME},"viewportUserScalable","yes");
 	my $fhemweburl = main::AttrVal($hash->{NAME},"fhemwebUrl",undef);
+	my $loglevel = main::AttrVal($hash->{NAME},"loglevel",undef);
+	my $logtype = main::AttrVal($hash->{NAME},"logtype",undef);
+	my $logareas = main::AttrVal($hash->{NAME},"logareas",undef);
 	return '<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 			<meta name="viewport" content="width=device-width, initial-scale='.$initialScale.', user-scalable='.$userScalable.'" />
 			<meta name="mobile-web-app-capable" content="yes" />
-			<meta name="apple-mobile-web-app-capable" content="yes" />
-			<meta name="longpoll_type" content="ajax" />'. 
-			($fhemweburl ? '<meta name="fhemweb_url" content="'.$fhemweburl.'" />' : '');
+			<meta name="apple-mobile-web-app-capable" content="yes" />'.
+			# <meta name="longpoll_type" content="ajax" />'. 
+			($fhemweburl ? '<meta name="fhemweb_url" content="'.$fhemweburl.'" />' : '').
+			($loglevel ? '<meta name="loglevel" content="'.$loglevel.'" />' : '').
+			($logtype ? '<meta name="logtype" content="'.$logtype.'" />' : '').
+			($logareas ? '<meta name="logareas" content="'.$logareas.'" />' : '');
 };
 
 
@@ -663,6 +670,13 @@ sub renderAutoReturn($$) {
 	$seconds = 5 if(not $locked and $seconds < 5);
 	$page->{returnTo} = "" unless $page->{returnTo}; # avoid undef
 	return ' data-fuip-return-after='.$seconds.' data-fuip-return-to="'.$page->{returnTo}.'"';
+};
+
+
+sub renderTabletUiJs($) {
+	my $hash = shift;
+	return '<script src="/fhem/'.lc($hash->{NAME}).'/js/fhem-tablet-ui.js"></script>';
+	#return '<script src="/fhem/'.lc($hash->{NAME}).'/fuip/js/fuip_tablet_ui.js"></script>';
 };
 
 
@@ -706,7 +720,7 @@ sub renderPage($$$) {
 				"<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.gridster.min.js\"></script>  
                 ".
 				($locked ? "" : renderFuipInit($hash)).
-				"<script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>
+				renderTabletUiJs($hash)."
 					<style type=\"text/css\">
 	                .fuip-color {
 		                color: ".$styleColor.";
@@ -775,8 +789,8 @@ sub renderPageFlex($$) {
 				.renderCommonCss($hash->{NAME})
 				.'<script type="text/javascript" src="/fhem/'.lc($hash->{NAME}).'/lib/jquery.min.js"></script>
 		        <script type="text/javascript" src="/fhem/'.lc($hash->{NAME}).'/fuip/jquery-ui/jquery-ui.min.js"></script>
-				<script src="/fhem/'.lc($hash->{NAME}).'/js/fhem-tablet-ui.js"></script>
-                <style type="text/css">
+				'.renderTabletUiJs($hash).'
+				<style type="text/css">
 	                .fuip-color {
 		                color: '.$styleColor.';
                     }
@@ -860,8 +874,8 @@ sub renderPageFlexMaint($$) {
 								<!-- tablesorter -->
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.js\"></script>
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.widgets.js\"></script>
-                <script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>".
-				renderFuipInit($hash).
+				".renderTabletUiJs($hash)."\n".				 
+                renderFuipInit($hash).
 				"<style type=\"text/css\">
 	                .fuip-color {
 		                color: ".$styleColor.";
@@ -983,7 +997,7 @@ sub renderPopupMaint($$) {
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.js\"></script>
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.widgets.js\"></script>".
 				"<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.gridster.min.js\"></script>".
-                "<script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>".
+                renderTabletUiJs($hash).
 				renderFuipInit($hash).
 				"<style type=\"text/css\">
 	                .fuip-color {
@@ -1083,7 +1097,7 @@ sub renderViewTemplateMaint($$) {
 								<!-- tablesorter -->
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.js\"></script>
 								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.widgets.js\"></script>".
-                "<script src=\"/fhem/".lc($hash->{NAME})."/js/fhem-tablet-ui.js\"></script>".
+                renderTabletUiJs($hash).
 				renderFuipInit($hash,$gridlines).
 				"<style type=\"text/css\">
 	                .fuip-color {
@@ -2010,82 +2024,6 @@ sub getFuipPage($$) {
 };
 
 
-sub showAllIcons() {
-  	my $result = 
-	   '<!DOCTYPE html>
-		<html>
-			<head>
-				<script type="text/javascript" src="/fhem/ui/lib/jquery.min.js"></script>
-				<script src="/fhem/ui/js/fhem-tablet-ui.js"></script>
-				<script>
-					$(function() {
-						$("body").css("background-color", "#E0E0E0");
-						$("body").css("color", "#101010");
-					});	
-				
-					function getIcons() {
-						if(document.styleSheets.length == 0) {
-							window.setTimeout(getIcons,1000);
-							return;
-						};
-						var currentSheet = null;
-						var i = 0;
-						var j = 0;
-						var ruleKey = null;
-						//loop through styleSheet(s)
-						var allIcons = {};
-						for(i = 0; i<document.styleSheets.length; i++){
-							currentSheet = document.styleSheets[i];
-							///loop through css Rules
-							for(j = 0; j< currentSheet.cssRules.length; j++){
-								if(!currentSheet.cssRules[j].selectorText) { continue; };
-								var selectors = currentSheet.cssRules[j].selectorText.split(",");
-								for(var k = 0; k < selectors.length; k++) {
-									var icons = selectors[k].match(/\.(fa|ftui|mi|oa|wi|fs)-.*(?=::before)/);
-									if(!icons){ continue; };
-									var icon = icons[0].substring(1);
-									// sometimes there is another class...
-									icon = icon.split(" ")[0];
-									allIcons[icon] = 1;
-									break;  // only one name of the same icon is enough
-								}
-							}
-						}
-						allIconsAsArr = Object.keys(allIcons);
-						allIconsAsArr.sort();
-						var html = "<table>";
-						for (var i = 0; i < allIconsAsArr.length; i++) {
-							var icon = allIconsAsArr[i];
-							if (! allIcons.hasOwnProperty(icon)) { continue };
-							var prefix = icon.split("-")[0];
-							if(prefix == "wi") {
-								icon = "wi " + icon;
-							};	
-							html += "<tr><td style=\"max-width:64px;padding:5px;border-style:solid;border-width:1px;\"><i class=\"fa " +icon+ " bigger bg-orange\"></i></td><td style=\"border-style:solid;border-width:1px;\">"+icon+"</td></tr>";
-						};
-						html += "</table>";
-						$("#allicons").html(html);
-					};
-					getIcons();		
-				</script>
-			</head>
-			<body>
-				<h1>Available Icons</h1>
-				<div id="allicons">
-				<p>Just a moment, more to come...</p>
-				<div data-type="symbol" data-icon="ftui-door"></div>
-				<div data-type="symbol" data-icon="fa-volume-up"></div>
-				<div data-type="symbol" data-icon="mi-local_gas_station"></div>
-				<div data-type="symbol" data-icon="oa-secur_locked"></div>
-				<div data-type="symbol" data-icon="wi-day-rain-mix"></div>	
-				<div data-type="symbol" data-icon="fs-ampel_aus"></div>
-				</div>
-			</body>
-		</html>';	
-	return ("text/html; charset=utf-8", $result);
-};
-
-
 sub urlParamsGet($) {
 	my ($request) = @_;
 	my @splitAtQ = split(/\?/,$request,2);
@@ -2245,6 +2183,42 @@ sub settingsImport($$) {
 };
 
 
+sub uploadLog($$) {
+	my ($hash,$request) = @_;
+	# get pageid and cellid
+	my $content;
+	my @urlParams = split(/&/,$request);
+	if($urlParams[1]) {
+		$content = $urlParams[1];
+	};	
+	# TODO: error management
+	# content is now URI-encoded
+	# main::Log3($hash,1,"FUIP upload logs: ".$request);
+	return("text/plain; charset=utf-8", "Content missing") unless $content;
+	$content =~ s/\+/%20/g;
+	$content = main::urlDecode($content);
+	my @content = split("\n",$content,2);
+	my $logid = $content[0];
+	$logid =~ s/[-:Z]//g;					#2019-10-21T18:53:39.116Z
+	$logid =~ s/T/\./g;
+	# now simply save to disk
+	my $filename = $hash->{NAME}.'.'.$main::defs{$main::FW_cname }{PEER}.'.'.$logid.'.log';
+	# make sure log directory exists
+	my $logPath = $fuipPath."log";
+	if(not(-d $logPath)) {
+		mkdir($logPath);
+		# we do not check for errors here as anyway the FileWrite will fail
+	};
+	# no config DB for logs
+	my $param = { FileName => $logPath."/".$filename };
+	$param->{ForceType} = "file";
+	my $result = main::FileWrite($param,@content);		
+	return("text/plain; charset=utf-8", "Error ".$result) if $result;
+	# confirmation message
+	return("text/plain; charset=utf-8", "OK");
+};
+
+
 sub finishCgiAnswer($$) {
 	# this is more or less copied from FW_finishRead of FHEMWEB
 	my ($rettype, $data) = @_;	
@@ -2314,6 +2288,12 @@ sub CGI_inner($) {
 		return getFuipPage($hash,join('/',@path));
 	};
 	
+	# very special logic for tablet-ui kernel
+	if($path[0] ne "fuip" and ( $path[-1] eq "fhem-tablet-ui.js")) {
+		unshift(@path,"fuip");
+		$path[-1] = "fuip_tablet_ui.js";
+	};	
+	
 	# special logic for weatherdetail and readingsgroup
 	# add "fuip" in front of path to make sure to use the FUIP version
 	if($path[0] ne "fuip" and ( $path[-1] eq "widget_weatherdetail.js" or 
@@ -2346,6 +2326,9 @@ sub CGI_inner($) {
 		# view template maintenance
 		}elsif($path[1] =~ m/^viewtemplate/) { 
 			return renderViewTemplateMaint($hash,$request);		
+		# upload logs	
+		}elsif($path[1] =~ m/^logupload/) {
+			return uploadLog($hash,$request);	
 		}
 		# other built in fuip files
 		shift @path;
@@ -2362,11 +2345,6 @@ sub CGI_inner($) {
 		}
 	};
 	
-	# TODO: remove this again...
-	if($path[0] eq "icons") {
-		return showAllIcons();
-	};
-
 	# otherwise, this is some library file or js or...	
 	
     $filename =~ s/\?.*//;

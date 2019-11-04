@@ -58,3 +58,88 @@ if($('html').data('fuipReturnAfter')) {
 	$(document).on("click", fuipResetTimer);
 	$(document).on("mousedown", fuipResetTimer);
 };
+
+
+// log/trace handling
+function fuipGetLogs() {
+	// get all entries in localStorage
+	var log = new Object;
+	for (var i = 0; i < localStorage.length; i++) {
+		var key = localStorage.key(i);
+		if(!key.match(/^ftui\.log\./)) 
+			continue;
+		var logid = key.substr(9);
+		logid = logid.substr(0,logid.length - 9);
+		if(!log[logid]) {
+			log[logid] = [];
+		};	
+		log[logid].push({index: key.substr(-8), content: localStorage.getItem(key)});
+	}
+	var logIds = [];
+	for(var logid in log) {
+		logIds.push(logid);
+		log[logid].sort(function (a,b) { return parseInt(a.index) - parseInt(b.index) });
+	};
+	logIds.sort();
+
+	var result = "";
+	for(var i = 0; i < logIds.length; i++) {
+		result += logIds[i] + "\n";
+		for(var j = 0; j < log[logIds[i]].length; j++) {
+			var entry = log[logIds[i]][j];
+			result += entry.index + " " + entry.content + "\n";
+		};
+	};	
+	return result;
+};
+
+
+function fuipDeleteOldLogs() {
+	// remove all logs except the current one
+	var keys2remove = [];
+	for (var i = 0; i < localStorage.length; i++) {
+		var key = localStorage.key(i);
+		if(!key.startsWith("ftui.log."))
+			continue;
+		if(ftui.logid && key.startsWith("ftui.log." + ftui.logid)) 
+			continue;
+		keys2remove.push(key);	
+	};
+	for (var i = 0; i < keys2remove.length; i++) {
+		localStorage.removeItem(keys2remove[i]);	
+	};	
+};
+
+
+// In case there is already a log written when the page is called,
+// this log is sent to FHEM (if possible)
+function fuipPostLogs() {
+	// check if there are logs (only send the first log for now)
+	var logs = fuipGetLogs();
+	// anything?
+	if(!logs.length){
+		return;
+	};
+	// send logs to FHEM
+	let url = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() + '/fuip/logupload';
+	$.ajax({
+		async: true,
+		cache: false,
+		method: 'POST',
+		dataType: 'text',
+		url: url,
+		data: encodeURIComponent(logs),
+		error: function (jqXHR, textStatus, errorThrown) {
+			ftui.log(1,"FUIP: Log upload failed" + jqXHR.status + " " + textStatus + ": " + errorThrown);
+		}
+	}).done(function(result) {
+		if(result == "OK") {
+					fuipDeleteOldLogs();
+		};	
+	});
+};
+
+// do this once when page loads
+fuipPostLogs();
+
+

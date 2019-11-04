@@ -19,7 +19,8 @@ function fuip_resize_init() {
 	if($(".gridster").length) {
 		// gridster
 		if(!ftui.gridster.instances['html']) {
-			$(fuip_resize_init); // i.e. do it a bit later
+			setTimeout(fuip_resize_init,100);
+			// $(fuip_resize_init); // i.e. do it a bit later
 			return;
 		};	
 	};	
@@ -33,7 +34,8 @@ function fuip_resize_init() {
 	});
 	if(!initialized) {
 		console.log("not initialized - trying later");
-		$(fuip_resize_init); // i.e. do it a bit later
+		setTimeout(fuip_resize_init,100);
+		// $(fuip_resize_init); // i.e. do it a bit later
 		return;		
 	};	
 	// now really do it
