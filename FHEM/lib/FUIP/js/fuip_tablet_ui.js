@@ -446,20 +446,20 @@ var ftui = {
     poll: {
         short: {
             timer: null,
-            request: null,
-            lastErrorToast: null
+            request: null
         },
         long: {
             currLine: 0,
             lastEventTimestamp: Date.now(),
-            timer: null,
-            lastErrorToast: null
+            timer: null
         },
 		// PFE
 		status: 0,   // 0: DISCONNECTED, 1: CONNECTING, 2: CONNECTED
 		healthCheckTimer: null,
 		lastConnectTime: 0,
-		connectRetryTimer: null
+		connectWaitTime: 0,  // at first fail, we don't wait, then 50ms, then 100ms, then 200ms etc. max. wait is 5 secs
+		connectRetryTimer: null,
+		initialized: false  // set to true after initWidgetsDone
     },
 
     states: {
@@ -639,7 +639,12 @@ var ftui = {
 		// I have never seen the "online" event, but it probably does not do any harm to 
 		// check whether we can connect
 		$(document).on("initWidgetsDone visibilitychange online", function (event) {
-			ftui.log(1, 'Event: ' + event.type,"base.poll");    
+			ftui.log(1, 'Event: ' + event.type,"base.poll");   
+			// make sure that iniWidgetsDone is the first
+			// sometimes visibilitychange comes before widgets are ready
+			if(!ftui.poll.initialized && event.type !== "initWidgetsDone") 
+				return true;
+			ftui.poll.initialized = true;
 			if(ftui.poll.status == 0) 
 				ftui.conditionalConnect(true);
 		});	
@@ -647,12 +652,23 @@ var ftui = {
 		//		disconnect
 		// There was also the event "offline". However, I have never seen any 
 		// "online" event when the connection came back. 
-		// "beforeunload" seems to be triggered only if the page is really "almost dead"
-		// or when a mobile device sleeps for a while. In the latter case, we rely
-		// on a "visibilitychange" event to tell us when it comes back.
+		// "beforeunload" seems to be triggered if the page is really "almost dead"
+		// or when a mobile device sleeps for a while. 
 		$(window).on("beforeunload", function (event) {
 			ftui.log(1, 'Event: ' + event.type,"base.poll"); 
+			// The following might look a bit weird. It is here to solve the following
+			// issue: Some browsers (Chrome Mobile) trigger a beforeunload after sleeping
+			// for a while. When coming back, the page is shown, but there are no
+			// events (like visibilitychange, online, focus etc.) triggered. 
+			// It also seems that after beforeunload, nothing is processed until the
+			// page is really back. This means that we do not have to try the connect
+			// multiple times or so.
+			// Put this a little bit into the future to avoid immediate reconnect for 
+			// real "beforeunload".
+			// 250 ms should be ok. 100ms is a bit short, it sometimes tries to 
+			// reconnect.
 			ftui.disconnect();
+			setTimeout(function() {	ftui.conditionalConnect(true) }, 250);
 		});	
 				
         $(document).on("initWidgetsDone", function () {
@@ -972,9 +988,6 @@ var ftui = {
 
                         // finished
                         ftui.log(1, 'shortPoll: Done', "base.poll");
-                        if (ftui.poll.short.lastErrorToast) {
-                            ftui.poll.short.lastErrorToast.reset();
-                        }
                         ftui.states.lastShortpoll = ltime;
                         ftui.saveStatesLocal();
                         ftui.updateBindElements('ftui.');
@@ -983,7 +996,6 @@ var ftui = {
                     } else {
                         var err = "request failed: Result is null";
                         ftui.log(1, "shortPoll: " + err, "base.poll");
-                        ftui.toast("<u>ShortPoll " + err + " </u><br>", 'error');
 						deferred.reject("ShortPoll: no result");
                     }
                 })
@@ -992,12 +1004,9 @@ var ftui = {
                     ftui.log(1, "shortPoll: request failed: " + err, "base.poll");
                     ftui.saveStatesLocal();
                     if (textStatus.indexOf('parsererror') < 0) {
-                        ftui.poll.short.lastErrorToast = ftui.toast("<u>ShortPoll Request Failed, will retry</u><br>" +
-                            err, 'error');
-                        ftui.getCSrf();
-                    } else {
-                        ftui.toast("<u>ShortPoll Request Failed</u><br>" + err, 'error');
-                    }
+						// it is relatively likely that this is because FHEM restarted
+						ftui.getCSrf();
+                    };
 					deferred.reject("ShortPoll request failed " + err);
                 });
 		return deferred.promise();		
@@ -1038,9 +1047,6 @@ var ftui = {
 
 	// PFE
     createWebsocket: function () {
-        if (ftui.poll.long.lastErrorToast) {
-            ftui.poll.long.lastErrorToast.reset();
-        }
         ftui.log(2, "WebSocket creation started", "base.poll");
         ftui.poll.long.URL = ftui.config.fhemDir.replace(/^http/i, "ws") + "?XHR=1&inform=type=status;filter=" +
             ftui.poll.long.filter + ";since=" + ftui.poll.long.lastEventTimestamp + ";fmt=JSON" +
@@ -1049,6 +1055,7 @@ var ftui = {
         ftui.poll.long.websocket = new WebSocket(ftui.poll.long.URL);
 		ftui.poll.long.websocket.onopen = function() { 
 			ftui.showErrorOverlay(false);
+			ftui.poll.connectWaitTime = 0;
 			// start health check timer
 			ftui.poll.healthCheckTimer = setInterval(ftui.healthCheck, 60000);
 			// start shortpoll timer
@@ -1145,7 +1152,6 @@ var ftui = {
     },
 
     sendFhemCommand: function (cmdline) {
-
         cmdline = cmdline.replace('  ', ' ');
         var dataType = (cmdline.substr(0, 8) === 'jsonlist') ? 'json' : 'text';
         ftui.log(1, 'send to FHEM: ' + cmdline, "base.command");
@@ -1163,7 +1169,7 @@ var ftui = {
                 XHR: "1"
             },
             error: function (jqXHR, textStatus, errorThrown) {
-                ftui.toast("<u>FHEM Command failed</u><br>" + textStatus + ": " + errorThrown + " cmd=" + cmdline, 'error');
+                ftui.log(1, "FHEM Command failed" + textStatus + ": " + errorThrown + " cmd=" + cmdline, 'base.command');
             }
         });
 
@@ -1285,24 +1291,36 @@ var ftui = {
 			clearTimeout(ftui.poll.connectRetryTimer);
 			ftui.poll.connectRetryTimer = null;
 		};
-		// if we have tried to connect less than 3 seconds ago, 
-		// then wait a bit
-		if(!immediately) {
-			var lastConnectAge = Date.now() - ftui.poll.lastConnectTime;
-			if(lastConnectAge < 3000) { 
-				ftui.poll.connectRetryTimer = setTimeout(ftui.conditionalConnect, 3000 - lastConnectAge);
-				return;
-			};	
-		};	
-		// page visible
+		// if not visible, don't try to connect
 		// There used to be a check on navigator.onLine as well, but this does not
 		// seem to work properly
-		if(document.visibilityState === 'visible') {
-			ftui.poll.lastConnectTime = Date.now();
-			ftui.connect();
-		}else{
+		if(document.visibilityState !== 'visible') {
 			ftui.log(1, 'Staying DISCONNECTED: invisible or offline', "base.poll");
+			ftui.poll.connectWaitTime = 0; // immediately connect when becoming visible or online 
+			return;
 		};	
+		// if we have tried to connect less than n seconds ago, 
+		// then wait a bit
+		if(immediately) {
+			ftui.poll.connectWaitTime = 0;  
+		};
+		if(ftui.poll.connectWaitTime > 0) { 
+			var lastConnectAge = Date.now() - ftui.poll.lastConnectTime;
+			if(lastConnectAge < ftui.poll.connectWaitTime) { 
+				ftui.log(4, 'Connect wait time ' + ftui.poll.connectWaitTime + " ...waiting", "base.poll");
+				ftui.poll.connectRetryTimer = setTimeout(ftui.conditionalConnect, ftui.poll.connectWaitTime - lastConnectAge);
+				return;
+			};	
+		};
+		// determine next time: 50,100,200,400,...,3200,5000
+		if(ftui.poll.connectWaitTime) {
+			ftui.poll.connectWaitTime *= 2;
+			if(ftui.poll.connectWaitTime > 5000) ftui.poll.connectWaitTime = 5000;
+		}else{
+			ftui.poll.connectWaitTime = 50;
+		};	
+		ftui.poll.lastConnectTime = Date.now();
+		ftui.connect();
 	},	
 		
 	
@@ -1331,7 +1349,6 @@ var ftui = {
 
         var deferredLoad = new $.Deferred();
         ftui.log(2, 'Start load plugin "' + name + '" for area "' + area + '"', "base.widget");
-        //ftui.toast(name);
 
         // get the plugin
         ftui.dynamicload(ftui.config.basedir + "js/widget_" + name + ".js", true).done(function () {

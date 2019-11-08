@@ -75,7 +75,7 @@ UPD 2019-03-15_20:30:01 5774 FHEM/lib/FUIP/doc/RenameViewTemplate.png
 UPD 2019-05-19_15:29:14 25890 FHEM/lib/FUIP/doc/Swiper.png
 UPD 2019-06-11_16:58:03 8100 FHEM/lib/FUIP/doc/Units.png
 UPD 2019-05-21_21:16:03 19252 FHEM/lib/FUIP/doc/VariablenImViewTemplate.png
-UPD 2019-11-04_22:46:05 48907 FHEM/lib/FUIP/doc/changes.html
+UPD 2019-11-08_14:12:35 50765 FHEM/lib/FUIP/doc/changes.html
 UPD 2019-01-23_21:22:28 1553 FHEM/lib/FUIP/fonts/nesges.css
 UPD 2015-05-26_10:04:28 5784 FHEM/lib/FUIP/fonts/nesges.woff
 UPD 2018-07-18_14:43:10 38 FHEM/lib/FUIP/images/lizenzen.txt
@@ -99,7 +99,7 @@ UPD 2019-04-07_20:03:20 841 FHEM/lib/FUIP/js/fuip_label.js
 UPD 2019-07-07_20:22:32 1810 FHEM/lib/FUIP/js/fuip_labelreading.js
 UPD 2019-01-11_16:27:51 475 FHEM/lib/FUIP/js/fuip_readingsgroup.js
 UPD 2019-04-07_20:03:21 1501 FHEM/lib/FUIP/js/fuip_state.js
-UPD 2019-11-04_20:52:40 87586 FHEM/lib/FUIP/js/fuip_tablet_ui.js
+UPD 2019-11-08_10:56:50 88572 FHEM/lib/FUIP/js/fuip_tablet_ui.js
 UPD 2018-03-17_22:57:55 106396 FHEM/lib/FUIP/js/jquery.tablesorter.js
 UPD 2018-03-17_22:57:55 125594 FHEM/lib/FUIP/js/jquery.tablesorter.widgets.js
 UPD 2019-01-15_12:06:58 1847 FHEM/lib/FUIP/js/widget_dwdweblink.js

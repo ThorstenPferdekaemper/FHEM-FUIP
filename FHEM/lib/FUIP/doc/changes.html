@@ -6,6 +6,22 @@
 <body>
 <h1>FUIP News</h1>
 
+<h2>08.11.2019</h2>
+<h3>Reconnect nach langem Handy-Schlaf</h3>
+Bei manchen mobilen Browsern (bzw. mindestens bei Chrome auf meinem Telefon) konnte sich das Frontend nach "langem" Abschalten des Bildschirms nicht mehr mit FHEM verbinden. Man musste die Seite manuell aktualisieren. Dies wurde behoben (jetzt hoffentlich endgültig).<br>
+Für Interessierte: Der Browser hat nach einer Weile (etwa 15 Minuten bis 2 Stunden) ein beforeunload-Event gesendet, aber die Seite war nach dem Aufwachen immer noch da. Allerdings gab es weder ein visibilitychange-Event noch irgend ein anderes Event, welches verwendbar wäre.
+
+<h3>Reconnect-Wartezeit-Eskalation</h3>
+(Ich habe keine Ahnung, wie ich das ordentlich nennen soll.)<br>
+In manchen Situationen bricht die Verbindung ab, kann aber sofort wiederhergestellt werden. Andererseits sollte bei dauerhaftem Verbindungsabbruch nicht st&auml;ndig versucht werden, eine Verbindung herzustellen. Daher wird jetzt der erste Versuch nach einem Abbruch sofort gemacht, der nächste etwas sp&auml;ter usw. Die maximale Wartezeit zwischen zwei Verbindungsversuchen betr&auml;gt 5 Sekunden. 
+
+<h3>Keine Toast-Messages mehr bei Verbindungsproblemen</h3>
+Durch die Overlay-Meldung (alles wird rot...) kann man Verbindungsprobleme kaum noch &uuml;bersehen. Die (zus&auml;tzlichen) Toast-Meldungen waren eher verwirrend, da sie in der Regel dann auftauchen, wenn die Verbindung gerade wieder hergestellt wurde. Eine genauere Analyse von Verbindungsproblemen kann (und sollte) jetzt &uuml;ber das Log erfolgen.
+
+<h3>Komplett fehlende Aktualisierung der Readings</h3>
+Dieser Fall kam relativ selten vor, aber manchmal wurden &uuml;berhaupt keine Readings aktualisiert. Derselbe Fehler hat auch dazu gef&uuml;hrt, dass nach einem Verbindungssabbruch st&auml;ndig und sehr schnell Shortpolls versucht wurden. Beides wurde behoben.
+
+
 <h2>04.11.2019</h2>
 <h3>Verbindung zum "Backend" stabilisiert</h3>
 Da die Umstellung auf Longpoll (Ajax) vom 13.08.2019 nicht wirklich viel gebracht hat, wurde wieder auf Websocket umgestellt und der komplette Connect/Disconnect/Reconnect-Mechanismus &uuml;berarbeitet. Dabei wurden insbesondere den Seltsamkeiten bei schlafenden Mobilger&auml;ten Beachtung geschenkt. Leider musste daf&uuml;r der "FTUI-Kernel" (also die Datei fhem-tablet-ui.js) &uuml;bernommen und stark modifiziert werden. (D.h. eine Kopie davon. FUIP ver&auml;ndert keine fremden Dateien.)
