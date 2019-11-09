@@ -10,6 +10,14 @@
 <h3>HTML-View: Flexible Felder mit Anf&uuml;hrungszeichen (")</h3>
 Flexible Felder, bei denen ein (oder mehrere) Anf&uuml;hrungszeichen im Wert vorkamen, haben zu Fehlern gef&uuml;hrt. (Flexible Felder sind solche, die durch die Verwendung von "fuip-field" im HTML entstehen.) Dieses Problem wurde behoben, au&szlig;er f&uuml;r Felder des Typs "setoptions". Hier sind nach wie vor keine Anführungszeichen m&ouml;glich. 
 
+<h3>ShutterControl, UpStopDown: Visualisierung der aktuellen Bewegung</h3>
+Bei den Views ShutterControl und UpStopDown kann man jetzt ein Reading angeben, welches die momentane Bewegungsrichtung enth&auml;lt. Enth&auml;lt dieses Reading den Wert f&uuml;r "hoch" (per Default "up"), dann wird der Pfeil nach oben aktiv ("on") dargestellt. Entsprechend beim Wert f&uuml;r "runter" der Pfeil nach unten. Die neuen Parameter der Views sind wie folgt:
+<ul>
+<li><b>dirReading</b> enth&auml;lt das Reading mit der Richtungs-/Bewegungsanzeige. Defaultwert ist "direction". Es sind nur Readings des Device im Parameter "device" vorgesehen.</li> 
+<li><b>dirUp</b> enth&auml;lt den Wert, den das Reading annimmt, wenn der Rollladen nach oben f&auml;hrt. Defaultwert ist "up".</li>
+<li><b>dirDown</b> enth&auml;lt den Wert, den das Reading annimmt, wenn der Rollladen nach unten f&auml;hrt. Defaultwert ist "down".</li>
+</ul>
+
 <h2>08.11.2019</h2>
 <h3>Reconnect nach langem Handy-Schlaf</h3>
 Bei manchen mobilen Browsern (bzw. mindestens bei Chrome auf meinem Telefon) konnte sich das Frontend nach "langem" Abschalten des Bildschirms nicht mehr mit FHEM verbinden. Man musste die Seite manuell aktualisieren. Dies wurde behoben (jetzt hoffentlich endgültig).<br>

@@ -10,6 +10,10 @@ use parent -norequire, 'FUIP::View';
 sub getHTML($){
 	my ($self) = @_;
 	my $device = $self->{device};
+	# for old instances
+	$self->{dirReading} = "direction" unless($self->{dirReading});	
+	$self->{dirUp} = "up" unless($self->{dirUp});	
+	$self->{dirDown} = "down" unless($self->{dirDown});	
 	# icons Closed ... Open
 	my @icons = (
 				"oa-fts_shutter_100","oa-fts_shutter_90",
@@ -59,13 +63,17 @@ sub getHTML($){
 				<td width="60">  
 					<div class="triplebox-v left" >
 						<div data-type="push" data-device="'.$device.'" data-icon="fa-chevron-up" 
-							data-background-icon="fa-square-o" 	data-set-on="'.$self->{setUp}.'" class=""> 
+							data-background-icon="fa-square-o" 	data-set-on="'.$self->{setUp}.'" 
+							data-get="'.$self->{dirReading}.'" data-get-on="'.$self->{dirUp}.'"
+							class=""> 
 						</div>
 						<div data-type="push" data-device="'.$device.'" data-icon="fa-minus" 
 							data-background-icon="fa-square-o" data-set-on="'.$self->{setStop}.'" class=""> 
 						</div>
 						<div data-type="push" data-device="'.$device.'" data-icon="fa-chevron-down" 
-							data-background-icon="fa-square-o" data-set-on="'.$self->{setDown}.'" class=""> 
+							data-background-icon="fa-square-o" data-set-on="'.$self->{setDown}.'" 
+							data-get="'.$self->{dirReading}.'" data-get-on="'.$self->{dirDown}.'"
+							class=""> 
 						</div>
 					</div> 
 				</td>
@@ -128,6 +136,9 @@ sub getStructure($) {
 				default => { type => "const", value => "shutter" }},
 		{ id => "minLevel", type => "text", default => { type => "const", value => "0" } },
 		{ id => "maxLevel", type => "text", default => { type => "const", value => "100" } },
+		{ id => "dirReading", type => "reading", refdevice => "device", default => { type => "const", value => "direction" } },
+		{ id => "dirUp", type => "text", default => { type => "const", value => "up" } },
+		{ id => "dirDown", type => "text", default => { type => "const", value => "down" } },
 		{ id => "timer", type => "device", default => { type => "field", value => "device", suffix => "Timer" } }
 		];
 };

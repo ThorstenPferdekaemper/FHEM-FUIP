@@ -36,7 +36,7 @@ UPD 2019-07-22_20:04:33 1873 FHEM/lib/FUIP/View/ReadingsGroup.pm
 UPD 2018-03-23_22:26:04 1478 FHEM/lib/FUIP/View/ReadingsList.pm
 UPD 2019-04-03_20:32:25 3762 FHEM/lib/FUIP/View/STATE.pm
 UPD 2018-11-24_21:06:06 2589 FHEM/lib/FUIP/View/Select.pm
-UPD 2019-03-12_16:37:33 5436 FHEM/lib/FUIP/View/ShutterControl.pm
+UPD 2019-11-09_21:06:28 6086 FHEM/lib/FUIP/View/ShutterControl.pm
 UPD 2018-12-01_20:41:29 2780 FHEM/lib/FUIP/View/ShutterOverview.pm
 UPD 2019-07-22_20:12:33 2087 FHEM/lib/FUIP/View/ShutterTimer.pm
 UPD 2018-11-29_08:36:57 1722 FHEM/lib/FUIP/View/SimpleSwitch.pm
@@ -45,7 +45,7 @@ UPD 2019-03-10_21:07:05 1963 FHEM/lib/FUIP/View/SpinDim.pm
 UPD 2019-07-22_20:18:03 2140 FHEM/lib/FUIP/View/Sysmon.pm
 UPD 2019-11-03_21:18:16 4353 FHEM/lib/FUIP/View/Thermostat.pm
 UPD 2019-01-29_16:14:57 2604 FHEM/lib/FUIP/View/Title.pm
-UPD 2018-12-09_16:28:50 2060 FHEM/lib/FUIP/View/UpStopDown.pm
+UPD 2019-11-09_21:06:38 2702 FHEM/lib/FUIP/View/UpStopDown.pm
 UPD 2019-05-05_10:11:58 5189 FHEM/lib/FUIP/View/ViewTemplInstance.pm
 UPD 2019-05-21_20:47:50 18005 FHEM/lib/FUIP/View/ViewTemplate.pm
 UPD 2019-07-22_20:24:50 4406 FHEM/lib/FUIP/View/WeatherDetail.pm
@@ -75,7 +75,7 @@ UPD 2019-03-15_20:30:01 5774 FHEM/lib/FUIP/doc/RenameViewTemplate.png
 UPD 2019-05-19_15:29:14 25890 FHEM/lib/FUIP/doc/Swiper.png
 UPD 2019-06-11_16:58:03 8100 FHEM/lib/FUIP/doc/Units.png
 UPD 2019-05-21_21:16:03 19252 FHEM/lib/FUIP/doc/VariablenImViewTemplate.png
-UPD 2019-11-09_20:00:40 51207 FHEM/lib/FUIP/doc/changes.html
+UPD 2019-11-09_21:10:19 52122 FHEM/lib/FUIP/doc/changes.html
 UPD 2019-01-23_21:22:28 1553 FHEM/lib/FUIP/fonts/nesges.css
 UPD 2015-05-26_10:04:28 5784 FHEM/lib/FUIP/fonts/nesges.woff
 UPD 2018-07-18_14:43:10 38 FHEM/lib/FUIP/images/lizenzen.txt
