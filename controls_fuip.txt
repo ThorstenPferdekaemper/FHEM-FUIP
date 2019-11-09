@@ -23,7 +23,7 @@ UPD 2019-07-21_21:26:25 1958 FHEM/lib/FUIP/View/DwdWebLink.pm
 UPD 2018-12-09_18:05:16 3791 FHEM/lib/FUIP/View/HeatingControl.pm
 UPD 2018-04-14_20:19:11 4330 FHEM/lib/FUIP/View/HeatingOverview.pm
 UPD 2019-06-04_20:52:20 840 FHEM/lib/FUIP/View/HomeButton.pm
-UPD 2019-01-01_21:02:01 2046 FHEM/lib/FUIP/View/Html.pm
+UPD 2019-11-09_19:56:03 2231 FHEM/lib/FUIP/View/Html.pm
 UPD 2019-07-26_13:59:57 7724 FHEM/lib/FUIP/View/HueSceneSelect.pm
 UPD 2019-02-08_22:22:18 2484 FHEM/lib/FUIP/View/LabelHumidity.pm
 UPD 2019-07-07_20:27:43 5639 FHEM/lib/FUIP/View/LabelReading.pm
@@ -75,7 +75,7 @@ UPD 2019-03-15_20:30:01 5774 FHEM/lib/FUIP/doc/RenameViewTemplate.png
 UPD 2019-05-19_15:29:14 25890 FHEM/lib/FUIP/doc/Swiper.png
 UPD 2019-06-11_16:58:03 8100 FHEM/lib/FUIP/doc/Units.png
 UPD 2019-05-21_21:16:03 19252 FHEM/lib/FUIP/doc/VariablenImViewTemplate.png
-UPD 2019-11-08_14:12:35 50765 FHEM/lib/FUIP/doc/changes.html
+UPD 2019-11-09_20:00:40 51207 FHEM/lib/FUIP/doc/changes.html
 UPD 2019-01-23_21:22:28 1553 FHEM/lib/FUIP/fonts/nesges.css
 UPD 2015-05-26_10:04:28 5784 FHEM/lib/FUIP/fonts/nesges.woff
 UPD 2018-07-18_14:43:10 38 FHEM/lib/FUIP/images/lizenzen.txt

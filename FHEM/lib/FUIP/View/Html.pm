@@ -31,6 +31,10 @@ sub getHTML($){
 		my $value = $self->{$flexfield};
 		if($self->{flexstruc}{$flexfield}{type} eq "setoptions") {
 			$value = '[\"'.join('\",\"',@$value).'\"]';
+		}else{
+			# allow double-ticks (") in variables, which are not type "setoptions"
+			# for setoptions, it would not work anyway when they have them
+			$value =~ s/\"/\\\"/g;	# " -> \"
 		};
 		$fieldStr .= '"'.$flexfield.'":"'.$value.'"'; 
 	};
