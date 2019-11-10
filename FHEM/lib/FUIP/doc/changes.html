@@ -10,6 +10,9 @@
 <h3>Beim Kopieren von Zellen springt FUIP zu FHEMWEB zur&uuml;ck</h3>
 Wenn im Namen des FUIP-Device Gro&szlig;buchstaben vorkommen, dann wurde beim Kopieren von Zellen zu FHEMWEB "zur&uuml;ckgesprungen". Dies ist jetzt behoben. 
 
+<h3>ShutterControl: Aktueller Stand im Select-Widget</h3>
+In der ShutterControl-View wird jetzt im Select-Widget auch etwas angezeigt, wenn der aktuelle Stand zwischen zwei Werten liegt. (Das Select-Widget ist das Element rechts neben den Hoch/Stop/Runter-Tasten, mit dem man einen bestimmten Prozentwert anfahren kann.) Es wird jetzt immer der Wert angezeigt, der am n&auml;chsten am vom Rollladen-Device zurückgemeldeten Stand liegt. Wenn der Rollladen z.B. bei 88% steht, dann wird 90% angezeigt.
+
 <h2>09.11.2019</h2>
 <h3>HTML-View: Flexible Felder mit Anf&uuml;hrungszeichen (")</h3>
 Flexible Felder, bei denen ein (oder mehrere) Anf&uuml;hrungszeichen im Wert vorkamen, haben zu Fehlern gef&uuml;hrt. (Flexible Felder sind solche, die durch die Verwendung von "fuip-field" im HTML entstehen.) Dieses Problem wurde behoben, au&szlig;er f&uuml;r Felder des Typs "setoptions". Hier sind nach wie vor keine Anführungszeichen m&ouml;glich. 

@@ -78,8 +78,8 @@ sub getHTML($){
 					</div> 
 				</td>
 				<td>
-					<div data-type="select" data-device="'.$device.'" 
-						data-items=\'["'.join('","',@levels).'"]\' 
+					<div data-type="fuip_numselect" data-device="'.$device.'" 
+						data-items=\'['.join(',',@levels).']\' 
 						data-alias=\'["'.join('","',@texts).'"]\' 
 						data-get="'.$self->{readingLevel}.'" data-set="'.$self->{setLevel}.'"
 						style="width:65px">
