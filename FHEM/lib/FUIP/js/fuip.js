@@ -3313,7 +3313,7 @@ function copyCurrentCell() {
 			click: async function() {
 				var newname = $("#newpagename").val();			
 				await asyncSendFhemCommandLocal("set " + name + " cellcopy " + pageid + "_" + viewid + " " + newname);
-				window.location = "/fhem/"+name+"/page/"+newname;
+				window.location = "/fhem/" + name.toLowerCase() + "/page/"+newname;
 			},
 			showLabel: false },
 		  { text: 'Cancel',
