@@ -3251,7 +3251,9 @@ sub _innerSet($$$)
 		my $files = getConfigFiles($hash);
 		return "Unknown argument $cmd, choose one of save:noArg".
 				($files ? " load:".join(',',@$files) : "").
-				" lock unlock viewsettings viewaddnew viewdelete viewposition autoarrange refreshBuffer pagedelete:".join(',',sort keys %{$hash->{pages}});
+				" lock unlock refreshBuffer pagedelete:".join(',',sort keys %{$hash->{pages}});
+				# further commands are: viewsettings viewaddnew viewdelete viewposition autoarrange, 
+				# but these are only for internal use 
 	}
 	return undef;  # i.e. all good
 }
@@ -3603,8 +3605,192 @@ sub Get($$$)
 			};
 		};
 		my $viewclasses = _getViewClasses();
-		return "Unknown argument $opt, choose one of settings viewclasslist:noArg viewdefaults:".join(",",@$viewclasses)." pagelist:noArg pagesettings:".join(",",@pages)." devicelist:noArg readingslist sets";
+		return "All get commands are for internal use only.";
+		# get commands are:
+		# settings viewclasslist:noArg viewdefaults:".join(",",@$viewclasses)." pagelist:noArg 
+		# pagesettings:".join(",",@pages)." devicelist:noArg readingslist sets"
+		# However, these are only for internal use
 	}
 }
    
 1;
+
+=pod
+=item helper
+=item summary    FHEM User Interface Painter 
+=item summary_DE FHEM User Interface Painter
+
+=begin html_DE
+
+<a name="FUIP"></a>
+<h3>FUIP</h3>
+<ul>
+  Definiert ein "FHEM User Interface Painter Device" (FUIP Device), welches ein "FUIP Frontend" repr&auml;sentiert. D.h. wenn man FUIP nutzen will, muss man mindestens ein FUIP Device anlegen.	
+  <br><br>
+
+  <a name="FUIPdefine"></a>
+  <b>Define</b><br>
+  <code>define &lt;name&gt; FUIP</code><br>
+	Mehr ist hier nicht notwendig, alles andere wird &uuml;ber Attribute und set-Kommandos bzw. Klickibunti und M&auml;seschubsen gemacht.
+  <br><br>
+  <a name="FUIPset"></a>
+  <b>Set</b>
+  <ul>
+  	<li><a name="save">save</a>: Speichern des Zustands der Oberfl&auml;che<br>
+	Das Kommando <code>set...save</code> speichert den momentanen Bearbeitungszustand der Oberfl&auml;che. Dies beinhaltet alles, was man per Klickibunti und M&auml;seschubsen macht, aber nicht die Einstellungen in der FHEMWEB-Oberfl&auml;che. Zus&auml;tzlich zum expliziten <code>set...save</code> gibt es noch einen Autosave-Mechanismus. Die entstehenden Dateien k&auml;nnen einfach per <code>set...load</code> geladen werden.</li>
+
+	<li><a name="load">load</a>: Laden eines Zustands der Oberfl&auml;che<br>
+	Das Kommando <code>set...load</code> akzeptiert einen Parameter, &uuml;ber den angegeben werden kann, ob man die normal abgespeicherte Konfiguration laden will ("lastSaved" oder einfach leer lassen) oder eine der Autosave-Dateien.
+	FUIP speichert jede &Auml;nderung automatisch ab. Dadurch entstehen für jedes FUIP-Device bis zu 5 Autosave-Dateien, die bei <code>set...load</code> ausgew&auml;hlt werden k&ouml;nnen. </li>
+	
+	<li><a name="lock">lock</a>: Sperren der Oberfl&auml;che gegen &Auml;nderungen<br>
+	Der Befehl <code>set...lock</code> ist daf&uuml;r gedacht, die Oberfl&auml;che vor&uuml;bergehend gegen &Auml;nderungen zu sperren, w&auml;hrend das Attribut <code>locked</code> (noch) nicht gesetzt ist (oder explizit auf "0"), bzw. die Oberfl&auml;che wieder zu sperren, nachdem sie mit <code>set...unlock</code> vor&uuml;bergehend in den &Auml;nderungsmodus geschaltet wurde.<br>
+	Als weiteren Parameter kann man entweder "client", "all" oder eine IP-Adresse angeben: 
+	<ul>
+	<li>"client" wirkt nur auf den aktuellen Client (also den Rechner, vor dem man sitzt). </li>
+		<li>"all" wirkt auf alle Clients.</li>
+		<li>Wird eine IP-Adresse angegeben, dann wirkt das Kommando auf den Client mit dieser IP-Adresse. Dadurch kann man z.B. auf dem Tablet/Telefon nachsehen, wie sich eine &Auml;nderung tats&auml;chlich auswirkt. Mehrere <code>set...lock</code> hintereinander wirken additiv. Insbesondere hat nach einem <code>set...lock all</code> ein <code>set...lock 192.168.178.60</code> keine Wirkung mehr.</li>
+		<li>Wird <code>set...lock</code> ohne weiteren Parameter aufgerufen, dann h&auml;ngt die Wirkung vom Attribut <code>locked</code> ab. Ist <code>locked=1</code>, dann ist der Default wie "all". Ansonsten ist der Default wie "client".</li> 
+	</ul>		
+	</li>
+	<li><a name="unlock">unlock</a>: Die Oberfl&auml;che in den &Auml;nderungsmodus schalten<br>
+	Der Befehl <code>set...unlock</code> ist daf&uuml;r gedacht, die Oberfl&auml;che vor&uuml;bergehend in den &Auml;nderungsmodus zu schalten, w&auml;hrend das Attribut <code>locked</code> (schon) auf "1" gesetzt ist, bzw. die Oberfl&auml;che wieder zu entsperren, nachdem sie mit <code>set...lock</code> vor&uuml;bergehend in den Anzeigemodus geschaltet wurde.<br>
+	Als weiteren Parameter kann man entweder "client", "all" oder eine IP-Adresse angeben: 
+	<ul>
+	<li>"client" wirkt nur auf den aktuellen Client (also den Rechner, vor dem man sitzt). Dadurch kann man z.B. &Auml;nderungen an der Oberfl&auml;che machen, ohne dass Familienmitglieder die Zahnr&auml;dchen angezeigt bekommen.</li>
+		<li>"all" wirkt auf alle Clients.</li>
+		<li>Wird eine IP-Adresse angegeben, dann wirkt das Kommando auf den Client mit dieser IP-Adresse. Mehrere <code>set...unlock</code> hintereinander wirken additiv. Insbesondere hat nach einem <code>set...unlock all</code> ein <code>set...unlock 192.168.178.60</code> keine Wirkung mehr.</li>
+		<li>Wird <code>set...unlock</code> ohne weiteren Parameter aufgerufen, dann h&auml;ngt die Wirkung vom Attribut <code>locked</code> ab. Ist <code>locked=1</code>, dann ist der Default wie "client". Ansonsten ist der Default wie "all".</li> 
+	</ul>		
+	</li>	
+	<li><a name="pagedelete">pagedelete</a>: FUIP-Seiten l&ouml;schen<br>
+	FUIP-Seiten k&ouml;nnen nicht &uuml;ber die Frontend-Bearbeitung gel&ouml;scht werden. Au&szlig;erdem kann es schnell passieren, dass man eine FUIP-Seite aus versehen anlegt. Diese k&ouml;nnen dann per <code>set...pagedelete</code> gel&ouml;scht werden.<br>
+	Das L&ouml;schen einer Seite ist eine &Auml;nderung des Frontends und muss mit <code>set...save</code> explizit gespeichert werden.
+	</li>	
+	<li><a name="refreshBuffer">refreshBuffer</a>: Device-Puffer l&ouml;schen<br>
+	FUIP verwendet Informationen aus dem "eigentlichen" FHEM, wie z.B. die Liste aller Devices sowie bestimmte Readings, Internals und Attribute. Insbesondere bei "entferntem" FUIP, also bei Verwendung des Attributs fhemwebUrl, kann die Ermittlung dieser Daten l&auml;nger dauern. Daher wird praktisch alles durch FUIP zwischengespeichert ("gepuffert"). Wenn man nun neue Devices anlegt bzw. bestehende Devices &auml;ndert, dann bekommt das FUIP-Device davon unter Umst&auml;nden nichts mit. In so einem Fall kann man mit set <name> refreshBuffer den Zwischenspeicher l&ouml;schen, um FUIP dazu zu zwingen, die Informationen erneut zu ermitteln.<br>
+	Im Anzeigemodus (also Attribut locked=1 oder <code>set...locked</code> wurde benutzt) treten diese Effekte nicht auf, da der Puffer bei jedem Seitenaufruf automatisch gel&ouml;scht wird.	
+	</li>	
+  </ul>
+  <br>
+
+  <a name="FUIPattr"></a>
+  <b>Attributes</b>
+  <ul>
+    <li><a name="baseHeight">baseHeight</a>: Basish&ouml;he einer Zelle<br>
+	Eine 1x1-Zelle ist <code>baseHeight</code> Pixel hoch. Standardwert ist 108.
+	</li> 
+     <li><a name="baseWidth">baseWidth</a>: Basisbreite einer Zelle<br>
+	Eine 1x1-Zelle ist <code>baseWidth</code> Pixel breit. Standardwert ist 142.
+	</li>
+	<li><a name="cellMargin">cellMargin</a>: Zellzwischenraum<br>
+	Mit dem Attribut <code>cellMargin</code> kann man jetzt den Platz zwischen den Zellen festlegen. Der Wert muss zwischen 0 und 10 liegen, der Standardwert ist 5. Um jede Zelle herum werden <code>cellMargin</code> Pixel frei gehalten. D.h. zwischen zwei Zellen ist zweimal so viel Platz (in Pixel) wie durch <code>cellMargin</code> festgelegt. Der Rand um den ganzen Anzeigebereich herum ist <code>cellMargin</code> Pixel breit.<br>
+	Damit beeinflusst <code>cellMargin</code> auch die Gr&ouml;&szlig;e von mehrspaltigen und mehrzeiligen Zellen. Ansonsten w&uuml;rde das ganze nicht mehr zusammenpassen. Eine dreispaltige Zelle ist beispielsweise standardm&auml;&szlig;ig 446 Pixel breit. Dies ergibt sich aus 3 Spalten zu 142 Pixeln (<code>baseWidth</code>) plus zwei Zwischenr&auml;umen zu je 10 Pixeln (je 2 mal <code>cellMargin</code>).<br>
+	Bei Verwendung des "flex" Layouts (siehe Attribut <code>layout</code>) liefert diese Berechnung die Mindestgr&ouml;&szlig;e der Zellen. Je nach Browserfenster k&ouml;nnen die Zellen auch gr&ouml;&szlig;er werden.
+	</li>
+	<li><a name="fhemwebUrl">fhemwebUrl</a>: Adresse eines entfernten Backend-FHEMs<br>
+Mit FUIP kann man sich auch an ein "entferntes" FHEM ankoppeln. Das Attribut <code>fhemwebUrl</code> enth&auml;lt dann die Adresse der "entfernten" FHEMWEB-Instanz, die man verwenden m&ouml;chte. Das Attribut <code>CORS</code> dieser FHEMWEB-Instanz muss dann auf "1" stehen. Au&szlig;erdem darf die FHEMWEB-Instanz keine Passwort-Pr&uuml;fung haben. Stattdessen kann man mit dem Attribut <code>allowedfrom</code> oder einer allowed-Instanz den Zugriff einschr&auml;nken.<br>
+Man darf fhemwebUrl auf keinen Fall setzen (auch nicht auf 127.0.0.1 oder so), wenn sich die FUIP-Instanz auf das lokale FHEM beziehen soll. In dem Fall w&uuml;rde FHEM ewig auf sich selbst warten.<br>
+Das Attribut <code>fhemwebUrl</code> muss die ganze Adresse, inklusive Port und abschlie&szlig;endem "fhem" enthalten, also z.B. <code>http://fenchurch:8086/fhem</code> oder <code>http://192.168.178.73:8086/fhem</code><br>
+Wenn man ein "entferntes" FHEM benutzt, dann k&ouml;nnen einige Funktionen der Konfigurationsoberfl&auml;che etwas Zeit brauchen. Zum Beispiel müssen für die Eingabehilfe für Devices alle Devices aus dem entfernten FHEM gelesen werden. Das ist so implementiert, dass das entfernte FHEM m&ouml;glichst wenig belastet wird, was aber zu Lasten des FUIP-FHEM geht. Siehe auch das Set-Kommando <code>refreshBuffer</code> zu diesem Thema.	
+</li>	
+	<li><a name="gridlines">gridlines</a>: Anzeige eines Gitters aus Hilfslinien<br>
+	Das Attribut <code>gridlines</code> kann die Werte "show" und "hide" annehmen. Bei "show" wird im Bearbeitungsmodus ein Gitter aus Hilfslinien angezeigt. Der Defaultwert ist "hide".<br>
+	Der Abstand der Linien wird aus <code>baseWidth</code> und <code>baseHeight</code> ermittelt und wird so berechnet, dass sich sowohl der linke Rand jeder Zelle mit einer Linie deckt und der untere Rand des Headers jeder Zelle. Ansonsten ist der Abstand der Linien etwa 30 Pixel. 
+</li>
+<li><a name="layout">layout</a>: Grundlegendes Seitenlayout (Gridster oder Flexbox)<br>
+Das Attribut <code>layout</code> kann zwei Werte annehmen: "gridster" oder "flex". Der Defaultwert ist "gridster".<br>
+<b>Gridster-Layout</b><br>
+<div style="padding-left:2em">
+Im Gridster-Layout haben die einzelnen Zellen eine fixe Gr&ouml;&szlig;e und Position. D.h. die Oberfl&auml;che sieht auf jedem Ger&auml;t gleich aus und passt sich im Prinzip nicht an das Browserfenster an. (Au&szlig;er ggf. einem Zoomfaktor, der durch die Attribute <code>viewportInitialScale</code> und <code>viewportUserScalable</code> beeinflussbar ist.)
+</div>
+<b>Flex-Layout</b><br>
+<div style="padding-left:2em">
+Im Flex-Layout passen sich die Zellen in Position und Breite an den vorhandenen Platz an. D.h. die Oberfl&auml;che sieht auf verschiedenen Ger&auml;ten bzw. je nach Breite des Browserfensters unterschiedlich aus. Dazu hat jede FUIP-Seite drei Bereiche: Ein Men&uuml;bereich links, einen Titelbereich oben und den Hauptbereich rechts unten (der ganze Rest).<br>
+Der <b>Men&uuml;bereich</b> selbst bleibt immer gleich und passt sich nicht an die Seitenbreite an. Allerdings verschwindet er, wenn die Seitenbreite 768 Pixel unterschreitet. Stattdessen erscheint dann das &uuml;bliche "Burger-Icon" (die drei Striche).<br>
+Im <b>Titelbereich</b> bleiben ebenfalls alle Zellen fix, au&szlig;er der ersten (ganz links). Die erste Zelle im Titelbereich passt ihre Breite so an, dass der Titelbereich immer die Breite des Hauptbereichs hat. Sie kann also auch kleiner werden, als im Bearbeitungsmodus definiert. Die Breite kann allerdings zwei Spalten nicht unterschreiten (Mindestbreite in Pixel ist also 2*<code>baseWidth</code>+2*<code>cellMargin</code>.)<br>
+Im <b>Hauptbereich</b> ist die festgelegte Zellenbreite eine Mindestbreite. Die Zellen k&ouml;nnen gr&ouml;&szlig;er werden, wenn mehr Platz zur Verf&uuml;gung steht. Wenn weniger Platz zur Verf&uuml;gung steht, dann werden die Zellen nach und nach untereinander angeordnet. D.h. die Zellen &auml;ndern sowohl ihre Breite als auch ihre Position.<br>
+</div>
+F&uuml;r "FUIP-Anf&auml;nger" eignet sich das Gridster-Layout besser. Man kann dann sp&auml;ter auf das Flex-Layout umstellen. FUIP versucht dann, die Zellen m&ouml;glichst sinnvoll zuzuordnen, also die erste Spalte in den Men&uuml;bereich, die erste Zeile (ohne die erste Spalte) in den Titelbereich und den Rest in den Hauptbereich.<br>
+Im Flex-Layout sollte man das Attribut <code>pageWidth</code> weglassen. Au&szlig;erdem sollte man mit <code>baseHeight</code> und <code>baseWidth</code> etwas herumexperimentieren, bevor man alles genau an die richtige Stelle schiebt. 
+</li>
+	<li><a name="locked">locked</a>: Sperren gegen Frontend-&Auml;nderungen (Anzeigemodus)<br>
+Wenn locked auf "1" gesetzt wird, dann sind die FUIP-Seiten gegen Bearbeitung gesperrt. Das Zahnrad-Icon oben rechts in den Zellen erscheint dann nicht mehr. Dadurch kann ein reiner "Frontend Benutzer" die Seiten nicht mehr &auml;ndern. Zus&auml;tzlich verschwinden auch die Zellennummern rechts neben den Zellen&uuml;berschriften und Zellen ohne &Uuml;berschrift haben dann auch keinen "Titelbalken" mehr. Falls das Attribut <code>layout</code> auf "flex" steht passt sich jetzt jede Seite automatisch an die Gr&ouml;&szlig;e des Browserfensters an.<br>
+&Uuml;ber <code>set...lock</code> und <code>set...unlock</code> kann die Sperre ebenfalls gesteuert werden.
+</li>	
+	<li><a name="loglevel">loglevel</a>: Detaillierungsgrad Frontend-Log<br>
+	Dieses Attribut bezieht sich auf das Frontend-Log, d.h. ein Log, welches vom Browser erzeugt wird. Ein Log f&uuml;r das Backend (also FHEM selbst) kann mit dem Attribut <code>verbose</code> gesteuert werden.<br>
+	Normalerweise wird dieses Protokoll nicht ben&ouml;tigt, man l&auml;sst es also am besten aus (<code>loglevel=0</code>), au&szlig;er es ist etwas schief gegangen und man will der Sache nachgehen.<br>
+	Das Attribut <code>loglevel</code> kann Werte von 0 bis 5 annehmen. Bei 0 (Default) wird kein Protokoll geschrieben, bei 5 ein sehr detailliertes. Siehe auch die Attribute <code>logareas</code> und <code>logtype</code>. 
+	</li>
+	<li><a name="logareas">logareas</a>: Protokollierte Bereiche (Frontend-Log)<br>
+	Da ein Frontend-Log unter Umst&auml;nden sehr lange laufen muss, sollte man es auf die notwendigen Bereiche beschr&auml;nken. Daf&uuml;r akzeptiert <code>logareas</code> eine Komma-separierte Liste mit folgenden Werten als Inhalt:
+	<div style="padding-left:2em">
+	<b>base.init</b> für die Initialisierungsphase<br>
+<b>base.poll</b> für alles rund um den Lebenszyklus der Verbindung zum Backend<br>
+<b>base.update</b> für die Aktualisierung der Werte am Frontend<br>
+<b>base.widget</b> für die Widget-Basis<br>
+<b>unknown</b> für alle Meldungen, die momentan keinen Bereich angeben. Das sind insbesondere alle Log-Einträge, die von den einzelnen Widgets kommen<br>
+</div>
+Die obige Liste kann mit der Zeit noch wachsen. Am besten, man l&auml;sst das Log eine Weile ohne <code>logareas</code> laufen und schaut in den Logeintr&auml;gen nach, welche Bereiche interessant sein k&ouml;nnten. Siehe auch die Attribute <code>loglevel</code> und <code>logtype</code>.
+	</li> 
+	<li><a name="logtype">logtype</a>: Art des Frontend-Logs<br>
+	Normalerweise wird das Protokoll in die "Javascript-Konsole" der Entwicklertools des Browsers geschrieben. Bei Mobilger&auml;ten ist es allerdings etwas schwierig, an diese "Konsole" zu kommen. Daher hat FUIP die M&ouml;glichkeit, das Protokoll zuerst im lokalen Speicher ("localStorage") des Browsers abzulegen und dann sp&auml;ter an das Backend zu schicken. Das Attribut <code>logtype</code> kann dazu zwei Werte annehmen:
+		<div style="padding-left:2em">
+		<b>console</b>: schreibt das Protokoll in die Javascript-Konsole. Das ist der Defaultwert.<br>
+		<b>localstorage</b>: schreibt das Protokoll in den lokalen Speicher des Browsers. Beim Aufruf der n&auml;chsten FUIP-Seite (bzw. Neuladen der Seite) wird das Log dann zu FHEM &uuml;bertragen, welches es dann in eine Datei im Verzeichnis <fhem>/FHEM/lib/FUIP/log schreibt. Der Dateiname enth&auml;lt den Namen des FUIP-Device, die IP-Adresse des Frontends (also z.B. des Mobilger&auml;ts) sowie einen Zeitstempel. So kann leicht zugeordnet werden, woher das Protokoll kommt.<br>
+		Die Daten im lokalen Speicher des Browsers werden automatisch wieder gel&ouml;scht, nicht aber die Log-Dateien. Diese m&uuml;ssen manuell aufger&auml;umt werden. 	
+	</div>
+	Siehe auch die Attribute <code>loglevel</code> und <code>logareas</code>.
+	</li>
+	<li><a name="pageWidth">pageWidth</a>: Seitenbreite in Pixel<br>
+	 Wenn <code>pageWidth</code> nicht gesetzt ist (das ist der Default), dann wird die Seitenbreite nicht festgelegt. Bei Attribut <code>layout=gridster</code> ergibt sie sich dann aus <code>baseWidth</code> (d.h. die Breite einer 1er-Zelle) und der Anzahl der verwendeten Spalten plus die Breite der Zwischenr&auml;ume (siehe Attribut <code>cellMargin</code>. Bei <code>layout=flex</code> ist die Seitenbreite durch das Browserfenster festgelegt und beeinflusst ihrerseits die Breite und Anordnung der Zellen. D.h. in der Regel muss man bzw. sollte man <code>pageWidth</code> nicht angeben.<br>
+Die Angabe in <code>pageWidth</code> beeinflusst auch die Darstellung des Hintergrundbilds, falls das Attribut <code>styleBackgroundImage</code> gesetzt ist. 
+</li>
+<li><a name="snapTo">snapTo</a>: Automatisches "Einrasten" an den Hilfslinien<br>
+Wird dieses Attribut gesetzt, dann werden die Views beim Drag&Drop automatisch am Raster (den Hilfslinien) ausgerichtet. (Die Views "ruckeln" dann also ein bisschen.) Wenn man w&auml;hrend des Ziehens die Alt-Taste dr&uuml;ckt, dann wird das tempor&auml;r deaktiviert, so dass man trotzdem pixelgenau positionieren kann.<br>
+Das Attribut kann die Werte "gridlines", "halfGrid", "quarterGrid" und "nothing" annehmen. Bei "gridlines" rasten die Views genau an den Hilfslinien ein, bei "halfGrid" an den Hilfslinien und in der Mitte zweier Linien und bei "quarterGrid" viermal pro Hilfslinie. Bei "nothing" wird das automatische Einrasten deaktiviert. Letzteres ist der Default.<br>
+F&uuml;r <code>snapTo</code> ist es egal, ob die Hilfslinien angezeigt werden oder nicht (Attribut <code>gridlines</code>). Die Views rasten dann eben dort ein, wo die Hilfslinien w&auml;ren.
+</li>
+	<li><a name="styleBackgroundImage">styleBackgroundImage</a>: Dateiname des Hintergrundbilds<br>
+	 Die Bilddatei muss sich im Verzeichnis <fhem>/FHEM/lib/FUIP/images befinden. (<fhem> steht meistens für /opt/fhem) Unterst&uuml;tzt werden jpg- und png- Dateien. Nachdem eine neue Datei hochgeladen wurde, muss man im Browser (in FHEMWEB) die Seite einmal auffrischen (neu laden), um die neue Datei verwenden zu können.<br>
+Falls das Attribut <code>pageWidth</code> gesetzt ist, dann wird die Breite des Hintergrundbilds auf die angegebene Gr&ouml;&szlig;e gesetzt. Ansonsten (ohne <code>pageWidth</code>) nimmt das Bild die Breite des Browser-Fensters ein. Die H&ouml;he des Bilds wird entsprechend skaliert, man muss sich also selbst darum k&uuml;mmern, dass das Bild ein passendes Seitenverh&auml;ltnis hat.<br>
+Bei Verwendung eines Hintergrundbilds werden die Zellenhintergr&uuml;nde automatisch auf halbtransparent gesetzt, so dass das Bild durchscheint.
+</li>
+<li><a name="styleColor">styleColor</a>: Vordergrundfarbe (veraltet)<br>
+Dieses Attribut kann verwendet werden, um die Standard-Textfarbe (Vordergrundfarbe) f&uuml;r alle Views zu setzen. Allerdings sollten Farben in FUIP inzwischen &uuml;ber das Attribut <code>styleSchema</code> bzw. den Punkt "Colours" im Zellenmenu gesetzt werden. Das Attribut <code>styleColor</code> entspricht dem Eintrag "foreground" (bzw. der CSS-Variable --fuip-color-foreground). Ist <code>styleColor</code> gesetzt, dann &uuml;berschreibt es diesen Eintrag.
+</li>
+	<li><a name="styleSchema">styleSchema</a>: Grundlegendes (Farb-)Schema<br>
+	Mittels <code>styleSchema</code> kann man zwischen sieben verschiedenen "Styles" ausw&auml;hlen. Die Styles sind angelehnt an die hier beschriebenen Schema-Dateien: <a href="https://wiki.fhem.de/wiki/FHEM_Tablet_UI#Farben" target="fuipdoc">FHEM_Tablet_UI#Farben</a> D.h. die FUIP-Seiten sehen dann in etwa so aus wie auf den Screenshots dort.<br>
+	Weitere Anpassungen kann man &uuml;ber den Punkt "Colours" im Zellenmen&uuml; vornehmen. Au&szlig;erdem kann man eine eigene CSS-Datei &uuml;ber das Attribut <code>userCss</code> einbinden.	
+	</li>
+	<li><a name="toastMessages">toastMessages</a>: Konfiguration der Toast-Nachrichten<br>
+	Die Meldungen, die z.B. bei Schaltvorg&auml;ngen normalerweise links unten auftauchen, sind konfigurierbar. Dazu kann das Attribut <code>toastMessages</code> folgende Werte annehmen:
+	<div style="padding-left:2em">
+<b>all</b>: Alle Meldungen werden angezeigt. Das ist der Defaultwert.<br>
+<b>errors</b>: Es werden nur noch Fehlermeldungen (also die roten Popups) angezeigt. Meldungen wie "set xy on" kommen nicht mehr.<br>
+<b>off</b>: Es werden keine Meldungen mehr angezeigt, au&szlig;er Fehlermeldungen, die von FUIP im &Auml;nderungsmodus (locked = 0) erzeugt werden. D.h. Lebenspartner oder andere Mitbewohner sehen wahrscheinlich tats&auml;chlich gar keine Meldungen mehr.
+</div>
+Am Anfang der FUIP-Entwicklung wurden noch relativ viele (Fehler-)Meldungen &uuml;ber den Toast-Mechanismus angezeigt. Seit es das Frontent-Log gibt haben die Toast-Meldungen aber an Bedeutung verloren und st&ouml;ren kaum noch (siehe auch Attribute <code>loglevel</code>, <code>logareas</code> und <code>logtype</code>).
+	</li>	
+<li><a name="userCss">userCss</a>: Eigenes Stylesheet<br>
+Mit diesem Attribut kann ein eigenes Stylesheet (CSS-Datei) eingebunden werden. Die zugeh&ouml;rige Datei muss im Verzeichnis <fhem>/FHEM/lib/FUIP/config liegen und die Endung ".css" haben.<br>
+Diese M&ouml;glichkeit sollte nicht leichtfertig eingesetzt werden. Zuerst sollte man pr&uuml;fen, ob man etwas passendes mit dem Attribut <code>styleSchema</code> einstellen kann. Die Farben kann man dann mit dem  Punkt "Colours" im Zellenmen&uuml; anpassen. Erst wenn diese M&ouml;glichkeiten ersch&ouml;pft sind, sollte man an das Attribut <code>userCss</code> denken. 
+ </li>
+<li><a name="userHtmlBodyStart">userHtmlBodyStart</a>: Eigenen HTML-Text hinzuf&uuml;gen<br>
+Mit diesem Attribut kann der Inhalt einer eigenen HTML-Datei eingebunden werden. Die zugeh&ouml;rige Datei muss im Verzeichnis <fhem>/FHEM/lib/FUIP/config liegen und die Endung ".html" haben. Dies eignet sich z.B. zum Einbinden eigener SVG-Definitionen.<br>
+Der HTML-Text wird relativ weit "oben" im generierten HTML-Code eingef&uuml;gt.<br>
+Diese M&ouml;glichkeit wird sehr selten ben&ouml;tigt. Meistens ist es besser, eigenen HTML-Code &uuml;ber die HTML-View einzubinden. 
+</li>
+<li><a name="viewportInitialScale">viewportInitialScale</a>: Anf&auml;nglicher Zoomgrad<br>
+FUIP generiert ein Meta-Element f&uuml;r den Viewport in jede Seite. Dabei wird der anf&auml;ngliche Zoomgrad auf 1,0 festgelegt. Dies kann mittels <code>viewportInitialScale</code> ge&auml;ndert werden. Der Wert entspricht genau dem "initial-scale"-Parameter des Meta-Elements f&uuml;r den Viewport.<br>
+Normalerweise muss man dieses Attribut nicht setzen. Wenn die FUIP-Seiten nicht (genau) in das Browserfenster passen, dann sollte man lieber mit den Attributen <code>baseWidth</code> und <code>cellMargin</code> experimentieren. Au&szlig;erdem kann es helfen, das Flex-Layout zu verwenden. Siehe dazu Attribut <code>layout</code>.
+</li>
+<li><a name="viewportUserScalable">viewportUserScalable</a>: Zoomen erlauben oder nicht<br>
+Dieses Attribut entspricht genau dem "user-scalable"-Parameter des Meta-Elements f&uuml;r den Viewport. Man kann damit also festlegen, ob der Benutzer die Seite zoomen darf (Wert "yes") oder nicht ("no"). Defaultwert ist "yes", also ist das Zoomen normalerweise erlaubt.
+</li>	
+  </ul>
+</ul>
+
+=end html_DE
+=cut
