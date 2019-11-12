@@ -58,7 +58,7 @@ sub getStructure($) {
 	my ($class) = @_;
 	return [
 		{ id => "class", type => "class", value => $class },
-		{ id => "title", type => "text", default => { type => "const", value => "Humidity"} },
+		{ id => "title", type => "text", default => { type => "field", value => "humidity-device"} },
 		{ id => "humidity", type => "device-reading",
 			device => { },
 			reading => { default => { type => "const", value => "humidity"} } },
