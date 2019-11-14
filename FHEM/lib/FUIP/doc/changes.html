@@ -5,6 +5,37 @@
 </head> 
 <body>
 <h1>FUIP News</h1>
+<h2>14.11.2019</h2>
+
+<img src="7segment.png" style="float:left;margin-right:10px;margin-bottom:10px" width=364px height=140px>
+<h3>Neue Views 7SegmentClock und 7SegmentReading</h3>
+Wer es gerne ein bisschen "retro" mag, kann sich jetzt mit den Views 7SegmentClock und 7SegmentReading ein paar sch&ouml;ne Anzeigen zusammenbasteln.<br>
+Danke an Waldmensch f&uuml;r Idee und Umsetzung des Widgets.<p>
+<b>7SegmentClock</b><br>
+Diese View zeigt eine Digitaluhr im 7-Segment-Design an. Es wird die Client-Zeit (also die Zeit des Browsers) angezeigt. Die View hat u.A. folgende Parameter:
+<ul>
+<li><b>seconds</b>: steuert, ob man nur Stunden und Minuten oder auch Sekunden sieht.</li>
+<li><b>color</b>: Farbe der Anzeige. Es k&ouml;nnen insbesondere die "FUIP-Farbsymbole" ausgew&auml;hlt werden, so dass die Anzeige zum Rest der Oberfl&auml;che passt. Ansonsten kann man so ziemlich alles eingeben, was CSS als Farbe erlaubt.</li>
+</ul> 
+Die restlichen Parameter sind die bei FUIP &uuml;blichen. W&auml;hlt man bei <i>sizing</i> "resizable" oder "auto", dann nimmt das Widget die Breite der View an. Die H&ouml;he ist f&uuml;r die Darstellung egal.<p>
+<b>7SegmentReading</b><br>
+Diese View zeigt numerische Readings im 7-Segment-Design an. Die View hat u.A. folgende Parameter:
+<ul>
+<li><b>reading</b>: Hier wird das Device und das Reading angegeben, welches angezeigt werden soll.</li>
+<li><b>digits</b>: Anzahl der Ziffern, die insgesamt dargestellt werden sollen, also inklusive der Nachkommastellen. Falls negative Werte erwartet werden, muss man auch eine Ziffer f&uuml;r das Vorzeichen vorsehen.</li> 
+<li><b>decimals</b>: Anzahl der Nachkommastellen.</li>
+<li><b>colorscheme</b>: Steuert die Farbgebung. Es sind folgende Werte vorgesehen:
+<ul>
+<li>single: Es wird eine feste Farbe verwendet. Wird dieser Wert ausgew&auml;hlt, dann erscheint der Parameter "color". Ansonsten bleibt "color" ausgeblendet.</li>
+<li>temp-air: Dies ist f&uuml;r Lufttemperaturen gedacht. Die Farbgebung erfolgt je nach Temperatur, so wie bei der View LabelTemperature, wenn man colors=air w&auml;hlt.</li>
+<li>temp-boiler: Dies ist f&uuml;r die Wassertemperatur in einer Heizung gedacht. Die Farbgebung erfolgt je nach Temperatur, so wie bei der View LabelTemperature, wenn man colors=boiler w&auml;hlt.</li>
+<li>humidity: Dies ist f&uuml;r relative Luftfeuchtigkeiten gedacht. Die Farbgebung erfolgt je nach Feuchtigkeit, so wie bei der View LabelHumidity.</li>
+</ul>
+<li><b>color</b>: Farbe der Anzeige. Es k&ouml;nnen insbesondere die "FUIP-Farbsymbole" ausgew&auml;hlt werden, so dass die Anzeige zum Rest der Oberfl&auml;che passt. Ansonsten kann man so ziemlich alles eingeben, was CSS als Farbe erlaubt.</li>
+ </ul>
+Die restlichen Parameter sind die bei FUIP &uuml;blichen. W&auml;hlt man bei <i>sizing</i> "resizable" oder "auto", dann nimmt das Widget die Breite der View an. Die H&ouml;he ist f&uuml;r die Darstellung egal.
+<p style="clear:left;height:0.5em;"></p>
+
 <h2>12.11.2019</h2>
 <h3>LabelTemperature, LabelHumidity: Titel ist per Default Device-Name</h3>
 Bei den Views LabelTemperature und LabelHumidity ist der Titel (Feld "title" im Konfigurations-Popup) jetzt standardm&auml;&szlig;ig der Device-Name und nicht mehr fix "Temperatur" bzw. "Humidity".

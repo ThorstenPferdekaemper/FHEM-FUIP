@@ -165,8 +165,14 @@ polyline {
 }
 
 /* color for "inactive" menu items or other texts etc 
-	might be overwritten by attribute styleColor*/
-.fuip-color-foreground, text.title.fuip-color-foreground {
+	might be overwritten by attribute styleColor
+	We need to duplicate the definition as otherwise, 
+	FTUI won't find the color style anymore */
+.fuip-color-foreground {	
+	color: var(--fuip-color-foreground);
+	fill: var(--fuip-color-foreground);
+}	
+text.title.fuip-color-foreground {
 	color: var(--fuip-color-foreground);
 	fill: var(--fuip-color-foreground);
 }	

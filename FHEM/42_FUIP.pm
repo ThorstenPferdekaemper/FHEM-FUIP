@@ -2306,6 +2306,7 @@ sub CGI_inner($) {
 								$path[-1] eq "widget_fuip_colorwheel.css" or
 								$path[-1] eq "widget_fuip_clock.js" or
 								$path[-1] eq "widget_fuip_numselect.js" or
+								$path[-1] eq "widget_7segment.js" or
 								$path[-1] eq "widget_fuip_popup.js"
 								)) {
 		unshift(@path,"fuip");
