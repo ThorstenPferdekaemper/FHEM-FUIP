@@ -4,7 +4,7 @@
 # written by Thorsten Pferdekaemper
 #
 ##############################################
-# $Id: 42_FUIP.pm 00099 2018-09-24 15:00:00Z Thorsten Pferdekaemper $
+# $Id: 42_FUIP.pm 0099 2019-11-14 15:00:00Z ThorstenPferdekaemper $
 
 package main;
 
@@ -3632,20 +3632,20 @@ sub Get($$$)
   <a name="FUIPdefine"></a>
   <b>Define</b><br>
   <code>define &lt;name&gt; FUIP</code><br>
-	Mehr ist hier nicht notwendig, alles andere wird &uuml;ber Attribute und set-Kommandos bzw. Klickibunti und M&auml;seschubsen gemacht.
+	Mehr ist hier nicht notwendig, alles andere wird &uuml;ber Attribute und set-Kommandos bzw. Klickibunti und M&auml;useschubsen gemacht.
   <br><br>
   <a name="FUIPset"></a>
   <b>Set</b>
   <ul>
-  	<li><a name="save">save</a>: Speichern des Zustands der Oberfl&auml;che<br>
-	Das Kommando <code>set...save</code> speichert den momentanen Bearbeitungszustand der Oberfl&auml;che. Dies beinhaltet alles, was man per Klickibunti und M&auml;seschubsen macht, aber nicht die Einstellungen in der FHEMWEB-Oberfl&auml;che. Zus&auml;tzlich zum expliziten <code>set...save</code> gibt es noch einen Autosave-Mechanismus. Die entstehenden Dateien k&auml;nnen einfach per <code>set...load</code> geladen werden.</li>
+  	<li><a name="save">save</a>: Speichern des aktuellen Zustands der Oberfl&auml;che<br>
+	Das Kommando <code>set...save</code> speichert den momentanen Bearbeitungszustand der Oberfl&auml;che. Dies beinhaltet alles, was man per Klickibunti und M&auml;useschubsen macht, aber nicht die Einstellungen in der FHEMWEB-Oberfl&auml;che. Zus&auml;tzlich zum expliziten <code>set...save</code> gibt es noch einen Autosave-Mechanismus. Die entstehenden Dateien k&ouml;nnen einfach per <code>set...load</code> geladen werden.</li>
 
-	<li><a name="load">load</a>: Laden eines Zustands der Oberfl&auml;che<br>
+	<li><a name="load">load</a>: Laden eines zuvor gespeicherten Zustands der Oberfl&auml;che<br>
 	Das Kommando <code>set...load</code> akzeptiert einen Parameter, &uuml;ber den angegeben werden kann, ob man die normal abgespeicherte Konfiguration laden will ("lastSaved" oder einfach leer lassen) oder eine der Autosave-Dateien.
 	FUIP speichert jede &Auml;nderung automatisch ab. Dadurch entstehen für jedes FUIP-Device bis zu 5 Autosave-Dateien, die bei <code>set...load</code> ausgew&auml;hlt werden k&ouml;nnen. </li>
 	
 	<li><a name="lock">lock</a>: Sperren der Oberfl&auml;che gegen &Auml;nderungen<br>
-	Der Befehl <code>set...lock</code> ist daf&uuml;r gedacht, die Oberfl&auml;che vor&uuml;bergehend gegen &Auml;nderungen zu sperren, w&auml;hrend das Attribut <code>locked</code> (noch) nicht gesetzt ist (oder explizit auf "0"), bzw. die Oberfl&auml;che wieder zu sperren, nachdem sie mit <code>set...unlock</code> vor&uuml;bergehend in den &Auml;nderungsmodus geschaltet wurde.<br>
+	Der Befehl <code>set...lock</code> sperrt die Oberfl&auml;che vor&uuml;bergehend gegen &Auml;nderungen, w&auml;hrend das Attribut <code>locked</code> (noch) nicht gesetzt ist (oder explizit auf "0"), bzw. sperrt die Oberfl&auml;che wieder, nachdem sie mit <code>set...unlock</code> vor&uuml;bergehend in den &Auml;nderungsmodus geschaltet wurde.<br>
 	Als weiteren Parameter kann man entweder "client", "all" oder eine IP-Adresse angeben: 
 	<ul>
 	<li>"client" wirkt nur auf den aktuellen Client (also den Rechner, vor dem man sitzt). </li>
@@ -3655,7 +3655,7 @@ sub Get($$$)
 	</ul>		
 	</li>
 	<li><a name="unlock">unlock</a>: Die Oberfl&auml;che in den &Auml;nderungsmodus schalten<br>
-	Der Befehl <code>set...unlock</code> ist daf&uuml;r gedacht, die Oberfl&auml;che vor&uuml;bergehend in den &Auml;nderungsmodus zu schalten, w&auml;hrend das Attribut <code>locked</code> (schon) auf "1" gesetzt ist, bzw. die Oberfl&auml;che wieder zu entsperren, nachdem sie mit <code>set...lock</code> vor&uuml;bergehend in den Anzeigemodus geschaltet wurde.<br>
+	Der Befehl <code>set...unlock</code> schaltet die Oberfl&auml;che vor&uuml;bergehend in den &Auml;nderungsmodus, w&auml;hrend das Attribut <code>locked</code> (schon) auf "1" gesetzt ist, bzw. entsperrt die Oberfl&auml;che wieder, nachdem sie mit <code>set...lock</code> vor&uuml;bergehend in den Anzeigemodus geschaltet wurde.<br>
 	Als weiteren Parameter kann man entweder "client", "all" oder eine IP-Adresse angeben: 
 	<ul>
 	<li>"client" wirkt nur auf den aktuellen Client (also den Rechner, vor dem man sitzt). Dadurch kann man z.B. &Auml;nderungen an der Oberfl&auml;che machen, ohne dass Familienmitglieder die Zahnr&auml;dchen angezeigt bekommen.</li>
@@ -3665,11 +3665,11 @@ sub Get($$$)
 	</ul>		
 	</li>	
 	<li><a name="pagedelete">pagedelete</a>: FUIP-Seiten l&ouml;schen<br>
-	FUIP-Seiten k&ouml;nnen nicht &uuml;ber die Frontend-Bearbeitung gel&ouml;scht werden. Au&szlig;erdem kann es schnell passieren, dass man eine FUIP-Seite aus versehen anlegt. Diese k&ouml;nnen dann per <code>set...pagedelete</code> gel&ouml;scht werden.<br>
+	FUIP-Seiten k&ouml;nnen nicht &uuml;ber die Frontend-Bearbeitung gel&ouml;scht werden. Au&szlig;erdem kann es schnell passieren, dass man eine FUIP-Seite aus Versehen anlegt. Diese k&ouml;nnen dann per <code>set...pagedelete</code> gel&ouml;scht werden.<br>
 	Das L&ouml;schen einer Seite ist eine &Auml;nderung des Frontends und muss mit <code>set...save</code> explizit gespeichert werden.
 	</li>	
 	<li><a name="refreshBuffer">refreshBuffer</a>: Device-Puffer l&ouml;schen<br>
-	FUIP verwendet Informationen aus dem "eigentlichen" FHEM, wie z.B. die Liste aller Devices sowie bestimmte Readings, Internals und Attribute. Insbesondere bei "entferntem" FUIP, also bei Verwendung des Attributs fhemwebUrl, kann die Ermittlung dieser Daten l&auml;nger dauern. Daher wird praktisch alles durch FUIP zwischengespeichert ("gepuffert"). Wenn man nun neue Devices anlegt bzw. bestehende Devices &auml;ndert, dann bekommt das FUIP-Device davon unter Umst&auml;nden nichts mit. In so einem Fall kann man mit set <name> refreshBuffer den Zwischenspeicher l&ouml;schen, um FUIP dazu zu zwingen, die Informationen erneut zu ermitteln.<br>
+	FUIP verwendet Informationen aus dem "eigentlichen" FHEM, wie z.B. die Liste aller Devices sowie bestimmte Readings, Internals und Attribute. Insbesondere bei "entferntem" FUIP, also bei Verwendung des Attributs fhemwebUrl, kann die Ermittlung dieser Daten l&auml;nger dauern. Daher wird praktisch alles durch FUIP zwischengespeichert ("gepuffert"). Wenn man nun neue Devices anlegt bzw. bestehende Devices &auml;ndert, dann bekommt das FUIP-Device davon unter Umst&auml;nden nichts mit. In so einem Fall kann man mit <code>set...refreshBuffer</code> den Zwischenspeicher l&ouml;schen, um FUIP dazu zu zwingen, die Informationen erneut zu ermitteln.<br>
 	Im Anzeigemodus (also Attribut locked=1 oder <code>set...locked</code> wurde benutzt) treten diese Effekte nicht auf, da der Puffer bei jedem Seitenaufruf automatisch gel&ouml;scht wird.	
 	</li>	
   </ul>
@@ -3702,7 +3702,7 @@ Wenn man ein "entferntes" FHEM benutzt, dann k&ouml;nnen einige Funktionen der K
 <li><a name="layout">layout</a>: Grundlegendes Seitenlayout (Gridster oder Flexbox)<br>
 Das Attribut <code>layout</code> kann zwei Werte annehmen: "gridster" oder "flex". Der Defaultwert ist "gridster".<br>
 <b>Gridster-Layout</b><br>
-<div style="padding-left:2em">
+<div style="padding-left:2em"> 
 Im Gridster-Layout haben die einzelnen Zellen eine fixe Gr&ouml;&szlig;e und Position. D.h. die Oberfl&auml;che sieht auf jedem Ger&auml;t gleich aus und passt sich im Prinzip nicht an das Browserfenster an. (Au&szlig;er ggf. einem Zoomfaktor, der durch die Attribute <code>viewportInitialScale</code> und <code>viewportUserScalable</code> beeinflussbar ist.)
 </div>
 <b>Flex-Layout</b><br>
@@ -3739,7 +3739,7 @@ Die obige Liste kann mit der Zeit noch wachsen. Am besten, man l&auml;sst das Lo
 	Normalerweise wird das Protokoll in die "Javascript-Konsole" der Entwicklertools des Browsers geschrieben. Bei Mobilger&auml;ten ist es allerdings etwas schwierig, an diese "Konsole" zu kommen. Daher hat FUIP die M&ouml;glichkeit, das Protokoll zuerst im lokalen Speicher ("localStorage") des Browsers abzulegen und dann sp&auml;ter an das Backend zu schicken. Das Attribut <code>logtype</code> kann dazu zwei Werte annehmen:
 		<div style="padding-left:2em">
 		<b>console</b>: schreibt das Protokoll in die Javascript-Konsole. Das ist der Defaultwert.<br>
-		<b>localstorage</b>: schreibt das Protokoll in den lokalen Speicher des Browsers. Beim Aufruf der n&auml;chsten FUIP-Seite (bzw. Neuladen der Seite) wird das Log dann zu FHEM &uuml;bertragen, welches es dann in eine Datei im Verzeichnis <fhem>/FHEM/lib/FUIP/log schreibt. Der Dateiname enth&auml;lt den Namen des FUIP-Device, die IP-Adresse des Frontends (also z.B. des Mobilger&auml;ts) sowie einen Zeitstempel. So kann leicht zugeordnet werden, woher das Protokoll kommt.<br>
+		<b>localstorage</b>: schreibt das Protokoll in den lokalen Speicher des Browsers. Beim Aufruf der n&auml;chsten FUIP-Seite (bzw. Neuladen der Seite) wird das Log dann zu FHEM &uuml;bertragen, welches es dann in eine Datei im Verzeichnis &lt;fhem&gt;/FHEM/lib/FUIP/log schreibt. Der Dateiname enth&auml;lt den Namen des FUIP-Device, die IP-Adresse des Frontends (also z.B. des Mobilger&auml;ts) sowie einen Zeitstempel. So kann leicht zugeordnet werden, woher das Protokoll kommt.<br>
 		Die Daten im lokalen Speicher des Browsers werden automatisch wieder gel&ouml;scht, nicht aber die Log-Dateien. Diese m&uuml;ssen manuell aufger&auml;umt werden. 	
 	</div>
 	Siehe auch die Attribute <code>loglevel</code> und <code>logareas</code>.
@@ -3754,7 +3754,7 @@ Das Attribut kann die Werte "gridlines", "halfGrid", "quarterGrid" und "nothing"
 F&uuml;r <code>snapTo</code> ist es egal, ob die Hilfslinien angezeigt werden oder nicht (Attribut <code>gridlines</code>). Die Views rasten dann eben dort ein, wo die Hilfslinien w&auml;ren.
 </li>
 	<li><a name="styleBackgroundImage">styleBackgroundImage</a>: Dateiname des Hintergrundbilds<br>
-	 Die Bilddatei muss sich im Verzeichnis <fhem>/FHEM/lib/FUIP/images befinden. (<fhem> steht meistens für /opt/fhem) Unterst&uuml;tzt werden jpg- und png- Dateien. Nachdem eine neue Datei hochgeladen wurde, muss man im Browser (in FHEMWEB) die Seite einmal auffrischen (neu laden), um die neue Datei verwenden zu können.<br>
+	 Die Bilddatei muss sich im Verzeichnis &lt;fhem&gt;/FHEM/lib/FUIP/images befinden. (&lt;fhem&gt; steht meistens für /opt/fhem) Unterst&uuml;tzt werden jpg- und png- Dateien. Nachdem eine neue Datei hochgeladen wurde, muss man die FHEMWEB-Seite einmal neu laden, um die neue Datei verwenden zu können.<br>
 Falls das Attribut <code>pageWidth</code> gesetzt ist, dann wird die Breite des Hintergrundbilds auf die angegebene Gr&ouml;&szlig;e gesetzt. Ansonsten (ohne <code>pageWidth</code>) nimmt das Bild die Breite des Browser-Fensters ein. Die H&ouml;he des Bilds wird entsprechend skaliert, man muss sich also selbst darum k&uuml;mmern, dass das Bild ein passendes Seitenverh&auml;ltnis hat.<br>
 Bei Verwendung eines Hintergrundbilds werden die Zellenhintergr&uuml;nde automatisch auf halbtransparent gesetzt, so dass das Bild durchscheint.
 </li>
@@ -3775,11 +3775,11 @@ Dieses Attribut kann verwendet werden, um die Standard-Textfarbe (Vordergrundfar
 Am Anfang der FUIP-Entwicklung wurden noch relativ viele (Fehler-)Meldungen &uuml;ber den Toast-Mechanismus angezeigt. Seit es das Frontent-Log gibt haben die Toast-Meldungen aber an Bedeutung verloren und st&ouml;ren kaum noch (siehe auch Attribute <code>loglevel</code>, <code>logareas</code> und <code>logtype</code>).
 	</li>	
 <li><a name="userCss">userCss</a>: Eigenes Stylesheet<br>
-Mit diesem Attribut kann ein eigenes Stylesheet (CSS-Datei) eingebunden werden. Die zugeh&ouml;rige Datei muss im Verzeichnis <fhem>/FHEM/lib/FUIP/config liegen und die Endung ".css" haben.<br>
+Mit diesem Attribut kann ein eigenes Stylesheet (CSS-Datei) eingebunden werden. Die zugeh&ouml;rige Datei muss im Verzeichnis &lt;fhem&gt;/FHEM/lib/FUIP/config liegen und die Endung ".css" haben.<br>
 Diese M&ouml;glichkeit sollte nicht leichtfertig eingesetzt werden. Zuerst sollte man pr&uuml;fen, ob man etwas passendes mit dem Attribut <code>styleSchema</code> einstellen kann. Die Farben kann man dann mit dem  Punkt "Colours" im Zellenmen&uuml; anpassen. Erst wenn diese M&ouml;glichkeiten ersch&ouml;pft sind, sollte man an das Attribut <code>userCss</code> denken. 
  </li>
 <li><a name="userHtmlBodyStart">userHtmlBodyStart</a>: Eigenen HTML-Text hinzuf&uuml;gen<br>
-Mit diesem Attribut kann der Inhalt einer eigenen HTML-Datei eingebunden werden. Die zugeh&ouml;rige Datei muss im Verzeichnis <fhem>/FHEM/lib/FUIP/config liegen und die Endung ".html" haben. Dies eignet sich z.B. zum Einbinden eigener SVG-Definitionen.<br>
+Mit diesem Attribut kann der Inhalt einer eigenen HTML-Datei eingebunden werden. Die zugeh&ouml;rige Datei muss im Verzeichnis &lt;fhem&gt;/FHEM/lib/FUIP/config liegen und die Endung ".html" haben. Dies eignet sich z.B. zum Einbinden eigener SVG-Definitionen.<br>
 Der HTML-Text wird relativ weit "oben" im generierten HTML-Code eingef&uuml;gt.<br>
 Diese M&ouml;glichkeit wird sehr selten ben&ouml;tigt. Meistens ist es besser, eigenen HTML-Code &uuml;ber die HTML-View einzubinden. 
 </li>
