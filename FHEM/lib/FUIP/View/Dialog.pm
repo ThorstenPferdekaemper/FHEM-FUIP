@@ -1,3 +1,6 @@
+
+# $Id: Dialog.pm 0099 2019-11-16 15:00:00Z ThorstenPferdekaemper $
+
 package FUIP::Dialog;
 # Popup, like FUIP::Cell
 
@@ -60,6 +63,8 @@ sub getStructure($) {
 		{ id => "title", type => "text" },
 		{ id => "position", type => "text", options => [ "screen-center", "starter-area" ],
 			default => { type => "const", value => "screen-center" } },		
+		{ id => "autoclose", type => "text", 
+			default => { type => "const", value => "0" } }, 	
 		{ id => "views", type => "viewarray" }
 		];
 };

@@ -2568,7 +2568,7 @@ function createField(settings, fieldNum, component,prefix) {
 					optionElem.attr("selected","selected");
 				};
 				theFieldElem.append(optionElem);	
-			};	
+			};
 		}else{
 			theFieldElem = $("<input type='text' " + fieldStyle + " />");
 		};		
