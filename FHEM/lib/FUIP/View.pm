@@ -69,7 +69,11 @@ sub getViewHTML($) {
 						data-mode="fade"
 						data-height="'.$height.'px"
 						data-width="'.$width.'px"
-						data-position="'.$dialog->{position}.'">
+						data-position="'.$dialog->{position}.'"';
+		if($dialog->{autoclose}) {
+			$result .= ' data-return-time="'.$dialog->{autoclose}.'"';
+		};	
+		$result .= '>
 					<div>';
 	};
 	# the normal HTML of the view
