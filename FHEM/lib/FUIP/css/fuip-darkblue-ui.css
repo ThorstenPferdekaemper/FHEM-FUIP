@@ -59,8 +59,6 @@ div[data-type="circlemenu"] > .circlemenu-wrapper > .circlemenu li div[data-type
     color: var(--fuip-color-foreground);
 }
 
-option {background-color: #ffffff;}
-
 /* spinner colors */
 [data-type="spinner"]:not([data-background-color]) .spinner .levelArea {
   background-color: #1B344A !important;
