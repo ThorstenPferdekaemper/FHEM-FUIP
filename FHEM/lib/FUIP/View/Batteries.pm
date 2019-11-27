@@ -281,7 +281,20 @@ sub getStructure($) {
 };
 
 
+our %docu = (
+	general => "Diese View zeigt eine Liste der batteriebetriebenen Ger&auml;te mit den aktuellen Ladest&auml;nden an. Dazu werden alle FHEM-Devices mit den Readings <i>battery</i>, <i>batteryLevel</i>, <i>batVoltage</i>, <i>batteryPercent</i> und <i>Activity</i> gesucht und in einer Liste dargestellt. Devices, f&uuml;r die das Attribut <i>ignore</i> auf einen Wert ungleich 0 gesetzt ist, werden ignoriert. Je nachdem, was bei den einzelnen Devices m&ouml;glich ist, wird ein Batterie-Icon erzeugt, welches den Zustand der Batterie zeigt sowie ein Spannungs- oder Prozentwert und eine alive/dead-Angabe f&uuml;r Devices mit dem Reading <i>Activity</i>.",
+	deviceFilter => "Hier kann angegeben werden, ob auch Devices angezeigt werden sollen, die das Reading <i>Activity</i> haben, aber gar nicht batteriebetrieben sind. Es gibt zwei m&ouml;gliche Werte:
+	<ul>
+	<li><b>all</b>: Es werden alle Devices angezeigt, auch solche, die nur das Reading <i>Activity</i> haben.</li>
+	<li><b>battery</b>: Es werden nur die Devices angezeigt, die (mindestens) eins der Batterie-Readings haben. Es wird dann f&uuml;r diese Devices trotzdem \"dead\" oder \"alive\" angezeigt, wenn sie das <i>Activity</i> Reading haben.</li></ul>",
+	exclude => "Hier kann eine Liste von Devices angegeben werden, die normalerweise von der <i>Batteries</i>-View angezeigt w&uuml;rden. Diese werden dann nicht angezeigt. In der zugeh&ouml;rigen Werthilfe werden nur Devices angezeigt, die normalerweise von der View gefunden werden.",
+	columns => "Hier kann man angeben, ob die Liste in einer, zwei, drei oder vier Spalten ausgegeben werden soll. Es ist empfehlenswert, mit dieser Angabe im Zusammenhang mit dem Parameter <i>sizing</i> etwas zu experimentieren, bevor man sich festlegt.",
+	labelRule => "Normalerweise wird der Text (das Label) zu jedem Device in der Liste vom Attribut <i>alias</i> genommen, falls dieses Attribut gesetzt ist. Ansonsten wird der Device-Name (das Internal NAME) benutzt. Mit dem Parameter <i>labelRule</i> kann man das &auml;ndern. Man gibt hier eine Komma-separierte Liste von Attributen, Internals und/oder Readings ein. Dann sucht die View f&uuml;r jedes Device nach dem ersten Eintrag, f&uuml;r den tats&auml;chlich etwas gesetzt ist. Man sollte <i>NAME</i> normalerweise immer als letztes in der Liste haben, um keine Eintr&auml;ge in der Liste ohne Text zu erzeugen.<br>
+	Hat man z.B. Devices, bei denen der \"sinnvolle\" Name im Internal <i>name</i> steht und andere, f&uuml;r die das Attribut <i>alias</i> gef&uuml;llt ist, dann kann man <i>labelRule</i> mit \"name,alias,NAME\" oder \"alias,name,NAME\" f&uuml;llen, je nachdem ob <i>name</i> oder <i>alias</i> h&ouml;here Priorit&auml;t hat."	
+);
+
+
 # register me as selectable
-$FUIP::View::selectableViews{"FUIP::View::Batteries"}{title} = "Batteries"; 
+$FUIP::View::selectableViews{"FUIP::View::Batteries"}{title} = "Liste der Batterien"; 
 	
 1;	

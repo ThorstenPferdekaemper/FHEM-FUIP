@@ -60,7 +60,17 @@ sub getStructure($) {
 		{ id => "popup", type => "dialog", default=> { type => "const", value => "inactive"} }			
 		];
 };
-	
+
+our %docu = (
+	general => "Diese View zeigt eine Digitaluhr im 7-Segment-Design an.<br>
+				Es wird die Client-Zeit (also die Zeit des Browsers) angezeigt.",
+	seconds => "Dieser Parameter steuert, ob man nur Stunden und Minuten oder 
+				auch Sekunden sieht.",
+	color => "Farbe der Anzeige.<br>
+			Es k&ouml;nnen insbesondere die \"FUIP-Farbsymbole\" ausgew&auml;hlt werden, so dass die Anzeige zum Rest der Oberfl&auml;che passt. Ansonsten kann man so ziemlich alles eingeben, was CSS als Farbe erlaubt."
+);
+
+
 # register me as selectable
 $FUIP::View::selectableViews{"FUIP::View::7SegmentClock"}{title} = "7-Segment-Display clock"; 
 	

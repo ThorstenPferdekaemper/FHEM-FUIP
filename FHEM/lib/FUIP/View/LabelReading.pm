@@ -151,8 +151,17 @@ sub getStructure($) {
 		];
 };
 
+our %docu = (
+	general => "Diese View stellt ein beliebiges Reading dar. Der Wert (und/oder der Timestamp) wird als Text angezeigt.",
+	reading => "Hier wird die Device-Reading-Kombination eingegeben, auf den sich die View beziehen soll.", 
+	icon => "Das hier angegebene Icon wird links im View angezeigt. ", 
+	content => 'Der Inhalt der View kann der Wert des Readings, der Timestamp oder beides sein. Entsprechend kann <i>content</i> die Werte "value", "timestamp" und "both" annehmen. Der Timestamp wird im Format "12.03. 17:28" angezeigt.', 
+	unit => 'Hier kann man eine Einheit eintragen, die hinter dem Wert angezeigt wird. In der Werthilfe dazu kann man sowohl die Kurzschreibweise (wie z.B. "A"), als auch den kompletten Namen der Einheit ("Ampere") ausw&auml;hlen.', 
+	border => "Hier kann man angeben, ob die View einen Rahmen haben soll. Bei der Option <i>solid</i> wird ein Rahmen gezeichnet, bei der Option <i>none</i> wird kein Rahmen erzeugt." 
+);
+
 
 # register me as selectable
-$FUIP::View::selectableViews{"FUIP::View::LabelReading"}{title} = "Display a reading as text"; 
+$FUIP::View::selectableViews{"FUIP::View::LabelReading"}{title} = "Ein Reading als Text anzeigen"; 
 
 1;	

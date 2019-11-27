@@ -123,6 +123,24 @@ sub getHTML($){
 };
 
 
+our %docu = (
+	general => "Die View <i>Thermostat</i> kann einen (Wand-)Thermostat mit Soll- und Ist-Temperatur sowie bis zu drei angeschlossene (\"gepeerte\") Stellantriebe (Heizk&ouml;rperthermostate) darstellen. Au&szlig;erdem kann man die Solltemperatur einstellen. Man kann auch einfach nur einen Heizk&ouml;rperthermostat darstellen und steuern.",
+	device => "Dies ist das Haupt-Device der Thermostat-Kombination. Das ist immer das Device, welches die Soll- und Ist-Temperatur \"enth&auml;lt\". D.h. bei Kombinationen von Wand- und Heizk&ouml;rperthermostat ist das in der Regel der Wandthermostat. Wenn es nur um einen einzelnen Heizk&ouml;rperthermostat geht, dann ist es dieser.",
+	label => "Dies ist ein Text, der unter der Thermostat-Grafik angezeigt wird. Man kann ihn auch weglassen.",
+	desiredTemp => "Hier wird das Reading des Haupt-Device (im Parameter <i>device</i> angegeben, welches die Solltemperatur enth&auml;lt.",
+	desiredSet => "Hier wird die Set-Option angegeben, mit der die Solltemperatur im Haupt-Device gesetzt wird. Normalerweise ist das dasselbe wie <i>desiredTemp</i>, es kann aber auch abweichen.",
+	measuredTemp => "Hier wird das Reading des Haupt-Device (im Parameter <i>device</i> angegeben, welches die Ist-Temperatur enth&auml;lt.",
+	minTemp => "Dies ist die minimale darstellbare/einstellbare Temperatur.",
+	maxTemp => "Dies ist die maximale darstellbare/einstellbare Temperatur.",
+	step => "Hier wird die Schrittweite der Temperatureinstellung und -anzeige angegeben. Zusammen mit <i>minTemp</i> und <i>maxTemp</i> legt das fest, welche Temperaturen eingestellt werden k&ouml;nnen und wie genau die Temperaturen angezeigt werden. Man kann hier auch \"Kommazahlen\" eingeben (Default ist 0.5). Dabei muss man darauf achten, dass als Dezimaltrennzeichen der Punkt und nicht das Komma benutzt wird.",
+	valvePos1 => "Die <i>valvePos</i>-Parameter sind Device/Reading-Kombinationen, aus denen der jeweilige Ventilstellungsgrad gelesen wird.",
+	valvePos2 => "Die <i>valvePos</i>-Parameter sind Device/Reading-Kombinationen, aus denen der jeweilige Ventilstellungsgrad gelesen wird.",
+	valvePos3 => "Die <i>valvePos</i>-Parameter sind Device/Reading-Kombinationen, aus denen der jeweilige Ventilstellungsgrad gelesen wird.",
+	size => "Die View <i>Thermostat</i> unterst&uuml;tzt die bei FUIP &uuml;blichen Sizing-Mechanismen nicht. Statt dessen gibt es zwei w&auml;hlbare Gr&ouml;&szlig;en \"normal\" und \"big\". Ersteres ist vor Allem f&uuml;r &Uuml;bersichtsseiten geeignet w&auml;hrend letzteres angenehmer zu bedienen ist.",
+	readonly => "Hiermit kann man das Setzen der Solltemperatur deaktivieren. D.h. die View zeigt dann die Daten nur noch an. Das ist vor Allem dann interessant, wenn man das eigentliche Bedienelement mit weiteren Details auf ein Popup auslagert."
+);
+
+
 # register me as selectable
 $FUIP::View::selectableViews{"FUIP::View::Thermostat"}{title} = "Thermostat"; 
 

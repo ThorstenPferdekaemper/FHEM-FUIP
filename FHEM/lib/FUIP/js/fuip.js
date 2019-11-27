@@ -352,10 +352,15 @@ function coloursChangeDialog() {
 	
 function openChangeLog() {
 	let name = $("html").attr("data-name").toLowerCase();
-	window.open(location.origin + "/fhem/" + name + "/fuip/doc/changes.html","fuipdoc");
+	window.open(location.origin + "/fhem/" + name + "/fuip/doc/changes.html","fuipnews");
+};	
+
+function openDocu() {
+	let name = $("html").attr("data-name").toLowerCase();
+	window.open(location.origin + "/fhem/" + name + "/fuip/docu","fuipdoc");
 };	
 	
-	
+
 function toggleConfigMenu(){
 	// cell menu
 	// Goto ->
@@ -387,34 +392,36 @@ function toggleConfigMenu(){
 		let mode = $( "#viewsettings" ).attr("data-mode");
 		if(mode != "cell" && mode != "page") 
 			return;  
+		let docid = "FUIP::ConfPopup::" + (mode == "cell" ? "Cell" : "Page") + "-";
 		if(mode == "cell") {
-			html += '<li onclick="toggleCellPage()"><div>Page config</div></li>'
-				+	'<li onclick="callViewTemplateMaint()"><div>View Templates</div></li>'
+			html += '<li onclick="toggleCellPage()" data-docid="'+docid+'gotopage"><div>Page config</div></li>'
+				+	'<li onclick="callViewTemplateMaint()" data-docid="'+docid+'gotovtemplates"><div>View Templates</div></li>'
 				+	'<li class="ui-widget-header"><div>Cell</div></li>'
-				+	'<li onclick="acceptSettings(viewAddNew)"><div title="Add a new cell to this page"><span class="ui-icon ui-icon-plus"></span>Add</div></li>'
-				+	'<li onclick="acceptSettings(copyCurrentCell)"><div><span class="ui-icon ui-icon-copy"></span>Copy</div></li>'
-				+	'<li><div onclick="acceptSettings(exportCellOrDialog)"><span class="ui-icon ui-icon-arrowstop-1-s"></span>Export</div></li>'
-				+	'<li><div onclick="importCellOrDialog()"><span class="ui-icon ui-icon-arrowstop-1-n"></span>Import</div></li>'
-				+	'<li><div onclick="acceptSettings(autoArrange)"><span class="ui-icon ui-icon-calculator"></span>Arrange views</div></li>'
-				+	'<li><div onclick="acceptSettings(dialogConvertToViewtemplate)" title="Create a view template which looks like this cell">Make view template</div></li>'
-				+	'<li><div onclick="deleteCell()"><span class="ui-icon ui-icon-trash"></span>Delete</div></li>';
+				+	'<li onclick="acceptSettings(viewAddNew)" data-docid="'+docid+'addcell"><div title="Add a new cell to this page"><span class="ui-icon ui-icon-plus"></span>Add</div></li>'
+				+	'<li onclick="acceptSettings(copyCurrentCell)" data-docid="'+docid+'copycell"><div><span class="ui-icon ui-icon-copy"></span>Copy</div></li>'
+				+	'<li data-docid="'+docid+'export"><div onclick="acceptSettings(exportCellOrDialog)"><span class="ui-icon ui-icon-arrowstop-1-s"></span>Export</div></li>'
+				+	'<li data-docid="'+docid+'import"><div onclick="importCellOrDialog()"><span class="ui-icon ui-icon-arrowstop-1-n"></span>Import</div></li>'
+				+	'<li data-docid="'+docid+'autoarrange"><div onclick="acceptSettings(autoArrange)"><span class="ui-icon ui-icon-calculator"></span>Arrange views</div></li>'
+				+	'<li data-docid="'+docid+'makevtemplate"><div onclick="acceptSettings(dialogConvertToViewtemplate)" title="Create a view template which looks like this cell">Make view template</div></li>'
+				+	'<li data-docid="'+docid+'deletecell"><div onclick="deleteCell()"><span class="ui-icon ui-icon-trash"></span>Delete</div></li>';
 		}else{
-			html += '<li onclick="toggleCellPage()"><div>Cell config</div></li>'
-				+	'<li onclick="callViewTemplateMaint()"><div>View Templates</div></li>'
+			html += '<li onclick="toggleCellPage()" data-docid="'+docid+'gotocell"><div>Cell config</div></li>'
+				+	'<li onclick="callViewTemplateMaint()" data-docid="'+docid+'gotovtemplates"><div>View Templates</div></li>'
 				+	'<li class="ui-widget-header"><div>Page</div></li>'
-				+	'<li><div onclick="acceptPageSettings(copyCurrentPage)"><span class="ui-icon ui-icon-copy"></span>Copy</div></li>'
-				+	'<li><div onclick="acceptPageSettings(exportPage)"><span class="ui-icon ui-icon-arrowstop-1-s"></span>Export</div></li>'
-				+	'<li><div onclick="importPage()"><span class="ui-icon ui-icon-arrowstop-1-n"></span>Import</div></li>'
-				+	'<li><div onclick="acceptPageSettings(repairPage)"><span class="ui-icon ui-icon-wrench"></span>Repair</div></li>';
+				+	'<li><div onclick="acceptPageSettings(copyCurrentPage)" data-docid="'+docid+'copypage"><span class="ui-icon ui-icon-copy"></span>Copy</div></li>'
+				+	'<li data-docid="'+docid+'export"><div onclick="acceptPageSettings(exportPage)"><span class="ui-icon ui-icon-arrowstop-1-s"></span>Export</div></li>'
+				+	'<li data-docid="'+docid+'import"><div onclick="importPage()"><span class="ui-icon ui-icon-arrowstop-1-n"></span>Import</div></li>'
+				+	'<li data-docid="'+docid+'repairpage"><div onclick="acceptPageSettings(repairPage)"><span class="ui-icon ui-icon-wrench"></span>Repair</div></li>';
 		};	
 		let acceptFunc = (mode == "cell" ? "acceptSettings" : "acceptPageSettings");
 		html +=	'<li class="ui-widget-header"><div>General</div></li>'
-			+ '<li onclick="coloursChangeDialog()"><div>Colours</div></li>'
-			+ '<li onclick="openChangeLog()"><div>FUIP News</div></li>'
-			+ '<li><div><span class="ui-icon ui-icon-locked"></span>Lock</div>'
+			+ '<li onclick="coloursChangeDialog()" data-docid="'+docid+'gotocolours"><div>Colours</div></li>'
+			+ '<li onclick="openChangeLog()" data-docid="'+docid+'opennews"><div>FUIP News</div></li>'
+			+ '<li onclick="openDocu()" data-docid="'+docid+'opendocu"><div><span class="ui-icon ui-icon-help"></span>FUIP Documentation</div></li>'
+			+ '<li data-docid="'+docid+'lock"><div><span class="ui-icon ui-icon-locked"></span>Lock</div>'
 			+ '	<ul style="width:125px;">'
-			+ '		<li><div onclick="'+acceptFunc+'(function(){setLock(\'client\')})">This client</div></li>'
-			+ '		<li><div onclick="'+acceptFunc+'(function(){setLock(\'all\')})">All clients</div></li>'
+			+ '		<li data-docid="'+docid+'lock"><div onclick="'+acceptFunc+'(function(){setLock(\'client\')})">This client</div></li>'
+			+ '		<li data-docid="'+docid+'lock"><div onclick="'+acceptFunc+'(function(){setLock(\'all\')})">All clients</div></li>'
 			+ ' </ul></li>';
 		html += '</ul>';
 		menu = $(html);
@@ -426,6 +433,7 @@ function toggleConfigMenu(){
 	menu.menu({
       items: "> :not(.ui-widget-header)"
     });
+	menu.on("mouseover","*", settingsDialogOnFocus);
 	$('#fuip-menutoggle').replaceWith(menu);
 };	
 	
@@ -1695,8 +1703,8 @@ function createClassField(selectedClass,prefix) {
 			showLabel: false
 		});		
 	});	*/	
-	return "<tr>" +
-			"<td style='text-align:left;'><label for='" + fieldName + "'>View type</label></td>" +  
+	return "<tr data-docid='" + selectedClass + "-class'>" +
+			"<td style='text-align:left;'><label for='" + fieldName + "' style='white-space:nowrap'>View type</label></td>" +  
 			"<td style='text-align:left;'><input type='checkbox' style='visibility:hidden;'><input type='text'" +
 			" name='" + fieldName + "' id='" + fieldName + "' " +
 			"style='visibility:visible;background-color:#EBEBE4;' readonly " +
@@ -2526,7 +2534,7 @@ function createField(settings, fieldNum, component,prefix) {
 	};
 	var fieldNameInBrackets = '"' + fieldName + '"';
 	// the result is an array of JQuery elements
-	let result = $("<td style='text-align:left;' />");
+	let result = $("<td style='text-align:left;white-space:nowrap' />");
 	// 1. element: the "default" checkbox (always there, but might be hidden)
 	result.append($("<input type='checkbox' id='" + fieldName + "-check' style='visibility: " + checkVisibility + ";'" 
 			+ ' title="change (don\'t use default)"'
@@ -2631,7 +2639,7 @@ function createField(settings, fieldNum, component,prefix) {
 		}else{
 			 value = fieldNameWoPrefix.replace(/-/g, "_");
 		};
-		result[1] = $("<td />");	
+		result[1] = $("<td style='white-space: nowrap' />");	
 		result[1].append($("<input type='checkbox' id='" + fieldName + "-varcheck' title='make this a variable'" 
 					+ checkValue 
 					+ " onchange='varCheckChanged(\"" + fieldName + "\")'>"));
@@ -2649,21 +2657,24 @@ function createViewArray(field,prefix) {
 						'" data-nextindex="' + items.length + '">');
 	for(var i = 0; i < items.length; i++) {
 		let entry = $('<div class="group" id="' + prefix + field.id + '-' + i + '" />');
-		let title = '' + i + ' ';
-		for(let j = 0; j < items[i].length; j++) {
-			if(items[i][j].id == 'title') {
-				title = items[i][j].value;
-				break;
-			};								
-		};
+		let viewType = items[i].find((element) => element.id == 'class');; 
+		let title = items[i].find((element) => element.id == 'title');
+		if(title) {
+			title = title.value;
+		}else{
+			title = '' + i + ' ';
+		};	
 		let titleElem = $('<h3>' + title + '</h3>');
-		let fieldNameWithTicks = "'" + prefix + field.id + '-' + i + "'";
-		let button = $('<button id="' + prefix + field.id + '-' + i + '-delete" onclick="viewDeleteFromArray('+fieldNameWithTicks+')" type="button" style="position:absolute;right:0;">Delete view from ' + field.id + '</button>');
+		if(viewType) {
+			titleElem.data("docid",viewType.value);
+		};	
+		titleElem.on("focus",function () { if($(this).attr("aria-expanded") == "false") settingsDialogSetDocu("FUIP::ConfPopup-viewdetails") });let fieldNameWithTicks = "'" + prefix + field.id + '-' + i + "'";
+		let button = $('<button id="' + prefix + field.id + '-' + i + '-delete" onclick="viewDeleteFromArray('+fieldNameWithTicks+')" type="button" style="position:absolute;right:0;top:1px;" data-docid="FUIP::ConfPopup::General-deleteview">Delete view from ' + field.id + '</button>');
 		button.button({
 					icon: 'ui-icon-trash',
 					showLabel: false
 				});		
-		titleElem.append(button);
+		titleElem.append(button);		
 		entry.append(titleElem);
 		entry.append($('<div/>').append(createSettingsTable(items[i], prefix + field.id + '-' + i + '-')));
 		accordion.append(entry);
@@ -2877,13 +2888,15 @@ function createSettingsTable(settings,prefix) {
 	setDefaults(settings);
 	let resultTab = $("<table/>");
 	let vArray = false;
+	let viewType = false;
 	for(var i = 0; i < settings.length; i++){
 		if(settings[i].type != 'class') { continue; }; 
+		viewType = settings[i].value;
 		if(	settings[i].value == 'FUIP::Cell' || 
 			settings[i].value == 'FUIP::Page' || 
 			settings[i].value == 'FUIP::Dialog' ||
 			settings[i].value == 'FUIP::ViewTemplate') { break; };
-		resultTab.append($(createClassField(settings[i].value,prefix)));
+		resultTab.append($(createClassField(viewType,prefix)));
 		break;
 	};
 	for(var i = 0; i < settings.length; i++){
@@ -2893,6 +2906,16 @@ function createSettingsTable(settings,prefix) {
 		if(settings[i].type == 'flexfields') { continue; };
 		let fieldName = prefix + settings[i].id;	
 		let html = "";	
+		let docid = "";
+		if(viewType) {
+			docid = " data-docid='" + viewType + "-";
+			if(settings[i].hasOwnProperty("flexfield") && settings[i].flexfield == "1"){
+				docid += "flexfields";
+			}else{			
+				docid += settings[i].id;
+			};
+			docid += "'";
+		};	
 		switch(settings[i].type) {
 			case 'device-reading':
 				let labelHtml = "<td";
@@ -2903,18 +2926,18 @@ function createSettingsTable(settings,prefix) {
 				let readingElem = createField(settings, i, ["reading"],prefix)
 				readingElem[0].css("white-space","nowrap");
 				if($("html").attr("data-viewtemplate")) {
-					resultTab.append($('<tr />').append([$(labelHtml),...deviceElem]));
-					resultTab.append($('<tr />').append(readingElem));
+					resultTab.append($('<tr' + docid + ' />').append([$(labelHtml),...deviceElem]));
+					resultTab.append($('<tr' + docid + ' />').append(readingElem));
 				}else{
-					resultTab.append($('<tr />').append([$(labelHtml),...deviceElem,...readingElem]));
+					resultTab.append($('<tr' + docid + ' />').append([$(labelHtml),...deviceElem,...readingElem]));
 				};	
 				break;
 			case 'viewarray':
 				html = '<div style="text-align:left;">';
 				var fieldNameInTicks = '"' + fieldName + '"'; 
 				html += '<div id="fuip-viewarraybuttons" style="margin-top:10px;margin-left:20px;">' + 
-					"<button id='" + fieldName + "-add' onclick='viewAddNewToArray("+fieldNameInTicks+")' type='button' title='Add view'>Add view</button>" + 
-					"<button id='" + fieldName + "-addByDevice' onclick='viewAddNewByDevice("+fieldNameInTicks+")' type='button' title='Add views by device'>Add views by device</button>" 
+					"<button id='" + fieldName + "-add' onclick='viewAddNewToArray("+fieldNameInTicks+")' type='button' title='Add view' data-docid='FUIP::ConfPopup::General-addview'>Add view</button>" + 
+					"<button id='" + fieldName + "-addByDevice' onclick='viewAddNewByDevice("+fieldNameInTicks+")' type='button' title='Add views by device' data-docid='FUIP::ConfPopup::General-addviewsbydevice'>Add views by device</button>" 
 					+ '</div></div>';
 				vArray = $(html).append(createViewArray(settings[i],prefix));
 				// make the button a jquery ui button
@@ -2936,7 +2959,7 @@ function createSettingsTable(settings,prefix) {
 				let labelElem = $("<td style='text-align:left'><label for='" + fieldName + "'>" + settings[i].id + "</label></td>");
 				let fieldElem = createField(settings, i,[],prefix);
 				if(settings[i].type == "longtext") fieldElem[0].attr("colspan","4");
-				let rowElem = $('<tr />').append(labelElem).append(fieldElem);
+				let rowElem = $('<tr' + docid + ' />').append(labelElem).append(fieldElem);
 				resultTab.append(rowElem);
 		};
 	};
@@ -3036,30 +3059,77 @@ async function dialogImportViewTemplate() {
 	}catch(e){};  // ignore errors, as popups have already been sent	
 };	
 
+
+async function settingsDialogSetDocu(docid) {
+	let name = $("html").attr("data-name");
+	let cmd = "get " + name + " docu " + docid;
+	let docutext = await asyncSendFhemCommandLocal(cmd);
+	$("#docarea").scrollTop(0);
+	$("#docarea").html(docutext);
+};	
+
+
+async function settingsDialogOnFocus(event) {
+	let docid =  $(event.target).data("docid");
+	if(!docid) {
+		docid = $(this).data("docid");
+	};	
+	if(!docid) return true;
+	settingsDialogSetDocu(docid)
+	return true;	
+};	
+
+
+function settingsDialogResizeStop(event,ui) {
+	var settingsDialog = $( "#viewsettings" );
+	if(ui.originalSize.height == ui.size.height) {
+		settingsDialog.css("height",ui.size.height - 88.222);
+	};	
+	settingsDialog.css("width",ui.size.width - 5);
+
+};	
+
+
+function createSettingsWithDocArea(settingsDialog, settings) {
+	settingsDialog.empty();
+	let formArea = $("<form onsubmit='return false' />").append(createSettingsTable(settings,""));
+	let docArea = $("<div style='position:relative;width:100%'><div id='docarea' style='position:absolute;top:0;bottom:0;left:0;right:0;border-style: inset;text-align:left;margin-left:3px;padding:2px;overflow:auto;'>Bisher wurde keine Dokumentation ausgew&auml;hlt.</div></div>");
+	settingsDialog.css("display","flex");
+	settingsDialog.append(formArea);
+	settingsDialog.append(docArea);
+};	
+
+
 								
 function changeSettingsDialog(settingsJson,type,cellid,fieldid) {
 	// type: cell,dialog or viewtemplate
 	// fieldId is set in the "popup maintenance mode" (type = dialog)
 	var settingsDialog = $( "#viewsettings" );
 	var title = "Settings ";
+	let docid = "FUIP::ConfPopup::";
 	switch(type) {
 		case "cell": 
-			title += "cell " + cellid; break;
+			title += "cell " + cellid; 
+			docid += "Cell";
+			break;
 		case "dialog":
 			title += "popup ";
 			if($("html").attr("data-pageid")) {
 				title += cellid + " ";
 			};
 			title += fieldid; 
+			docid += "Dialog";
 			break;
 		case "viewtemplate":
-			title += "view template " + $("html").attr("data-viewtemplate"); break;
+			title += "view template " + $("html").attr("data-viewtemplate"); 
+			docid += "ViewTemplate";
+			break;
 		default:
 			title += type + " ???";
 	};		
+	docid += "-";
 	var settings = json2object(settingsJson);
-	settingsDialog.empty();
-	settingsDialog.append($("<form onsubmit='return false' />").append(createSettingsTable(settings,"")));
+	createSettingsWithDocArea(settingsDialog, settings);
 	for(var i = 0; i < settings.length; i++){
 		if(settings[i].id == "title") {
 			title += " (" + settings[i].value + ")"; 
@@ -3069,6 +3139,7 @@ function changeSettingsDialog(settingsJson,type,cellid,fieldid) {
 	settingsDialog.dialog("option","title",title); 
 	var buttons = 
 		[{
+			'data-docid': docid + 'ok',
 			text: 'Ok',
 			icon: 'ui-icon-check',
 			click: function() { acceptSettings(); },
@@ -3076,10 +3147,12 @@ function changeSettingsDialog(settingsJson,type,cellid,fieldid) {
 	if(type == "cell") {
 		buttons.push(	
 			{   text: 'Add new cell',
+				'data-docid': docid + 'addcell',
 				icon: 'ui-icon-plus',
 				click: function() { acceptSettings(viewAddNew);},
 				showLabel: false },
 			{	text: 'Copy cell',
+				'data-docid': docid + 'copycell',
 				icon: 'ui-icon-copy',
 				click: function() { acceptSettings(copyCurrentCell);},
 				showLabel: false });
@@ -3087,10 +3160,12 @@ function changeSettingsDialog(settingsJson,type,cellid,fieldid) {
 	if(type == "dialog") {
 		buttons.push(
 			{	text: 'Export ' + type,
+				'data-docid': docid + 'export',
 				icon: ' ui-icon-arrowstop-1-s',
 				click: function() { acceptSettings(exportCellOrDialog) },
 				showLabel: false },
 			{	text: 'Import ' + type,
+				'data-docid': docid + 'import',
 				icon: ' ui-icon-arrowstop-1-n',
 				click: importCellOrDialog,  // does the acceptSettings internally	
 				showLabel: false });
@@ -3098,12 +3173,14 @@ function changeSettingsDialog(settingsJson,type,cellid,fieldid) {
 	if(type == "cell") {
 		buttons.push(	
 			{   text: 'Delete cell',
+				'data-docid': docid + 'deletecell',
 				icon: 'ui-icon-trash',
 				click: deleteCell,
 				showLabel: false });
 	};
 	buttons.push(
 		{   text: 'Cancel',
+			'data-docid': docid + 'cancel',
 			icon: 'ui-icon-close',
 			click: function() {	settingsDialog.dialog( "close" ); 
 								// even here, we do a reload as other functions (like export) 
@@ -3112,6 +3189,7 @@ function changeSettingsDialog(settingsJson,type,cellid,fieldid) {
 							},
 			showLabel: false },
 		{	text: 'Toggle editOnly',
+			'data-docid': docid + 'editonly',
 			click: function() { acceptSettings( function() {
 				var easyDrag = $('html').attr('data-editonly');
 				if(easyDrag == "0") {
@@ -3125,6 +3203,13 @@ function changeSettingsDialog(settingsJson,type,cellid,fieldid) {
 		}
 		);
 	settingsDialog.dialog("option","buttons",buttons);
+	settingsDialog.dialog("option","height","auto");
+	settingsDialog.on( "dialogresizestop", settingsDialogResizeStop );
+	settingsDialog.off("click","*", settingsDialogOnFocus);
+	settingsDialog.on("click","*", settingsDialogOnFocus);
+	settingsDialog.off("focus","*", settingsDialogOnFocus);
+	settingsDialog.on("focus","*", settingsDialogOnFocus);
+	settingsDialog.parent().on("focus","button", settingsDialogOnFocus);
 };
 					
 				
@@ -3152,9 +3237,11 @@ async function openSettingsDialog(type, cellid) {
 	// XMLHTTP request to get config options with current values
 	var cmd = "get " + name + " settings type=" + type + " ";
 	let fieldid;
+	let docid = "";
 	switch(type) {
 		case "cell": 
 			cmd += 'pageid="' + $("html").attr("data-pageid") + '" cellid="' + cellid + '"';
+			docid = "Cell";
 			break;
 		case "dialog":
 			fieldid = $("html").attr("data-fieldid");
@@ -3165,9 +3252,11 @@ async function openSettingsDialog(type, cellid) {
 				cmd += 'templateid="' + $("html").attr("data-viewtemplate") + '"';
 			};	
 			cmd += ' fieldid="' + fieldid + '"';
+			docid = "Dialog";
 			break;
 		case "viewtemplate":
 			cmd += 'templateid="' + $("html").attr("data-viewtemplate") + '"';
+			docid = "ViewTemplate";
 			break;
 		default:
 			console.log("FUIP: openSettingsDialog failed: unknown type");
@@ -3193,6 +3282,8 @@ async function openSettingsDialog(type, cellid) {
 		fuip.messages = [];	
 	};
 	settingsDialog.dialog("open");
+	// display cell/dialog/viewtemplate docu
+	settingsDialogSetDocu("FUIP::ConfPopup::" + docid);
 };
 			
 			
@@ -3267,17 +3358,21 @@ function toggleCellPage() {
 		openSettingsDialog("cell",settingsDialog.attr("data-viewid"));
 	}else if(mode == "cell") {
 		settingsDialog.dialog("option","title", "Settings page " + $("html").attr("data-pageid"));
+		settingsDialog.dialog("option","height",250);
 		settingsDialog.attr("data-mode","page");
 		settingsDialog.dialog("option","buttons",
 			[{	text: 'Ok',
+				'data-docid': 'FUIP::ConfPopup::Page-ok',
 				icon: 'ui-icon-check',
 				click: function() { acceptPageSettings();},
 				showLabel: false },
 			{	text: 'Copy page',
+				'data-docid': 'FUIP::ConfPopup::Page-copypage',
 				icon: 'ui-icon-copy',
 				click: function() { acceptPageSettings(copyCurrentPage); },
 				showLabel: false },
 			{   text: 'Cancel',
+				'data-docid': 'FUIP::ConfPopup::Page-cancel',
 				icon: 'ui-icon-close',
 				click: function() {	settingsDialog.dialog( "close" ); 
 									location.reload(true);
@@ -3287,10 +3382,13 @@ function toggleCellPage() {
 		var cmd = "get " + $("html").attr("data-name") + " pagesettings " + $("html").attr("data-pageid");
 		sendFhemCommandLocal(cmd).done(function(settingsJson){
 			var settings = json2object(settingsJson);
-			settingsDialog.empty();
-			settingsDialog.append($("<form onsubmit='return false' />").append(createSettingsTable(settings,"")));
+			createSettingsWithDocArea(settingsDialog, settings);
+			// display cell/dialog/viewtemplate docu
+			settingsDialogSetDocu("FUIP::ConfPopup::Page");
 		});	
 	};
+	// close menu
+	toggleConfigMenu();
 };	
 
 

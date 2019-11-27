@@ -28,5 +28,11 @@ sub getStructure($) {
 		];
 };
 
-	
+
+our %docu = (
+	general => "Eine Seite in FUIP ist eine einzelne Webseite.",
+	title => "&Uuml;berschrift der Seite.<br>
+			Hier kann ein Titel für die Seite eingetragen werden. Das erscheint dann je nach Browser irgendwo oben. (Technisch ist es der Inhalt des &lt;title&gt; Tags in &lt;head&gt;.)"
+);
+
 1;	

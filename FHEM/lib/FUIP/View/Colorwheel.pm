@@ -74,7 +74,18 @@ sub getStructure($) {
 		];
 };
 
+our %docu = (
+	general => "Farbauswahl im RGB-Format<br>
+		Mit der View <i>Colorwheel</i> kann man Geräte steuern, die Farben im RGB-Format akzeptieren bzw. bereitstellen, wie z.B. Hue-Leuchten. Die View entspricht ungef&auml;hr dem FTUI-Widget \"colorwheel\", wobei FUIP eine eigene Implementierung bereitstellt, die beim Sizing flexibler ist.",
+	device => "Das Device, auf das sich die Farbauswahl bezieht. Das kann z.B. eine Leuchte vom Typ HUEDevice sein.",
+	label => "Der hier eingetragene Text erscheint unter der Farbauswahl, also am unteren Rand der View. Man kann das Label auch leer lassen.",
+	set => "Set-Option, die eine Farbe im RGB-Hex-Format akzeptiert.<br>
+		Beim Setzen der Farbe ruft die View folgenden FHEM-Befehl auf: <i>set &lt;device&gt; &lt;set&gt; RRGGBB</i>. Defaultwert ist \"rgb\". Bei Hue-Leuchten ergibt sich also normalerweise so etwas wie <i>set myHueDevice rgb FF0000</i>, wenn man die Lampe auf Rot setzt.",
+	reading => "Reading, welches die aktuelle Farbe im RGB-Hex-Format enth&auml;lt.<br>
+		Defaultwert ist das, was bei <i>set</i> eingetragen wurde." 
+);
+
 # register me as selectable
-$FUIP::View::selectableViews{"FUIP::View::Colorwheel"}{title} = "Select a colour"; 
+$FUIP::View::selectableViews{"FUIP::View::Colorwheel"}{title} = "Farbauswahl"; 
 
 1;	

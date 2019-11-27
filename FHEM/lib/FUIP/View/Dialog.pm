@@ -69,5 +69,11 @@ sub getStructure($) {
 		];
 };
 
+
+our %docu = (
+	general => "Ein Popup (oder auch Dialog) enth&auml;lt wie eine Zelle Views, die frei positioniert werden k&ouml;nnen. Die Gr&ouml;szlig des Popups selbst kann pixelgenau eingestellt werden.",
+	title => "&Uuml;berschrift des Popups.<br>
+			Wird hier etwas eingetragen, dann erscheint es in der Titelzeile des Popups. Ein Popup muss keine &Uuml;berschrift haben."
+);
 	
 1;	

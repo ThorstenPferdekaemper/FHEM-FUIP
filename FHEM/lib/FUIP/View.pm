@@ -238,8 +238,8 @@ sub getStructure($) {
 		{ id => "class", type => "class", value => $class },
 		{ id => "title", type => "text", default => { type => "const", value => "Empty"} },
 		{ id => "content", type => "text", default => { type => "const", value => "This is just empty"} },
-		{ id => "width", type => "internal" },
-		{ id => "height", type => "internal" }
+		{ id => "width", type => "dimension" },
+		{ id => "height", type => "dimension" }
 		];
 };
 
@@ -484,8 +484,66 @@ sub getConfigFields($) {
 	return $result;
 }
 
+my %docu = (
+	general => "Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.",
+	class => "Dies ist der Typ (bzw. die \"Klasse\") der View.<br>
+			  Der View-Typ bestimmt die Funktionalit&auml;t der View, welche Parameter sie hat und wie sie auf der Oberfl&auml;che aussieht.",
+	title => "Dies ist sozusagen die &Uuml;berschrift der View-Instanz.<br>
+			  Der Titel wird in der Regel nur auf dem Konfigurations-Popup verwendet. Meistens taucht dieses Feld nirgends auf der Oberfl&auml;che selbst auf.",
+	sizing => "Ermittlung der Gr&ouml;&szlig;e der View<br>
+			Es gibt prinzipiell drei verschiedene Mechanismen, wie die Gr&ouml;&szlig;e einer View bestimmt wird: <i>fixed</i>, <i>resizable</i> und <i>auto</i>:
+			<ul>
+				<li><b>fixed</b>: Die View berechnet selbst ihre Breite und H&ouml;he. Oft ist die Gr&ouml;&szlig;e dann tats&auml;chlich \"fix\", sie kann aber auch von der Konfiguration der View abh&auml;ngen.</li>
+				<li><b>resizable</b>: Man kann die Gr&ouml;&szlig;e frei einstellen. Es erscheinen dann zwei Felder zum Eingeben von H&ouml;he und Breite auf dem Konfigurations-Popup. Au&szlig;erdem kann die rechte untere Ecke der View mit der Maus \"gezogen\" werden.</li>
+				<li><b>auto</b>: Die View nimmt automatisch den kompletten Platz bis zur rechten unteren Ecke der Zelle (oder des Popups oder des View Templates) ein. D.h. die Gr&ouml;&szlig;e wird nur durch die Position der View bestimmt. Im Flex-Layout kann sich die View auch an Zellen flexibler Gr&ouml;&szlig;e anpassen.</li>
+			</ul>",
+	popup => "Hiermit kann ein Popup angelegt werden, welches durch Klick auf die View
+			  ge&ouml;ffnet wird.<br>	
+			  Wird die Checkbox (\"Default-Haken\") aktiviert, dann erscheint ein Button, &uuml;ber den das Popup bearbeitet werden kann. Ein Popup (oder auch \"Dialog\" erscheint auf der Bearbeitungsoberfl&auml;che wie eine FUIP-Seite mit einer einzigen Zelle.",
+	device => "Hier wird das FHEM-Device angegeben, auf den sich die View bezieht.<br>
+			  Es wird eine Werthilfe mit Filter- und Sortierm&ouml;glichkeit angeboten, &uuml;ber die man das Device ausw&auml;hlen kann. Manche Views bieten automatisch nur solche Devices an, die f&uuml;r die View sinnvoll sind.",
+	reading => "FHEM-Reading, auf das sich die View bezieht.<br>
+				Dieser Parameter bezieht sich immer auf ein Device-Feld (welches nicht unbedingt <i>device</i> hei&szlig;t) oder es besteht sogar aus zwei Teilfeldern, wobei in das erste Feld das FHEM-Device eingegeben werden muss. Beim Reading wird eine Werthilfe angeboten, die die Readings des zugeh&ouml;rigen Device auflistet. (Daher ist es immer sinnvoll, zuerst das Device auszuw&auml;hlen.)",
+	label => "Das \"Label\" ist ein kurzer beschreibender Text, der in der View angezeigt
+				wird. Das Label wird je nach Art der View z.B. vor einem Reading oder unter einem Symbol angezeigt. Man kann das Label auch weglassen, indem man es einfach leer l&auml;sst. (Dies ist ein allgemeiner Text f&uuml;r alle Views.)", 	
+	icon => "Ein Icon...<br>
+			Manche Views benutzen ein Icon zur Darstellung. Dieses kann hier ausgew&auml;hlt werden. Dazu wird eine Werthilfe angeboten, die alle m&ouml;glichen Icons auflistet.",
+	layout => "Layout ausw&auml;hlen (Swiper aktivieren)<br>
+			Normalerweise werden Views in Zellen und View Templates frei positioniert (<i>layout=position</i>). Man kann aber auch einen \"Swiper\" (oder \"Slider\") aktivieren, mit dem man die einzelnen Views sozusagen \"durchbl&auml;ttern\" bzw \"wischen\" kann (<i>layout=swiper</i>). Im Swiper-Layout werden weitere Felder zur Konfiguration aktiviert. Die Reihenfolge der Views wird durch deren Reihenfolge im Konfigurations-Popup festgelegt. Diese kann durch Drag&amp;Drop &uuml;ber die Titelbalken der einzelnen Views ge&auml;ndert werden.<br>
+			Auch im Swiper-Layout ist es m&ouml;glich, Views aus einer Zelle heraus- bzw. hineinzuziehen. Beim \"in den Swiper Fallenlassen\" wird die View momentan als letzte in der Reihe angef&uuml;gt. D.h. es sieht im ersten Moment so aus, als ob die View verschwindet, sie ist aber nur ganz hinten.",
+	autoplay => "Automatisch weiterschalten (Swiper-Layout)<br>
+		Wenn hier ein Wert ungleich 0 eingegeben wird, dann werden die einzelnen Views automatisch weitergeschaltet. Der bei <i>autoplay</i> angegebene Wert ist die Zeit in Millisekunden, nachdem zur n&auml;chsten View weitergschaltet wird.",
+	navbuttons => "Navigationspfeile (de-)aktivieren (Swiper-Layout)<br>
+		Normalerweise erscheinen rechts und links vom Swiper-Widget Navigationspfeile. Diese k&ouml;nnen hiermit abgeschaltet werden.",
+	pagination => "\"Punkte\" (de-)aktivieren (Swiper-Layout)<br>
+		Normalerweise erscheinen unter dem Swiper-Widget Punkte, die den momentanen Zustand anzeigen und mit denen auch eine bestimmte View im Swiper angew&auml;hlt werden kann. Diese Punkte k&ouml;nnen hiermit abgeschaltet werden."
+		
+	);
+
+
+sub getDocu($$;$) {
+	my ($class,$fieldname,$onlySpecific) = @_;
+	# do we have a specific doc of the class?
+	my $classdocu = eval('\%'.$class.'::docu');
+	if($classdocu) {
+		if($fieldname) {
+			return $classdocu->{$fieldname} if(exists $classdocu->{$fieldname});
+		}else{
+			return $classdocu->{general} if(exists $classdocu->{general});
+		};
+	};	
+	# no specific docu
+	return undef if $onlySpecific;
+	if($fieldname) {
+		return $docu{$fieldname} if(exists $docu{$fieldname});
+		return "Es wurde keine Dokumentation zum Feld <i>".$fieldname."</i> gefunden.";
+	};
+	return $docu{general};
+};	
+
 # register me as selectable
-$FUIP::View::selectableViews{"FUIP::View"}{title} = "The Empty View"; 
+$FUIP::View::selectableViews{"FUIP::View"}{title} = "Die leere View"; 
 
 	
 1;	

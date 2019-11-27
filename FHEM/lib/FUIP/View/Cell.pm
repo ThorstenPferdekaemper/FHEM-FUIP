@@ -145,5 +145,11 @@ sub getStructure($) {
 		];
 };
 
-	
+
+our %docu = (
+	general => "Die Zellen sind die \"K&auml;stchen\", aus denen eine FUIP-Oberfl&auml;che besteht. Im Bearbeitungsmodus k&ouml;nnen sie mit der Maus positioniert werden und man kann ebenfalls mit der Maus ihre Gr&ouml;&szlig;e &auml;ndern.",
+	title => "&Uuml;berschrift der Zelle.<br>
+			Eine Zelle muss keine &Uuml;berschrift haben. Die Zahl hinter der &Uuml;berschrift in der Zelle selbst verschwindet, wenn man die Oberfl&auml;che gegen Bearbeitung sperrt (Attribut <i>locked</i> bzw. Kommando <i>set...lock</i>)."
+);
+
 1;	

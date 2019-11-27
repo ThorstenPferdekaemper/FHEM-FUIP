@@ -2331,7 +2331,10 @@ sub CGI_inner($) {
 		# upload logs	
 		}elsif($path[1] =~ m/^logupload/) {
 			return uploadLog($hash,$request);	
-		}
+		# documentation
+		}elsif($path[1] =~ m/^docu/) {
+			return renderDocu($hash);
+		};	
 		# other built in fuip files
 		shift @path;
 		$filename = $main::attr{global}{modpath}."/FHEM/lib/FUIP/".join('/',@path);
@@ -3517,7 +3520,171 @@ sub _setSettings($$) {
 	autoArrangeNewViews($container);	
 	return undef;
 };		
+
+
+my %docuConfPopup = (
+	# cell, dialog, viewtemplate, page
+	"general" => { 
+		"general" => "Auf den Konfigurations-Dialogen legt man haupts&auml;chlich den Inhalt der betreffenden Elemente fest. D.h. man kann hier Views hinzuf&uuml;gen und l&ouml;schen sowie die Views konfigurieren. Die Positionierung der Views erfolgt dann direkt auf der Oberfl&auml;che mittels Drag&amp;Drop.<br><br>
+		F&uuml;r die meisten Elemente in den Konfigurationsdialogen erscheinen Hilfetexte. Buttons und manche andere Elemente muss man mittels \"Tab\" in den Fokus holen, um deren Hilfetext zu sehen.",
+		"gotovtemplates" => "Ruft die Bearbeitungsoberfl&auml;che f&uuml;r View Templates auf",
+		"addview" => "Neuen View einf&uuml;gen.<br>
+			Damit wird sozusagen neuer Inhalt zu einer Zelle hinzugef&uuml;gt. Man w&auml;hlt dann aus, welche Art View angelegt werden soll und f&uuml;llt die Details, wie z.B. das zugeh&ouml;rige Device. Der neue View wird an einer freien Stelle (falls m&ouml;glich) in der Zelle positioniert. Nach dem Schlie&szlig;en des Konfigurations-Dialogs kann man den View per Drag&amp;Drop an die gew&uuml;nschte Stelle schieben und ggf. die Gr&ouml;&szlig;e anpassen.",
+		"addviewsbydevice" => "Neue Views nach Device ausw&auml;hlen<br>
+			Dies dient ebenfalls dazu, neue Views in die Zelle zu packen. Allerdings w&auml;hlt man nicht die Art des Views aus, sondern die FHEM-Devices, die dargestellt werden sollen. Das System sucht dann jeweils einen geeigneten View aus. Bisher funktioniert das nur sehr eingeschr&auml;nkt, hat aber den Vorteil, dass man gleich mehrere Devices ausw&auml;hlen kann.",
+		"cancel" => "Damit schlie&szlig;t man den Dialog ohne die &Auml;nderungen zu &uuml;bernehmen.",
+		"viewdetails" => "Hier klappt man die Details zum View aus und kann diese &auml;ndern.<br>
+			Was man dann genau machen kann kommt auf die Art der View an. Per Drag&amp;Drop kann man auch die Reihenfolge der Views im Konfigurations-Dialog &auml;ndern. Das hat allerdings keinen unmittelbaren Effekt auf die Positonierung bereits existierender Views in der Zelle, au&szlig;er man benutzt die Funktion <i>Arrange views</i>.",
+		"deleteview" => "View aus der Zelle bzw. Dialog oder View Template l&ouml;schen.<br>
+			Wenn man den View eigentlich nicht l&ouml;schen, sondern in einer anderen Zelle haben will, dann kann man ihn auch per Drag&amp;Drop in die andere Zelle verschieben. L&auml;sst man einen View in einer anderen Zelle \"fallen\", dann wird dieser automatisch der neuen Zelle zugeordnet.",
+		"ok" => "Dialog schlie&szlig;en und &Auml;nderungen &uuml;bernehmen.<br>
+			Dadurch kann man die Auswirkungen auf der Oberfl&auml;che selbst sehen. Um die &Auml;nderungen allerdings den n&auml;chsten FHEM Neustart &uuml;berleben zu lassen muss man noch ein <i>set...save</i> machen.",
+		"autoarrange" => "Views automatisch in der Zelle anordnen (positionieren).<br>
+			FUIP ordnet die Views in der Reihenfolge an, in der sie im Konfigurations-Dialog erscheinen. Das zugrunde liegende Layout ist sehr einfach gehalten und kann sich auch noch &auml;ndern. Diese Funktion ist vor Allem brauchbar f&uuml;r mehrere gleichartige Views in derselben Zelle, wie z.B. bei Men&uuml;s.<br>
+			Bevor diese Funktion ausgef&uuml;hrt wird, werden alle &Auml;nderungen &uuml;bernommen und der Konfigurations-Dialog wird geschlossen.",
+		"export" => "Aktuelle(n) Zelle/Seite/Dialog/ViewTemplate exportieren<br>
+			Dies erlaubt die Definition des aktuell bearbeiteten Objekts herunterzuladen und auf dem Client (also dem Rechner, auf dem der Browser l&auml;uft) zu speichern. Exportierte FUIP-Objekte k&ouml;nnen auch in andere FHEM-Installationen hochgeladen werden.",
+		"editonly" => "Modus zur einfacheren Bearbeitung aktivieren<br>
+			Bei manchen Views ist es schwierig, sie mit der Maus \"anzufassen\", da sie sofort eine Aktion ausl&ouml;sen (z.B. bei Links). Mit \"Toggle editOnly\" wird eine graue \"Schicht\" &uuml;ber die Views gelegt. Dadurch wei&szlig; man besser, wo man den View anfassen kann und Mausklicks haben keine Wirkung mehr, außer f&uuml;r Drag&amp;Drop und &Auml;nderung von H&ouml;he und Breite.",
+		"gotocolours" => "Zum \"Farben-Dialog\" springen<br>
+			Der \"Farben-Dialog\" erlaubt das &Auml;ndern von bestimmten Farben in der Oberfl&auml;che. Zum Beispiel kann die Hintergrundfarbe, die Vordergrundfarbe und die Farbe der Symbole ge&auml;ndert werden.",
+		"opennews" => "FUIP News anzeigen<br>
+			Es wird ein neues Browserfenster ge&ouml;ffnet, in dem die \"FUIP News\" angezeigt werden. Dies ist eine Liste von &Auml;nderungen und Neuerungen in FUIP, geordnet nach Datum.",
+		"opendocu" => "FUIP Dokumentation anzeigen<br>
+			Es wird ein neues Browserfenster ge&ouml;ffnet, in dem eine ausf&uuml;hrliche Dokumentation zu FUIP angezeigt wird.",
+		"lock" => "Oberfl&auml;che gegen &Auml;nderungen sperren<br>
+			Dies entspricht dem FHEM-Befehl <i>set...lock</i>. Man kann auch w&auml;hlen, ob man nur den aktuellen Client oder alle Clients sperren will." 
+	},	
+	"Cell" => {
+		"general" => "Dies ist der Konfigurations-Dialog f&uuml;r Zellen.",
+		"gotopage" => "Wechselt zum Konfigurations-Popup f&uuml;r die aktuelle Seite",
+		"addcell" => "Neue Zelle anlegen<br>
+			Dadurch wird eine neue (leere) Zelle auf der aktuellen Seite angelegt. Bevor diese Funktion ausgef&uuml;hrt wird, werden alle &Auml;nderungen &uuml;bernommen und der Konfigurations-Dialog wird geschlossen.",
+		"copycell" => "Aktuelle Zelle kopieren<br>
+			Man muss eine Seite angeben, zu der die kopierte Zelle geh&ouml;ren soll. Das entsprechende Feld ist mit der aktuellen Seite vorbelegt. Falls man dies nicht &auml;ndert, wird einfach eine Kopie der Zelle auf derselben Seite erzeugt. Ansonsten wird die Zelle auf die angegebene Seite kopiert. Bevor diese Funktion ausgef&uuml;hrt wird, werden alle &Auml;nderungen &uuml;bernommen und der Konfigurations-Dialog wird geschlossen. Falls man eine andere Seite angegeben hat, wird zu dieser gewechselt. Wenn man eine Seite angibt, die noch nicht existiert, dann wird diese Seite angelegt mit der kopierten Zelle als einzigen Inhalt.",
+		"import" => "Exportierte Zelle von Datei importieren<br>
+			FUIP erzeugt uf der aktuellen Seite eine neue Zelle mit dem entsprechenden Inhalt. Das funktioniert auch mit Zellen, die von einer anderen FUIP-Seite, einem anderen FUIP-Device oder von einer anderen FHEM-Installation kommen.",
+		"deletecell" => "Aktuelle Zelle l&ouml;schen.<br>
+			Die Zelle verschwindet dann von der aktuellen Seite und der Konfigurations-Dialog wird geschlossen.",
+		"makevtemplate" => "View Template aus aktueller Zelle generieren<br>
+			Die aktuelle Zelle wird als View Template angelegt. Dann wird auf die Bearbeitungsoberfl&auml;che f&uuml;r das neue View Template gesprungen. Die aktuelle Zelle wird dadurch nicht ge&auml;ndert. Insbesondere wird das neue View Template <b>nicht</b> automatisch in der aktuellen Zelle verwendet."
+	},	
+	"Dialog" => {
+		"general" => "Dies ist der Konfigurations-Dialog f&uuml;r Popups (Dialoge)."
+	},	
+	"ViewTemplate" => {
+		"general" => "Dies ist der Konfigurations-Dialog f&uuml;r View Templates."
+	},	
+	"Page" => { 
+		"general" => "Dies ist der Konfigurations-Dialog f&uuml;r Seiten.",
+		"gotocell" => "Wechselt zur&uuml;ck zum Konfigurations-Popup f&uuml;r die aktuelle Zelle",
+		"copypage" => "Seite kopieren<br>
+			Es wird eine neue Seite angelegt, die so aussieht wie die aktuelle. Der Dialog wird dann geschlossen und automatisch zur neuen Seite gesprungen.",
+		"import" => "Exportierte Seite von Datei importieren<br>
+			Beim Importieren gibt man einen (neuen) Namen f&uuml;r die Seite an. Diese Seite wird dann mit dem Inhalt der Export-Datei angelegt. Der Dialog wird dann geschlossen und automatisch zur neuen Seite gesprungen."
+	}	
+);
+
 	
+sub _getDocu($$) {
+	my ($hash,$docid) = @_;
+	my ($class,$fieldname) = split(/-/,$docid);
+	my (undef,$category,$viewname) = split(/::/,$class);
+	my $result = "<b>";
+	if($category eq "Cell") {
+		$result .= "Zelle";
+	}elsif($category eq "View") {
+		$result .= $viewname;
+	}elsif($category eq "Page") {
+		$result .= "Seite";
+	}elsif($category eq "Dialog") {
+		$result .= "Popup";	
+	}elsif($category eq "VTempl") {
+		$result .= "View Template \"".$viewname.'"';	
+	}elsif($category eq "ViewTemplate") {
+		$result .= "View Template";
+	}elsif($category eq "ConfPopup") {
+		$result .= "Konfiguration ";	
+		if($viewname eq "Cell") {
+			$result .= "Zelle";
+		}elsif($viewname eq "Dialog") {
+			$result .= "Popup";
+		}elsif($viewname eq "ViewTemplate") {
+			$result .= "View Template";
+		}elsif($viewname eq "Page") {
+			$result .= "Seite";
+		};
+	};
+	if($fieldname) {
+		$result .= ": <i>".$fieldname."</i>";
+	};
+	$result .= "</b><br>";
+	if($category =~ /^(View|Page|Cell|Dialog|ViewTemplate)$/) {  
+		$result .= $class->getDocu($fieldname);
+	}elsif($category eq "VTempl") {
+		if($fieldname) {
+			$result .= "FUIP::View"->getDocu($fieldname);
+		}else{	
+			$result .= 	$hash->{viewtemplates}{$viewname}{title}.'<br>';
+			$result .= "View Templates sind normalerweise vom FUIP-Anwender selbst erstellte Views, die wiederum aus anderen Views oder auch anderen View Templates bestehen. Sie sind prinzipiell abh&auml;ngig von der FUIP-Instanz, haben also keine spezifische Dokumentation im System.";
+		};
+	};
+	if($category eq "View") {
+		$result = '<img src="/fhem/'.lc($hash->{NAME}).'/fuip/view-images/FUIP-View-'.$viewname.'.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />'.$result.'<p style="clear:left;height:0.5em;"></p>';
+	};
+	if($category eq "ConfPopup") {
+		if($fieldname) {
+			if($docuConfPopup{$viewname}{$fieldname}) {
+				$result .= $docuConfPopup{$viewname}{$fieldname};
+			}else{
+				$result .= $docuConfPopup{general}{$fieldname};
+			}	
+		}else{
+			$result .= $docuConfPopup{$viewname}{general}."<br>" if($docuConfPopup{$viewname}{general});
+			$result .= $docuConfPopup{general}{general} unless $viewname eq "Page";
+		};
+	};
+
+	return $result;
+};	
+
+
+sub renderDocu($) {
+	my $hash = shift;
+	# start of help file
+	my $result = readTextFile($hash,"FHEM/lib/FUIP/doc/maindoc.html");
+	# render docu for all the (selectable) views	
+	my $viewclasses = _getViewClasses();	
+	for	my $view (sort @$viewclasses) {
+		next if $view eq "FUIP::View";
+		my (undef,undef,$viewname) = split(/::/,$view);
+		$result .= '
+			<h3>'.$viewname.': '.$selectableViews->{$view}{title}.'</h3>
+			<img src="/fhem/'.lc($hash->{NAME}).'/fuip/view-images/FUIP-View-'.$viewname.'.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />'.$view->getDocu();
+		my $fields = $view->getStructure();	
+		my @fieldnames = map { $_->{id} } grep { $_->{id} ne "class" and $_->{type} ne "dimension" and $_->{type} ne "flexfields"} @$fields;
+		if(@fieldnames) {
+			$result .= '<br>Die View '.$viewname.' l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>'.join('</i>, <i>',@fieldnames).'</i>.';
+
+		};
+		$result .= '<p style="clear:left;height:0em;">
+			<ul>';
+		my $fields = $view->getStructure();
+		for my $field (@$fields) {
+			# next if $field->{id} =~ /^(class|title|label|sizing|popup)$/;
+			next if $field->{type} =~ /^(dimension|flexfields)$/;
+			my $doctext = $view->getDocu($field->{id},1); # 1 => only specific docu 
+			next unless $doctext;
+			$result .= '<li><b>'.$viewname.' - '.$field->{id}.'</b><br>'.$doctext.'</li>';
+		};	
+		$result .= '</ul><br>';
+	};
+	$result .= '
+		</body>
+		</html>';	
+	return ("text/html; charset=utf-8", $result);
+};
+
 
 sub Get($$$)
 {
@@ -3588,6 +3755,8 @@ sub Get($$$)
 		return _toJson(FUIP::Model::getReadingsOfDevice($hash->{NAME},$a->[2]));
 	}elsif($opt eq "sets") {
 		return _toJson(FUIP::Model::getSetsOfDevice($hash->{NAME},$a->[2]));
+	}elsif($opt eq "docu") {
+		return _getDocu($hash,$a->[2]);
 	}else{
 		# get all pages
 		my @pages = sort keys %{$hash->{pages}};
@@ -3638,7 +3807,8 @@ sub Get($$$)
   <b>Set</b>
   <ul>
   	<li><a name="save">save</a>: Speichern des aktuellen Zustands der Oberfl&auml;che<br>
-	Das Kommando <code>set...save</code> speichert den momentanen Bearbeitungszustand der Oberfl&auml;che. Dies beinhaltet alles, was man per Klickibunti und M&auml;useschubsen macht, aber nicht die Einstellungen in der FHEMWEB-Oberfl&auml;che. Zus&auml;tzlich zum expliziten <code>set...save</code> gibt es noch einen Autosave-Mechanismus. Die entstehenden Dateien k&ouml;nnen einfach per <code>set...load</code> geladen werden.</li>
+	Das Kommando <code>set...save</code> speichert den momentanen Bearbeitungszustand der Oberfl&auml;che. Dies beinhaltet alles, was man per Klickibunti und M&auml;useschubsen macht, aber nicht die Einstellungen in der FHEMWEB-Oberfl&auml;che. Die FUIP-Oberfl&auml;che wird in einer Datei namens "FUIP_&lt;name&gt;.cfg" gespeichert, wobei &lt;name&gt; der Name des FUIP-Device ist. Normalerweise liegt diese Datei im Verzeichnis "/opt/fhem/FHEM/lib/FUIP/config". 	
+	<br>Zus&auml;tzlich zum expliziten <code>set...save</code> gibt es noch einen Autosave-Mechanismus. Die entstehenden Dateien k&ouml;nnen einfach per <code>set...load</code> geladen werden.</li>
 
 	<li><a name="load">load</a>: Laden eines zuvor gespeicherten Zustands der Oberfl&auml;che<br>
 	Das Kommando <code>set...load</code> akzeptiert einen Parameter, &uuml;ber den angegeben werden kann, ob man die normal abgespeicherte Konfiguration laden will ("lastSaved" oder einfach leer lassen) oder eine der Autosave-Dateien.

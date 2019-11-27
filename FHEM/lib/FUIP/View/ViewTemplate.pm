@@ -493,24 +493,13 @@ sub getConfigFields($) {
 	return $result;
 }
 
+our %docu = (
+	general => "View Templates sind vom FUIP-Anwender selbst erstellte Views, die wiederum aus anderen Views oder auch anderen View Templates bestehen. Im Prinzip werden sie wie Zellen bearbeitet, k&ouml;nnen aber zus&auml;tzlich Variablen haben, die dann bei der Verwendung entsprechend belegt werden k&ouml;nnen.",
+	title => "Kurzbeschreibung des View Template.<br>
+			Hier sollte ein kurzer beschreibender Text eingetragen werden. Der Text erscheint nicht auf der Oberfl&auml;che, sondern nur in der View Template &Uuml;bersicht und der Werthilfe zur View-Auswahl.",
+	sizing => "Gr&ouml;&szlig;e des View Templates<br>
+			Ein View Template selbst ist immer \"resizable\". Man kann die Gr&ouml;&szlig;e frei einstellen, entweder &uuml;ber die Felder f&uuml;r Breite und H&ouml;he auf dem Konfigurations-Popup oder durch Ziehen der rechten unteren Ecke mit der Maus.<br>
+			Wird ein View Template dann (als View) verwendet, k&ouml;nnen alle drei \"sizing\"-Optionen verwendet werden. (Also <i>fixed</i>, <i>resizable</i> und <i>auto</i>.) Bei <i>fixed</i> nimmt die View Template Instanz dann die hier eingestellte Gr&ouml;&szlig;e an."
+);
 
-# TODO: this can be deleted again
-# sub reconstruct($$$) {
-	# my ($class,$conf,$fuip) = @_;
-	# # this expects that $conf is already hash reference
-	# # and key "class" is already deleted
-	# my $self = FUIP::View::reconstructRec($conf,$fuip);
-	# $self->{fuip} = $fuip;
-	# weaken($self->{fuip});
-	# if(ref($self->{variables}) eq "HASH") {
-		# my $asHash = $self->{variables};
-		# $self->{variables} = [];
-		# for my $var (keys %$asHash) {
-			# push(@{$self->{variables}},{name => $var, fields => $asHash->{$var}});
-		# };
-	# };
-	# return bless($self,$class);
-# };
-
-	
 1;	

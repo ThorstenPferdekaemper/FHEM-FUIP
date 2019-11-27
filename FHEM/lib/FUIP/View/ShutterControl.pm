@@ -143,7 +143,42 @@ sub getStructure($) {
 		];
 };
 
+our %docu = (
+	general => "Diese View eignet sich, um einen Rollladen zu steuern. Man kann damit einen Rollladen (oder &auml;hnliches) &ouml;ffnen und schlie&szlig;en, auf einen bestimmten Prozentwert fahren sowie eine Wochen-Zeitschaltuhr aufrufen, um das ganze zu automatisieren.<br>
+	Der im Select-Widget angezeigte Prozentwert ist nicht unbedingt genau der Wert, bei dem der Rollladen momentan steht. Es wird der Wert aus der Liste der m&ouml;glichen Werte des Select-Widgets angezeigt, der am n&auml;chsten am tats&auml;chlichen Wert liegt.<br>
+	Die meisten Rollladenaktoren lassen sich &uuml;ber Prozentwerte steuern. Allerdings gibt es Unterschiede in der Interpretation, ob die 100% oben oder unten sind. Daf&uuml;r gibt es die Parameter <i>levelType</i>, <i>minLevel</i> und <i>maxLevel</i>. Durch <i>levelType</i> \"inverted_shutter\" wird die Reihenfolge der Prozentangaben umgedreht und \"Auf\" und \"Zu\" werden vertauscht. D.h. \"Auf\" entspricht <i>minLevel</i> (meistens 0) und \"Zu\" entspricht <i>maxLevel</i> (meistens 100). Das klingt im ersten Moment sehr &auml;hnlich wie beim Vertauschen von <i>minLevel</i> und <i>maxLevel</i>, allerdings ist dann auch die Zuordnung der Prozentangaben zu den Werten in FHEM umgedreht. Die folgende Tabelle soll das ganze verdeutlichen:
+<table>
+<tr><td><b>levelType</b></td><td><b>minLevel</b></td><td><b>maxLevel</b></td><td><b>Ergebnis (Anzeige in FUIP:Wert in FHEM)</b></td></tr>
+<tr><td>shutter</td><td>0</td><td>100</td><td>Auf:100, 90%:90, 80%:80,... 20%:20, 10%:10, Zu:0</td></tr>
+<tr><td>shutter</td><td>100</td><td>0</td><td>Auf:0, 90%:10, 80%:20,... 20%:80, 10%:90, Zu:100</td></tr>
+<tr><td>inverted_shutter</td><td>0</td><td>100</td><td>Auf:0, 10%:10, 20%:20,... 80%:80, 90%:90, Zu:100</td></tr>
+<tr><td>inverted_shutter</td><td>100</td><td>0</td><td>Auf:100, 10%:90, 20%:80,... 80%:20, 90%:10, Zu:0</td></tr>
+</table>",
+	device => "Hier gibt man den Rollladen-Aktor in FHEM an, also ein Device, welches einen Rollladen oder &auml;hnliches steuert.",
+	label => "Der hier eingegebene Text erscheint unter dem gro&szlig;en Rollladen-Icon. Man kann ihn auch weglassen.",
+	setUp => "Hier wird die Set-Option angegeben, die den Rollladen zum Hochfahren veranlasst.",
+	setStop => "Hier wird die Set-Option angegeben, die den Rollladen zum Anhalten veranlasst.",
+	setDown => "Hier wird die Set-Option angegeben, die den Rollladen zum Herunterfahren veranlasst.",
+	setLevel => "Hier wird die Set-Option angegeben, bei der man einen Anzufahrenden (Prozent-)Wert mitgeben kann.",
+	readingLevel => "Hier wird das Reading angegeben, das den momentanen Stand des Rollladens enth&auml;lt, in der Regel in Prozent.",
+	levelType => 'Dies steuert ob 100% "oben" oder "unten" bedeutet. Die folgeden beiden Werte sind m&ouml;glich:
+			<ul>
+			<li><b>shutter</b>: Bei dieser Option bedeutet "Auf" 100%. Als m&ouml;gliche Optionen zum Anfahren werden dann "Auf", "90%", "80%",... ,"10%", "Zu" angeboten.
+			<li><b>inverted_shutter</b>: Bei dieser Option bedeutet "Auf" 0%. Als m&ouml;gliche Optionen zum Anfahren werden dann "Auf", "10%", "20%",... ,"90%", "Zu" angeboten.</li>
+			</ul>',
+	minLevel => 'Hier wird der Wert eingetragen, der f&uuml;r 0% an das FHEM-Device gesendet wird. 	Es ist auch erlaubt, in <i>minLevel</i> einen gr&ouml;&szlig;eren Wert als in <i>maxLevel</i> einzutragen. In dem Fall wird r&uuml;ckw&auml;rts gerechnet. 100% entspricht immer <i>maxLevel</i>, auch wenn das 0 sein sollte. Die restlichen Werte werden dann einfach linear zwischen 0% und 100% aufgeteilt.',
+	maxLevel => 'Hier wird der Wert eingetragen, der f&uuml;r 100% an das FHEM-Device gesendet wird.
+			Es ist auch erlaubt, in <i>maxLevel</i> einen kleineren Wert als in <i>minLevel</i> einzutragen. Beim Feld <i>minLevel</i> wird erkl&auml;rt, was das bedeutet.',
+	dirReading => "Hier kann ein Reading f&uuml;r die Richtungs- bzw. Bewegungsanzeige angegeben werden. Der Defaultwert ist \"direction\". Es sind nur Readings des Device im Parameter <i>device</i> vorgesehen.<br>
+	Sobald dieser Parameter gef&uuml;llt ist, versucht die View, die Bewegungsrichtung zu visualisieren: Enth&auml;lt dieses Reading den Wert für \"hoch\" (per Default \"up\"), dann wird der Pfeil nach oben aktiv dargestellt. Entsprechend beim Wert für \"runter\" der Pfeil nach unten.",
+	dirUp => "Hier wird der Wert angegeben, den das Reading <i>dirReading</i> annimmt, wenn der Rollladen nach oben f&auml;hrt. Defaultwert ist \"up\".",
+	dirDown => "Hier wird der Wert angegeben, den das Reading <i>dirReading</i> annimmt, wenn der Rollladen nach unten f&auml;hrt. Defaultwert ist \"down\".",
+	timer => "Hier kann ein WeekdayTimer-Device angegeben werden, mit dem man den Rollladen automatisieren kann. Das eingegebene Device muss schon in FHEM existieren und ein WeekdayTimer-Device sein. Es wird nicht automatisch angelegt.<br>
+	Sobald hier etwas angegeben wird, erscheint ein \"Zahnrad\"-Button in der View. Klickt man auf den Button, dann erscheint ein Popup, &uuml;ber das man die Zeitschaltuhr programmieren kann. Allerdings ist dessen Funktionalit&auml;t gegen&uuml;ber der View <i>WeekdayTimer</i> etwas eingeschr&auml;nkt. Gegebenenfalls sollte man also die View <i>WeekdayTimer</i> verwenden."
+);
+
+
 # register me as selectable
-$FUIP::View::selectableViews{"FUIP::View::ShutterControl"}{title} = "Shutter (detail)"; 
+$FUIP::View::selectableViews{"FUIP::View::ShutterControl"}{title} = "Rollladen (Detail)"; 
 	
 1;	
