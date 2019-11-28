@@ -1117,7 +1117,7 @@ async function asyncSendFhemCommandLocal(cmdline) {
 		$.ajax({
 			async: true,
 			cache: false,
-			method: 'GET',
+			method: 'POST',
 			dataType: 'text',
 			url: location.origin + '/fhem/',
 			// username: ftui.config.username,
