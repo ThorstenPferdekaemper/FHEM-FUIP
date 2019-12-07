@@ -30,7 +30,7 @@ UPD 2019-07-26_13:59:57 7724 FHEM/lib/FUIP/View/HueSceneSelect.pm
 UPD 2019-11-12_20:52:49 2491 FHEM/lib/FUIP/View/LabelHumidity.pm
 UPD 2019-11-26_22:42:17 6606 FHEM/lib/FUIP/View/LabelReading.pm
 UPD 2019-11-08_15:01:41 2769 FHEM/lib/FUIP/View/LabelTemperature.pm
-UPD 2019-06-05_20:18:24 3606 FHEM/lib/FUIP/View/MenuItem.pm
+UPD 2019-12-07_19:03:15 8271 FHEM/lib/FUIP/View/MenuItem.pm
 UPD 2019-11-22_20:34:24 1112 FHEM/lib/FUIP/View/Page.pm
 UPD 2018-12-03_21:22:12 1087 FHEM/lib/FUIP/View/Popup.pm
 UPD 2018-10-02_13:46:23 1489 FHEM/lib/FUIP/View/Push.pm
@@ -79,7 +79,7 @@ UPD 2019-03-15_20:30:01 5774 FHEM/lib/FUIP/doc/RenameViewTemplate.png
 UPD 2019-05-19_15:29:14 25890 FHEM/lib/FUIP/doc/Swiper.png
 UPD 2019-06-11_16:58:03 8100 FHEM/lib/FUIP/doc/Units.png
 UPD 2019-05-21_21:16:03 19252 FHEM/lib/FUIP/doc/VariablenImViewTemplate.png
-UPD 2019-11-28_22:00:41 58799 FHEM/lib/FUIP/doc/changes.html
+UPD 2019-12-07_19:07:52 58912 FHEM/lib/FUIP/doc/changes.html
 UPD 2019-11-27_21:06:28 23103 FHEM/lib/FUIP/doc/maindoc.html
 UPD 2019-11-23_22:58:30 8295 FHEM/lib/FUIP/doc/maindoc_cellexample.png
 UPD 2019-11-24_20:57:20 48854 FHEM/lib/FUIP/doc/maindoc_confpopup.png
