@@ -826,8 +826,20 @@ var Modul_fuip_wdtimer = function () {
 				if(/^\s\s/.test(lines[i])) break;
 				timespec += "\n" + lines[i].trim();
 			};	
-			// now i should point to "TAGE"
+			// now we need to search for "TAGE"
+			// if we don't find it, then there is something wrong
+			// and we just revert to the "old" algorithm
+			var iSave = i;
 			var weekdays = "";
+			var found = false;
+			for(;i < lines.length;i++) {
+				if(!/^TAGE/.test(lines[i].trim())) 
+					continue;
+				found = true;
+				break;
+			};
+			if(!found) // old process
+				i = iSave;				
 			for(i++;i < lines.length;i++) {
 				if(!/^[012345678]$/.test(lines[i].trim())) break;
 				weekdays += lines[i].trim();
