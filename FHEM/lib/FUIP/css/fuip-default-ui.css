@@ -195,9 +195,26 @@ text.title.fuip-color-foreground {
 	background-color: var(--fuip-color-header);
 	color: var(--fuip-color-foreground);
 }
+
+/* fix ftui issue with "fixed" positioned headers */
+.dialog > header {
+	position: absolute;
+}
+
 .fuip-cell-header.fuip-transparent {
 	background-color: var(--fuip-color-header-transparent);
 }
+
+/* popup */
+.dialog-starter {
+	width: 100%;
+	height: 100%;
+}
+div[data-type="fuip_popup"] {
+	width: 100%;
+	height: 100%;
+}
+
 
 
 /* menu item */

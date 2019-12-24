@@ -59,7 +59,7 @@ UPD 2019-01-18_22:26:39 1054 FHEM/lib/FUIP/css/fuip-blue-ui.css
 UPD 2019-03-21_22:00:39 3770 FHEM/lib/FUIP/css/fuip-bright-mint-ui.css
 UPD 2019-11-20_09:34:42 3489 FHEM/lib/FUIP/css/fuip-darkblue-ui.css
 UPD 2019-01-19_22:48:21 4113 FHEM/lib/FUIP/css/fuip-darkgreen-ui.css
-UPD 2019-11-13_20:28:16 8094 FHEM/lib/FUIP/css/fuip-default-ui.css
+UPD 2019-12-24_10:39:51 8315 FHEM/lib/FUIP/css/fuip-default-ui.css
 UPD 2019-01-20_20:22:33 903 FHEM/lib/FUIP/css/fuip-green-ui.css
 UPD 2019-01-20_21:01:25 5112 FHEM/lib/FUIP/css/fuip-mobil-ui.css
 UPD 2018-12-09_21:48:13 1454 FHEM/lib/FUIP/css/fuipchart.css
@@ -79,7 +79,7 @@ UPD 2019-03-15_20:30:01 5774 FHEM/lib/FUIP/doc/RenameViewTemplate.png
 UPD 2019-05-19_15:29:14 25890 FHEM/lib/FUIP/doc/Swiper.png
 UPD 2019-06-11_16:58:03 8100 FHEM/lib/FUIP/doc/Units.png
 UPD 2019-05-21_21:16:03 19252 FHEM/lib/FUIP/doc/VariablenImViewTemplate.png
-UPD 2019-12-08_17:16:05 59103 FHEM/lib/FUIP/doc/changes.html
+UPD 2019-12-24_10:52:22 59605 FHEM/lib/FUIP/doc/changes.html
 UPD 2019-11-27_21:06:28 23103 FHEM/lib/FUIP/doc/maindoc.html
 UPD 2019-11-23_22:58:30 8295 FHEM/lib/FUIP/doc/maindoc_cellexample.png
 UPD 2019-11-24_20:57:20 48854 FHEM/lib/FUIP/doc/maindoc_confpopup.png
