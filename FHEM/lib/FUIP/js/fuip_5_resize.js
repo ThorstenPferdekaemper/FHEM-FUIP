@@ -61,3 +61,27 @@ $(function() {
 	$(".dialog").on("fadein",function() {  setTimeout(fuip_resize_all, 10 ) } );  // TODO: not for all of them!	
 });	
 
+
+// helpers
+function fuip_getTargetHeight(elem) {
+	// search for something with a size
+	// the issue here is that we might sit within a popup widget,
+	// which does not really have a size 
+	var elemWithSize = elem.parent();  // don't use the table itself
+	var targetHeight = 0;
+	while(true) {
+		// ignore dialog-starter and fuip_popup
+		if(elemWithSize.hasClass("dialog-starter") || elemWithSize.data("type") == "fuip_popup") {
+			elemWithSize = elemWithSize.parent();
+			continue;
+		};	
+		targetHeight = elemWithSize.prop("clientHeight");
+		if(targetHeight) break;  // found
+		if(typeof(elemWithSize.attr("data-viewid")) !== "undefined") break; // don't go further than the view container
+		elemWithSize = elemWithSize.parent();
+	};
+	return targetHeight;
+};
+
+
+
