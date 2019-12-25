@@ -1514,26 +1514,47 @@ function deleteCell() {
 	});	
 };
 					
-					
-function inputChanged(inputElem,influencedFields) {
+
+function inputChanged(inputElem) {
+	let field = $(inputElem);
+	let influencedFields = field.data("influencedFields");
+	// defaulting
 	for(var i = 0; i < influencedFields.length; i++) {
 		// default or own value?
 		if($('#' + influencedFields[i] + '-check').is(':checked')) { continue; };
 		// default, set default value
 		$('#' + influencedFields[i] + '-check').trigger("change");
 	};
+	// dependencies (trigger visibility of dependent fields)
 	for(let i = 0; i < influencedFields.length; i++) {
 		// get influenced field
 		let infField = $('#' + influencedFields[i]);
 		let settings = infField.data("settings");
 		// does it have a "depends"?
 		if(!settings.hasOwnProperty("depends")) 
-			return;
-		if(settings.depends.value == $(inputElem).val()) {
-			infField.closest("tr").css("display","");	
-		}else{
+			continue;
+		let depends = settings.depends;
+		// is it really the field we are currently checking?
+		if(depends.field != field.data("settings").id) 
+			continue;
+		// if the triggering field is not visible itself, 
+		// also switch off dependent fields
+		let letsHideIt = field.data("fuipHidden");
+		if(!letsHideIt) {
+			letsHideIt = !(depends.hasOwnProperty("value") && depends.value == field.val()
+					|| depends.hasOwnProperty("regex") && (new RegExp(depends.regex)).test(field.val()));
+		};			
+		// no change -> go on
+		if(letsHideIt === infField.data("fuipHidden"))
+			continue;
+		infField.data("fuipHidden", letsHideIt);
+		if(letsHideIt) { 
 			infField.closest("tr").css("display","none");	
-		};		
+		}else{
+			infField.closest("tr").css("display","");	
+		};
+		// trigger input for recursive dependencies
+		infField.trigger("input");
 	};
 };
 					
@@ -2557,7 +2578,7 @@ function createField(settings, fieldNum, component,prefix) {
 	let theFieldElem;
 	if(field.type == "longtext") {
 		theFieldElem = $("<textarea rows='5' cols='50' name='" + fieldName + "' id='" + fieldName + "' " 
-			+ fieldStyle + " oninput='inputChanged(this," + JSON.stringify(influencedFields) +")' >"
+			+ fieldStyle + " oninput='inputChanged(this)' >"
 			+ fieldValue + "</textarea>");
 	// special case of sizing fixed to "resizable" (or any other single value)		
 	}else if(field.type == "sizing" && fieldComp.hasOwnProperty("options") && fieldComp.options.length == 1){		
@@ -2581,17 +2602,21 @@ function createField(settings, fieldNum, component,prefix) {
 			theFieldElem = $("<input type='text' " + fieldStyle + " />");
 		};		
 		theFieldElem.attr({name: fieldName, id: fieldName});
-		// add the settings object
+
 		fieldComp.fieldType = field.type;
-		theFieldElem.data("settings",fieldComp);
+
 		// set attributes for "dependent" fields 
 		if(fieldComp.hasOwnProperty("depends")) {
 			$(function() {
-				inputChanged($('#' + prefix + fieldComp.depends.field),[fieldName]);
+				inputChanged($('#' + prefix + fieldComp.depends.field));
 			});
 		};	
-		theFieldElem.attr({value: fieldValue, oninput: 'inputChanged(this,' + JSON.stringify(influencedFields) +')' });
+		theFieldElem.attr({value: fieldValue, oninput: 'inputChanged(this)' });
 	};	
+	// add the settings object
+	theFieldElem.data("settings",fieldComp);
+	// add influenced fields 
+	theFieldElem.data("influencedFields",influencedFields);
 	result.append(theFieldElem);
 	// 3. element: value help (optional)
 	// do we have a value help?

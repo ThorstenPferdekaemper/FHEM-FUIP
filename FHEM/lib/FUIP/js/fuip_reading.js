@@ -1,14 +1,11 @@
 
-function fuip_labelreading_resize(id) {
-	// called when the widget is resized (this is the idea...)
-	// console.log("resize: " + id);	
-	var elem = $("#"+id);
+function fuip_reading_resize_multiline(elem) {
 	var targetHeight = fuip_getTargetHeight(elem);
 	// elem has up to 4 children: an icon, a label, the reading and a timestamp
 	var icon = elem.find("i");
-	var label = elem.find("[data-fuip-type='fuip-labelreading-label']");
-	var reading = elem.find("[data-fuip-type='fuip-labelreading-reading']");
-	var timestamp = elem.find("[data-fuip-type='fuip-labelreading-timestamp']");
+	var label = elem.find("[data-fuip-type='fuip-reading-label']");
+	var reading = elem.find("[data-fuip-type='fuip-reading-reading']");
+	var timestamp = elem.find("[data-fuip-type='fuip-reading-timestamp']");
 	var lines = 0;
 	if(label.length) lines++;
 	if(reading.length) lines++;
@@ -38,5 +35,25 @@ function fuip_labelreading_resize(id) {
 	});
 };
 
-fuip_resize_register("fuip-labelreading",fuip_labelreading_resize);
+
+function fuip_reading_resize_singleline(elem) {
+	// console.log("resize: " + id);	
+	var targetHeight = fuip_getTargetHeight(elem);
+	var size = Math.round(targetHeight * 6);
+	elem.children().css("font-size",size.toString() + "%");
+};
+
+
+function fuip_reading_resize(id) {
+	// called when the widget is resized (this is the idea...)
+	var elem = $("#"+id);
+	if(elem.hasClass("fuip-multiline")) {
+		fuip_reading_resize_multiline(elem);
+	}else{
+		fuip_reading_resize_singleline(elem); 
+	};
+};
+	
+	
+fuip_resize_register("fuip-reading",fuip_reading_resize); 
 
