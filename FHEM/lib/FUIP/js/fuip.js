@@ -69,18 +69,24 @@ function fuipInit(conf) { //baseWidth, baseHeight, maxCols, gridlines, snapTo
 				stop: onViewResizeStop,
 				classes: { "ui-resizable-se" : "ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se fuip-ui-icon-bright" },
 				resize: function(e,ui) {
-					if(fuip.snapTo == "nothing") return;
-					if(e.altKey) return;
-					var dim = snapDimensions();
-					var start = gridStart();
-					var n = (ui.position.left + ui.size.width) / dim.gridWidth;
-					if(n - Math.floor(n) > 0.5) n++;
-					var snapped = Math.floor(n) * dim.gridWidth;  // offset	
-					ui.size.width = snapped - ui.position.left;
-					n = (ui.originalElement.offset().top - start.top + ui.size.height) / dim.gridHeight;
-					if(n - Math.floor(n) > 0.5) n++;
-					snapped = start.top + Math.floor(n) * dim.gridHeight;  // offset	
-					ui.size.height = snapped - ui.originalElement.offset().top;					
+					// snap to grid?
+					if(fuip.snapTo != "nothing" && !e.altKey) {
+						var dim = snapDimensions();
+						var start = gridStart();
+						var n = (ui.position.left + ui.size.width) / dim.gridWidth;
+						if(n - Math.floor(n) > 0.5) n++;
+						var snapped = Math.floor(n) * dim.gridWidth;  // offset	
+						ui.size.width = Math.floor(snapped - ui.position.left);
+						n = (ui.originalElement.offset().top - start.top + ui.size.height) / dim.gridHeight;
+						if(n - Math.floor(n) > 0.5) n++;
+						snapped = start.top + Math.floor(n) * dim.gridHeight;  // offset	
+						ui.size.height = Math.floor(snapped - ui.originalElement.offset().top);		
+					};	
+					// Put current size into view. It seems that while resizing,
+					// the element itself does not have the correct size.
+					let view = ui.originalElement;
+					view.data("fuipResize",{ "height": ui.size.height, "width": ui.size.width });
+					$(window).trigger("resize");
 				}				
 			});
 		});		
@@ -1059,6 +1065,7 @@ function getViewKeyForCommand(view) {
 // when a view resize finished
 function onViewResizeStop(event,ui) {
 	let view = ui.originalElement;
+	view.removeData("fuipResize");
 	let cmd = "set " + $("html").attr("data-name") + " resize " + getViewKeyForCommand(view);
 	cmd += ' width=' + ui.size.width + ' height=' + ui.size.height;
 	asyncSendFhemCommandLocal(cmd);

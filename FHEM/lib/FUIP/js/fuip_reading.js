@@ -37,7 +37,6 @@ function fuip_reading_resize_multiline(elem) {
 
 
 function fuip_reading_resize_singleline(elem) {
-	// console.log("resize: " + id);	
 	var targetHeight = fuip_getTargetHeight(elem);
 	var size = Math.round(targetHeight * 6);
 	elem.children().css("font-size",size.toString() + "%");

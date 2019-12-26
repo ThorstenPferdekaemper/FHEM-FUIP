@@ -4,7 +4,12 @@
 // fuipType / resizeFunc / initialized
 var fuip_resizers = [];
 
-function fuip_resize_all() {
+function fuip_resize_all(event) {
+	// if this comes up with a fuip-resizable as a target,
+	// then this is probably the "early bubbling" of the jquery
+	// ui resizable
+	if($(event.target).hasClass("fuip-resizable")) 
+		return;
 	for(var i = 0; i < fuip_resizers.length; i++) {
 		if(!fuip_resizers[i].initialized) continue;  // not yet initialized
 		$('[data-fuip-type="' + fuip_resizers[i].fuipType + '"]').each(function() {
@@ -65,6 +70,11 @@ $(function() {
 // helpers
 function fuip_getTargetHeight(elem) {
 	// search for something with a size
+	// is this currently being resized?
+	var resize = elem.closest(".fuip-resizable").data("fuipResize");
+	if(resize) {
+		return resize.height;
+	};	
 	// the issue here is that we might sit within a popup widget,
 	// which does not really have a size 
 	var elemWithSize = elem.parent();  // don't use the table itself

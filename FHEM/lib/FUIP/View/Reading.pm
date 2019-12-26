@@ -50,10 +50,10 @@ sub _getHTML_line($){
 					</div>';
 	};
 	if($self->{label}) {
-		$result .= '<div class="fuip-color left" style="white-space:nowrap;overflow:hidden;text-overflow: ellipsis">'.$self->{label}.':</div>';
+		$result .= '<div class="fuip-color left" style="white-space:nowrap;overflow:hidden;text-overflow: ellipsis">'.$self->{label}.'</div>';
 	};	
 	if($self->{content} =~ m/^value|both$/) {
-		$result .= "<div style='flex-grow:1;text-align:right;padding-left:0.1em;padding-top:0.1em;white-space:nowrap;' 
+		$result .= "<div style='flex-grow:1;text-align:right;padding-left:0.1em;white-space:nowrap;' 
 					data-type=\"label\" 
 					data-device=\"".$self->{reading}{device}."\" 
 					data-get=\"".$self->{reading}{reading}."\"".
@@ -64,7 +64,7 @@ sub _getHTML_line($){
 				 
 	if($self->{content} =~ m/^timestamp|both$/) {
 		my $padding = ($self->{content} eq "both" ? "0.8" : "0.1")."em";				
-		$result .= "<div style='flex-grow:1;text-align:right;padding-left:".$padding.";padding-top:0.1em;white-space:nowrap;'
+		$result .= "<div style='flex-grow:1;text-align:right;padding-left:".$padding.";white-space:nowrap;'
 						data-type=\"label\" 
 						class=\"fuip-color timestamp\"
 						data-substitution=\"toDate().ddmmhhmm()\"

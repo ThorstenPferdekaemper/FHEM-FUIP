@@ -23,19 +23,68 @@ figure.left {
 }
 </style>
 
+<script>
+function createToc() {
+	var headers = document.querySelectorAll("h2,h3,h4,h5,h6");
+	var toc = document.getElementById("toc");
+	var level = 1;
+	var currentNode = toc;
+	var numbers = [];
+	headers.forEach(function(node){
+		var newLevel = parseInt(node.nodeName.substr(1));
+		for(var i = level; i > newLevel; i--) {
+			currentNode = currentNode.parentNode;
+			numbers.pop();
+		};
+		for(var i = level; i < newLevel; i++) {
+			var newNode = document.createElement("ul");
+			newNode.style.listStyleType = "none";
+			currentNode.appendChild(newNode);
+			currentNode = newNode;
+			numbers.push(0);
+		};
+		level = newLevel;
+		numbers[numbers.length-1]++;
+		var numStr = "";
+		for(var i = 0; i < numbers.length; i++) {
+			if(i) {
+				numStr += ".";
+			};
+			numStr += numbers[i].toString();
+		};
+		// do we have an id?
+		var nodeText = node.innerHTML;
+		if(node.hasAttribute("id")) {
+			nodeText = '<a href="#' + node.id + '">' + nodeText + '</a>';
+		};
+		currentNode.innerHTML += "<li>" + numStr + " " + nodeText + "</li>";
+		// create "back to contents" link
+		if(node.id != "contents") {
+			node.innerHTML += '<a style="padding-left:1em;" href="#contents"><img title="Zur&uuml;ck zum Inhaltsverzeichnis" width="16" height="16" src="doc/icon_back.png"></a>';
+		};
+	});
+};
+window.onload = createToc;
+</script>
+
 </head> 
 <body>
 <h1>FUIP - FHEM User Interface Painter</h1>
+<hr>
+<h2 id="contents">Inhaltsverzeichnis</h2>
+<div id="toc"></div>
+<hr>
+<h2 id="intro">Einf&uuml;hrung</h2>
 Der FHEM User Interface Painter (FUIP) ist ein FHEM-Modul, mit dem man FHEM Tablet UI (FTUI) Seiten graphisch ("klickibunti") erstellen kann. D.h. man kann sich ein UI zusammenklicken, welches die Tablet UI Technik verwendet, aber ohne sich selbst unbedingt mit HTML und CSS herumschlagen zu m&uuml;ssen.<br>
 Diese Dokumentation befasst sich vor Allem mit grundlegenden Erkl&auml;rungen sowie der Bearbeitungsoberfl&auml;che. Zus&auml;tzlich gibt es noch einiges, was man &uuml;ber die "klassische" FHEM-Oberfl&auml;che (also FHEMWEB) machen kann bzw. muss. Dies ist dann vorwiegend in der "Device specific help" (bzw. Commandref) erkl&auml;rt. D.h. dieser Text hier soll nicht die Commandref ersetzen, sondern erg&auml;nzen.
 
-<h2>Grundlegende Begriffe und Konzepte</h2>
+<h2 id="concepts">Grundlegende Begriffe und Konzepte</h2>
 <figure style="float:right;margin:0;margin-left:10px;margin-bottom:5px;margin-right:10px;text-align:center">
 <a href="doc/maindoc_pageexample.png"><img src="doc/maindoc_pageexample.png" width=356px height=262px></a>
 <figcaption>Beispiel f&uuml;r eine FUIP-Seite</figcaption>
 </figure>
 
-<h3>Seite (Page)</h3>
+<h3 id="concepts-page">Seite (Page)</h3>
 <p>Eine <i>Seite</i> ist in FUIP das, was man normalerweise darunter im Internet versteht. Im Zusammenhang mit FUIP wird auch von <i>FUIP-Seite</i> geredet, wenn eine Seite gemeint ist, die mittels FUIP erzeugt wird. Normalerweise geh&ouml;ren zu einem FUIP-Device mehrere Seiten. FUIP erzeugt also keine "Single Page Website" oder "Single Page Application".</p>
 <p>Wenn der Benutzer im Bearbeitungsmodus versucht, eine FUIP-Seite aufzurufen, die es nicht gibt, dann wird diese Seite von FUIP generiert. (D.h. so kann man eine neue Seite anlegen.) Dabei gibt es im Prinzip drei M&ouml;glichkeiten:
 <ol>
@@ -51,19 +100,19 @@ Diese Dokumentation befasst sich vor Allem mit grundlegenden Erkl&auml;rungen so
 <p style="clear:right;height:0.0em;"></p>
 
 <br> 
-<h3>Zelle</h3>
+<h3 id="concepts-cell">Zelle</h3>
 <figure style="float:right;margin:0;margin-left:10px;margin-bottom:5px;margin-right:10px;text-align:center">
 <a href="doc/maindoc_cellexample.png"><img src="doc/maindoc_cellexample.png" width=250px height=206px></a>
 <figcaption>Eine Zelle im Bearbeitungsmodus</figcaption>
 </figure>
 <p>FUIP-Seiten bestehen zuerst einmal aus <i>Zellen</i>. Im Beispiel einer FUIP-Seite auf dem Bild weiter oben sieht man, dass die Seite offensichtlich in einzelne K&auml;stchen eingeteilt ist. Diese K&auml;stchen sind die <i>Zellen</i> in FUIP. Eine FUIP-Seite muss aus mindestens einer Zelle bestehen, kann aber auch viele Zellen haben. (Zumindest scheint es keine praxisrelevante Obergrenze zu geben.)</p> 
 <p>Im Bearbeitungsmodus k&ouml;nnen Zellen mit der Maus positioniert werden durch "Anfassen" an der Titelzeile. Die Gr&ouml;&szlig;e kann durch "Anfassen" an der rechten unteren Ecke der Zelle ge&auml;ndert werden. Allerdings sind Position und Gr&ouml;&szlig;e einer Zelle nicht komplett frei festzulegen. Die Position einer Zelle h&auml;ngt auch vom Gesamtlayout ab sowie von den Positionen und Abmessungen der anderen Zellen. Au&szlig;erdem k&ouml;nnen Breite und H&ouml;he einer Zelle nur ein Vielfaches (in etwa) einer Basisbreite bzw. Basish&ouml;he annehmen. (Siehe auch die Dokumentation zu den Attributen <i>layout</i>, <i>baseWidth</i> und <i>baseHeight</i> des FUIP-Device in FHEM.) </p>
-&Uuml;ber das Zahnrad-Icon rechts oben in der Zelle &ouml;ffnet man das Konfigurations-Popup der Zelle. Dort kann man den Inhalt der Zelle bestimmen und konfigurieren. Au&szlig;erdem erreicht man von dort fast alle weiteren Bearbeitungsfunktionen. Weitere Informationen dazu gibt es im Kapitel zum <a href="#confpopup">Konfigurations-Popup</a>. 
+&Uuml;ber das Zahnrad-Icon rechts oben in der Zelle &ouml;ffnet man das Konfigurations-Popup der Zelle. Dort kann man den Inhalt der Zelle bestimmen und konfigurieren. Au&szlig;erdem erreicht man von dort fast alle weiteren Bearbeitungsfunktionen. Weitere Informationen dazu gibt es im Kapitel zum <a href="#concepts-confpopup">Konfigurations-Popup</a>. 
 <p style="clear:right;height:0.0em;"></p>
 
-<h3>View</h3>
+<h3 id="concepts-view">View</h3>
 <p>Auf dem "Beispiel f&uuml;r eine FUIP-Seite" weiter oben sieht man verschiedene Inhalte der Zellen. Alle diese Inhalte bestehen aus einer oder mehreren <i>View(s)</i>. Eine View stellt oft die Sicht auf ein Device in FHEM oder sogar nur ein einzelnes Reading dar. Ein Beispiel daf&uuml;r ist die SimpleSwitch View (die L&auml;mpchen auf dem Beispielbild) oder auch die ShutterControl View (die Rollladensteuerung). Andere Views zeigen mehrere Devices, die irgendwie zusammengeh&ouml;ren. So kann z.B. die Thermostat View Daten von mehreren Heizungsthermostaten (Stellantrieben) und Wandthemostat zusammen anzeigen. Die Batteries View zeigt sogar eine ganze Liste von Devices mit Batterien an. Es gibt auch Views, die gar keinen Bezug zu einem FHEM-Device haben. Dazu geh&ouml;ren z.B. die Uhr (die Clock View) oder auch die Title View. In diese Kategorie f&auml;llt normalerweise auch die MenuItem View.</p> 
-<p>Views werden in der Regel im Konfigurations-Popup einer Zelle (oder einem Dialog oder einem View Template) hinzugef&uuml;gt. Einzelheiten dazu findet man im Kapitel zum <a href="#confpopup">Konfigurations-Popup</a>. Die Position und oft auch die Gr&ouml;&szlig;e der Views legt man dann durch Drag&amp;Drop bzw. Ziehen mit der Maus fest. Man kann sogar eine View von einer Zelle in eine andere ziehen. Die folgenden Parameter werden von fast allen Views unterst&uuml;tzt. Daher werden diese Parameter nur einmal hier beschrieben und nicht bei jeder View einzeln.</p>
+<p>Views werden in der Regel im Konfigurations-Popup einer Zelle (oder einem Dialog oder einem View Template) hinzugef&uuml;gt. Einzelheiten dazu findet man im Kapitel zum <a href="#concepts-confpopup">Konfigurations-Popup</a>. Die Position und oft auch die Gr&ouml;&szlig;e der Views legt man dann durch Drag&amp;Drop bzw. Ziehen mit der Maus fest. Man kann sogar eine View von einer Zelle in eine andere ziehen. Die folgenden Parameter werden von fast allen Views unterst&uuml;tzt. Daher werden diese Parameter nur einmal hier beschrieben und nicht bei jeder View einzeln.</p>
 <ul>
 	<li><b>View type</b> (oder auch "class")<br>
 		Dies ist der Typ (bzw. die "Klasse") der View. Der View-Typ bestimmt die Funktionalit&auml;t der View, welche Parameter sie hat und wie sie auf der Oberfl&auml;che aussieht.</li>
@@ -85,13 +134,12 @@ Diese Dokumentation befasst sich vor Allem mit grundlegenden Erkl&auml;rungen so
 	</li>
 </ul>
 
-<h3>Popup (Dialog)</h3>
+<h3 id="concepts-popup">Popup (Dialog)</h3>
 <p>Ein <i>Popup</i> ist in FUIP das, was man sich normalerweise darunter vorstellt. Wenn das ausl&ouml;sende Element angeklickt wird, dann erscheint ein Dialogfenster, welches man dann manuell wieder schlie&szlig;en kann. Man kann auch eine Zeit einstellen, nach der der Dialog von selbst wieder verschwinden soll. Fast jede View kann bei FUIP "ausl&ouml;sendes Element" f&uuml;r ein Popup sein.</p> 
 <p>Von der Bearbeitung her &auml;hneln sich Popups und Zellen sehr. Ein Popup enth&auml;lt wie eine Zelle Views, die frei positioniert werden k&ouml;nnen. Auch alle anderen Eigenschaften der Views sind gleich. Die Gr&ouml;szlig;e des Popups selbst kann allerdings pixelgenau eingestellt werden. Views auf Popups haben auch die M&ouml;glichkeit, selbst wieder ein Popup zu erzeugen. D.h. Popups in Popups sind (zumindest technisch) kein Problem.</p>
 
 
-<a name="confpopup"></a>
-<h3>Das Konfigurations-Popup</h3>
+<h3 id="concepts-confpopup">Das Konfigurations-Popup</h3>
 <figure style="float:right;margin:0;margin-left:10px;margin-bottom:5px;margin-right:10px;text-align:center">
 <a href="doc/maindoc_confpopup.png"><img src="doc/maindoc_confpopup.png" width=300px height=252px></a>
 <figcaption>Das Konfigurations-Popup</figcaption>
@@ -113,7 +161,7 @@ Um von der Vorgabe abweichende Werte einzugeben, muss man zuerst das Ankreuzfeld
 <p style="clear:right;height:0.0em;"></p>
 <p style="clear:left;height:0.0em;"></p>
 
-<h3>View Templates</h3>
+<h3 id="concepts-viewtemplate">View Templates</h3>
 <p style="width:15em;float:left;margin:10px;margin-right:20px;border-style:solid;border-width:1px;border-color:green;"><b>Tipp: </b>Wer gerade mit FUIP angefangen hat, der wird Abschnitt &uuml;ber View Templates m&ouml;glicherweise verwirrend finden. Nachdem man selbst ein paar FUIP-Seiten angelegt und bearbeitet hat, sollte man hierher zur&uuml;ckkehren und diesen Abschnitt lesen.</p>
 
 <p>Ein <i>View Template</i> ist eine benutzerdefinierte View. D.h. man kann sich aus bestehenden Views eigene <i>View Templates</i> zusammenklicken, die man dann wiederum wie normale Views (eigentlich View-Typen) verwenden kann. Das ist ganz n&uuml;tzlich, wenn man immer (oder oft) dieselbe Ansicht f&uuml;r z.B. Thermostate hat. Das definiert man sich dann einmal als View Template und verwendet es immer wieder. Ein View Template bearbeitet man im Wesentlichen wie eine normale Zelle bzw. einen Dialog (ein Popup). Zus&auml;tzlich kann man auf dem Konfigurations-Popup Felder als Variablen kennzeichnen und benennen. Dadurch ensteht dann ein neuer View-Typ mit diesen Variablen als Parameter. Die View Templates kann man dann beim Bearbeiten einer Zelle wie einen normalen View ausw&auml;hlen. Das geht auch in View Templates selbst, man kann also auch View Templates in View Templates verwenden.</p>
@@ -155,9 +203,9 @@ Wenn man ein View Template mit Variablen (z.B. in einer Zelle) verwendet, dann e
 <p style="clear:left;height:0.0em;"></p>
 <p style="clear:right;height:0.0em;"></p>
 
-<h2>Die Views</h2>
+<h2 id="views">Die Views</h2>
 
-<h3>Die leere View</h3>
+<h3 id="views-empty">Die leere View</h3>
 Die "leere" View wird im Konfigurationsdialog vorbelegt, wenn eine neue View hinzugef&uuml;gt wird. Man ersetzt dann den <i>View type</i> durch das, was man eigentlich haben will. Ansonsten kann man die leere View theoretisch als Platzhalter verwenden oder wenn man nur einen kurzen Text darstellen will. Au&szlig;er <i>View type</i> und <i>title</i> hat die leere View nur ein Feld. (Sie ist also eigentlich gar nicht so leer.)
 <ul><li><b>content</b><br>Hier kann ein kurzer Text eingegeben werden, der dann auf der Oberfl&auml;che angezeigt wird. Allerdings kann man keinerlei Formatangaben mitgeben (wie Gr&ouml;&szlig;e, Farbe etc.). </li></ul>
 

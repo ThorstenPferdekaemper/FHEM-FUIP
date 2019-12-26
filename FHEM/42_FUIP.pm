@@ -3659,7 +3659,7 @@ sub renderDocu($) {
 		next if $view eq "FUIP::View";
 		my (undef,undef,$viewname) = split(/::/,$view);
 		$result .= '
-			<h3>'.$viewname.': '.$selectableViews->{$view}{title}.'</h3>
+			<h3 id="views-'.$viewname.'">'.$viewname.': '.$selectableViews->{$view}{title}.'</h3>
 			<img src="/fhem/'.lc($hash->{NAME}).'/fuip/view-images/FUIP-View-'.$viewname.'.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />'.$view->getDocu();
 		my $fields = $view->getStructure();	
 		my @fieldnames = map { $_->{id} } grep { $_->{id} ne "class" and $_->{type} ne "dimension" and $_->{type} ne "flexfields"} @$fields;

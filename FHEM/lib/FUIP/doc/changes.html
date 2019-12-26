@@ -6,6 +6,20 @@
 <body>
 <h1>FUIP News</h1>
 
+<h2>26.12.2019</h2>
+<h3>Inhaltsverzeichnis zur Doku</h3>
+Die FUIP-Dokumentation hat jetzt ein Inhaltsverzeichnis. Man kann auch Verweise (Links) direkt auf die einzelnen Abschnitte setzen.
+
+<h3>Resizing von Views in Verbindung mit "snapTo"</h3>
+Wenn das Attribut <i>snapTo</i> gesetzt war, dann gab es manchmal seltsame Effekte beim &Auml;ndern der Gr&ouml;&szlig;e von Views. Manchmal hat sich die Gr&ouml;&szlig;e einzelner Elemente (z.B. der Schrift) nach einem Seiten-Reload noch einmal ge&auml;ndert. Au&szlig;erdem wurde die <i>snapTo</i>-Einstellung w&auml;hrend der Gr&ouml;&szlig;en&auml;nderung nicht beachtet.<br>
+Dies hat vor Allem die Views Reading, LabelReading, LabelTemperature und LabelHumidity betroffen und sollte jetzt auch f&uuml;r diese behoben sein.
+
+<h3>Reading View: Alles auf derselben Ebene</h3>
+Bei der View "Reading" war das Label und der Wert (bzw. Timestamp) nicht auf derselben Linie. Dies wurde behoben.
+
+<h3>Reading View: Label ohne Doppelpunkt</h3>
+Bei der View "Reading" wird nach dem Label jetzt kein Doppelpunkt mehr hinzugef&uuml;gt. Wer einen haben will, muss ihn jetzt selbst reinschreiben.
+
 <h2>25.12.2019</h2>
 <h3>Neue View "Reading"</h3>
 Es gibt jetzt eine neue View "Reading", die die Eigenschaften der Views LabelReading, LabelTemperature und LabelHumidity zusammenfasst. M&ouml;glicherweise werden diese drei Views in n&auml;chster Zeit wegfallen. (Dies wird dann keine existierenden FUIP-Oberfl&auml;chen betreffen.) 
