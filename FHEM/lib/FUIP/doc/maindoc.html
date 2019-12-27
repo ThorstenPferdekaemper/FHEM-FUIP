@@ -4,6 +4,11 @@
 <title>FUIP Dokumentation</title>
 
 <style>
+
+body {
+	line-height: 1.3;
+}	
+
 figure {
 	border-style:solid;
 	border-width:1px;
@@ -20,6 +25,13 @@ figure.left {
 	float:left;
 	margin-left:2px;
 	margin-right:20px;
+}
+
+code {
+    background-color: #f8f9fa;
+    border: 1px solid #eaecf0;
+    border-radius: 2px;
+    padding: 1px 4px;
 }
 </style>
 
@@ -77,6 +89,37 @@ window.onload = createToc;
 <h2 id="intro">Einf&uuml;hrung</h2>
 Der FHEM User Interface Painter (FUIP) ist ein FHEM-Modul, mit dem man FHEM Tablet UI (FTUI) Seiten graphisch ("klickibunti") erstellen kann. D.h. man kann sich ein UI zusammenklicken, welches die Tablet UI Technik verwendet, aber ohne sich selbst unbedingt mit HTML und CSS herumschlagen zu m&uuml;ssen.<br>
 Diese Dokumentation befasst sich vor Allem mit grundlegenden Erkl&auml;rungen sowie der Bearbeitungsoberfl&auml;che. Zus&auml;tzlich gibt es noch einiges, was man &uuml;ber die "klassische" FHEM-Oberfl&auml;che (also FHEMWEB) machen kann bzw. muss. Dies ist dann vorwiegend in der "Device specific help" (bzw. Commandref) erkl&auml;rt. D.h. dieser Text hier soll nicht die Commandref ersetzen, sondern erg&auml;nzen.
+
+<h3 id="installation">Installation und Upgrade in FHEM</h3>
+Genau wie FTUI ist auch FUIP nicht automatisch Teil von FHEM. Es muss explizit installiert bzw. hinzugef&uuml;gt werden. Die Installation funktioniert folgenderma&szlig;en:
+<ul><li>FUIP verwendet FTUI. D.h. man sollte zuerst einmal FTUI installieren, falls noch nicht passiert. Wie das geht steht z.B. hier: <a href="https://wiki.fhem.de/wiki/FHEM_Tablet_UI#Installation" title="FHEM Tablet UI">FHEM Tablet UI</a>. Dabei reicht der erste Schritt aus, da lediglich die FTUI-Dateien von FUIP ben&ouml;tigt werden.</li>
+<li>Dann wird das FUIP-Repository zum FHEM Update hinzugef&uuml;gt. Dazu muss man folgendes im FHEM-Kommandofeld eingeben:
+<ul><li><code>update add https://raw.githubusercontent.com/ThorstenPferdekaemper/FHEM-FUIP/master/controls_fuip.txt</code></li></ul></li>
+<li>Jetzt <code>update all fuip</code> im FHEM-Kommandofeld eingeben.</li>
+<li>Dann sollte man warten, bis man ganz sicher ist, dass alles installiert ist. Das sieht man normalerweise an der Meldung <code>update finished, "shutdown restart" is needed to activate the changes.</code> Das ganze kann etwas l&auml;nger dauern, da FUIP aus einigen Dateien besteht, von denen ein paar etwas gr&ouml;&szlig;er sind.</li>
+<li>Jetzt erst sollte ein <code>shutdown restart</code> gemacht werden.</li>
+<li>FUIP sollte jetzt installiert sein.</li></ul>
+<p>Zum Upgrade reicht ein <code>update</code>, wenn man FUIP wie oben beschrieben installiert hat. Will man nur den FUIP-Teil aktualisieren und nicht alles in FHEM, dann geht das mit <code>update all fuip</code>.
+
+<h3 id="quickstart">Erste Schritte</h3>
+<p>Nach der Installation legt man ein "FUIP Device" an, also etwa <code>define ui FUIP</code>. Dieses Device meldet sich sozusagen als Webserver bei FHEM an (wie z.B. auch <a href="https://wiki.fhem.de/wiki/HTTPSRV" title="HTTPSRV">HTTPSRV</a>), d.h. es erscheint im Menu oben links (&uuml;ber den R&auml;umen) ein Link "ui". Beim Klick auf diesen Link generiert FUIP eine &Uuml;bersichtsseite aus den R&auml;umen im FHEM System. (Das kann ein bisschen dauern, wenn man viele Devices hat.) Nun kann man durch Verschieben und gr&ouml;&szlig;er/kleiner-Ziehen der einzelnen Zellen bzw. durch Verschieben des Zelleninhalts die Gestaltung &auml;ndern. Au&szlig;erdem kann man &uuml;ber das Zahnrad rechts oben in den Zellen neuen Inhalt hinzufügen, den bestehenden Inhalt &auml;ndern und vieles mehr.</p>
+<p>Durch Klicken auf die R&auml;ume im Menu der &Uuml;bersichtsseite werden einzelne Raum-Seiten generiert. Diese kann man ebenfalls entsprechend bearbeiten. Nat&uuml;rlich k&ouml;nnen auch eigene Seiten hinzugef&uuml;gt werden.</p>
+<p>Nachdem man die Seiten entsprechend bearbeitet hat sollte man im FHEM-Kommandofeld ein <code>set ui save</code> machen. Ansonsten gehen die &Auml;nderungen beim n&auml;chsten FHEM-Neustart verloren. Ein normales <code>save config</code> reicht nicht aus und ist auch nicht notwendig.
+
+<h3 id="troubleshooting">Was tun bei Problemen?</h3>
+<p>Falls es bei oder nach der Installation oder dem Upgrade Probleme gibt (welcher Art auch immer), sollten die folgenden Punkte gepr&uuml;ft werden:
+</p>
+<ul><li>Wird das richtige Repository benutzt? Man kann das mit <code>update list</code> &uuml;berpr&uuml;fen. Wenn der Eintrag f&uuml;r fuip nicht genau so aussieht wie oben beschrieben, dann sollte er per <code>update delete</code> gel&ouml;scht werden und dann genau so eingetragen werden wie oben beschrieben.</li>
+<li>Ist der update-Prozess wirklich komplett durchgelaufen? Auch wenn es etwas l&auml;nger dauert, muss man auf die Meldung <code>update finished, "shutdown restart" is needed to activate the changes.</code> warten, bevor man durchstartet. Im Zweifelsfall einfach noch einmal <code>update all fuip</code> machen und diesmal mehr Geduld haben.</li>
+<li>FHEM braucht Schreibrechte im Verzeichnis &lt;fhem&gt;/FHEM/lib/FUIP/config (&lt;fhem&gt; steht meistens für /opt/fhem) und allen enthaltenen Dateien. Auf Betriebssystemebene (Linux) kann man das mit <code>ls -ls</code> &uuml;berpr&uuml;fen. Meistens kann es mit folgendem Befehl repariert werden: <code>chown -R fhem:dialout /opt/fhem/FHEM/lib/FUIP/config</code>. (Dieser Punkt gilt nicht unbedingt, wenn man die configDB benutzt.)</li>
+<li>Bitte auch einmal im FHEM-Logfile nachsehen, bevor man sich ans Forum wendet.</li>
+</ul>
+<p>Wenn man zwar die generierte (oder auch selbst erstellte) FUIP-Oberfl&auml;che sieht, aber alles hinter einem roten "Schleier" mit der Meldung "Disconnected from FHEM, reconnecting", dann k&ouml;nnten die folgenden Hinweise hilfreich sein.</p>
+<ul>
+<li>Die Meldung deutet darauf hin, dass die Oberfl&auml;che zwar angezeigt werden kann, aber die Verbindung zur eigentlichen FHEM-Instanz verloren gegangen ist. Man sollte also prinzipiell &uuml;berpr&uuml;fen, ob die Verbdindung zwischen Browser und FHEM-Server stabil ist.</li>
+<li>Man kann versuchen die Seite einmal neu zu laden (Browser-Reload) bzw. den Browser neu zu starten. Dies sollte allerdings nicht zur Gewohnheit werden. FUIP stellt die Verbindung im Prinzip selbst&auml;ndig wieder her.</li>
+<li>Auf iOS (Apple) Frontends, insbesondere dem Safari Browser, funktioniert die Basic Authentication f&uuml;r Websockets nicht. Das bedeutet, dass FUIP nicht funktioniert, wenn man ein iOS-Frontend hat und das FHEMWEB-Device mittels Basic Authentication abgesichert ist. Abhilfe schafft hier in der Regel, wenn man im allowed-Device das Attribut <i>basicAuthExpiry</i> auf 1 oder gr&ouml;&szlig;er setzt. Au&szlig;erdem muss der Browser Cookies setzen d&uuml;rfen. (Sollte hierzu jemand eine bessere L&ouml;sung haben, dann bitte im FHEM-Forum Bescheid geben.)</li>
+</ul>
 
 <h2 id="concepts">Grundlegende Begriffe und Konzepte</h2>
 <figure style="float:right;margin:0;margin-left:10px;margin-bottom:5px;margin-right:10px;text-align:center">

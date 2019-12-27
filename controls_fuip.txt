@@ -80,9 +80,9 @@ UPD 2019-03-15_20:30:01 5774 FHEM/lib/FUIP/doc/RenameViewTemplate.png
 UPD 2019-05-19_15:29:14 25890 FHEM/lib/FUIP/doc/Swiper.png
 UPD 2019-06-11_16:58:03 8100 FHEM/lib/FUIP/doc/Units.png
 UPD 2019-05-21_21:16:03 19252 FHEM/lib/FUIP/doc/VariablenImViewTemplate.png
-UPD 2019-12-26_16:46:04 61329 FHEM/lib/FUIP/doc/changes.html
+UPD 2019-12-27_18:21:37 61728 FHEM/lib/FUIP/doc/changes.html
 UPD 2019-12-25_22:47:49 21406 FHEM/lib/FUIP/doc/icon_back.png
-UPD 2019-12-25_22:53:57 24685 FHEM/lib/FUIP/doc/maindoc.html
+UPD 2019-12-26_22:58:16 30534 FHEM/lib/FUIP/doc/maindoc.html
 UPD 2019-11-23_22:58:30 8295 FHEM/lib/FUIP/doc/maindoc_cellexample.png
 UPD 2019-11-24_20:57:20 48854 FHEM/lib/FUIP/doc/maindoc_confpopup.png
 UPD 2019-11-25_19:51:25 7490 FHEM/lib/FUIP/doc/maindoc_defaultcheck.png
@@ -103,7 +103,7 @@ UPD 2018-03-21_12:10:11 6313 FHEM/lib/FUIP/jquery-ui/images/ui-icons_ffffff_256x
 UPD 2018-03-21_12:10:11 37326 FHEM/lib/FUIP/jquery-ui/jquery-ui.css
 UPD 2017-12-18_21:55:39 253669 FHEM/lib/FUIP/jquery-ui/jquery-ui.min.js
 UPD 2019-12-26_16:29:11 123757 FHEM/lib/FUIP/js/fuip.js
-UPD 2019-12-26_16:23:24 2991 FHEM/lib/FUIP/js/fuip_5_resize.js
+UPD 2019-12-27_18:08:45 3003 FHEM/lib/FUIP/js/fuip_5_resize.js
 UPD 2019-04-20_19:09:04 1421 FHEM/lib/FUIP/js/fuip_batteries.js
 UPD 2019-02-07_21:00:49 897 FHEM/lib/FUIP/js/fuip_clock.js
 UPD 2019-11-03_21:14:56 4024 FHEM/lib/FUIP/js/fuip_common.js
