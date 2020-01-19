@@ -196,6 +196,13 @@ text.title.fuip-color-foreground {
 	color: var(--fuip-color-foreground);
 }
 
+
+/* calendar "today" */
+.fuip-calendar-today {
+	background-color: var(--fuip-color-header);
+}
+
+
 /* fix ftui issue with "fixed" positioned headers */
 .dialog > header {
 	position: absolute;

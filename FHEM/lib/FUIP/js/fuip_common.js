@@ -143,3 +143,56 @@ function fuipPostLogs() {
 fuipPostLogs();
 
 
+// convert any color to rgba-object
+function colorToRgbaArray(color) {
+	// return color itself if this is already an array
+	if(Array.isArray(color)) return color;
+	// remove blanks
+	let value = color.replace(/\s/g, "");
+	let result = [255,0,0,1];  // R,G,B,A (A = opacity)
+	if(value.length == 4) {  // short hex like #ggg
+		for(let i = 0; i < 3; i++) {
+			result[i] = parseInt(value.charAt(i+1) + value.charAt(i+1),16);
+		};
+		return result;	
+	};	
+	if(/^rgba/.test(value)) {  // like rgba(0,80,255,0.2)
+		let parts = value.substr(5,value.length - 6).split(",");
+		for(let i = 0; i < 3; i++) {
+			result[i] = parseInt(parts[i]);
+		};	
+		result[3] = parseFloat(parts[3]);
+		return result;
+	};	
+	if(/^rgb/.test(value)) {  // like rgb(0,80,255)
+		let parts = value.substr(4,value.length - 5).split(",");
+		for(let i = 0; i < 3; i++) {
+			result[i] = parseInt(parts[i]);
+		};	
+		result[3] = 1;
+		return result;
+	};	
+	// now it should be #123456
+	if(value.length == 7) {
+		for(let i = 0; i < 3; i++) {
+			result[i] = parseInt(value.charAt(i*2+1) + value.charAt(i*2+2),16);
+		};
+		return result;	
+	};	
+	// something is wrong here, just return something "red"
+	return result;
+};	
+
+
+function colorToRgbaString(color) {
+	let colAsAr = colorToRgbaArray(color);
+	let result = 'rgba(';
+	for(let i = 0; i < 4; i++) {
+		if(i > 0) result += ',';
+		result += colAsAr[i].toString();
+	};
+	result += ')';
+	return result;	
+};	
+
+
