@@ -180,16 +180,23 @@ sub getRooms($) {
 	
 	
 sub getReadingsOfDevice($$) {
-# get all readings of a device (only the reading names, without values)
-	my ($name,$device) = @_;
-	my $coding = [
-		'return [] unless defined $main::defs{"'.$device.'"}',
-		'my @result = (keys(%{$main::defs{"'.$device.'"}{READINGS}}))',
-		'return \@result'
-	];
-	my $readings = callCoding($name,$coding);
-	@$readings = sort(@$readings);
-	return $readings;
+# get all readings of one or multiple device(s) (only the reading names, without values)
+	my ($name,$deviceStr) = @_;
+	my @devices = split /,/ , $deviceStr;
+	my %resultHash;
+	for my $device (@devices) {
+		my $coding = [
+			'return [] unless defined $main::defs{"'.$device.'"}',
+			'my @result = (keys(%{$main::defs{"'.$device.'"}{READINGS}}))',
+			'return \@result'
+		];
+		my $readings = callCoding($name,$coding);
+		for my $reading (@$readings) {
+			$resultHash{$reading} = 1;
+		};	
+	};
+	my @result = sort keys %resultHash;
+	return \@result;
 };		
 	
 	
