@@ -6,6 +6,11 @@
 <body>
 <h1>FUIP News</h1>
 
+<h2>30.01.2020</h2>
+<h3>Experimentelles "Longpoll &uuml;ber Ajax"</h3>
+Wegen st&ouml;rrischer Probleme mit Websockets bei verschiedenen Apple-Ger&auml;ten gibt es jetzt eine experimentelle Longpoll-Version, die per Ajax anstatt Websockets funktioniert. Diese kann mit dem Attribut <i>longPollType</i> aktiviert werden. Einfach <i>longPollType</i> auf "ajax" stellen.<br>
+Bitte beachten, dass das noch etwas experimentell ist und wahrscheinlich noch nicht ganz so gut funktioniert, wie die Websocket-Version. (...zumindest dort, wo die Websockets &uuml;berhaupt gehen.)
+
 <h2>26.01.2020</h2>
 <h3>ReadingsList &uuml;berarbeitet</h3>
 Die View "ReadingsList" war bisher nur in Ausnahmef&auml;llen wirklich n&uuml;tzlich. Das sollte sich jetzt ge&auml;ndert haben. Man kann jetzt mehrere Devices w&auml;hlen sowie die Readings ausw&auml;hlen, die man sehen will. Zus&auml;tzlich kann man einen Filterwert angeben, der bestimmt, welche Readings angezeigt werden. Letzteres reagiert auch auf Wert&auml;nderungen (solange sie als FHEM-Events ankommen), so dass Zeilen automatisch ein- bzw. ausgeblendet werden. Das ist z.B. f&uuml;r eine Anzeige aller offenen Fenster sinnvoll.

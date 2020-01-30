@@ -65,7 +65,7 @@ sub setAttrList($) {
 	if(@$htmlNames) {
 		$hash->{AttrList} .= " userHtmlBodyStart:".join(",",@$htmlNames);
 	};	
-	$hash->{AttrList} .= " loglevel:0,1,2,3,4,5 logtype:console,localstorage logareas";
+	$hash->{AttrList} .= " loglevel:0,1,2,3,4,5 logtype:console,localstorage logareas longPollType:websocket,ajax";
 }
 
 
@@ -2291,7 +2291,12 @@ sub CGI_inner($) {
 	# very special logic for tablet-ui kernel
 	if($path[0] ne "fuip" and ( $path[-1] eq "fhem-tablet-ui.js")) {
 		unshift(@path,"fuip");
-		$path[-1] = "fuip_tablet_ui.js";
+		my $longpolltype = main::AttrVal($name,"longPollType","websocket");
+		if($longpolltype eq 'ajax') {
+			$path[-1] = "fuip_tablet_ui_longpoll.js";  
+		}else{
+			$path[-1] = "fuip_tablet_ui.js";
+		};
 	};	
 	
 	# special logic for weatherdetail and readingsgroup
