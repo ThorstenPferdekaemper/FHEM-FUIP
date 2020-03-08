@@ -34,7 +34,7 @@ UPD 2019-11-08_15:01:41 2769 FHEM/lib/FUIP/View/LabelTemperature.pm
 UPD 2019-12-07_19:03:15 8271 FHEM/lib/FUIP/View/MenuItem.pm
 UPD 2019-11-22_20:34:24 1112 FHEM/lib/FUIP/View/Page.pm
 UPD 2018-12-03_21:22:12 1087 FHEM/lib/FUIP/View/Popup.pm
-UPD 2018-10-02_13:46:23 1489 FHEM/lib/FUIP/View/Push.pm
+UPD 2020-03-08_21:18:37 3114 FHEM/lib/FUIP/View/Push.pm
 UPD 2019-12-26_14:28:22 10579 FHEM/lib/FUIP/View/Reading.pm
 UPD 2019-07-22_20:04:33 1873 FHEM/lib/FUIP/View/ReadingsGroup.pm
 UPD 2020-01-26_22:04:12 6322 FHEM/lib/FUIP/View/ReadingsList.pm
@@ -81,7 +81,7 @@ UPD 2019-03-15_20:30:01 5774 FHEM/lib/FUIP/doc/RenameViewTemplate.png
 UPD 2019-05-19_15:29:14 25890 FHEM/lib/FUIP/doc/Swiper.png
 UPD 2019-06-11_16:58:03 8100 FHEM/lib/FUIP/doc/Units.png
 UPD 2019-05-21_21:16:03 19252 FHEM/lib/FUIP/doc/VariablenImViewTemplate.png
-UPD 2020-01-30_21:44:46 63133 FHEM/lib/FUIP/doc/changes.html
+UPD 2020-03-08_21:22:46 63311 FHEM/lib/FUIP/doc/changes.html
 UPD 2019-12-25_22:47:49 21406 FHEM/lib/FUIP/doc/icon_back.png
 UPD 2019-12-26_22:58:16 30534 FHEM/lib/FUIP/doc/maindoc.html
 UPD 2019-11-23_22:58:30 8295 FHEM/lib/FUIP/doc/maindoc_cellexample.png
