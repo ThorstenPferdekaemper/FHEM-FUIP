@@ -3,6 +3,7 @@ var fuipGridster;
 var fuip = {};
 
 function fuipInit(conf) { //baseWidth, baseHeight, maxCols, gridlines, snapTo
+	fuip.webname = conf.webname;
 	fuip.baseWidth = conf.baseWidth;
 	fuip.baseHeight = conf.baseHeight;
 	fuip.cellMargin = conf.cellMargin;
@@ -126,6 +127,8 @@ function fuipInit(conf) { //baseWidth, baseHeight, maxCols, gridlines, snapTo
 		});
 	});
 };
+
+
 	
 	
 function pulsateColorStart(key) {
@@ -271,7 +274,7 @@ function coloursChangeDialog() {
 				};	
 				fuip.colorchangepopup.dialog("close"); 
 				if(cmd.length > 0) {
-					cmd = "set " + $("html").attr("data-name") + " colors " + cmd;
+					cmd = "set " + fuipName() + " colors " + cmd;
 					asyncSendFhemCommandLocal(cmd);
 				};	
 			},
@@ -280,7 +283,7 @@ function coloursChangeDialog() {
 		{	text: 'Reset all to style schema',
 			icon: 'ui-icon-arrowreturnthick-1-w',
 			click: async function() {
-				let cmd = "set " + $("html").attr("data-name") + " colors reset"; 
+				let cmd = "set " + fuipName() + " colors reset"; 
 				fuip.colorchangepopup.dialog("close"); 
 				await asyncSendFhemCommandLocal(cmd);
 				location.reload(true);
@@ -310,15 +313,30 @@ function coloursChangeDialog() {
 	});
 };	
 	
-	
+
+function fuipName() {
+	// returns name of the FUIP device
+	return $("html").attr("data-name");
+};	
+
+function fuipBasePath() {
+	// returns base path of fuip device, i.e. usually /fhem/<device>
+	return fuip.webname + '/' + fuipName().toLowerCase();
+};	
+
+function fuipBaseUrl() {
+	// returns base URL of fuip device
+	// i.e. something like http://192.168.178.25:8083/fhem/<device>
+	return location.origin + fuipBasePath();
+};	
+
+
 function openChangeLog() {
-	let name = $("html").attr("data-name").toLowerCase();
-	window.open(location.origin + "/fhem/" + name + "/fuip/doc/changes.html","fuipnews");
+	window.open(fuipBaseUrl() + "/fuip/doc/changes.html","fuipnews");
 };	
 
 function openDocu() {
-	let name = $("html").attr("data-name").toLowerCase();
-	window.open(location.origin + "/fhem/" + name + "/fuip/docu","fuipdoc");
+	window.open(fuipBaseUrl() + "/fuip/docu","fuipdoc");
 };	
 	
 
@@ -409,7 +427,7 @@ function renderWhereUsedLists() {
 		let container = $(this);
 		if(container.attr("data-fuip-type") != "viewtemplate") return true;
 		let templateid = container.attr("data-fuip-templateid");
-		let name = $("html").attr("data-name");
+		let name = fuipName();
 		// call backend to retrieve where used list
 		var cmd = "get " + name + " whereusedlist type=viewtemplate recursive=1 templateid=" + templateid;
 		sendFhemCommandLocal(cmd).done(function(whereusedlistJson){
@@ -429,12 +447,12 @@ function renderWhereUsedLists() {
 					switch(whereusedlist[i].type) {
 						case "view":
 							shown.pages[whereusedlist[i].pageid] = true;
-							html += '<a href="/fhem/' + name.toLowerCase() + '/page/' + whereusedlist[i].pageid + '">Page ' 
+							html += '<a href="' + fuipBasePath() + '/page/' + whereusedlist[i].pageid + '">Page ' 
 									+ whereusedlist[i].pageid + '</a>';
 							break;
 						case "viewtemplate":
 							shown.viewtemplates[whereusedlist[i].templateid] = true;
-							html += '<a href="/fhem/' + name.toLowerCase() + '/fuip/viewtemplate?templateid=' 
+							html += '<a href="' + fuipBasePath() + '/fuip/viewtemplate?templateid=' 
 								+ whereusedlist[i].templateid + '">View template ' + whereusedlist[i].templateid + '</a>';
 							break;
 						default: 
@@ -453,8 +471,7 @@ function renderWhereUsedLists() {
 	
 
 function callViewTemplateMaint() {
-	let name = $("html").attr("data-name").toLowerCase();
-	window.location.href = location.origin + "/fhem/" + name + "/fuip/viewtemplate";
+	window.location.href = fuipBaseUrl() + "/fuip/viewtemplate";
 };	
 
 
@@ -465,7 +482,7 @@ function viewTemplateDelete(name,templateid){
 			popupError("Cannot delete " + templateid,message);
 			return;
 		};
-		window.location.replace(location.origin + "/fhem/" + name + "/fuip/viewtemplate");
+		window.location.replace(fuipBaseUrl() + "/fuip/viewtemplate");
 	});	
 };
 
@@ -480,7 +497,7 @@ async function viewTemplateRename(name,templateid){
 			"set " + name + " rename type=viewtemplate origintemplateid=" + templateid 
 					+ " targettemplateid=" + targettemplateid
 			);
-		window.location.replace("/fhem/" + name.toLowerCase() +"/fuip/viewtemplate?templateid="+targettemplateid);
+		window.location.replace(fuipBasePath() + "/fuip/viewtemplate?templateid="+targettemplateid);
 	}catch(e){}; // we can ignore this, usually only user input error 
 };	
 	
@@ -557,7 +574,7 @@ function drawGrid() {
 
 function getLocalCSrf() {
     $.ajax({
-        'url': location.origin + '/fhem/',
+        'url': location.origin + fuip.webname + '/',
         'type': 'GET',
         cache: false,
         data: {
@@ -578,7 +595,7 @@ function getLocalCSrf() {
 // when cell move/resize stops
 function onGridsterChangeStop(e,ui,widget) {
 	var s = JSON.stringify(fuipGridster.serialize()).replace(/\:/g, " => ");
-	var name = $("html").attr("data-name");
+	var name = fuipName();
 	var pageId = $("html").attr("data-pageid");
 	var cmd = '{FUIP::FW_setPositionsAndDimensions("' + name + '","' + pageId + '",' + s + ')}';
 	sendFhemCommandLocal(cmd);
@@ -615,7 +632,7 @@ function onFlexChangeStop() {
 	flexMaintSerialize("fuip-flex-title","title",sizes);
 	flexMaintSerialize("fuip-flex-main","main",sizes);
 	var s = JSON.stringify(sizes).replace(/\:/g, " => ");
-	var name = $("html").attr("data-name");
+	var name = fuipName();
 	var pageId = $("html").attr("data-pageid");
 	var cmd = '{FUIP::FW_setPositionsAndDimensions("' + name + '","' + pageId + '",' + s + ')}';
 	sendFhemCommandLocal(cmd);		
@@ -626,7 +643,7 @@ function onFlexChangeStop() {
 function onResize(e,ui) { 
 	let key = getKeyForCommand();
 	if(!key) return;
-	var cmd = "set " + $("html").attr("data-name") + " resize " + key + " width=" + ui.size.width + " height=" + ui.size.height; 
+	var cmd = "set " + fuipName() + " resize " + key + " width=" + ui.size.width + " height=" + ui.size.height; 
 	asyncSendFhemCommandLocal(cmd);					
 };		
 
@@ -972,7 +989,7 @@ async function onDragStop(cell,ui) {
 		if(newCellId != oldCellId) 
 			type = 'cellmove';
 	};
-	let cmd = 'set ' + $("html").attr("data-name") + ' position ';
+	let cmd = 'set ' + fuipName() + ' position ';
 	switch(type) {
 		case 'cellmove':
 			cmd += 'newcellid="' + newCellId + '" ';
@@ -1021,7 +1038,7 @@ function getViewKeyForCommand(view) {
 function onViewResizeStop(event,ui) {
 	let view = ui.originalElement;
 	view.removeData("fuipResize");
-	let cmd = "set " + $("html").attr("data-name") + " resize " + getViewKeyForCommand(view);
+	let cmd = "set " + fuipName() + " resize " + getViewKeyForCommand(view);
 	cmd += ' width=' + ui.size.width + ' height=' + ui.size.height;
 	asyncSendFhemCommandLocal(cmd);
 };
@@ -1056,7 +1073,7 @@ function sendFhemCommandLocal(cmdline) {
 		cache: false,
 		method: 'GET',
 		dataType: 'text',
-		url: location.origin + '/fhem/',
+		url: location.origin + fuip.webname + '/',
 		// username: ftui.config.username,
 		// password: ftui.config.password,
 		data: {
@@ -1081,7 +1098,7 @@ async function asyncSendFhemCommandLocal(cmdline) {
 			cache: false,
 			method: 'POST',
 			dataType: 'text',
-			url: location.origin + '/fhem/',
+			url: location.origin + fuip.webname + '/',
 			// username: ftui.config.username,
 			// password: ftui.config.password,
 			data: {
@@ -1111,7 +1128,7 @@ async function asyncSendFhemCommandLocal(cmdline) {
 async function asyncPostImportCommand(content,type,pageid) {
 	return new Promise(function(resolve,reject) {
 		let data = encodeURIComponent(content);
-		let url = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() + '/fuip/import?type='+type;
+		let url = fuipBaseUrl() + '/fuip/import?type='+type;
 		if(type != "viewtemplate") {
 			url += '&pageid=' + pageid;
 		};	
@@ -1139,7 +1156,7 @@ async function asyncPostImportCommand(content,type,pageid) {
 		
 
 async function callBackendFunc(funcname,args) {
-	let argstr = '"' + $("html").attr("data-name") + '"';
+	let argstr = '"' + fuipName() + '"';
 	if(args.length) {
 		argstr += ',"' + args.join('","') + '"';
 	};	
@@ -1150,7 +1167,7 @@ async function callBackendFunc(funcname,args) {
 		
 					
 async function autoArrange() {
-	let name = $("html").attr("data-name");
+	let name = fuipName();
 	let key = getKeyForCommand();
 	if(!key) return;  // error message has already been sent
 	let cmd = "set " + name + " autoarrange " + key;  
@@ -1161,7 +1178,7 @@ async function autoArrange() {
 	
 async function setLock(range) {
 	// lock for this client (range = client) or for all (range = all)
-	let name = $("html").attr("data-name");
+	let name = fuipName();
 	let cmd = "set " + name + " lock " + range;  
 	await asyncSendFhemCommandLocal(cmd);
 	let rngText = (range == "client" ? "this client" : "all clients");
@@ -1298,7 +1315,7 @@ async function acceptSettings(doneFunc) {
 
 	let key = getKeyForCommand();
 	if(!key) return;
-	cmd = "set " + $("html").attr("data-name") + " settings " + key + " " + cmd;
+	cmd = "set " + fuipName() + " settings " + key + " " + cmd;
 	await asyncSendFhemCommandLocal(cmd);
 	if(doneFunc) {
 		doneFunc();
@@ -1366,7 +1383,7 @@ function acceptPageSettings(doneFunc) {
 		value = '"' + value + '"'; 
 		cmd += " " + $(this).attr("id") + "=" + value;
 	});
-	var name = $("html").attr("data-name");
+	var name = fuipName();
 	var pageId = $("html").attr("data-pageid");
 	cmd = "set " + name + " pagesettings " + pageId + cmd; 
 	// TODO: error handling when sending command
@@ -1381,7 +1398,7 @@ function acceptPageSettings(doneFunc) {
 
 
 function viewAddNew() {
-	var name = $("html").attr("data-name");
+	var name = fuipName();
 	var pageId = $("html").attr("data-pageid");
 	var viewId = $("#viewsettings").attr("data-viewid");	
 	var region = "";
@@ -1417,8 +1434,7 @@ function viewAddKnownToArray(arrayName,viewSettings,title) {
 					
 function viewAddNewToArray(arrayName) {
 	// get default empty view
-	var name = $("html").attr("data-name");
-	var cmd = "get " + name + " viewdefaults FUIP::View";
+	var cmd = "get " + fuipName() + " viewdefaults FUIP::View";
 	sendFhemCommandLocal(cmd)
 	.done(function(settingsJson){
 		viewAddKnownToArray(arrayName,json2object(settingsJson), 'empty view');
@@ -1430,8 +1446,7 @@ function viewAddNewByDevice(arrayName) {
 	// callback for value help 
 	var processDevices = function(devices) {
 		if(devices.length == 0) { return; };
-		var name = $("html").attr("data-name");
-		var cmd = "get " + name + " viewsByDevices " + devices.join(' ');
+		var cmd = "get " + fuipName() + " viewsByDevices " + devices.join(' ');
 		sendFhemCommandLocal(cmd)
 			.done(function(settingsJson){
 				var views = json2object(settingsJson);
@@ -1465,10 +1480,9 @@ function viewDeleteFromArray(viewName) {
 					
 function deleteCell() {
 	var cmd = "";
-	var name = $("html").attr("data-name");
 	var pageId = $("html").attr("data-pageid");
 	var viewId = $("#viewsettings").attr("data-viewid");	
-	cmd = "set " + name + " viewdelete " + pageId + "_" + viewId; 
+	cmd = "set " + fuipName() + " viewdelete " + pageId + "_" + viewId; 
 	// TODO: error handling when sending command
 	sendFhemCommandLocal(cmd).done(function () {
 		$("#viewsettings").dialog( "close" );
@@ -1649,8 +1663,7 @@ function classChanged(classField) {
 	// get old values
 	let oldValues = collectFieldValues(settingsDialog);
 	settingsDialog.html('Just a moment...');
-	var name = $("html").attr("data-name");
-	var cmd = "get " + name + " viewdefaults " + classField.value;
+	var cmd = "get " + fuipName() + " viewdefaults " + classField.value;
 	sendFhemCommandLocal(cmd).done(function(settingsJson){
 		// copy old values into new view type, if possible
 		let settings = json2object(settingsJson);
@@ -1841,7 +1854,7 @@ async function valueHelp(fieldName,type) {
 		return;
 	};	
 	// all others
-	var name = $("html").attr("data-name");
+	var name = fuipName();
 	createValueHelpDialog(function(){
 		var selected = $('#valuehelptable').attr('data-selected');
 		if(!selected) { return; };
@@ -1981,7 +1994,7 @@ async function valueHelp(fieldName,type) {
 				style = " style='background:#F39814;color:black;'";
 			};	
 			html += "<tr id='valuehelp-row-"+i+"' data-key='"+classList[i].id+"'><td"+style+">"+classList[i].id+"</td><td"+style+">"+classList[i].title+"</td><td"+style+">";
-			html += "<img height=48 src='/fhem/"+name.toLowerCase()+"/fuip/view-images/" 
+			html += "<img height=48 src='"+fuipBasePath()+"/fuip/view-images/" 
 						+ classList[i].id.replace(/::/g,"-") + ".png' onerror=\"this.style.display='none'\">";
 			html += "</td></tr>";
 		};
@@ -2107,7 +2120,7 @@ function createValueHelpTable(tabDef,selected,multiSelect) {
 
 
 async function valueHelpForDevice(fieldTitle, callbackFunction, multiSelect) {
-	var name = $("html").attr("data-name");
+	var name = fuipName();
 	createValueHelpDialog(function(){
 		var resultArray = [];
 		$("tr[data-selected='X']").each(function(){
@@ -2342,7 +2355,7 @@ function valueHelpForUnit(fieldTitle, callbackFunction) {
 
 
 async function valueHelpForOptions(fieldName, callbackFunction,multiSelect) {
-	var name = $("html").attr("data-name");
+	var name = fuipName();
 	createValueHelpDialog(function(){
 		var resultArray = [];
 		$("tr[data-selected='X']").each(function(){
@@ -2423,7 +2436,6 @@ async function valueHelpForOptions(fieldName, callbackFunction,multiSelect) {
 
 
 function callPopupMaint(fieldName) {
-	let name = $("html").attr("data-name").toLowerCase();
 	let cellUrlPart;
 	let pageId = $("html").attr("data-pageid");
 	if(pageId) {
@@ -2443,7 +2455,7 @@ function callPopupMaint(fieldName) {
 	}else{
 		fullFieldName = fieldName;
 	};	
-	window.location.href = location.origin + "/fhem/" + name + "/fuip/popup?" + cellUrlPart + "&fieldid=" + fullFieldName;
+	window.location.href = fuipBaseUrl() + "/fuip/popup?" + cellUrlPart + "&fieldid=" + fullFieldName;
 };	
 
 
@@ -2986,8 +2998,7 @@ function json2object(json) {
 
 
 function exportCellOrDialog() { 
-	var downloadUrl = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() 
-					+ '/fuip/export?pageid=' + $("html").attr("data-pageid") 
+	var downloadUrl = fuipBaseUrl() + '/fuip/export?pageid=' + $("html").attr("data-pageid") 
 					+ '&cellid=' + $("#viewsettings").attr("data-viewid");
 	if($("html").attr("data-fieldid")) {
 		downloadUrl += '&fieldid='+$("html").attr("data-fieldid");
@@ -3039,7 +3050,7 @@ async function dialogImportViewTemplate() {
 		let content = await dialogFileUpload();
 		let msg = await asyncPostImportCommand(content,"viewtemplate","");
 		if(msg.slice(0,2) == "OK") {  // OK<templateid>
-			window.location.replace("/fhem/" + $("html").attr("data-name").toLowerCase() +"/fuip/viewtemplate?templateid="+msg.slice(2));
+			window.location.replace(fuipBasePath() +"/fuip/viewtemplate?templateid="+msg.slice(2));
 		}else{	
 			popupError("Import View Template: Error",msg);
 		};
@@ -3048,8 +3059,7 @@ async function dialogImportViewTemplate() {
 
 
 async function settingsDialogSetDocu(docid) {
-	let name = $("html").attr("data-name");
-	let cmd = "get " + name + " docu " + docid;
+	let cmd = "get " + fuipName() + " docu " + docid;
 	let docutext = await asyncSendFhemCommandLocal(cmd);
 	$("#docarea").scrollTop(0);
 	$("#docarea").html(docutext);
@@ -3184,7 +3194,7 @@ function changeSettingsDialog(settingsJson,type,cellid,fieldid) {
 				}else{
 					easyDrag = "0";
 				};
-				sendFhemCommandLocal("set " + $("html").attr("data-name") + " editOnly " + easyDrag).
+				sendFhemCommandLocal("set " + fuipName() + " editOnly " + easyDrag).
 					done(function(){ location.reload(true) });
 			});} 
 		}
@@ -3220,7 +3230,7 @@ async function openSettingsDialog(type, cellid) {
         $(this).css('-webkit-user-select', 'text');
     });	
 	var settingsDialog = $( "#viewsettings" );
-	let name = $("html").attr("data-name");
+	let name = fuipName();
 	// XMLHTTP request to get config options with current values
 	var cmd = "get " + name + " settings type=" + type + " ";
 	let fieldid;
@@ -3276,7 +3286,6 @@ async function openSettingsDialog(type, cellid) {
 			
 async function copyCurrentPage() {
 	// get current name and page id
-	var name = $("html").attr("data-name");
 	var pageid = $("html").attr("data-pageid");
 	// get new page id
 	try{
@@ -3287,9 +3296,9 @@ async function copyCurrentPage() {
 				checkFunc: function(name) { return name.length; }
 			});
 		// TODO: This allows overwriting page "home". Is this good?
-		sendFhemCommandLocal("set " + name + " pagecopy " + pageid + " " + newname)
+		sendFhemCommandLocal("set " + fuipName() + " pagecopy " + pageid + " " + newname)
 			.done(function() {
-				window.location = "/fhem/" + name.toLowerCase() +"/page/"+newname;
+				window.location = fuipBasePath() +"/page/"+newname;
 			});	
 	}catch(e){
 		return; // we ignore this in principle. A message should have been sent already.
@@ -3298,19 +3307,17 @@ async function copyCurrentPage() {
 			
 
 function exportPage() { 
-	location.href = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() 
-			+ '/fuip/export?pageid=' + $("html").attr("data-pageid"); 
+	location.href = fuipBaseUrl() + '/fuip/export?pageid=' + $("html").attr("data-pageid"); 
 };
 
 
 function exportViewTemplate() { 
-	location.href = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() 
-			+ '/fuip/export?templateid=' + $("html").attr("data-viewtemplate"); 
+	location.href = fuipBaseUrl() + '/fuip/export?templateid=' + $("html").attr("data-viewtemplate"); 
 };
 
 
 async function repairPage() {
-	let cmd = 'set ' + $("html").attr("data-name") + ' repair type=page pageid=' + $("html").attr("data-pageid");
+	let cmd = 'set ' + fuipName() + ' repair type=page pageid=' + $("html").attr("data-pageid");
 	await asyncSendFhemCommandLocal(cmd);
 	location.reload(true);
 };	
@@ -3327,7 +3334,7 @@ async function importPage() {
 			});
 		let msg = await asyncPostImportCommand(content,"page",newname);
 		if(msg == "OK") {
-			window.location = "/fhem/" + $("html").attr("data-name").toLowerCase() + "/page/"+newname;
+			window.location = fuipBasePath() + "/page/"+newname;
 		}else{	
 			popupError("Import page: Error",msg);
 		};
@@ -3366,7 +3373,7 @@ function toggleCellPage() {
 								},
 				showLabel: false }
 			]);
-		var cmd = "get " + $("html").attr("data-name") + " pagesettings " + $("html").attr("data-pageid");
+		var cmd = "get " + fuipName() + " pagesettings " + $("html").attr("data-pageid");
 		sendFhemCommandLocal(cmd).done(function(settingsJson){
 			var settings = json2object(settingsJson);
 			createSettingsWithDocArea(settingsDialog, settings);
@@ -3381,7 +3388,7 @@ function toggleCellPage() {
 
 function copyCurrentCell() {
 	// get current name, page id and view id
-	var name = $("html").attr("data-name");
+	var name = fuipName();
 	var pageid = $("html").attr("data-pageid");
 	var viewid = $("#viewsettings").attr("data-viewid");	
 	// create popup to input new page id
@@ -3398,7 +3405,7 @@ function copyCurrentCell() {
 			click: async function() {
 				var newname = $("#newpagename").val();			
 				await asyncSendFhemCommandLocal("set " + name + " cellcopy " + pageid + "_" + viewid + " " + newname);
-				window.location = "/fhem/" + name.toLowerCase() + "/page/"+newname;
+				window.location = fuipBasePath() + "/page/"+newname;
 			},
 			showLabel: false },
 		  { text: 'Cancel',
@@ -3501,7 +3508,7 @@ async function dialogNewName(config) {
 async function dialogCreateNewViewTemplate() {
 	try{
 		let newname = await dialogNewViewTemplateName();
-		window.location.replace("/fhem/" + $("html").attr("data-name").toLowerCase() +"/fuip/viewtemplate?templateid="+newname);
+		window.location.replace(fuipBasePath() + "/fuip/viewtemplate?templateid="+newname);
 	}catch(e){}; // we can ignore this, usually only user input error 
 };
 
@@ -3514,8 +3521,8 @@ async function dialogConvertToViewtemplate() {
 	}catch(e){
 		return;
 	};  
-	let cmd = 'set ' + $("html").attr("data-name") + ' convert ' + getKeyForCommand("origin")
+	let cmd = 'set ' + fuipName() + ' convert ' + getKeyForCommand("origin")
 				+ ' targettype=viewtemplate targettemplateid="' + newname + '"';
 	await asyncSendFhemCommandLocal(cmd);
-	window.location.href = location.origin + "/fhem/" + $("html").attr("data-name").toLowerCase() +"/fuip/viewtemplate?templateid="+newname;	
+	window.location.href = fuipBaseUrl() + "/fuip/viewtemplate?templateid="+newname;	
 };	

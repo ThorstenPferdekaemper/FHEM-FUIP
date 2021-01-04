@@ -42,9 +42,8 @@ if($('html').data('fuipReturnAfter')) {
 	var fuipReturnTimer;
 	
 	function fuipReturn() {
-		var name = $("html").attr("data-name");
 		var newPage = $("html").data('fuipReturnTo');
-		window.location = "/fhem/" + name.toLowerCase() +"/page/"+newPage;
+		window.location = ftui.config.basedir + "page/" + newPage;
 	}
 	
 	function fuipResetTimer() {
@@ -121,7 +120,7 @@ function fuipPostLogs() {
 		return;
 	};
 	// send logs to FHEM
-	let url = location.origin + '/fhem/' + $("html").attr("data-name").toLowerCase() + '/fuip/logupload';
+	let url = location.origin + ftui.config.basedir + 'fuip/logupload';
 	$.ajax({
 		async: true,
 		cache: false,

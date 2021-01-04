@@ -513,6 +513,8 @@ var ftui = {
             ftui.config.fhemDir = location.origin + "/" + fhemUrl + "/";
         }
         ftui.config.fhemDir = ftui.config.fhemDir.replace('///', '//');
+		// change the meta tag because some widgets are using it (chart at least)
+		$("meta[name='fhemweb_url']").attr("content",ftui.config.fhemDir);
         ftui.log(1, 'FHEM dir: ' + ftui.config.fhemDir,"base.init");
         // lang
         var userLang = navigator.language || navigator.userLanguage;

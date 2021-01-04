@@ -33,7 +33,7 @@ sub getHTML($){
 	# my $link = (substr($self->{link},0,1) eq "/" ? $self->{link} : "/fhem/".lc($self->{fuip}{NAME})."/page/".$self->{link});
 	my $link = "";
 	if($self->{linkType} eq "fuip-page") {
-		$link = 'data-url="/fhem/'.lc($self->{fuip}{NAME}).'/page/'.$self->{pageid}.'"'; 
+		$link = 'data-url="'.FUIP::urlBase($self->{fuip}).'/page/'.$self->{pageid}.'"'; 
 	}elsif($self->{linkType} eq "ftui-link") {
 		$link = 'data-url="'.$self->{link}.'"';
 	}elsif($self->{linkType} eq "fhem-reading") {

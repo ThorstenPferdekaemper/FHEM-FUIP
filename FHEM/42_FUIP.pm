@@ -362,6 +362,11 @@ sub determineMaxCols($;$) {
 	return $maxCols;
 };
 
+sub urlBase($) {
+	# return base path for the fuip device, i.e. usually /fhem/<device>
+	my ($hash) = @_;
+	return "$main::FW_ME/".lc($hash->{NAME});	
+};
 
 sub renderFuipInit($;$) {
 	# include fuip.js, call fuipInit and include proper JQueryUI style sheet
@@ -372,16 +377,19 @@ sub renderFuipInit($;$) {
 		$gridlines = main::AttrVal($hash->{NAME},"gridlines","hide");
 	};	
 	my $snapto = main::AttrVal($hash->{NAME},"snapTo","nothing");
-	return "<script src=\"/fhem/".lc($hash->{NAME})."/fuip/js/fuip.js\"></script>
+	# webname is the contents of attribute webname of the FHEMWEB instance
+	#         or /fhem as default
+	return '<script src="'.urlBase($hash).'/fuip/js/fuip.js"></script>
   			<script>
-				fuipInit({	baseWidth:".$baseWidth.",
-							baseHeight:".$baseHeight.",
-							cellMargin:".getCellMargin($hash).",
-							maxCols:".determineMaxCols($hash,99).",
-							gridlines:\"".$gridlines."\",
-							snapTo:\"".$snapto."\" })
+				fuipInit({	webname:"'.$main::FW_ME.'", 
+							baseWidth:'.$baseWidth.',
+							baseHeight:'.$baseHeight.',
+							cellMargin:'.getCellMargin($hash).',
+							maxCols:'.determineMaxCols($hash,99).',
+							gridlines:"'.$gridlines.'",
+							snapTo:"'.$snapto.'" })
 			</script>
-			<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/css/theme.blue.css\">";
+			<link rel="stylesheet" href="'.urlBase($hash).'/fuip/css/theme.blue.css">';
 };
 
 
@@ -482,11 +490,11 @@ sub renderHeaderHTML($$) {
 	my ($hash,$pageId) = @_;
 	my $dependencies = getViewDependencies($hash,$pageId,"js");
 	# common script parts
-	my $result = '<script src="/fhem/'.lc($hash->{NAME}).'/fuip/js/fuip_common.js"></script>'."\n";
+	my $result = '<script src="'.urlBase($hash).'/fuip/js/fuip_common.js"></script>'."\n";
 	for my $dep (@$dependencies) {
-		$result .= '<script src="/fhem/'.lc($hash->{NAME}).'/fuip/'.$dep.'"></script>'."\n";
+		$result .= '<script src="'.urlBase($hash).'/fuip/'.$dep.'"></script>'."\n";
 	};
-	$result .= 	'<link href="/fhem/'.lc($hash->{NAME}).'/css/fhem-tablet-ui-user.css" rel="stylesheet" type="text/css">'."\n";
+	$result .= 	'<link href="'.urlBase($hash).'/css/fhem-tablet-ui-user.css" rel="stylesheet" type="text/css">'."\n";
 	return $result;
 };
 
@@ -500,7 +508,7 @@ sub renderBackgroundImage($$){
 		$result .= 
 			'<script type="text/javascript">
 				$(() =>
-					$(\'body\').css(\'background\',\'#000000 url(/fhem/'.lc($hash->{NAME}).'/fuip/images/'.$backgroundImage.') 0 0/';
+					$(\'body\').css(\'background\',\'#000000 url('.urlBase($hash).'/fuip/images/'.$backgroundImage.') 0 0/';
 		if($pageWidth) {
 			$result .= $pageWidth.'px';
 		}else{	
@@ -614,31 +622,42 @@ sub renderCommonEditStyles($) {
 			background-color: initial;
 		}
 		.fuip-ui-icon-bright {
-			background-image: url(/fhem/'.lc($hash->{NAME}).'/fuip/jquery-ui/images/ui-icons_ffffff_256x240.png);
+			background-image: url('.urlBase($hash).'/fuip/jquery-ui/images/ui-icons_ffffff_256x240.png);
 		}'."\n";	
 };
 
 
 sub renderCommonCss($) {
-	my $name = shift;
+    my $hash = shift;
+	my $name = $hash->{NAME};
 	my $lcName = lc($name);
 	my $styleSchema = main::AttrVal($name,"styleSchema","default");
 	my $styleSchemaLine = "";	
-	$styleSchemaLine = '<link rel="stylesheet" href="/fhem/'.$lcName.'/fuip/css/fuip-'.$styleSchema.'-ui.css" type="text/css" />'."\n" unless $styleSchema eq "default"; 
-	return '<link rel="shortcut icon" href="/fhem/icons/favicon" />
-			<link rel="stylesheet" href="/fhem/'.$lcName.'/css/fhem-tablet-ui.css"  type="text/css" />'."\n"
-			.'<link rel="stylesheet" href="/fhem/'.$lcName.'/fuip/css/fuip-default-ui.css" type="text/css" />'."\n"
+	$styleSchemaLine = '<link rel="stylesheet" href="'.urlBase($hash).'/fuip/css/fuip-'.$styleSchema.'-ui.css" type="text/css" />'."\n" unless $styleSchema eq "default"; 
+	return '<link rel="shortcut icon" href="'.$main::FW_ME.'/icons/favicon" />
+			<link rel="stylesheet" href="'.urlBase($hash).'/css/fhem-tablet-ui.css"  type="text/css" />'."\n"
+			.'<link rel="stylesheet" href="'.urlBase($hash).'/fuip/css/fuip-default-ui.css" type="text/css" />'."\n"
 			.$styleSchemaLine
-			.'<link rel="stylesheet" href="/fhem/'.$lcName.'/lib/font-awesome.min.css"   type="text/css" />
-			<link rel="stylesheet" href="/fhem/'.$lcName.'/fuip/fonts/nesges.css" type="text/css" />'."\n";
+			.'<link rel="stylesheet" href="'.urlBase($hash).'/lib/font-awesome.min.css"   type="text/css" />
+			<link rel="stylesheet" href="'.urlBase($hash).'/fuip/fonts/nesges.css" type="text/css" />'."\n";
 };
 
+sub renderFhemwebUrl($) {
+	my $hash = shift;
+	my $fhemweburl = main::AttrVal($hash->{NAME},"fhemwebUrl",undef);
+	if(not defined($fhemweburl)) {
+		# if we do not have an external fhem, then we might still 
+		# have a webname defined for the FHEMWEB device. In this 
+		# case, the default /fhem does not work either in FTUI
+		$fhemweburl = substr($main::FW_ME,1);
+	};
+	return '<meta name="fhemweb_url" content="'.$fhemweburl.'" />';
+};
 
 sub renderCommonMetas($) {
 	my $hash = shift;
 	my $initialScale = main::AttrVal($hash->{NAME},"viewportInitialScale","1.0");
 	my $userScalable = main::AttrVal($hash->{NAME},"viewportUserScalable","yes");
-	my $fhemweburl = main::AttrVal($hash->{NAME},"fhemwebUrl",undef);
 	my $loglevel = main::AttrVal($hash->{NAME},"loglevel",undef);
 	my $logtype = main::AttrVal($hash->{NAME},"logtype",undef);
 	my $logareas = main::AttrVal($hash->{NAME},"logareas",undef);
@@ -647,7 +666,7 @@ sub renderCommonMetas($) {
 			<meta name="mobile-web-app-capable" content="yes" />
 			<meta name="apple-mobile-web-app-capable" content="yes" />'.
 			# <meta name="longpoll_type" content="ajax" />'. 
-			($fhemweburl ? '<meta name="fhemweb_url" content="'.$fhemweburl.'" />' : '').
+			renderFhemwebUrl($hash).
 			($loglevel ? '<meta name="loglevel" content="'.$loglevel.'" />' : '').
 			($logtype ? '<meta name="logtype" content="'.$logtype.'" />' : '').
 			($logareas ? '<meta name="logareas" content="'.$logareas.'" />' : '');
@@ -675,7 +694,7 @@ sub renderAutoReturn($$) {
 
 sub renderTabletUiJs($) {
 	my $hash = shift;
-	return '<script src="/fhem/'.lc($hash->{NAME}).'/js/fhem-tablet-ui.js"></script>';
+	return '<script src="'.urlBase($hash).'/js/fhem-tablet-ui.js"></script>';
 	#return '<script src="/fhem/'.lc($hash->{NAME}).'/fuip/js/fuip_tablet_ui.js"></script>';
 };
 
@@ -709,15 +728,15 @@ sub renderPage($$$) {
 					};	
 				</script>
 				<title>".$title."</title>"
-				.'<link rel="stylesheet" href="/fhem/'.lc($hash->{NAME}).'/lib/jquery.gridster.min.css" type="text/css">'
-				.renderCommonCss($hash->{NAME})
-				."<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
-		        <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.min.js\"></script>".
-				($locked ? "" : "<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.css\">
+				.'<link rel="stylesheet" href="'.urlBase($hash).'/lib/jquery.gridster.min.css" type="text/css">'
+				.renderCommonCss($hash)
+				."<script type=\"text/javascript\" src=\"".urlBase($hash)."/lib/jquery.min.js\"></script>
+		        <script type=\"text/javascript\" src=\"".urlBase($hash)."/fuip/jquery-ui/jquery-ui.min.js\"></script>".
+				($locked ? "" : "<link rel=\"stylesheet\" href=\"".urlBase($hash)."/fuip/jquery-ui/jquery-ui.css\">
 								<!-- tablesorter -->
-								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.js\"></script>
-								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.widgets.js\"></script>").
-				"<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.gridster.min.js\"></script>  
+								 <script type=\"text/javascript\" src=\"".urlBase($hash)."/fuip/js/jquery.tablesorter.js\"></script>
+								 <script type=\"text/javascript\" src=\"".urlBase($hash)."/fuip/js/jquery.tablesorter.widgets.js\"></script>").
+				"<script type=\"text/javascript\" src=\"".urlBase($hash)."/lib/jquery.gridster.min.js\"></script>  
                 ".
 				($locked ? "" : renderFuipInit($hash)).
 				renderTabletUiJs($hash)."
@@ -786,9 +805,9 @@ sub renderPageFlex($$) {
 					};	
 				</script>
 				<title>".$title."</title>"
-				.renderCommonCss($hash->{NAME})
-				.'<script type="text/javascript" src="/fhem/'.lc($hash->{NAME}).'/lib/jquery.min.js"></script>
-		        <script type="text/javascript" src="/fhem/'.lc($hash->{NAME}).'/fuip/jquery-ui/jquery-ui.min.js"></script>
+				.renderCommonCss($hash)
+				.'<script type="text/javascript" src="'.urlBase($hash).'/lib/jquery.min.js"></script>
+		        <script type="text/javascript" src="'.urlBase($hash).'/fuip/jquery-ui/jquery-ui.min.js"></script>
 				'.renderTabletUiJs($hash).'
 				<style type="text/css">
 	                .fuip-color {
@@ -867,14 +886,14 @@ sub renderPageFlexMaint($$) {
 					};	
 				</script>
 				<title>".$title."</title>"
-				.renderCommonCss($hash->{NAME})
-				."<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
-		        <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.min.js\"></script>
-				<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.css\">
+				.renderCommonCss($hash)
+				.'<script type="text/javascript" src="'.urlBase($hash).'/lib/jquery.min.js"></script>
+		        <script type="text/javascript" src="'.urlBase($hash).'/fuip/jquery-ui/jquery-ui.min.js"></script>
+				<link rel="stylesheet" href="'.urlBase($hash).'/fuip/jquery-ui/jquery-ui.css">
 								<!-- tablesorter -->
-								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.js\"></script>
-								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.widgets.js\"></script>
-				".renderTabletUiJs($hash)."\n".				 
+								 <script type="text/javascript" src="'.urlBase($hash).'/fuip/js/jquery.tablesorter.js"></script>
+								 <script type="text/javascript" src="'.urlBase($hash).'/fuip/js/jquery.tablesorter.widgets.js"></script>
+				'.renderTabletUiJs($hash)."\n".				 
                 renderFuipInit($hash).
 				"<style type=\"text/css\">
 	                .fuip-color {
@@ -988,15 +1007,15 @@ sub renderPopupMaint($$) {
 				data-editonly=\"".$hash->{editOnly}."\"".renderToastSetting($hash).">
 			<head>
 	            <title>".$title."</title>"
-				.renderCommonCss($hash->{NAME})
-				."
-				<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
-		        <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.min.js\"></script>".
-				"<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.css\">
+				.renderCommonCss($hash)
+				.'
+				<script type="text/javascript" src="'.urlBase($hash).'/lib/jquery.min.js"></script>
+		        <script type="text/javascript" src="'.urlBase($hash).'/fuip/jquery-ui/jquery-ui.min.js"></script>'.
+				'<link rel="stylesheet" href="'.urlBase($hash).'/fuip/jquery-ui/jquery-ui.css">
 								<!-- tablesorter -->
-								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.js\"></script>
-								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.widgets.js\"></script>".
-				"<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.gridster.min.js\"></script>".
+								 <script type="text/javascript" src="'.urlBase($hash).'/fuip/js/jquery.tablesorter.js"></script>
+								 <script type="text/javascript" src="'.urlBase($hash).'/fuip/js/jquery.tablesorter.widgets.js"></script>'.
+				'<script type="text/javascript" src="'.urlBase($hash).'/lib/jquery.gridster.min.js"></script>'.
                 renderTabletUiJs($hash).
 				renderFuipInit($hash).
 				"<style type=\"text/css\">
@@ -1005,7 +1024,7 @@ sub renderPopupMaint($$) {
                     }
 					".renderCommonEditStyles($hash).
                 "</style>".
-				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
+				renderFhemwebUrl($hash).
 				'<script>
 					$( function() {
 						$( "#popupcontent" ).resizable({
@@ -1089,14 +1108,14 @@ sub renderViewTemplateMaint($$) {
 					};	
 				</script>
 	            <title>".$title."</title>"
-				.renderCommonCss($hash->{NAME})
-				."
-				<script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/lib/jquery.min.js\"></script>
-		        <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.min.js\"></script>".
-				"<link rel=\"stylesheet\" href=\"/fhem/".lc($hash->{NAME})."/fuip/jquery-ui/jquery-ui.css\">
+				.renderCommonCss($hash)
+				.'
+				<script type="text/javascript" src="'.urlBase($hash).'/lib/jquery.min.js"></script>
+		        <script type="text/javascript" src="'.urlBase($hash).'/fuip/jquery-ui/jquery-ui.min.js"></script>'.
+				'<link rel="stylesheet" href="'.urlBase($hash).'/fuip/jquery-ui/jquery-ui.css">
 								<!-- tablesorter -->
-								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.js\"></script>
-								 <script type=\"text/javascript\" src=\"/fhem/".lc($hash->{NAME})."/fuip/js/jquery.tablesorter.widgets.js\"></script>".
+								 <script type="text/javascript" src="'.urlBase($hash).'/fuip/js/jquery.tablesorter.js"></script>
+								 <script type="text/javascript" src="'.urlBase($hash).'/fuip/js/jquery.tablesorter.widgets.js"></script>'.
                 renderTabletUiJs($hash).
 				renderFuipInit($hash,$gridlines).
 				"<style type=\"text/css\">
@@ -1111,7 +1130,7 @@ sub renderViewTemplateMaint($$) {
 					}	
 					".renderCommonEditStyles($hash).
                 "</style>".
-				(main::AttrVal($hash->{NAME},"fhemwebUrl",undef) ? "<meta name=\"fhemweb_url\" content=\"".main::AttrVal($hash->{NAME},"fhemwebUrl",undef)."\">" : "").
+				renderFhemwebUrl($hash).
 				'<script>
 					$( function() {
 						$( "#templatecontent" ).resizable({
@@ -1162,7 +1181,7 @@ sub renderViewTemplateMaint($$) {
 	$result .= "<ul>\n";
 	$result .= '<li	style="text-align:left;list-style-type:circle;color:var(--fuip-color-symbol-active);">
 						<a href="javascript:void(0);" 
-							onclick="window.location.replace(\'/fhem/'.lc($hash->{NAME}).'/fuip/viewtemplate\')">
+							onclick="window.location.replace(\''.urlBase($hash).'/fuip/viewtemplate\')">
 					Show all (overview)
 					</a></li>
 				<li style="text-align:left;list-style-type:circle;color:var(--fuip-color-symbol-active);"><a href="javascript:void(0);" onclick="dialogCreateNewViewTemplate();">Create new</a></li> 
@@ -1171,7 +1190,7 @@ sub renderViewTemplateMaint($$) {
 	for my $viewtemplate (sort keys %{$hash->{viewtemplates}}) {
 		$result .= '<li	style="text-align:left;list-style-type:circle;color:var(--fuip-color-symbol-active);">
 						<a href="javascript:void(0);" 
-							onclick="window.location.replace(\'/fhem/'.lc($hash->{NAME}).'/fuip/viewtemplate?templateid='.$viewtemplate.'\')">
+							onclick="window.location.replace(\''.urlBase($hash).'/fuip/viewtemplate?templateid='.$viewtemplate.'\')">
 					FUIP::VTempl::'.$viewtemplate.' ('.$hash->{viewtemplates}{$viewtemplate}{title}.')
 					</a></li>'."\n";
 	};				
@@ -1214,7 +1233,7 @@ sub renderViewTemplateMaint($$) {
 					border: 1px solid rgba(0, 0, 0, 0.1);
 					margin:20px;">'."\n";
 			$result .= $viewtemplate->getHTML(1);  # always locked	
-			$result .= '<div onclick="window.location.replace(\'/fhem/'.lc($hash->{NAME}).'/fuip/viewtemplate?templateid='.$key.'\')" title="click to change" style="position:absolute;left:0;top:0;width:100%;height:100%;z-index:11;background:var(--fuip-color-background,rgba(255,255,255,.1));opacity:0.1;"></div>';
+			$result .= '<div onclick="window.location.replace(\''.urlBase($hash).'/fuip/viewtemplate?templateid='.$key.'\')" title="click to change" style="position:absolute;left:0;top:0;width:100%;height:100%;z-index:11;background:var(--fuip-color-background,rgba(255,255,255,.1));opacity:0.1;"></div>';
 			$result .= '</div>'."\n";
 		};
 	};
@@ -2254,7 +2273,8 @@ sub finishCgiAnswer($$) {
 
 ##################
 #
-# here we answer any request to http://host:port/fhem/$infix and below
+# here we answer any request to http://host:port$FW_ME/$infix and below
+# $FW_ME is usually /fhem
 
 sub CGI_inner($) {
 
@@ -3637,7 +3657,7 @@ sub _getDocu($$) {
 		};
 	};
 	if($category eq "View") {
-		$result = '<img src="/fhem/'.lc($hash->{NAME}).'/fuip/view-images/FUIP-View-'.$viewname.'.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />'.$result.'<p style="clear:left;height:0.5em;"></p>';
+		$result = '<img src="'.urlBase($hash).'/fuip/view-images/FUIP-View-'.$viewname.'.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />'.$result.'<p style="clear:left;height:0.5em;"></p>';
 	};
 	if($category eq "ConfPopup") {
 		if($fieldname) {
@@ -3667,7 +3687,7 @@ sub renderDocu($) {
 		my (undef,undef,$viewname) = split(/::/,$view);
 		$result .= '
 			<h3 id="views-'.$viewname.'">'.$viewname.': '.$selectableViews->{$view}{title}.'</h3>
-			<img src="/fhem/'.lc($hash->{NAME}).'/fuip/view-images/FUIP-View-'.$viewname.'.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />'.$view->getDocu();
+			<img src="'.urlBase($hash).'/fuip/view-images/FUIP-View-'.$viewname.'.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />'.$view->getDocu();
 		my $fields = $view->getStructure();	
 		my @fieldnames = map { $_->{id} } grep { $_->{id} ne "class" and $_->{type} ne "dimension" and $_->{type} ne "flexfields"} @$fields;
 		if(@fieldnames) {
