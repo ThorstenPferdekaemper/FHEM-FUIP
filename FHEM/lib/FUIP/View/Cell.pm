@@ -60,7 +60,7 @@ sub getHTML_swiper($$){
 		$result .= '
 		<li>
 			<div style="position:absolute;left:'.($self->{navbuttons} eq "on" ? '37' : '0').'px;width:'.($self->{navbuttons} eq "on" ? 'calc(100% - 74px)' : '100%').';">
-				<div data-viewid="'.$i.'"'.($locked ? '' : ' class="fuip-draggable'.$resizable.'"').' style="';
+				<div data-viewid="'.$i.'"'.$self->getHTML_sysid($view).($locked ? '' : ' class="fuip-draggable'.$resizable.'"').' style="';
 		my (undef, $cellHeight) = FUIP::cellSizeToPixels($self);
 		if($width eq "auto") {
 			$result .= 'width:100%;';
@@ -102,7 +102,7 @@ sub getHTML($$){
 		my ($width,$height) = $view->dimensions();
 		my $resizable = ($view->isResizable() ? " fuip-resizable" : "");
 		# TODO: hardcode 22px headers?
-		$result .= '<div><div data-viewid="'.$i.'"'.($locked ? '' : ' class="fuip-draggable'.$resizable.'"').' style="position:absolute;left:'.$left.'px;top:'.($top+22).'px;';
+		$result .= '<div><div data-viewid="'.$i.'"'.$self->getHTML_sysid($view).($locked ? '' : ' class="fuip-draggable'.$resizable.'"').' style="position:absolute;left:'.$left.'px;top:'.($top+22).'px;';
 		if($width eq "auto") {
 			$result .= 'width:calc(100% - '.$left.'px);';
 			$result .= 'height:calc(100% - '.($top+22).'px);'; 

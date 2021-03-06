@@ -51,10 +51,22 @@ my $fuipPath = $main::attr{global}{modpath} . "/FHEM/lib/FUIP/";
 
 my $currentPage = "";
 
+
+# giveUp
+# This is called in case something went terribly wrong and we 
+# should not really go on
+sub giveUp($) {
+	my ($reason) = @_;
+	main::stacktrace();
+	main::Log3(undef,0,"FUIP giving up: ".$reason);
+	die();
+}
+
+
 # possible values of attributes can change...
 sub setAttrList($) {
 	my ($hash) = @_;
-    $hash->{AttrList}  = "layout:gridster,flex locked:0,1 fhemwebUrl baseWidth baseHeight cellMargin:0,1,2,3,4,5,6,7,8,9,10 pageWidth styleSchema:default,blue,green,mobil,darkblue,darkgreen,bright-mint styleColor viewportUserScalable:yes,no viewportInitialScale gridlines:show,hide snapTo:gridlines,halfGrid,quarterGrid,nothing toastMessages:all,errors,off styleBackgroundImage:";
+    $hash->{AttrList}  = "layout:gridster,flex locked:0,1 fhemwebUrl backend_.* defaultBackend baseWidth baseHeight cellMargin:0,1,2,3,4,5,6,7,8,9,10 pageWidth styleSchema:default,blue,green,mobil,darkblue,darkgreen,bright-mint styleColor viewportUserScalable:yes,no viewportInitialScale gridlines:show,hide snapTo:gridlines,halfGrid,quarterGrid,nothing toastMessages:all,errors,off styleBackgroundImage:";
 	my $imageNames = getImageNames();
 	$hash->{AttrList} .= join(",",@$imageNames);
 	my $cssNames = getUserCssFileNames();
@@ -65,7 +77,9 @@ sub setAttrList($) {
 	if(@$htmlNames) {
 		$hash->{AttrList} .= " userHtmlBodyStart:".join(",",@$htmlNames);
 	};	
-	$hash->{AttrList} .= " loglevel:0,1,2,3,4,5 logtype:console,localstorage logareas longPollType:websocket,ajax";
+	#longPollType is only there for compatibility with earlier versions. It does not have any 
+	#meaning anymore
+	$hash->{AttrList} .= " loglevel:0,1,2,3,4,5 logtype:console,localstorage logareas longPollType";
 }
 
 
@@ -267,22 +281,98 @@ sub getCellMargin($) {
 };
 
 
-sub createRoomsMenu($$) {
-	my ($hash,$pageid) = @_;
+# getSystems
+# Returns all connected FHEM systems
+# This depends on attributes backend_.* and fhemwebUrl
+# - nothing of these is set 
+#     => result is { home => local }
+#        i.e. the default system name is "home"
+# - fhemwebUrl is set, but no backend_.*
+#     => result is { home => $fhemweburl }
+# - backend_.* is/are set
+#     => result is { <name> => $backend_<name> }
+#        with one entry for each backend_.*
+# TODO: Performance, i.e. buffer somewhere or so
+sub getSystems($) {
+	my $hash = shift;
+	
+	my %result;
+	# are there backend_.* attributes?
+	for my $attrName (keys %{$main::attr{$hash->{NAME}}}) {
+		next unless $attrName =~ m/^backend_(.*)$/;
+		$result{$1} = $main::attr{$hash->{NAME}}{$attrName};
+	};
+	return \%result if(%result); 
+	
+	# is fhemwebUrl set? (if not, return 'local' only)
+	my $fhemweburl = main::AttrVal($hash->{NAME},"fhemwebUrl",'local');
+	return { 'home' => $fhemweburl }; 
+};
+
+
+# TODO: buffer?
+sub getNumSystems($) {
+	my $hash = shift;
+	my $systems = getSystems($hash);
+	return scalar (keys %$systems);
+};
+
+
+# getSystemUrl
+# Get URL for system
+# TODO: Performance, i.e. buffer somewhere or so
+sub getSystemUrl($$) {
+	my ($hash,$sysid) = @_;
+	
+	# "local" is always "local"
+	if($sysid eq 'local') {
+	    return 'local';
+	};	
+
+	my $systems = getSystems($hash);
+	return $systems->{$sysid};
+};
+
+
+# getDefaultSystem
+# This is for downward compatibility and if no 
+# system id is set for view/cell/page etc.
+# depends on attribute defaultBackend
+sub getDefaultSystem($) {
+	my $hash = shift;
+	my $systems = getSystems($hash);
+	my $defaultSysid = main::AttrVal($hash->{NAME},"defaultBackend",undef);
+	if(defined($systems->{$defaultSysid})) {
+	    return $defaultSysid;
+	};
+	# if there is no defaultBackend or it does not exist,
+    # return "smallest" system id	
+    return (sort keys %$systems)[0];
+};
+
+
+sub getDefaultSystemUrl($) {
+	my $hash = shift;
+	return getSystemUrl($hash,getDefaultSystem($hash));
+};
+
+
+sub createRoomsMenu($$$) {
+	my ($hash,$pageid,$sysid) = @_;
 	my $cell = FUIP::Cell->createDefaultInstance($hash);
 	$cell->{title} = "R&auml;ume";	
 	$cell->position(0,1);
     # create a MenuItem view for each room
-	my @rooms = FUIP::Model::getRooms($hash->{NAME});
+	my @rooms = FUIP::Model::getRooms($hash->{NAME},$sysid);
 	my $posY = 0; 
 	for my $room (@rooms) {
 		my $menuItem = FUIP::View::MenuItem->createDefaultInstance($hash);
 		$menuItem->{text} = $room;
-		$menuItem->{pageid} = "room/".$room;
+		$menuItem->{pageid} = $sysid."/room/".$room;
 		$menuItem->{active} = "0";
 		my @parts = split('/',$pageid);
-		if(@parts > 1) {
-			if($parts[0] =~ /room|device/ and main::urlDecode($parts[1]) eq $room) {
+		if(@parts > 2) {
+			if($parts[0] eq $sysid and $parts[1] =~ /room|device/ and main::urlDecode($parts[2]) eq $room) {
 				$menuItem->{active} = "1";
 			};
 		};	
@@ -296,18 +386,35 @@ sub createRoomsMenu($$) {
 };
 
 
-sub addStandardCells($$$) {
-	my ($hash,$cells,$pageid) = @_;
-	# determine height of title line
-	# this gives more flexibility for baseHeight
-	# baseWidth is assumed something roughly around 140
+sub _generateGetTitleHeight($) {
+	my $hash = shift;
 	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
 	use integer;
 	my $titleHeight = 60 / $baseHeight;
 	$titleHeight += 1 if 60 % $baseHeight;
 	no integer;
+	return $titleHeight;
+};
+
+
+sub addStandardCells($$$) {
+	my ($hash,$cells,$pageid) = @_;
+	# determine height of title line
+	# this gives more flexibility for baseHeight
+	# baseWidth is assumed something roughly around 140
+	my $titleHeight = _generateGetTitleHeight($hash);
+	my $sysid = ( split '/', $pageid )[ 0 ];	
+	# If the system id is "home", then take the first 
+	# system id (this includes the case where we do not 
+	# have multifhem, as then the system id list is just [home]
+	if($sysid eq 'home') {
+		my $systems = getSystems($hash);
+		$sysid = (sort keys %$systems)[0]
+	};
+	
 	# Home button
 	my $view = FUIP::View::HomeButton->createDefaultInstance($hash);
+	$view->{sysid} = $sysid;
 	$view->{active} = ($pageid eq "home" ? 1 : 0);
 	$view->position(0,0);
 	my $homeCell = FUIP::Cell->createDefaultInstance($hash);
@@ -318,6 +425,7 @@ sub addStandardCells($$$) {
 	push(@$cells,$homeCell);
 	# Clock
 	my $clockView = FUIP::View::Clock->createDefaultInstance($hash);
+	$clockView->{sysid} = $sysid;
 	$clockView->position(0,0);
 	# switch sizing of the clock to auto, e.g. to center it
 	$clockView->{sizing} = "auto";
@@ -331,6 +439,7 @@ sub addStandardCells($$$) {
 	# Title cell
 	my $title = ($pageid eq "home" ? "Home, sweet home" : main::urlDecode(( split '/', $pageid )[ -1 ]));
 	$view = FUIP::View::Title->createDefaultInstance($hash);
+	$view->{sysid} = $sysid;
 	$view->{text} = $title;
 	$view->{icon} = "oa-control_building_s_all" if $pageid eq "home";
 	$view->position(0,0);
@@ -340,8 +449,12 @@ sub addStandardCells($$$) {
 	$titleCell->{views} = [ $view ];
 	$titleCell->{title} = $title;
 	push(@$cells,$titleCell);
-	# rooms menu
-	my $roomsMenu = createRoomsMenu($hash,$pageid);
+	# rooms menu unless index page and multifhem...
+	if($pageid eq "home") {
+	    return if(getNumSystems($hash) > 1);
+	};	
+	
+	my $roomsMenu = createRoomsMenu($hash,$pageid,$sysid);
 	# make sure rooms menu is under home button
 	$roomsMenu->position(0,$titleHeight);
 	push(@$cells,$roomsMenu);
@@ -393,50 +506,8 @@ sub renderFuipInit($;$) {
 };
 
 
-sub getViewClassesSingle($$);  # recursion
-
-sub getViewClassesSingle($$) {
-	# get classes of one view. This might be a dialog or view template, so recursive
-	my ($view,$viewClasses) = @_;
-	# first the view itself
-	$viewClasses->{blessed($view)} = 1;
-	# is this a view template instance?
-	if(blessed($view) eq "FUIP::ViewTemplInstance") {
-		for my $subview (@{$view->{viewtemplate}{views}}) {
-			getViewClassesSingle($subview,$viewClasses);
-		};
-	};
-	# check whether the view has a popup, i.e. a component of type "dialog"
-	# which is actually switched on
-	my $viewStruc = $view->getStructure(); 
-	my $popupField;
-	for my $field (@$viewStruc) {
-		if($field->{type} eq "dialog") {
-			$popupField = $field;
-			last;
-		};	
-	};
-	return unless $popupField;
-	# if we have a default as "no popup", then we might not want a popup
-	if($popupField and exists($popupField->{default})) {
-		unless(exists($view->{defaulted}) and exists($view->{defaulted}{$popupField->{id}})
-				and $view->{defaulted}{$popupField->{id}} == 0) {
-			return;
-		};	
-	};
-	# now we know that there is a popup field 
-	# do we have a popup?
-	my $dialog = $view->{$popupField->{id}};
-	return if( not blessed($dialog) or not $dialog->isa("FUIP::Dialog"));
-	# ok, we have a dialog, get the classes of the views of the dialog
-	for my $subview (@{$dialog->{views}}) {
-		getViewClassesSingle($subview,$viewClasses);
-	};
-};
-
-
 sub getViewDependencies($$$) {
-	my ($hash,$pageId,$suffix) = @_;
+	my ($hash,$page,$suffix) = @_;
 	
 	# pageId might also be a dialog/viewtemplate instance
 	
@@ -449,38 +520,21 @@ sub getViewDependencies($$$) {
 	my $pattern = '(.*)\.('.$suffix.')$';
 	my $rex = qr/$pattern/;
 	
-	my %viewClasses;
-	if(blessed($pageId)){ # this should always have views
-		return unless exists $pageId->{views};
-		for my $view (@{$pageId->{views}}) {
-			getViewClassesSingle($view,\%viewClasses);		
-		};
-	}elsif(ref($pageId) eq "HASH") {
-		# in this case, the hash elements should contain something with views
-		# e.g. for view template overview
-		for my $elem (values %$pageId) {
-			next unless exists $elem->{views};
-			for my $view (@{$elem->{views}}) {
-				getViewClassesSingle($view,\%viewClasses);		
-			};			
-		};	
-	}else{
-		return unless exists $hash->{pages}{$pageId};
-		my $cells = $hash->{pages}{$pageId}{cells};
-		for my $cell (@{$cells}) {
-			for my $view (@{$cell->{views}}) {
-				getViewClassesSingle($view,\%viewClasses);
-			};
-		};
-	};
 	my %dependencies;
-	for my $class (keys %viewClasses) {
-		my $deps = $class->getDependencies($hash);
-		for my $dep (@$deps) {
-			next unless $dep =~ m/$rex/;
-			$dependencies{$dep} = 1;
-		};
-	};
+
+	# callback function to collect dependencies	
+	my $cb = sub ($) {
+				my ($view) = @_;
+				my $deps = $view->getDependencies($hash);
+				for my $dep (@$deps) {
+					next unless $dep =~ m/$rex/;
+					$dependencies{$dep} = 1;
+				};
+			};	
+	
+	# do this for all views
+	_traverseViewsOfPage($hash,$cb,$page);
+
 	my @result = sort keys %dependencies;
 	return \@result;
 };
@@ -491,6 +545,7 @@ sub renderHeaderHTML($$) {
 	my $dependencies = getViewDependencies($hash,$pageId,"js");
 	# common script parts
 	my $result = '<script src="'.urlBase($hash).'/fuip/js/fuip_common.js"></script>'."\n";
+	$result .= renderSystemsFunction($hash);					
 	for my $dep (@$dependencies) {
 		$result .= '<script src="'.urlBase($hash).'/fuip/'.$dep.'"></script>'."\n";
 	};
@@ -522,13 +577,14 @@ sub renderBackgroundImage($$){
 
 
 sub readTextFile($$) {
-	my ($hash,$filename) = @_;
-	my $forceLocal = 1;
-	if($filename =~ m/^remote:/) {
-		$forceLocal = 0;
-		$filename = substr($filename,7);
+	my ($hash,$locator) = @_;
+	# Filename starts with "<sysid>:" ?
+	my ($sysid,$filename) = split(/:/,$locator,2);
+	unless($filename) {
+		$sysid = 'local';
+		$filename = $locator;
 	};
-	return FUIP::Model::readTextFile($hash->{NAME},$filename,$forceLocal);
+	return FUIP::Model::readTextFile($hash->{NAME},$filename,$sysid);
 };
 
 
@@ -642,10 +698,11 @@ sub renderCommonCss($) {
 			<link rel="stylesheet" href="'.urlBase($hash).'/fuip/fonts/nesges.css" type="text/css" />'."\n";
 };
 
+
 sub renderFhemwebUrl($) {
 	my $hash = shift;
-	my $fhemweburl = main::AttrVal($hash->{NAME},"fhemwebUrl",undef);
-	if(not defined($fhemweburl)) {
+	my $fhemweburl = getDefaultSystemUrl($hash);
+	if($fhemweburl eq 'local') {
 		# if we do not have an external fhem, then we might still 
 		# have a webname defined for the FHEMWEB device. In this 
 		# case, the default /fhem does not work either in FTUI
@@ -653,6 +710,44 @@ sub renderFhemwebUrl($) {
 	};
 	return '<meta name="fhemweb_url" content="'.$fhemweburl.'" />';
 };
+
+
+sub renderSystemsFunction($) {
+	my $hash = shift;
+	my $systems = getSystems($hash);
+	
+	# getSystemUrl
+	my $result = '<script type="text/javascript">
+		ftui.getSystemUrl = function(sysid) {'."\n";
+	foreach my $sysid (sort keys %$systems) {
+		$result .= '    if(sysid == "'.$sysid.'"){'."\n";
+		if($systems->{$sysid} eq 'local') {
+			$result .= '    	return location.origin + "/'.substr($main::FW_ME,1).'";'."\n";
+		}else{
+			$result .= '        return "'.$systems->{$sysid}.'";'."\n";
+		};
+		$result .= '    };'."\n";			
+	};
+	# Always use the "default" connection as fallback
+	$result .= '    return ftui.config.fhemDir;'."\n";
+	$result .= '};'."\n";
+	
+	#getSystemIds
+	$result .= 'ftui.getSystemIds = function() {'."\n";	
+	$result .= '    return ["';
+	$result .= join('","',(sort keys %$systems));
+	$result .= '"];'."\n";
+	$result .= '};'."\n";	
+	
+	#getDefaultSystemId
+	$result .= 'ftui.getDefaultSystemId = function() {'."\n";
+	$result .= '    return "'.getDefaultSystem($hash).'"'."\n";
+	$result .= '};'."\n";	
+	
+	$result .= '</script>'."\n";
+	return $result;
+};
+
 
 sub renderCommonMetas($) {
 	my $hash = shift;
@@ -725,7 +820,7 @@ sub renderPage($$$) {
 					// when using browser back or so, we should reload
 					if(performance.navigation.type == 2){
 						location.reload(true);
-					};	
+					};
 				</script>
 				<title>".$title."</title>"
 				.'<link rel="stylesheet" href="'.urlBase($hash).'/lib/jquery.gridster.min.css" type="text/css">'
@@ -1006,9 +1101,8 @@ sub renderPopupMaint($$) {
 	$result .= "data-fieldid=\"".$urlParams->{fieldid}."\"
 				data-editonly=\"".$hash->{editOnly}."\"".renderToastSetting($hash).">
 			<head>
-	            <title>".$title."</title>"
-				.renderCommonCss($hash)
-				.'
+	            <title>".$title."</title>
+				".renderCommonCss($hash).'
 				<script type="text/javascript" src="'.urlBase($hash).'/lib/jquery.min.js"></script>
 		        <script type="text/javascript" src="'.urlBase($hash).'/fuip/jquery-ui/jquery-ui.min.js"></script>'.
 				'<link rel="stylesheet" href="'.urlBase($hash).'/fuip/jquery-ui/jquery-ui.css">
@@ -1250,15 +1344,63 @@ sub renderViewTemplateMaint($$) {
 };
 
 
+# defaultPageIndex
+# Creates default index page
 sub defaultPageIndex($) {
 	my ($hash) = @_;
+	# if we are not in multifhem mode, just create system page as the home page
+	if(getNumSystems($hash) <= 1) {
+		defaultPageSystem($hash,'home');
+		return;
+	};
+	
+	# Now we can be sure that we are in multifhem mode
+	# Create home page with links to each system
+		
 	my @cells;
 	# home button and rooms menu
-	addStandardCells($hash, \@cells, "home");
+	addStandardCells($hash, \@cells, 'home');
+	# TODO: get "system views", not only system menu 
+
+	my $systemsMenu = FUIP::Cell->createDefaultInstance($hash);
+	$systemsMenu->{title} = "Systeme";	
+	$systemsMenu->position(0,1);
+    # create a MenuItem view for each system
+	my $systems = getSystems($hash);
+	my $posY = 0; 
+	foreach my $sysid (sort keys %$systems) {
+		my $menuItem = FUIP::View::MenuItem->createDefaultInstance($hash);
+		$menuItem->{text} = $sysid;
+		$menuItem->{pageid} = $sysid;
+		$menuItem->{active} = "0";
+		$menuItem->position(0,$posY);
+		my (undef,$h) = $menuItem->dimensions();
+		$posY += $h;  
+		push(@{$systemsMenu->{views}}, $menuItem);												
+	};
+	$systemsMenu->dimensions(1,undef);
+	# make sure systems menu is under home button
+	my $titleHeight = _generateGetTitleHeight($hash);
+	$systemsMenu->position(0,$titleHeight);
+	push(@cells,$systemsMenu);	
+	
+	$hash->{pages}{"home"} = FUIP::Page->createDefaultInstance($hash);
+	$hash->{pages}{"home"}{cells} = \@cells;
+};
+
+
+# defaultPageSystem
+# Create (generate) default page for one FHEM system.
+# sysid should be "home" unless multifhem
+sub defaultPageSystem($$) {
+	my ($hash,$sysid) = @_;
+	my @cells;
+	# home button and rooms menu
+	addStandardCells($hash, \@cells, $sysid); 
 	# get "room views" 
-	my @rooms = FUIP::Model::getRooms($hash->{NAME});
+	my @rooms = FUIP::Model::getRooms($hash->{NAME},$sysid);
 	foreach my $room (@rooms) {
-		my $views = getDeviceViewsForRoom($hash,$room,"overview");
+		my $views = getDeviceViewsForRoom($hash,$room,"overview",$sysid);
 		# we do not show empty rooms here
 		next unless @$views;
 		my @switches;
@@ -1301,16 +1443,16 @@ sub defaultPageIndex($) {
 		autoArrangeNewViews($cell);
 		push(@cells, $cell);
 	};
-	$hash->{pages}{"home"} = FUIP::Page->createDefaultInstance($hash);
-	$hash->{pages}{"home"}{cells} = \@cells;
+	$hash->{pages}{$sysid} = FUIP::Page->createDefaultInstance($hash);
+	$hash->{pages}{$sysid}{cells} = \@cells;
 };
 
 
-sub defaultPageRoom($$){
-	my ($hash,$room) = @_;
-	my $pageid = "room/".$room;
+sub defaultPageRoom($$$){
+	my ($hash,$room,$sysid) = @_;
+	my $pageid = $sysid."/room/".$room;
 	$room = main::urlDecode($room);
-	my $viewsInRoom = getDeviceViewsForRoom($hash,$room,"room");
+	my $viewsInRoom = getDeviceViewsForRoom($hash,$room,"room",$sysid);
 	# sort devices by type
 	my @switches;
 	my @thermostats;
@@ -1388,9 +1530,9 @@ sub defaultPageRoom($$){
 };
 
 
-sub defaultPageDevice($$$){
-    my ($hash,$room,$device) = @_;
-	my $pageid = "device/".$room."/".$device;
+sub defaultPageDevice($$$$){
+    my ($hash,$room,$device,$sysid) = @_;
+	my $pageid = $sysid."/device/".$room."/".$device;
 	my @cells;
 	addStandardCells($hash, \@cells,$pageid);
 	my $deviceView = FUIP::View::ReadingsList->createDefaultInstance($hash);
@@ -1411,9 +1553,19 @@ sub defaultPage($$){
 };
 
 
-sub getDeviceView($$$){
-	my ($hash,$name, $level) = @_;
-	my $device = FUIP::Model::getDevice($hash->{NAME},$name,["TYPE","subType","state","chanNo","model"]);
+sub getDeviceView($$$$){
+	my ($hash,$name,$level,$sysid) = @_;
+	my $view = getDeviceViewInner($hash,$name,$level,$sysid);
+	if($view) {
+		$view->{sysid} = $sysid;
+	};
+	return $view;
+};	
+
+
+sub getDeviceViewInner($$$$){
+	my ($hash,$name,$level,$sysid) = @_;
+	my $device = FUIP::Model::getDevice($hash->{NAME},$name,["TYPE","subType","state","chanNo","model"],$sysid);
 	return undef unless defined $device;
 	# don't show FileLogs or FHEMWEBs
 	# TODO: rooms and types to ignore could be configurable
@@ -1497,6 +1649,12 @@ sub getDeviceView($$$){
 		$view->{height} = 175;
 		return $view;
 	};
+	# Charts
+	if($device->{Internals}{TYPE} eq "SVG"){
+		$view = FUIP::View::Chart->createDefaultInstance($hash);
+		$view->{device} = $name;
+		return $view;
+	};
 	# TODO: Does subType "shutter" exist at all?
 	if($subType =~ /^(shutter|blind)$/){
 		if($level eq 'overview') {
@@ -1517,12 +1675,12 @@ sub getDeviceView($$$){
 }
 
 
-sub getDeviceViewsForRoom($$$) {
-	my ($hash,$room,$level) = @_;
+sub getDeviceViewsForRoom($$$$) {
+	my ($hash,$room,$level,$sysid) = @_;
 	my @views;
-	my $devices = FUIP::Model::getDevicesForRoom($hash->{NAME},$room);
+	my $devices = FUIP::Model::getDevicesForRoom($hash->{NAME},$room,$sysid);
 	foreach my $d (@$devices) {
-		my $deviceView = getDeviceView($hash,$d,$level);
+		my $deviceView = getDeviceView($hash,$d,$level,$sysid);
 		next unless $deviceView;
 		push(@views,$deviceView);
 	};
@@ -1965,23 +2123,44 @@ sub createPage($$) {
 	# creates a new page
 	# there is no check whether the page exists, i.e. might be overwritten
 	my ($hash,$pageid) = @_;
+	
+	main::Log3(undef, 3, "FUIP: Creating page ".$pageid);
+	
+	# home page?
 	if($pageid eq "home"){
 		defaultPageIndex($hash);
-	}else{
-		my @path = split(/\//,$pageid);
-		if($path[0] eq "room" and defined($path[1])) {
-			shift(@path);
-			defaultPageRoom($hash,join("/",@path));
-		}elsif($path[0] eq "device" and defined($path[1]) and defined($path[2])){
-			shift(@path);
-			my $room = shift(@path);
-			# we need to put the paths together again in case there are further "/"
-			# this is in principle rubbish but we need to avoid crashes
-			defaultPageDevice($hash,$room,join("/",@path));
-		}else{		
-			defaultPage($hash,$pageid);
-		};
-	};		
+		return;
+	};
+
+	my @path = split(/\//,$pageid);
+	# To be able to generate a page, we need the system id
+	my $sysid = shift(@path);
+	if(not getSystemUrl($hash,$sysid)) {
+		# Not a proper system id, just create the empty page
+		defaultPage($hash,$pageid);
+		return;
+	};	
+	
+	# System page, i.e. nothing after sysid in the path
+	if($pageid eq $sysid) {
+		defaultPageSystem($hash,$sysid);
+		return;
+	};	
+	
+	if($path[0] eq "room" and defined($path[1])) {
+		shift(@path);
+		defaultPageRoom($hash,join("/",@path),$sysid);
+	}elsif($path[0] eq "device" and defined($path[1]) and defined($path[2])){
+		shift(@path);
+		my $room = shift(@path);
+		# we need to put the paths together again in case there are further "/"
+		# this is in principle rubbish but we need to avoid crashes
+		defaultPageDevice($hash,$room,join("/",@path),$sysid);
+	}else{	
+		# TODO: it might make sense to generate a bit more than an empty page 
+		#       if we know the sysid
+		defaultPage($hash,$pageid);
+	};
 };
 
 
@@ -2162,6 +2341,7 @@ sub settingsImport($$) {
 			$dialog->{width} =  $newObject->{width};
 			$dialog->{height} =  $newObject->{height};
 		};
+		# parent stays like it is
 	}elsif($targettype eq "cell") {
 		# importing as a cell
 		# This always creates a new cell
@@ -2184,8 +2364,10 @@ sub settingsImport($$) {
 			delete $newObject->{posY};
 		};
 		push(@{$hash->{pages}{$urlParams->{pageid}}{cells}},$newObject);
+		$newObject->setParent($hash->{pages}{$urlParams->{pageid}});
 	}elsif($targettype eq "page"){
 		$hash->{pages}{$urlParams->{pageid}} = $newObject;
+		$newObject->setParent($hash);
 	}elsif($targettype eq "viewtemplate") {
 		# make sure to use a new name
 		my $id = $newObject->{id};
@@ -2196,6 +2378,7 @@ sub settingsImport($$) {
 		};
 		$newObject->{id} = $id;
 		$hash->{viewtemplates}{$id} = $newObject;
+		$newObject->setParent($hash);
 		return ("text/plain; charset=utf-8", "OK".$id);
 	};	
 	return("text/plain; charset=utf-8", "OK");
@@ -2311,12 +2494,7 @@ sub CGI_inner($) {
 	# very special logic for tablet-ui kernel
 	if($path[0] ne "fuip" and ( $path[-1] eq "fhem-tablet-ui.js")) {
 		unshift(@path,"fuip");
-		my $longpolltype = main::AttrVal($name,"longPollType","websocket");
-		if($longpolltype eq 'ajax') {
-			$path[-1] = "fuip_tablet_ui_longpoll.js";  
-		}else{
-			$path[-1] = "fuip_tablet_ui.js";
-		};
+		$path[-1] = "fuip_tablet_ui_multifhem.js";  		
 	};	
 	
 	# special logic for weatherdetail and readingsgroup
@@ -2325,6 +2503,7 @@ sub CGI_inner($) {
 								$path[-1] eq "widget_dwdweblink.js" or
 								$path[-1] eq "widget_dwdweblink.css" or
 								$path[-1] eq "widget_readingsgroup.js" or 
+								$path[-1] eq "widget_chart.js" or 
 								$path[-1] eq "widget_fuip_wdtimer.js" or
 								$path[-1] eq "widget_fuip_wdtimer.css" or
 								$path[-1] eq "widget_fuip_colorwheel.js" or
@@ -2692,6 +2871,7 @@ sub load($;$) {
 		delete($conf->{class});
 		$hash->{viewtemplates}{$id} = $class->reconstruct($conf,$hash);
 		$hash->{viewtemplates}{$id}{id} = $id;
+		$hash->{viewtemplates}{$id}->setParent($hash);
 	};
 	# now the pages
 	for my $pageid (keys %$cPages) {
@@ -2699,6 +2879,7 @@ sub load($;$) {
 		my $class = $pageConf->{class}; # This allows for other page-implementations (???)
 		delete($pageConf->{class});
 		$hash->{pages}{$pageid} = $class->reconstruct($pageConf,$hash);
+		$hash->{pages}{$pageid}->setParent($hash);
 	};
 	# there might be view templates, which use other view templates, but "reconstructed"
 	# in opposite order...
@@ -2721,7 +2902,9 @@ sub cloneView($) {
 	my $conf = eval($view->serialize());
 	my $class = $conf->{class}; 
 	delete($conf->{class});
-	return $class->reconstruct($conf,$view->{fuip});
+	my $result = $class->reconstruct($conf,$view->{fuip});
+	$result->setParent($view->{parent});
+	return $result;
 };
 
 
@@ -2859,6 +3042,8 @@ sub setViewSettings($$$$;$) {
 							},[],$h,$prefix);
 		};
 	};
+	# parents need to be refreshed
+	$view->setAsParent();
 };
 
 
@@ -3059,6 +3244,7 @@ sub _setConvert($$) {
 	# create new view template
 	$hash->{viewtemplates}{$templateid} = FUIP::ViewTemplate->createDefaultInstance($hash);
 	$hash->{viewtemplates}{$templateid}{id} = $templateid;
+	$hash->{viewtemplates}{$templateid}->setParent($hash);
 	# create a deep copy of the cell
 	my $instanceStr = $origin->serialize();
 	my $instance = "FUIP::Cell"->reconstruct(eval($instanceStr),$hash);
@@ -3217,6 +3403,7 @@ sub _innerSet($$$)
 		my $newCell = FUIP::Cell->createDefaultInstance($hash);
 		$newCell->{region} = $a->[3] if($a->[3]);	
 		push(@{$hash->{pages}{$pageId}{cells}},$newCell);
+		$newCell->setParent($hash->{pages}{$pageId});
 	}elsif($cmd eq "pagedelete") {
 		#get page id
 		my $pageId = (exists($a->[2]) ? $a->[2] : "");
@@ -3239,6 +3426,7 @@ sub _innerSet($$$)
 		delete $newCell->{posX};
 		delete $newCell->{posY};
 		push(@{$hash->{pages}{$newPageId}{cells}},$newCell);
+		$newCell->setParent($hash->{pages}{$newPageId});
 	}elsif($cmd eq "pagesettings") {	
 		# get page id
 		my $pageId = $a->[2]; 
@@ -3257,6 +3445,7 @@ sub _innerSet($$$)
 			splice(@{$oldCell->{views}},$h->{viewid},1);
 			# put view into new cell 
 			push(@{$newCell->{views}},$container);
+			$container->setParent($newCell);
 		};
 	}elsif($cmd eq "autoarrange") {
 		my $container = _getContainerForCommand($hash,$h);
@@ -3341,13 +3530,12 @@ sub _toJson($){
 };
 
 
-sub _getDeviceList($) {
-	my ($name) = @_;
+sub _getDeviceList($$) {
+	my ($name,$sysid) = @_;
 	my $result = [];
-	
-	my $keys = FUIP::Model::getDeviceKeys($name);
+	my $keys = FUIP::Model::getDeviceKeys($name,$sysid);
 	for my $key (sort { lc($a) cmp lc($b) } @$keys) {
-		my $device = FUIP::Model::getDevice($name,$key,["TYPE","room","alias"]);
+		my $device = FUIP::Model::getDevice($name,$key,["TYPE","room","alias"],$sysid);
 		push(@$result, {
 			NAME => $key,
 			TYPE => $device->{Internals}{TYPE},
@@ -3355,6 +3543,24 @@ sub _getDeviceList($) {
 			alias => $device->{Attributes}{alias}
 			});
 	};
+	return $result;
+};
+
+
+sub keyToString($) {
+	my $key = shift;
+	my $result = $key->{type}.':';
+	if($key->{type} eq "page") { 
+		$result .= $key->{pageid};
+	}elsif($key->{type} eq 'cell') {
+		$result .= $key->{cellid};
+	}elsif($key->{type} eq 'dialog') {
+		$result .= $key->{fieldid};
+	}elsif($key->{type} eq 'viewtemplate') {
+		$result .= $key->{templateid};
+	}elsif($key->{type} eq 'view') {
+		$result .= $key->{viewid};
+	};	
 	return $result;
 };
 
@@ -3386,6 +3592,9 @@ sub _traverseViews($$;$$) {
 		};
 		return;
 	};	
+	
+	# main::Log3(undef,1,"Traversing ".keyToString($startkey));
+	
 	my $key = { %$startkey };
 	# traverse single page
 	if($startkey->{type} eq "page") { 
@@ -3410,6 +3619,7 @@ sub _traverseViews($$;$$) {
 		&$func($key,$startobj);
 		# check for dialogs (popups)
 		for my $fieldname (keys %$startobj) { 
+			next if $fieldname eq 'parent';
 			next unless blessed($startobj->{$fieldname}) and $startobj->{$fieldname}->isa("FUIP::Dialog");
 			$key->{type} = "dialog";
 			if($key->{fieldid}) {
@@ -3422,6 +3632,40 @@ sub _traverseViews($$;$$) {
 		};
 	};	
 };
+
+
+# simplified form to traverse views of the currently rendered "thing",
+# usually called the current page, even if it is a dialog, view template
+# or the whole set of view templates
+# It does not use the "key" part of the callback, as this is anyway not
+# really clean
+sub _traverseViewsOfPage($$$) {
+	my ($hash,$func,$page) = @_;
+	my $key = {};
+	
+	# define callback for the normal _traverse function
+	my $cb = sub ($$) {
+				my ($key, $view) = @_;
+				&$func($view);
+			};
+	
+	if(blessed($page)){ # dialog or view template
+		$key->{type} = 'dialog';  # does not really matter here
+		_traverseViews($hash,$cb,$key,$page);
+	}elsif(ref($page) eq "HASH") { # view template overview
+		# in this case, the hash elements should contain something with views
+		# e.g. for view template overview
+		$key->{type} = 'viewtemplate';
+		for my $elem (values %$page) {
+			_traverseViews($hash,$cb,$key,$elem);
+		};	
+	}else{ # should be a page id
+		return unless exists $hash->{pages}{$page};
+		$key->{type} = 'page';
+		_traverseViews($hash,$cb,$key,$hash->{pages}{$page});
+	};
+};
+
 
 
 sub _getWhereUsedList($$;$); # recursion
@@ -3755,8 +3999,9 @@ sub Get($$$)
 		};	
 	}elsif($opt eq "viewsByDevices") {
 		my @views;
-		foreach my $i (2 .. $#{$a}) {
-			my $view = getDeviceView($hash, $a->[$i],"overview");
+		# format is "get viewsByDevices <sysid> <device> <device> ..."
+		foreach my $i (3 .. $#{$a}) {
+			my $view = getDeviceView($hash, $a->[$i],"overview",$a->[2]);
 			if(not defined($view)) {
 				$view = FUIP::View::STATE->createDefaultInstance($hash);
 				$view->{device} = $a->[$i];
@@ -3776,12 +4021,15 @@ sub Get($$$)
 		my $page = $hash->{pages}{$pageId};	
 		return _toJson($page->getConfigFields());			
 	}elsif($opt eq "devicelist"){
-		return _toJson(_getDeviceList($hash->{NAME}));
-	}elsif($opt eq "readingslist") {
 		# TODO: check if $a->[2] exists
-		return _toJson(FUIP::Model::getReadingsOfDevice($hash->{NAME},$a->[2]));
+		return "\"get devicelist\" needs a system id" unless(defined($a->[2]));
+		return _toJson(_getDeviceList($hash->{NAME},$a->[2]));
+	}elsif($opt eq "readingslist") {
+		# TODO: check if $a->[2] and $a->[3] exists
+		return _toJson(FUIP::Model::getReadingsOfDevice($hash->{NAME},$a->[2],$a->[3]));
 	}elsif($opt eq "sets") {
-		return _toJson(FUIP::Model::getSetsOfDevice($hash->{NAME},$a->[2]));
+		# TODO: check if $a->[2] and $a->[3] exists
+		return _toJson(FUIP::Model::getSetsOfDevice($hash->{NAME},$a->[2],$a->[3]));
 	}elsif($opt eq "docu") {
 		return _getDocu($hash,$a->[2]);
 	}else{

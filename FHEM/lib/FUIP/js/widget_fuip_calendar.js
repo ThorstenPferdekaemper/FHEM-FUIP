@@ -276,18 +276,7 @@ var Modul_fuip_calendar = function () {
 		// red background for elem if date is a weekend or holiday
 		var str = date.toISOString().substr(0,10);
 		var cmd = '{ IsWe("'+str+'") }';
-		$.ajax({
-			async: true,
-			timeout: 3000,
-			cache: false,
-			url: $("meta[name='fhemweb_url']").attr("content") || "/fhem/",
-			fwcsrf: ftui.config.csrf?ftui.config.csrf:'',
-			data: {
-				cmd: cmd,
-				XHR: "1",
-				fwcsrf: ftui.config.csrf?ftui.config.csrf:''
-			}
-		})
+		ftui.sendFhemCommand(cmd,elem)
 		.done(function(data ) {
 			if(data.substr(0,1) == '1') {
 				elem.css("background-color","rgba(255,0,0,0.2)");
@@ -402,24 +391,15 @@ var Modul_fuip_calendar = function () {
 		var offset = elem.data('weekOffset') * 7;
 		var include = "";
 		if(Array.isArray(device)) {
-			include = " include:" + device.join(',');	
+			if(device.length > 1) {
+			    include = " include:" + device.join(',');	
+			};	
 			device = device[0];
 		};	
 		var from = offset - 7;
 		var to = offset + 7;
 		var cmd = "get " + device + ' events limit:from='+from+'d,to='+to+'d format:custom={ sprintf(\'{"startSec":"%s", "start":"%s", "endSec":"%s", "end":"%s", "durationSec":"%s", "duration":"%s", "summary":"%s", "description":"%s", "location":"%s", "classification":"%s", "mode":"%s"}\', $t1, $T1, $t2, $T2, $d, $D, main::urlEncode($S), main::urlEncode($DS), $L, $CL,$M) }' + include; 
-		$.ajax({
-			async: true,
-			timeout: 15000,
-			cache: false,
-			url: $("meta[name='fhemweb_url']").attr("content") || "/fhem/",
-			fwcsrf: ftui.config.csrf?ftui.config.csrf:'',
-			data: {
-				cmd: cmd,
-				XHR: "1",
-				fwcsrf: ftui.config.csrf?ftui.config.csrf:''
-			}
-		})
+		ftui.sendFhemCommand(cmd,elem)
 		.done(function(data ) {
 			renderWeek(elem,data);
 		})

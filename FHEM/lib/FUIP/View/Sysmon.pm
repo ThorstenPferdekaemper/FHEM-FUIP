@@ -44,10 +44,10 @@ sub dimensions($;$$){
 };	
 
 
-sub getDevicesForValueHelp($) {
+sub getDevicesForValueHelp($$) {
 	# Return devices with TYPE WeekdayTimer
-	my ($fuipName) = @_;
-	return FUIP::_toJson(FUIP::Model::getDevicesForType($fuipName,"SYSMON"));
+	my ($fuipName,$sysid) = @_;
+	return FUIP::_toJson(FUIP::Model::getDevicesForType($fuipName,"SYSMON",$sysid));
 }		
 
 	

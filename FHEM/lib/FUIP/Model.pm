@@ -7,25 +7,17 @@ use warnings;
 use JSON 'from_json';
 
 my %buffer;
-# FUIP-name => {rooms => [<room>],
-#				fhemwebUrl => <fhembwebUrl>,
-#				devices => {<device-name> => { Attributes => { <attr-name> => <attr-value> },
-#											   Readings => { <readings-name> => <readings-value> },
-#                                              Internals => { <name> => <value> } } },
-#				room-device => {<room> => [<device-name>]} }
+# FUIP-name => url => 
+#    {rooms => [<room>],
+#	  devices => {<device-name> => { Attributes => { <attr-name> => <attr-value> },
+#		  						     Readings => { <readings-name> => <readings-value> },
+#                                    Internals => { <name> => <value> } } },
+#	  room-device => {<room> => [<device-name>]} }
 
 
 sub refresh($) {
 	my ($name) = @_;
 	delete $buffer{$name};
-};
-
-
-sub getFhemwebUrl($) {
-	my ($name) = @_;
-	$buffer{$name}{fhemwebUrl} = main::AttrVal($name,"fhemwebUrl",0) 
-									unless defined($buffer{$name}{fhemwebUrl});
-	return $buffer{$name}{fhemwebUrl};
 };
 
 
@@ -100,18 +92,50 @@ sub _sendRemoteCommand($$$) {
 };
 
 
-sub callCoding($$;$) {
-	my ($fuipName, $codingLines, $forceLocal) = @_;
+sub _getUrl($$) {
+	my ($fuipName,$sysid) = @_;
+	# Since "multifhem", the system id needs to be given explicitely
+	# "local" means to use the FHEM where FUIP is running on
+	# However, the old version might still kick in here and this
+	# means that the sysid might become 1
+	my $hash = $main::defs{$fuipName};
+	#if( not $sysid or $sysid == 1 ){
+	#    $sysid = FUIP::getDefaultSystem($hash);
+	#};	
+	my $url = FUIP::getSystemUrl($hash,$sysid);
+	if( not $url ){
+	    # TODO: Do not give up, but create proper error message
+	    #FUIP::giveUp('Model could not determine URL');
+		
+		#get URL of default system as fallback
+		$url = FUIP::getSystemUrl($hash,FUIP::getDefaultSystem($hash));
+	};	
+	return $url;
+};
+
+
+sub callCoding($$$) {
+	my ($fuipName, $codingLines, $sysid) = @_;
 	# $fuipName: Name of the FUIP instance, usually something like "ui"
 	# $codingLines: Coding as an array of lines without ";" (or ";;")
 	# it is expected that the coding returns something which works with Dumper
-	my $url = $forceLocal ? undef : getFhemwebUrl($fuipName);
+	
+	my $url = _getUrl($fuipName,$sysid);
+	
 	my $result;
-	if($url) {
+	if($url eq 'local') {
+		# We are using the FHEM instance this FUIP is running on
+		my $coding = join(";",@$codingLines);
+		$result = eval($coding);
+		if($@) {
+			main::Log3(undef,1,"FUIP::Model::callCoding: ".$@);
+		};
+	}else{
 		# make an anonymous sub, call it and return something eval'uable
 		my $coding = '{ my $func = sub { '
 					.join(";;",@$codingLines)
 					.' };;
+					use Data::Dumper;;
 					return Dumper(&$func());; }';
 		my $resultStr = _sendRemoteCommand($fuipName,$url,$coding);
 		# older versions of Dumper start with "$VAR..."
@@ -123,39 +147,33 @@ sub callCoding($$;$) {
 			main::Log3(undef,1,"FUIP::Model::callCoding: ".$@);
 			main::Log3(undef,1,"FUIP::Model::callCoding: ".$resultStr);
 		};
-	}else{
-		my $coding = join(";",@$codingLines);
-		$result = eval($coding);
-		if($@) {
-			main::Log3(undef,1,"FUIP::Model::callCoding: ".$@);
-		};
 	}
 	return $result;
 };
 	
 
-sub getDeviceKeys($) {
+sub getDeviceKeys($$) {
 # get the names of all devices
-	my ($name) = @_;
+	my ($name,$sysid) = @_;
 	# buffered?
-	return $buffer{$name}{devicekeys} if(defined($buffer{$name}{devicekeys}));
+	return $buffer{$name}{$sysid}{devicekeys} if(defined($buffer{$name}{$sysid}{devicekeys}));
 	# not buffered, determine
 	
 	my $coding = [
 		'my @devices = (keys %main::defs)',
 		'return \@devices'
 	];
-	my $devices = callCoding($name,$coding);	
-	$buffer{$name}{devicekeys} = $devices;
+	my $devices = callCoding($name,$coding,$sysid);	
+	$buffer{$name}{$sysid}{devicekeys} = $devices;
 	return $devices;
 };	
 
 
-sub getRooms($) {
+sub getRooms($$) {
 # get all rooms
-	my ($name) = @_;
+	my ($name,$sysid) = @_;
 	# buffered?
-	return @{$buffer{$name}{rooms}} if(exists($buffer{$name}{rooms}));
+	return @{$buffer{$name}{$sysid}{rooms}} if(exists($buffer{$name}{$sysid}{rooms}));
 	# not buffered, determine rooms
 
 	# we do not return the room "hidden" or "Unsorted"
@@ -172,16 +190,18 @@ sub getRooms($) {
 		'my @rooms = keys(%rooms)',
 		'return \@rooms'
 	];
-	my $unsortedRooms = callCoding($name,$coding);
+	my $unsortedRooms = callCoding($name,$coding,$sysid);
+	# in case of connection issues, this returns as an undefined reference
+	$unsortedRooms = [] unless defined $unsortedRooms;
 	my @rooms = sort(@$unsortedRooms);
-	$buffer{$name}{rooms} = \@rooms;
+	$buffer{$name}{$sysid}{rooms} = \@rooms;
 	return @rooms;
 };
 	
 	
-sub getReadingsOfDevice($$) {
+sub getReadingsOfDevice($$$) {
 # get all readings of one or multiple device(s) (only the reading names, without values)
-	my ($name,$deviceStr) = @_;
+	my ($name,$deviceStr,$sysid) = @_;
 	my @devices = split /,/ , $deviceStr;
 	my %resultHash;
 	for my $device (@devices) {
@@ -190,7 +210,7 @@ sub getReadingsOfDevice($$) {
 			'my @result = (keys(%{$main::defs{"'.$device.'"}{READINGS}}))',
 			'return \@result'
 		];
-		my $readings = callCoding($name,$coding);
+		my $readings = callCoding($name,$coding,$sysid);
 		for my $reading (@$readings) {
 			$resultHash{$reading} = 1;
 		};	
@@ -200,11 +220,11 @@ sub getReadingsOfDevice($$) {
 };		
 	
 	
-sub getDevicesForRoom($$) {
+sub getDevicesForRoom($$$) {
 # get all devices for a room
-	my ($name,$room) = @_;
+	my ($name,$room,$sysid) = @_;
 	# buffered?
-	return $buffer{$name}{"room-device"}{$room} if(defined($buffer{$name}{"room-device"}{$room}));
+	return $buffer{$name}{$sysid}{"room-device"}{$room} if(defined($buffer{$name}{$sysid}{"room-device"}{$room}));
 	# not buffered, determine
 	
 	my $coding = [
@@ -215,21 +235,21 @@ sub getDevicesForRoom($$) {
 		'}',
 		'return \@devices'	
 	];
-	my $devices = callCoding($name,$coding);
+	my $devices = callCoding($name,$coding,$sysid);
 	@$devices = sort(@$devices);
-	$buffer{$name}{"room-device"}{$room} = $devices;
+	$buffer{$name}{$sysid}{"room-device"}{$room} = $devices;
 	return $devices;
 };	
 	
 	
-sub getDevice($$$) {
+sub getDevice($$$$) {
 # get certain attributes, readings, internals for a device
-	my ($name,$devName,$fields) = @_;
+	my ($name,$devName,$fields,$sysid) = @_;
 	# do we have the device 
-	my $device = $buffer{$name}{devices}{$devName};
+	my $device = $buffer{$name}{$sysid}{devices}{$devName};
 	if(not defined($device)) {
-		$buffer{$name}{devices}{$devName} = {Attributes => {}, Readings => {}, Internals => {}, undefs => []};
-		$device = $buffer{$name}{devices}{$devName};
+		$buffer{$name}{$sysid}{devices}{$devName} = {Attributes => {}, Readings => {}, Internals => {}, undefs => []};
+		$device = $buffer{$name}{$sysid}{devices}{$devName};
 	};
 	# which fields are missing?
 	my %fieldHash;
@@ -240,13 +260,13 @@ sub getDevice($$$) {
 	delete(@fieldHash{@{$device->{undefs}}});    # non-existing to avoid asking again
 	# anything left?
 	if(%fieldHash or not @$fields) {
-		my $url = getFhemwebUrl($name);
 		my $cmd = 'jsonlist2 '.$devName.' '.join(' ',keys %fieldHash);
 		my $jsonResult;
-		if($url) {
-			$jsonResult = _sendRemoteCommand($name,$url,$cmd);
-		}else{
+		my $url = _getUrl($name,$sysid);
+		if($url eq 'local') {
 			$jsonResult = main::fhem($cmd,1);
+		}else{
+			$jsonResult = _sendRemoteCommand($name,$url,$cmd);
 		};
 		# the json "object" is always a proper object, but nevertheless some Perl JSON 
 		# implementations throw an error sometimes without allow_nonref
@@ -279,13 +299,13 @@ sub getDevice($$$) {
 
 # get all sets incl. options for device	
 # (same as in FHEMWEB)
-sub getSetsOfDevice($$) {
-	my ($fuipName, $devName) = @_;
+sub getSetsOfDevice($$$) {
+	my ($fuipName, $devName, $sysid) = @_;
 	# buffered?
-	return $buffer{$fuipName}{devicesets}{$devName} if(defined($buffer{$fuipName}{devicesets}{$devName}));
+	return $buffer{$fuipName}{$sysid}{devicesets}{$devName} if(defined($buffer{$fuipName}{$sysid}{devicesets}{$devName}));
 	# not buffered, determine
 	my $coding = [ 'return main::getAllSets("'.$devName.'")' ];
-	my $resultStr = callCoding($fuipName,$coding);
+	my $resultStr = callCoding($fuipName,$coding,$sysid);
 	# split into sets
 	my %result;
 	for my $setStr (split(" ",$resultStr)) {
@@ -293,30 +313,30 @@ sub getSetsOfDevice($$) {
 		my @options = split(",",$optStr);
 		$result{$set} = \@options;
 	};
-	$buffer{$fuipName}{devicesets}{$devName} = \%result;
+	$buffer{$fuipName}{$sysid}{devicesets}{$devName} = \%result;
 	return \%result;
 };	
 	
 	
-sub getDevicesForReading($$) {
+sub getDevicesForReading($$$) {
 # get all devices which have a certain reading
-	my ($name,$reading) = @_;
+	my ($name,$reading,$sysid) = @_;
 	# buffered?
-	return $buffer{$name}{"reading-device"}{$reading} if(defined($buffer{$name}{"reading-device"}{$reading}));
+	return $buffer{$name}{$sysid}{"reading-device"}{$reading} if(defined($buffer{$name}{$sysid}{"reading-device"}{$reading}));
 	# not buffered, determine
 	my $coding = [ 
 		'my @devices = grep { defined $main::defs{$_}{READINGS}{"'.$reading.'"} } keys %main::defs',
 		'return \@devices'
 	];
-	my $devices = callCoding($name,$coding);	
+	my $devices = callCoding($name,$coding,$sysid);	
 	@$devices = sort(@$devices);
-	$buffer{$name}{"reading-device"}{$reading} = $devices;
+	$buffer{$name}{$sysid}{"reading-device"}{$reading} = $devices;
 	return $devices;
 };	
 	
 
-sub getGplot($$) {
-	my ($name,$device) = @_;
+sub getGplot($$$) {
+	my ($name,$device,$sysid) = @_;
 	my $coding = [	
 		'my $filename = $main::defs{"'.$device.'"}{GPLOTFILE}', 
 		'return undef unless $filename',
@@ -325,38 +345,38 @@ sub getGplot($$) {
 		'my %conf = main::SVG_digestConf($cfg,$plot)',  
 		'return { srcDesc => $srcDesc, conf => \%conf }'
 	];
-	return callCoding($name,$coding);
+	return callCoding($name,$coding,$sysid);
 };	
 	
 	
-sub readTextFile($$;$) {
-	my ($name,$filename,$forceLocal) = @_;
+sub readTextFile($$$) {
+	my ($name,$filename,$sysid) = @_;
 	my $coding = [
 		'open(FILE, $main::attr{global}{modpath}."/'.$filename.'") or return []',
 		'my @result = <FILE>',
 		'close(FILE)',
 		'return \@result'
 	];
-	my $result = callCoding($name,$coding,$forceLocal);
+	my $result = callCoding($name,$coding,$sysid);
 	return join("",@$result);
 };	
 
 
-sub getStylesheetPrefix($) {
-	my ($name) = @_;
+sub getStylesheetPrefix($$) {
+	my ($name,$sysid) = @_;
 	my $coding = [
 		'return "" unless $main::FW_wname',
 		'return main::AttrVal($main::FW_wname,"stylesheetPrefix", "")'
 	];
-	my $stylesheetPrefix = callCoding($name,$coding);
+	my $stylesheetPrefix = callCoding($name,$coding,$sysid);
 	$stylesheetPrefix = "" if $stylesheetPrefix eq "default";
 	return $stylesheetPrefix;
 };
 
 
-sub getDevicesForType($$) {
+sub getDevicesForType($$$) {
 	# Return devices with TYPE SVG
-	my ($fuipName,$type) = @_;
+	my ($fuipName,$type,$sysid) = @_;
 	my $coding = [
 		'my @result',
 		'for my $dev (keys %main::defs) {',
@@ -365,7 +385,7 @@ sub getDevicesForType($$) {
 		'}',
 		'return \@result'
 	];
-	return FUIP::Model::callCoding($fuipName,$coding);	
+	return FUIP::Model::callCoding($fuipName,$coding,$sysid);	
 }	
 	
 1;

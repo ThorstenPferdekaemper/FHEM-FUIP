@@ -17,7 +17,7 @@ sub dimensions($;$$){
 	}	
 	return ($self->{width},$self->{height});
 };	
-	
+
 	
 sub getHTML_swiper($$){
 	my ($self,$locked) = @_;
@@ -36,7 +36,7 @@ sub getHTML_swiper($$){
 		$result .= '
 		<li>
 			<div style="position:absolute;left:'.($self->{navbuttons} eq "on" ? '37' : '0').'px;width:'.($self->{navbuttons} eq "on" ? 'calc(100% - 74px)' : '100%').';">
-				<div data-viewid="'.$i.'"'.($locked ? '' : ' class="fuip-draggable'.$resizable.'"').' style="';
+				<div data-viewid="'.$i.'"'.$self->getHTML_sysid($view).($locked ? '' : ' class="fuip-draggable'.$resizable.'"').' style="';
 		if($width eq "auto") {
 			$result .= 'width:100%;';
 			# It seems that the swiper widget does some funny computations for the height, so 100% and calculations do not 
@@ -76,7 +76,7 @@ sub getHTML($$){
 		my ($left,$top) = $view->position();
 		my ($width,$height) = $view->dimensions();
 		my $resizable = ($view->isResizable() ? " fuip-resizable" : "");
-		$result .= '<div><div data-viewid="'.$i.'"'.($locked ? '' : ' class="fuip-draggable'.$resizable.'"').' style="position:absolute;left:'.$left.'px;top:'.$top.'px;';
+		$result .= '<div><div data-viewid="'.$i.'"'.$self->getHTML_sysid($view).($locked ? '' : ' class="fuip-draggable'.$resizable.'"').' style="position:absolute;left:'.$left.'px;top:'.$top.'px;';
 		if($width eq "auto") {
 			$result .= 'width:calc(100% - '.$left.'px);';
 			$result .= 'height:calc(100% - '.$top.'px);'; 
@@ -212,12 +212,17 @@ sub getStructure($) {
 
 
 sub getDefaultFields($;$) {
+	# TODO: Why is this here and not using the version in View.pm
 	# class method
 	# returns view structure with all "const" defaults filled
 	# and defaulting set to "true"
 	# $includes is a list of field types which are normally not visible
 	my ($class,$includesInternals) = @_;
 	my $result = $class->getStructure();  # without values
+	# always add sysid
+	# TODO: Maybe add on top somewhere
+	# TODO: Maybe do the same for the class, if not there anyway
+	push(@$result, { id => "sysid", type => "sysid" } );
 	
 	if(not $includesInternals) {
 		my @withoutInternals = grep {$_->{type} ne "internal"} @$result;

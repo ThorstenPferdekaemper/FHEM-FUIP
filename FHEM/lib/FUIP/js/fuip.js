@@ -1155,11 +1155,13 @@ async function asyncPostImportCommand(content,type,pageid) {
 };
 		
 
-async function callBackendFunc(funcname,args) {
+async function callBackendFunc(funcname,args,sysid) {
 	let argstr = '"' + fuipName() + '"';
 	if(args.length) {
 		argstr += ',"' + args.join('","') + '"';
 	};	
+	// add system id
+	argstr += ',"' + sysid + '"';
 	let cmd = '{' + funcname + '(' + argstr + ')}';
 	let result = await sendFhemCommandLocal(cmd);	
 	return json2object(result);	
@@ -1463,7 +1465,7 @@ function viewAddNewByDevice(arrayName) {
 			});
 	};	
 	// bring up list of devices
-	valueHelpForDevice(arrayName, processDevices, true);
+	valueHelpForDevice(arrayName, processDevices, 'devices');
 };	
 					
 					
@@ -1713,6 +1715,47 @@ function createClassField(selectedClass,prefix) {
 };
 	
 	
+function createSysidField(selectedSysid,prefix) {
+	let fieldName = prefix + 'sysid';
+	let sysids =  ftui.getSystemIds();
+	
+	//Do not show if there is only one system anyway
+	if(sysids.length < 2) {
+		return null;
+	};	
+	
+	//Add <inherit> as (the first) selectable value
+	sysids.unshift('&lt;inherit&gt;');
+
+	//If the selected system id is not there, add it
+	if(selectedSysid != '<inherit>' && sysids.indexOf(selectedSysid) < 0) {
+		sysids.push(selectedSysid);	
+	};	
+	
+	// a select element with all system ids as option
+	let theFieldElem = $("<select class='fuip' name='" + fieldName + "' id='" + fieldName + "' " +
+		                 "style='visibility: visible;' />");
+	for(var i = 0; i < sysids.length; i++) {
+		let optionElem = $("<option class='fuip' value='" + sysids[i] + "'>" + sysids[i] + "</option>");
+		if(sysids[i] == selectedSysid || i == 0 && selectedSysid == '<inherit>') {
+			optionElem.attr("selected","selected");
+		};
+		theFieldElem.append(optionElem);	
+	};
+	
+	// table cell with the dummy checkbox field in front
+	let td = $("<td style='text-align:left;'><input type='checkbox' style='visibility:hidden;'></td>");
+	td.append(theFieldElem);
+	// and the full table line
+	// TODO: is the docid really good? Should this not be sth like "Class-sysid"?
+	let tr = $("<tr data-docid='sysid'>" +
+			   "<td style='text-align:left;'><label for='" + fieldName + 
+			   "' style='white-space:nowrap'>System Id</label></td></tr>");
+	tr.append(td);
+	return tr;		
+};	
+	
+	
 function getIcons() {
 	//if(document.styleSheets.length == 0) {
 	//	window.setTimeout(getIcons,1000);
@@ -1812,12 +1855,30 @@ function getFullRefName(fieldname,reftype) {
 	let shortRefName = settings[reftype];
 	if(!shortRefName) 
 		return false; 
-	var nameArray = fieldname.split("-").slice(0,-1);
-	nameArray.push(shortRefName);
-	return nameArray.join("-");
+	return getFullName(fieldname,shortRefName);
 };
-	
-	
+
+
+// replace last part of the field name
+function getFullName(fieldname,localName,type) {
+	let parts = -1;
+	if(type == 'device-reading') 
+	    parts = -2;	
+	let nameArray = fieldname.split("-").slice(0,parts);
+	nameArray.push(localName);
+	return nameArray.join("-");
+};	
+
+
+// gets sysid from the current view
+// fieldname is any field of the view
+function getSysidFromView(fieldname,type) {
+	let sysfield = getFullName(fieldname,'sysid',type);
+	// TODO: What if sysfield is empty?
+	return $('#'+sysfield).val();
+};	
+
+
 async function valueHelp(fieldName,type) {
 	// device help has its own function
 	if(type == "device" || type == "devices" || type == "device-reading" && fieldName.match(/-device$/) ) {
@@ -1825,7 +1886,7 @@ async function valueHelp(fieldName,type) {
 			function(value) {
 				$('#'+fieldName).val(value);
 				$('#'+fieldName).trigger("input");
-			},(type == "devices"));
+			},type);
 		return;
 	};	
 	// setoptions
@@ -1854,7 +1915,8 @@ async function valueHelp(fieldName,type) {
 		return;
 	};	
 	// all others
-	var name = fuipName();
+	let name = fuipName();
+	let sysid = getSysidFromView(fieldName,type);
 	createValueHelpDialog(function(){
 		var selected = $('#valuehelptable').attr('data-selected');
 		if(!selected) { return; };
@@ -1888,7 +1950,7 @@ async function valueHelp(fieldName,type) {
 			deviceFieldName = fieldName.replace(/-reading$/,"-device");
 		};	
 		var device = $('#'+deviceFieldName).val();
-		var cmd = "get " + name + " readingslist " + device;
+		var cmd = "get " + name + " readingslist " + device + " " + sysid;
 		sendFhemCommandLocal(cmd).done(function(readingsListJson){
 			var readingsList = json2object(readingsListJson);
 			var valueDialog = $( "#valuehelp" );
@@ -2118,8 +2180,8 @@ function createValueHelpTable(tabDef,selected,multiSelect) {
 };	
 
 
-
-async function valueHelpForDevice(fieldTitle, callbackFunction, multiSelect) {
+// type: device, devices or device-reading	
+async function valueHelpForDevice(fieldTitle, callbackFunction, type) {
 	var name = fuipName();
 	createValueHelpDialog(function(){
 		var resultArray = [];
@@ -2127,7 +2189,7 @@ async function valueHelpForDevice(fieldTitle, callbackFunction, multiSelect) {
 			resultArray.push($(this).attr('data-key'));
 		});	
 		$( "#valuehelp" ).dialog("close");
-		if(multiSelect) {
+		if(type == 'devices') {  // multi select
 			callbackFunction(resultArray);
 		}else if(resultArray.length) {
 			callbackFunction(resultArray[0]);
@@ -2137,6 +2199,11 @@ async function valueHelpForDevice(fieldTitle, callbackFunction, multiSelect) {
 	valueDialog.dialog("option","title","Possible values for " + fieldTitle); 
 	valueDialog.html("Please wait...");
 	valueDialog.dialog("open");
+	
+	// get system id
+	// TODO: This won't work if called to create views by devices
+	let sysid = getSysidFromView(fieldTitle,type);
+	
 	// do we have a device filter from the view?
 	let field = $("#"+fieldTitle);
 	let allDevices = true;
@@ -2144,12 +2211,12 @@ async function valueHelpForDevice(fieldTitle, callbackFunction, multiSelect) {
 	if(field.length) {
 		let fieldSettings = field.data("settings");
 		if(fieldSettings && fieldSettings.hasOwnProperty("filterfunc")) {
-			deviceFilter = await callBackendFunc(fieldSettings.filterfunc,[]);
+			deviceFilter = await callBackendFunc(fieldSettings.filterfunc,[],sysid);
 			allDevices = false;
 		};
 	};	
 	
-	var cmd = "get " + name + " devicelist";
+	let cmd = "get " + name + " devicelist " + sysid; 
 	sendFhemCommandLocal(cmd).done(function(deviceListJson){
 		var deviceList = json2object(deviceListJson);
 		// filter, if needed
@@ -2229,7 +2296,7 @@ async function valueHelpForDevice(fieldTitle, callbackFunction, multiSelect) {
 				}	
 			});
 			$( "#valuehelptable tbody tr" ).on( "click", function() {
-				if(multiSelect) {
+				if(type == 'devices') {
 					if($(this).attr('data-selected') == 'X') {
 						$(this).attr('data-selected','');
 						$(this).children("td").removeAttr("style"); 	
@@ -2401,6 +2468,9 @@ async function valueHelpForOptions(fieldName, callbackFunction,multiSelect) {
 		createValueHelpTable(tabDef,selected,multiSelect);
 	};	
 	
+	// get sysid
+	let sysid = getSysidFromView(fieldName);
+	
 	// get set name and device name
 	// reference function to call? (Get options from backend function.)
 	let settings = $('#'+fieldName).data("settings");
@@ -2414,13 +2484,13 @@ async function valueHelpForOptions(fieldName, callbackFunction,multiSelect) {
 				args.push($("#"+fullRefName).val());
 			};	
 		};	
-		let opts = await callBackendFunc(settings.reffunc,args);
+		let opts = await callBackendFunc(settings.reffunc,args,sysid);
 		innerValueHelp(fieldName,opts);
 	}else{
 		var refSetFullName = getFullRefName(fieldName,"refset");
 		if(refSetFullName) {  // i.e. we have a "refset"
 			var refDeviceFullName = getFullRefName(refSetFullName, "refdevice");
-			var cmd = "get " + name + " sets " + $("#"+refDeviceFullName).val();
+			var cmd = "get " + name + " sets " + $("#"+refDeviceFullName).val() + " " + sysid;
 			sendFhemCommandLocal(cmd).done(function(json){
 				var sets = json2object(json);
 				innerValueHelp(fieldName,sets[$("#"+refSetFullName).val()]);
@@ -2888,6 +2958,7 @@ function createSettingsTable(settings,prefix) {
 	let resultTab = $("<table/>");
 	let vArray = false;
 	let viewType = false;
+	// class field
 	for(var i = 0; i < settings.length; i++){
 		if(settings[i].type != 'class') { continue; }; 
 		viewType = settings[i].value;
@@ -2898,8 +2969,15 @@ function createSettingsTable(settings,prefix) {
 		resultTab.append($(createClassField(viewType,prefix)));
 		break;
 	};
+	// sysid field
+	for(var i = 0; i < settings.length; i++){
+		if(settings[i].type != 'sysid') { continue; }; 
+		resultTab.append($(createSysidField(settings[i].value,prefix)));
+		break;
+	};
 	for(var i = 0; i < settings.length; i++){
 		if(settings[i].type == 'class') { continue; };
+		if(settings[i].type == 'sysid') { continue; };
 		if(settings[i].type == 'dimension') { continue; };
 		if(settings[i].type == 'variables') { continue; };
 		if(settings[i].type == 'flexfields') { continue; };

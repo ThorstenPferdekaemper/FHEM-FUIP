@@ -95,6 +95,7 @@ sub serialize($;$) {
 		# fuip is the reference to the FUIP object, don't serialize this
 		next if $field eq "fuip";
 		next if $field eq "class";
+		next if $field eq "parent";
 		# do not serialize the viewtemplate instance, only store the id
 		next if $field eq "viewtemplate";
 		$result .= ",\n".$blanks."   ".$field." => ".FUIP::View::serializeRef($self->{$field},$indent);
@@ -121,7 +122,9 @@ sub reconstruct($$$) {
 		# including usage on popups (on popups...), which are part of templates.
 		push(@instancesWithoutTemplates,$self);
 	};	
-	return bless($self,$class);
+	$self = bless($self,$class);
+	$self->setAsParent();
+	return $self;
 };
 
 

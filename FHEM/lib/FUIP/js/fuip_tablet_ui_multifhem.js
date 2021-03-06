@@ -232,36 +232,72 @@ var Modul_widget = function () {
         me.elements = $('[data-type="' + me.widgetname + '"]:not([data-ready])', me.area);
         me.elements.each(function (index) {
             var elem = $(this);
-            elem.attr("data-ready", "");
-            me.init_attr(elem);
-            elem = me.init_ui(elem);
+			// store elem globally in order to find out 
+			// the system id if needed
+			ftui.currentElem = elem;			
+			try {
+				elem.attr("data-ready", "");
+				me.init_attr(elem);
+				elem = me.init_ui(elem);
+			}finally{
+				// invalidate current element to avoid getting the 
+				// wrong element later
+				ftui.currentElem = null;
+			};	
         });
     }
 
     function addReading(elem, key) {
         var data = elem.data(key);
 
-        if (ftui.isValid(data)) {
+        if (!ftui.isValid(data)) {
+			return;
+		};	
 
-            if ($.isArray(data) || !data.toString().match(/^[#\.\[][^:]*$/)) {
-                var device = elem.data('device');
-                if (!$.isArray(data)) {
-                    data = new Array(data.toString());
-                }
-                var i = data.length;
-                while (i--) {
-                    var reading = data[i];
-                    // fully qualified readings => DEVICE:READING
-                    if (reading.match(/:/)) {
-                        var fqreading = reading.split(':');
-                        device = fqreading[0].replace('[', '');
-                        reading = fqreading[1].replace(']', '');
-                    }
-                    // fill objects for mapping from FHEMWEB paramid to device + reading
-                    me.addSubscription(device, reading);
-
-                }
-            }
+        if (!$.isArray(data) && data.toString().match(/^[#\.\[][^:]*$/)) {
+			return;
+		};	
+          
+		var devices = elem.data('device');
+		// allow multiple devices
+		if (!$.isArray(devices)) {
+			if (ftui.isValid(devices)) {
+				devices = new Array(devices.toString());
+			}else{			
+                devices = new Array();
+			};	
+        }
+        if (!$.isArray(data)) {
+            data = new Array(data.toString());
+        }
+		
+		var sysid = ftui.findSysidByElem(elem);
+        var i = data.length;
+        while (i--) {
+            var reading = data[i];
+            // fully qualified readings => DEVICE:READING
+            if (reading.match(/:/)) {
+                var fqreading = reading.split(':');
+                var device = fqreading[0].replace('[', '');
+                reading = fqreading[1].replace(']', '');
+				// No device -> ignore this entry
+				if (!ftui.isValid(device)) {
+					continue;
+				};
+				if(ftui.isMultifhem()) {
+				    me.addSubscription(sysid + '-' + device, reading);	
+				}else{
+				    me.addSubscription(device, reading);	
+				}
+            }else{
+				for(var j = 0; j < devices.length; j++) {
+					if(ftui.isMultifhem()) {
+					    me.addSubscription(sysid + '-' + devices[j], reading);
+					}else{
+						me.addSubscription(devices[j], reading);
+					};
+				};	
+			};
         }
     }
 
@@ -280,31 +316,74 @@ var Modul_widget = function () {
     function extractReadings(elem, key) {
         var data = elem.data(key);
 
-        if (ftui.isValid(data)) {
+        if (!ftui.isValid(data)) {
+			return;
+		};	
 
-            if ($.isArray(data) || !data.toString().match(/^[#\.\[][^:]*$/)) {
-                if (!$.isArray(data)) {
-                    data = new Array(data.toString());
-                }
-                var i = data.length;
-                while (i--) {
-                    var device, reading, item = data[i];
-                    // only fully qualified readings => DEVICE:READING
-                    if (item.match(/:/)) {
-                        var fqreading = item.split(':');
-                        device = fqreading[0].replace('[', '');
-                        reading = fqreading[1].replace(']', '');
-                    }
-                    // fill objects for mapping from FHEMWEB paramid to device + reading
-                    me.addSubscription(device, reading);
-                }
+        if (!$.isArray(data) && data.toString().match(/^[#\.\[][^:]*$/)) {
+			return;
+		};	
+        
+        if (!$.isArray(data)) {
+            data = new Array(data.toString());
+        }
+		
+		var sysid = ftui.findSysidByElem(elem);
+        var i = data.length;
+        while (i--) {
+            var device, reading, item = data[i];
+            // only fully qualified readings => DEVICE:READING
+            if (item.match(/:/)) {
+                var fqreading = item.split(':');
+                device = fqreading[0].replace('[', '');
+                reading = fqreading[1].replace(']', '');
             }
+            // fill objects for mapping from FHEMWEB paramid to device + reading
+			if(ftui.isMultifhem()) {
+				me.addSubscription(sysid + '-' + device, reading);
+			}else{
+				me.addSubscription(device, reading);
+			};			
         }
     }
 
     function update(dev, par) {
         ftui.log(1, 'warning: ' + me.widgetname + ' has not implemented update function',"base.widget");
     }
+	
+	
+	// getFhemCallinfo
+	// Determines how to call FHEM 
+	// The parameter is either an object or a string
+	//   If it is an object, we assume that it is a widget. In this case, try to get the
+	//   sysid from the element
+	//   If it is a string, we assume that it is the sysid or it starts with the sysid and a '-'
+	// The return value is an object with...
+	//   url: The FHEM Url
+	//   csrf: The csrf token	
+	function getFhemCallinfo(param) {
+		if(!ftui.isMultifhem) {
+			return {
+				url: ftui.getFhemUrl('home'),
+				csrf: ftui.config['home'].csrf
+			};		
+		};	
+		
+		var sysid;
+		if(typeof param === 'object') {
+			sysid = ftui.findSysidByElem(param);
+		}else{
+			sysid = param.split('-')[0];
+		};	
+		if(!sysid) 
+			// TODO: Some kind of error handling?
+			return null;	
+		return {
+			url: ftui.getFhemUrl(sysid),
+			csrf: ftui.config[sysid].csrf
+		};	
+	};	
+	
 
     var me = {
         widgetname: 'widget',
@@ -328,6 +407,7 @@ var Modul_widget = function () {
         addReading: addReading,
         addSubscription: addSubscription,
         extractReadings: extractReadings,
+		getFhemCallinfo: getFhemCallinfo,
         subscriptions: subscriptions,
         elements: elements
     };
@@ -355,43 +435,57 @@ var plugins = {
     updateParameters: function () {
         ftui.subscriptions = {};
         ftui.subscriptionTs = {};
+		// all devices
         ftui.devs = [];
-        ftui.reads = [];
+		// devices and readings by sysid
+        var devices = [];
+		var readings = [];
+		var systemIds = ftui.getSystemIds();
+		for(var i = 0; i < systemIds.length; i++) {
+			devices[systemIds[i]] = [];
+			readings[systemIds[i]] = [];
+		};
+		
         var i = this.modules.length;
         while (i--) {
             var module = this.modules[i];
             for (var key in module.subscriptions) {
                 ftui.subscriptions[key] = module.subscriptions[key];
                 ftui.subscriptionTs[key + '-ts'] = module.subscriptions[key];
-                var d = ftui.subscriptions[key].device;
+                var d = $.trim(ftui.subscriptions[key].device);
                 if (ftui.devs.indexOf(d) < 0) {
                     ftui.devs.push(d);
                 }
-                var r = ftui.subscriptions[key].reading;
-                if (ftui.reads.indexOf(r) < 0) {
-                    ftui.reads.push(r);
-                }
+				// determine system id and system specific device id
+				var dev = ftui.splitDeviceKey(d);
+				if(devices[dev.sysid].indexOf(dev.device) < 0) {
+					devices[dev.sysid].push(dev.device);
+				};
+                var reading = $.trim(ftui.subscriptions[key].reading);
+				if(readings[dev.sysid].indexOf(reading) < 0) {
+					readings[dev.sysid].push(reading);
+				};			
             }
         }
 
-        // build filter
-        var devicelist = (ftui.devs.length) ? $.map(ftui.devs, $.trim).join() : '.*';
-        var readinglist = (ftui.reads.length) ? $.map(ftui.reads, $.trim).join(' ') : '';
-
-        if (!ftui.config.longPollFilter) {
-            ftui.poll.long.filter = devicelist + ', ' + readinglist;
-        } else {
-            ftui.poll.long.filter = ftui.config.longPollFilter;
-        }
-
-        if (!ftui.config.shortPollFilter) {
-            ftui.poll.short.filter = devicelist + ' ' + readinglist;
-        } else {
-            ftui.poll.short.filter = ftui.config.shortPollFilter;
-        }
-
-        // force shortpoll
-        ftui.states.lastShortpoll = 0;
+        // build filters by sysid
+		for(var i = 0; i < systemIds.length; i++) {
+			var poll = ftui.poll[systemIds[i]];
+			// do we have devices or readings at all?
+			if( devices[systemIds[i]].length == 0 && 
+			    readings[systemIds[i]].length == 0 ) {
+				poll.hasSubscriptions = false;
+                continue;				
+			};		
+			poll.hasSubscriptions = true;
+			// build filters
+			var devicelist = devices[systemIds[i]].join();
+			var readinglist = readings[systemIds[i]].join(' ');
+			poll.long.filter = devicelist + ', ' + readinglist;
+			poll.short.filter = devicelist + ' ' + readinglist;
+			// force shortpoll
+			poll.short.lastTime = 0;
+		};
     },
 
     load: function (name, area) {
@@ -443,29 +537,35 @@ var ftui = {
         stdColors: ["green", "orange", "red", "ligthblue", "blue", "gray", "white", "mint"]
     },
 
-    poll: {
-        short: {
-            timer: null,
-            request: null
-        },
-        long: {
-            currLine: 0,
-            lastEventTimestamp: Date.now(),
-            timer: null
-        },
-		// PFE
-		status: 0,   // 0: DISCONNECTED, 1: CONNECTING, 2: CONNECTED
-		healthCheckTimer: null,
-		lastConnectTime: 0,
-		connectWaitTime: 0,  // at first fail, we don't wait, then 50ms, then 100ms, then 200ms etc. max. wait is 5 secs
-		connectRetryTimer: null,
-		initialized: false  // set to true after initWidgetsDone
-    },
+    poll: [], // array of sysids, i.e. one entry for each fhem backend
+
+	// create default entry for poll array
+	getPollDefaultEntry : function () {
+		// TODO: check whether this always returns the same instance or new instances
+		return {  
+			short: {
+				timer: null,
+				request: null,
+				lastTime: 0,  // formerly ftui.states.lastShortpoll
+			},
+			long: {
+				xhr: null,  
+				currLine: 0,
+				lastEventTimestamp: Date.now(),
+				openTimer: null  // timer to measure until connection is assumed as stable
+			},
+			status: 0,   // 0: DISCONNECTED, 1: CONNECTING, 2: CONNECTED, 3: DISCONNECTING
+			healthCheckTimer: null,
+			lastConnectTime: 0,
+			connectWaitTime: 0,  // at first fail, we don't wait, then 50ms, then 100ms, then 200ms etc. max. wait is 5 secs
+			connectRetryTimer: null,
+		};
+	},
+	
+	initialized: false,  // set to true after initWidgetsDone (formerly ftui.poll.initialized)
 
     states: {
         width: 0,
-        lastShortpoll: 0,
-        inits: []
     },
 
     deviceStates: {},
@@ -491,8 +591,6 @@ var ftui = {
 
         ftui.paramIdMap = {};
         ftui.timestampMap = {};
-        ftui.config.shortPollFilter = $("meta[name='shortpoll_filter']").attr("content");
-        ftui.config.longPollFilter = $("meta[name='longpoll_filter']").attr("content");
         ftui.config.ICONDEMO = ($("meta[name='icondemo']").attr("content") == '1');
         ftui.config.fadeTime = $("meta[name='fade_time']").attr("content") || 200;
         if (ftui.config.fadeTime === '0') {
@@ -524,15 +622,20 @@ var ftui = {
         ftui.config.password = $("meta[name='password']").attr("content");
         // subscriptions
         ftui.devs = [];
-        ftui.reads = [];
 
         var cssReadyDeferred = $.Deferred();
         var initDeferreds = [cssReadyDeferred];
 
-        // Get CSFS Token
-        initDeferreds.push(
-            ftui.getCSrf()
-        );
+		// stuff for each connected fhem
+		var systemIds = ftui.getSystemIds();
+		for(var i = 0; i < systemIds.length; i++) {
+			// Get CSRF Token
+			initDeferreds.push(
+				ftui.getCSrf(systemIds[i])
+			);
+			// initialize poll array
+			ftui.poll[systemIds[i]] = ftui.getPollDefaultEntry();
+		};
 
         // init Toast
         function configureToast() {
@@ -611,7 +714,7 @@ var ftui = {
             cssReadyDeferred.resolve();
         }
 
-        // init Page after css is ready and CSFS Token has been retrieved
+        // init Page after css is ready and CSRF Token has been retrieved
         $.when.apply(this, initDeferreds).then(function () {
             ftui.loadStyleSchema();
             ftui.initPage();
@@ -644,11 +747,14 @@ var ftui = {
 			ftui.log(1, 'Event: ' + event.type,"base.poll");   
 			// make sure that iniWidgetsDone is the first
 			// sometimes visibilitychange comes before widgets are ready
-			if(!ftui.poll.initialized && event.type !== "initWidgetsDone") 
+			if(!ftui.initialized && event.type !== "initWidgetsDone") 
 				return true;
-			ftui.poll.initialized = true;
-			if(ftui.poll.status == 0) 
-				ftui.conditionalConnect(true);
+			ftui.initialized = true;
+			// connect to backends
+			for(var i = 0; i < systemIds.length; i++) {
+				if(ftui.poll[systemIds[i]].status == 0) 
+					ftui.conditionalConnect(systemIds[i],true);
+			};	
 		});	
 		// beforeunload
 		//		disconnect
@@ -669,8 +775,10 @@ var ftui = {
 			// real "beforeunload".
 			// 250 ms should be ok. 100ms is a bit short, it sometimes tries to 
 			// reconnect.
-			ftui.disconnect();
-			setTimeout(function() {	ftui.conditionalConnect(true) }, 250);
+			for(var i = 0; i < systemIds.length; i++) {
+				ftui.disconnect(systemIds[i]);
+				setTimeout(function() {	ftui.conditionalConnect(systemIds[i],true) }, 250);
+			};	
 		});	
 				
         $(document).on("initWidgetsDone", function () {
@@ -908,21 +1016,34 @@ var ftui = {
                 'lib/weather-icons-wind.min.css" type="text/css" />');
     },
 
+	
+	// isMultifhem
+	// returns true if there are multiple backend systems
+	isMultifhem: function() {
+		var sysids =  ftui.getSystemIds();
+		return sysids.length > 1;
+	},	
+	
  
-	shortPoll: function () {
+	shortPoll: function (sysid) {
+		// TODO: check what happens if one backend does not have any subscriptions
 		var deferred = $.Deferred();
         var ltime = Date.now() / 1000;
-        ftui.log(1, 'start shortpoll', "base.poll");
+        ftui.log(1, 'start shortpoll ' + sysid, "base.poll");
         // invalidate all readings for detection of outdated ones
         var i = ftui.devs.length;
         while (i--) {
+			// correct sysid (backend)?
+			if(ftui.isMultifhem() && ftui.splitDeviceKey(ftui.devs[i]).sysid != sysid) {
+				continue;
+			}
             var params = ftui.deviceStates[ftui.devs[i]];
             for (var reading in params) {
                 params[reading].valid = false;
             }
-        }
-        ftui.poll.short.request =
-            ftui.sendFhemCommand('jsonlist2 ' + ftui.poll.short.filter)
+        };
+        ftui.poll[sysid].short.request =
+            ftui.sendFhemCommandWithSysid('jsonlist2 ' + ftui.poll[sysid].short.filter,sysid)
                 .done(function (fhemJSON) {
                     ftui.log(3, 'fhemJSON: 0=' + Object.keys(fhemJSON)[0] + ' 1=' + Object.keys(fhemJSON)[1], "base.poll");
 
@@ -982,6 +1103,9 @@ var ftui = {
                             var res = results[i];
                             var devName = res.Name;
                             if (devName.indexOf('FHEMWEB') < 0 && !devName.match(/WEB_\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}_\d{5}/)) {
+								if(ftui.isMultifhem()) {
+									devName = sysid + '-' + devName;
+								};	
                                 checkReading(devName, res.Internals);
                                 checkReading(devName, res.Attributes);
                                 checkReading(devName, res.Readings);
@@ -990,7 +1114,7 @@ var ftui = {
 
                         // finished
                         ftui.log(1, 'shortPoll: Done', "base.poll");
-                        ftui.states.lastShortpoll = ltime;
+                        ftui.poll[sysid].short.lastTime = ltime;
                         ftui.saveStatesLocal();
                         ftui.updateBindElements('ftui.');
                         ftui.onUpdateDone();
@@ -1002,96 +1126,124 @@ var ftui = {
                     }
                 })
                 .fail(function (jqxhr, textStatus, error) {
+					ftui.showErrorOverlay(true,sysid);
                     var err = textStatus + ", " + error;
                     ftui.log(1, "shortPoll: request failed: " + err, "base.poll");
                     ftui.saveStatesLocal();
                     if (textStatus.indexOf('parsererror') < 0) {
 						// it is relatively likely that this is because FHEM restarted
-						ftui.getCSrf();
+						ftui.getCSrf(sysid);
                     };
 					deferred.reject("ShortPoll request failed " + err);
                 });
 		return deferred.promise();		
     },
 	
-	// PFE
-	getWebsocketCloseText: function (event) {
-        if (event.code == 1000)
-			return "Normal closure, meaning that the purpose for which the connection was established has been fulfilled.";
-        else if (event.code == 1001)
-            return "An endpoint is \"going away\", such as a server going down or a browser having navigated away from a page.";
-        else if (event.code == 1002)
-            return  "An endpoint is terminating the connection due to a protocol error";
-        else if (event.code == 1003)
-            return "An endpoint is terminating the connection because it has received a type of data it cannot accept (e.g., an endpoint that understands only text data MAY send this if it receives a binary message).";
-        else if (event.code == 1004)
-             return "Reserved. The specific meaning might be defined in the future.";
-        else if (event.code == 1005)
-            return "No status code was actually present.";
-        else if (event.code == 1006)
-            return "The connection was closed abnormally, e.g., without sending or receiving a Close control frame";
-        else if (event.code == 1007)
-            return "An endpoint is terminating the connection because it has received data within a message that was not consistent with the type of the message (e.g., non-UTF-8 [http://tools.ietf.org/html/rfc3629] data within a text message).";
-        else if (event.code == 1008)
-            return "An endpoint is terminating the connection because it has received a message that \"violates its policy\". This reason is given either if there is no other sutible reason, or if there is a need to hide specific details about the policy.";
-        else if (event.code == 1009)
-             return "An endpoint is terminating the connection because it has received a message that is too big for it to process.";
-        else if (event.code == 1010) // Note that this status code is not used by the server, because it can fail the WebSocket handshake instead.
-            return "An endpoint (client) is terminating the connection because it has expected the server to negotiate one or more extension, but the server didn't return them in the response message of the WebSocket handshake. <br /> Specifically, the extensions that are needed are: " + event.reason;
-        else if (event.code == 1011)
-            return "A server is terminating the connection because it encountered an unexpected condition that prevented it from fulfilling the request.";
-        else if (event.code == 1015)
-            return "The connection was closed due to a failure to perform a TLS handshake (e.g., the server certificate can't be verified).";
-        else
-             return "Unknown reason";
+	
+	setConnected: function(sysid) {
+		if(ftui.poll[sysid].status != 1)
+			return;
+		ftui.showErrorOverlay(false);
+		if(ftui.poll[sysid].long.openTimer) {
+			clearTimeout(ftui.poll[sysid].long.openTimer);
+			ftui.poll[sysid].long.openTimer = null;
+		};	
+		ftui.poll[sysid].connectWaitTime = 0;
+		// start health check timer
+		ftui.poll[sysid].healthCheckTimer = setInterval(ftui.healthCheck, 60000);
+		// start shortpoll timer
+		ftui.poll[sysid].short.timer = setInterval(function () {
+				ftui.shortPoll(sysid).fail(function() { ftui.conditionalConnect(sysid); } );
+			}, ftui.config.shortpollInterval * 1000);
+		// log and status
+		ftui.log(1, "CONNECTED","base.poll");	
+		ftui.poll[sysid].status = 2;  // connected	
 	},	
 	
 
-	// PFE
-    createWebsocket: function () {
-        ftui.log(2, "WebSocket creation started", "base.poll");
-        ftui.poll.long.URL = ftui.config.fhemDir.replace(/^http/i, "ws") + "?XHR=1&inform=type=status;filter=" +
-            ftui.poll.long.filter + ";since=" + ftui.poll.long.lastEventTimestamp + ";fmt=JSON" +
-            "&timestamp=" + Date.now();
-        ftui.log(2, 'WebSocket URL=' + ftui.poll.long.URL, "base.poll");
-        ftui.poll.long.websocket = new WebSocket(ftui.poll.long.URL);
-		ftui.poll.long.websocket.onopen = function() { 
-			ftui.showErrorOverlay(false);
-			ftui.poll.connectWaitTime = 0;
-			// start health check timer
-			ftui.poll.healthCheckTimer = setInterval(ftui.healthCheck, 60000);
-			// start shortpoll timer
-			ftui.poll.short.timer = setInterval(function () {
-				ftui.shortPoll().then(null,ftui.conditionalConnect);
-			}, ftui.config.shortpollInterval * 1000);
-			// log and status
-			ftui.log(1, "CONNECTED","base.poll");	
-			ftui.poll.status = 2;  // connected
-		};
-        ftui.poll.long.websocket.onclose = function (event) {
-			ftui.showErrorOverlay(true);
-			var reason = ftui.getWebsocketCloseText(event);
-			ftui.log(1, "Websocket closed ("+event.code+" " + reason + "), restarting...","base.poll");	
-			ftui.conditionalConnect();
-        };
-        ftui.poll.long.websocket.onerror = function (event) {
-            ftui.log(1, "Websocket error", "base.poll");
-        };
-        ftui.poll.long.websocket.onmessage = function (msg) {
-			ftui.log(5, "Websocket received " + msg.data, "base.poll");
-            ftui.handleUpdates(msg.data);
-        };
+    createLongpoll: function (sysid) {
+        ftui.log(2, "Longpoll creation started", "base.poll");
+		
+		// TODO: is the below really needed?
+		//		If we come here and xhr or request still exist, then
+		//      something has gone (very?) wrong.
+		if (ftui.poll[sysid].long.xhr) {
+			ftui.log(1, 'longpoll: valid ftui.poll.long.xhr found', "base.poll");
+			return;
+		}
+		if (ftui.poll[sysid].long.request) {
+			ftui.log(1, 'longpoll: valid ftui.poll.long.request found', "base.poll");
+			return;
+		}
+		
+		ftui.poll[sysid].long.currLine = 0;
+
+		ftui.poll[sysid].long.request = $.ajax({
+			url: ftui.getFhemUrl(sysid),
+			cache: false,
+			async: true,
+			method: 'GET',
+			data: {
+				XHR: 1,
+				inform: 'type=status;filter=' + ftui.poll[sysid].long.filter + ';since=' +
+						ftui.poll[sysid].long.lastEventTimestamp + ';fmt=JSON',
+				// TODO: proper system id		
+				fwcsrf: ftui.config[sysid].csrf
+			},
+			username: ftui.config.username,
+			password: ftui.config.password,
+			xhr: function () {
+					ftui.poll[sysid].long.xhr = new window.XMLHttpRequest();
+					ftui.poll[sysid].long.xhr.addEventListener('readystatechange', function (e) {
+						if(e.target.readyState === 1) {  // opened
+							ftui.poll[sysid].long.openTimer = setTimeout(function() { ftui.setConnected(sysid); } ,1500);
+						};
+						if (e.target.readyState === 2) {  // received headers
+							ftui.setConnected(sysid);
+						};	
+						if (e.target.readyState === 3) { // loading, i.e. data received
+							ftui.setConnected(sysid);
+							ftui.handleUpdates(sysid, e.target.responseText);
+						}
+						if (e.target.readyState === 4) { // done or failure
+							if(ftui.poll[sysid].long.openTimer) {
+								clearTimeout(ftui.poll[sysid].long.openTimer);
+								ftui.poll[sysid].long.openTimer = null;
+							};	
+						};
+					}, false);
+					return ftui.poll[sysid].long.xhr;
+			}
+		})
+		.always(function() {
+			if (ftui.poll[sysid].long.xhr) {
+				ftui.poll[sysid].long.xhr.abort();
+				ftui.poll[sysid].long.xhr = null;
+			}
+			ftui.poll[sysid].long.request = null;
+		})
+        .done(function (data) {
+            ftui.log(1, 'Longpoll done ' + data);
+        })
+        .fail(function (jqXHR, textStatus, errorThrown) {	
+			if(ftui.poll[sysid].status != 0 &&  ftui.poll[sysid].status != 3) // not if disconnected or disconnecting
+				ftui.showErrorOverlay(true,sysid);
+			var reason = textStatus + ": " + errorThrown;
+			ftui.log(1, "Longpoll error " + sysid + ' ' + reason + ", restarting...","base.poll");	
+        })
+		.always(function(){ftui.conditionalConnect(sysid, false)});
     },
 
-    handleUpdates: function (data) {
+	
+    handleUpdates: function (sysid, data) {
 		// set "timestamp of last event" to 5 seconds before
 		// this should make sure that we do not lose anything when restarting
 		// the connection
-		ftui.poll.long.lastEventTimestamp = Date.now() - 5000;
+		ftui.poll[sysid].long.lastEventTimestamp = Date.now() - 5000;
         var lines = data.split(/\n/);
-        for (var i = ftui.poll.long.currLine, len = lines.length; i < len; i++) {
+        for (var i = ftui.poll[sysid].long.currLine, len = lines.length; i < len; i++) {
             ftui.log(5, lines[i], "base.update");
-            ftui.poll.long.lastLine = lines[i];
+            ftui.poll[sysid].long.lastLine = lines[i];
             var lastChar = lines[i].slice(-1);
             if (ftui.isValid(lines[i]) && lines[i] !== '' && lastChar === "]") {
                 try {
@@ -1103,9 +1255,13 @@ var ftui = {
 
                     ftui.log(4, dataJSON, "base.update");
 
-                    var pmap = ftui.paramIdMap[dataJSON[0]];
-                    var tmap = ftui.timestampMap[dataJSON[0]];
-                    var subscription = ftui.subscriptions[dataJSON[0]];
+					var paramId = dataJSON[0];	
+					if(ftui.isMultifhem()) {
+						paramId = sysid + '-' + paramId;	
+					};	
+                    var pmap = ftui.paramIdMap[paramId];
+                    var tmap = ftui.timestampMap[paramId];
+                    var subscription = ftui.subscriptions[paramId];
                     // update for a parameter
                     if (pmap) {
                         if (isSTATE) {
@@ -1131,7 +1287,7 @@ var ftui = {
                         params[tmap.reading] = param;
                         ftui.deviceStates[tmap.device] = params;
                         // paramter + timestamp update now completed -> update widgets
-                        if (ftui.subscriptionTs[dataJSON[0]]) {
+                        if (ftui.subscriptionTs[paramId]) {
                             plugins.update(tmap.device, tmap.reading);
                         }
                     }
@@ -1140,34 +1296,158 @@ var ftui = {
                         plugins.update(subscription.device, subscription.reading);
                     }
                 } catch (err) {
-                    ftui.poll.long.lastError = err;
+                    ftui.poll[sysid].long.lastError = err;
                     ftui.log(1, "longpoll: Error=" + err, "base.update");
                     ftui.log(1, "longpoll: Bad line=" + lines[i], "base.update");
                 }
             }
         }
         ftui.updateBindElements('ftui.poll');
+		
+		// Ajax longpoll 
+		// cumulative data -> remember last line 
+		// restart after 9999 lines to avoid overflow
+		ftui.poll[sysid].long.currLine = lines.length - 1;
+		if (ftui.poll[sysid].long.currLine > 9999) {
+			ftui.log(1, "Longpoll line overflow, restarting", "base.update");
+			ftui.conditionalConnect(sysid,true);
+		}
     },
 
+	//findSysid
+	//Try to find current system id. These are only heuristics...
+	//TODO: Heuristics?
+	//TODO: Once this is all a bit more mature, replace defaulting 
+	//      by some error management
+	findSysid: function() {
+		var defaultId = ftui.getDefaultSystemId();
+		if(!ftui.isMultifhem) 
+			return defaultId;
+	
+		// If this is called by an event handler...
+		var result = ftui.findSysidByEvent();
+		if(result) return result;
+		
+		// Do we have a "current" element?
+		var result = ftui.findSysidByElem(ftui.currentElem);
+		if(result) return result;
+
+		return defaultId;  // not found
+	},	
+	
+		
+	// findSysidByEvent
+	// Try to find the system id using the current event (if any)
+	findSysidByEvent() {
+		if(!ftui.isMultifhem) 
+			return ftui.getDefaultSystemId();
+		// Somewhere in the path, we should
+		// find the view, which has a system id
+		if(window.event === undefined) 
+			return null;
+		// TODO: If we have an event, but without a path, shouldn't 
+		//       this lead to some error message?
+		if(window.event.path === undefined)
+			return null;
+		for(var i = 0; i < window.event.path.length; i++) {
+			var sysid = $(window.event.path[i]).data('sysid');
+			if(sysid) {
+				ftui.validateSysid(sysid,$(window.event.path[i]));
+				return sysid;
+			};	
+		};	
+		return null;  // not found
+	},	
+	
+	
+	// findSysidByElem
+	// Try to find a system id in the current element or "above"
+	findSysidByElem: function(elem) {
+		if(!ftui.isMultifhem) 
+			return ftui.getDefaultSystemId();
+		for(;elem && elem.length;elem = elem.parent()) {
+			var sysid = elem.data('sysid');
+			if(sysid) {
+				ftui.validateSysid(sysid,elem);
+				return sysid;
+			};	
+		};	
+		return null;  // not found
+	},	
+	
+	
+	//getFhemUrl
+	// Finds the URL to call the backend of a system id
+	getFhemUrl: function(sysid) {
+		// getSystemUrl is generated by FUIP directly into the HTML head
+		// it returns ftui.config.fhemDir by default
+		return ftui.getSystemUrl(sysid);
+	},	
+	
+	
+	validateSysid(sysid,elem) {
+		var sysids =  ftui.getSystemIds();
+		if(sysids.indexOf(sysid) >= 0) 
+			// ok
+			return;
+		
+		// not ok
+		if(sysid) {
+			ftui.toast('Unkown system id: ' + sysid, 'error');
+		}else{	
+			ftui.toast('Empty system id','error');
+		}	
+	},	
+	
+	
+	//splitDeviceKey
+	// ...into sysid and device
+	// TODO: Do we need anything for the case where there is no "-"?
+	splitDeviceKey: function(device) {
+		if(ftui.isMultifhem()) {
+			var split = device.split('-');
+			var result = {};
+			result.sysid = split.shift();
+			result.device = split.join('-');
+			return result;
+		}else{
+			return { sysid : 'home', device : device };
+		};	
+	},
+	
+	
     setFhemStatus: function (cmdline) {
         ftui.sendFhemCommand(cmdline);
     },
+	
 
-    sendFhemCommand: function (cmdline) {
+	// sendFhemCommand
+	// elem is optional	
+	sendFhemCommand: function (cmdline, elem) {
+		// This is the "old" call, where we do not have a system id
+		var sysid = ftui.findSysidByElem(elem);
+		if(!sysid) 
+			sysid = ftui.findSysid();
+		return ftui.sendFhemCommandWithSysid(cmdline,sysid);
+	},	
+		
+		
+	sendFhemCommandWithSysid: function (cmdline,sysid) {	
         cmdline = cmdline.replace('  ', ' ');
         var dataType = (cmdline.substr(0, 8) === 'jsonlist') ? 'json' : 'text';
+		var url = ftui.getFhemUrl(sysid);
         ftui.log(1, 'send to FHEM: ' + cmdline, "base.command");
         return $.ajax({
             async: true,
             cache: false,
             method: 'GET',
             dataType: dataType,
-            url: ftui.config.fhemDir,
+            url: url,
             username: ftui.config.username,
             password: ftui.config.password,
             data: {
                 cmd: cmdline,
-                fwcsrf: ftui.config.csrf,
+                fwcsrf: ftui.config[sysid].csrf,
                 XHR: "1"
             },
             error: function (jqXHR, textStatus, errorThrown) {
@@ -1230,99 +1510,94 @@ var ftui = {
     },
 
 
-	// PFE
-	connect: function() {
+	connect: function(sysid) {
 		// this assumes that we are disconnected and that no timers are running
 		// TODO: handle csrf errors better
 		
-		ftui.log(1, 'CONNECTING', "base.poll");
-		ftui.poll.status = 1;  // connecting
+		ftui.log(1, 'CONNECTING ' + sysid, "base.poll");
+		ftui.poll[sysid].status = 1;  // connecting
 		// if shortpoll is due (check via real time)
 		var ltime = Date.now() / 1000;
-        if (ltime - ftui.states.lastShortpoll >= ftui.config.shortpollInterval) {
-			ftui.poll.long.lastEventTimestamp = Date.now();
+        if (ltime - ftui.poll[sysid].short.lastTime >= ftui.config.shortpollInterval) {
+			ftui.poll[sysid].long.lastEventTimestamp = Date.now();
 		//		start shortpoll
 		//			fail: like onclose (conditionalConnect)
 		//			success: handle results
-			ftui.shortPoll().then(ftui.createWebsocket, ftui.conditionalConnect);
+		// TODO: read system id
+			ftui.shortPoll(sysid).then(
+				function() { ftui.createLongpoll(sysid) }, 
+				function() { ftui.conditionalConnect(sysid) }
+			);
 		}else{
-			ftui.createWebsocket();
+			ftui.createLongpoll(sysid);
 		};	
 	},	
 	
 	
-	// PFE
-	disconnect: function() {
-		// if websocket exists
-		//		remove onclose handler
-		//		close websocket
-		//		throw away websocket
-		if (ftui.poll.long.websocket) {
-			// avoid trying to open again immediately via close event
-			ftui.poll.long.websocket.onclose = function() {
-				ftui.log(2, 'Websocket stopped, probably by disconnect', "base.poll");
-			};
-			// avoid any messages coming via the "old" websocket
-			ftui.poll.long.websocket.onmessage = function (msg) {
-				if(msg.data.length > 30) msg.data = msg.data.substring(0,27) + "...";
-				ftui.log(2, "Closing websocket received " + msg.data, "base.poll");
-			};
-            ftui.poll.long.websocket.close();
-            ftui.poll.long.websocket = undefined;
-		};
+	disconnect: function(sysid) {
+		var poll = ftui.poll[sysid];
+		poll.status = 3;  // disconnecting
+		if (poll.long.request)
+			poll.long.request.abort();
 		// stop healthcheck timer
-		clearInterval(ftui.poll.healthCheckTimer);
+		clearInterval(poll.healthCheckTimer);
 		// stop shortpoll timer
-		clearInterval(ftui.poll.short.timer);
+		clearInterval(poll.short.timer);
 		// abort shortpoll, if needed
-		if(ftui.poll.short.request) {
-			ftui.poll.short.request.abort();
-			ftui.poll.short.request = null;
+		if(poll.short.request) {
+			poll.short.request.abort();
+			poll.short.request = null;
 		};	
-		ftui.log(1, 'DISCONNECTED', "base.poll");
-		ftui.poll.status = 0;  // disconnected
+		ftui.log(1, 'DISCONNECTED ' + sysid, "base.poll");
+		poll.status = 0;  // disconnected
 	},
 	
 	
-	// PFE
-	conditionalConnect: function(immediately) {
-		// always disconnect first to start in a clean state
-		ftui.disconnect();
+	conditionalConnect: function(sysid, immediately) {
+		// This seems to be called sometimes with not yet initialized
+		// or already cleared data
+		var poll = ftui.poll[sysid];
+		if(!poll) return;
+		// do we have to connect at all?
+		if(!poll.hasSubscriptions) return;
+		
+		// disconnect first to start in a clean state
+		ftui.disconnect(sysid);
 		// avoid that we do this multiple times
-		if(ftui.poll.connectRetryTimer) {
-			clearTimeout(ftui.poll.connectRetryTimer);
-			ftui.poll.connectRetryTimer = null;
+		if(poll.connectRetryTimer) {
+			clearTimeout(poll.connectRetryTimer);
+			poll.connectRetryTimer = null;
 		};
 		// if not visible, don't try to connect
 		// There used to be a check on navigator.onLine as well, but this does not
 		// seem to work properly
 		if(document.visibilityState !== 'visible') {
 			ftui.log(1, 'Staying DISCONNECTED: invisible or offline', "base.poll");
-			ftui.poll.connectWaitTime = 0; // immediately connect when becoming visible or online 
+			poll.connectWaitTime = 0; // immediately connect when becoming visible or online 
 			return;
 		};	
 		// if we have tried to connect less than n seconds ago, 
 		// then wait a bit
 		if(immediately) {
-			ftui.poll.connectWaitTime = 0;  
+			poll.connectWaitTime = 0;  
 		};
-		if(ftui.poll.connectWaitTime > 0) { 
-			var lastConnectAge = Date.now() - ftui.poll.lastConnectTime;
-			if(lastConnectAge < ftui.poll.connectWaitTime) { 
-				ftui.log(4, 'Connect wait time ' + ftui.poll.connectWaitTime + " ...waiting", "base.poll");
-				ftui.poll.connectRetryTimer = setTimeout(ftui.conditionalConnect, ftui.poll.connectWaitTime - lastConnectAge);
+		if(poll.connectWaitTime > 0) { 
+			var lastConnectAge = Date.now() - poll.lastConnectTime;
+			if(lastConnectAge < poll.connectWaitTime) { 
+				ftui.log(4, 'Connect wait time ' + poll.connectWaitTime + " ...waiting", "base.poll");
+				poll.connectRetryTimer = setTimeout(function() { ftui.conditionalConnect(sysid); }, poll.connectWaitTime - lastConnectAge);
 				return;
 			};	
 		};
 		// determine next time: 50,100,200,400,...,3200,5000
-		if(ftui.poll.connectWaitTime) {
-			ftui.poll.connectWaitTime *= 2;
-			if(ftui.poll.connectWaitTime > 5000) ftui.poll.connectWaitTime = 5000;
+		if(poll.connectWaitTime) {
+			poll.connectWaitTime *= 2;
+			if(poll.connectWaitTime > 5000) poll.connectWaitTime = 5000;
 		}else{
-			ftui.poll.connectWaitTime = 50;
+			poll.connectWaitTime = 50;
 		};	
-		ftui.poll.lastConnectTime = Date.now();
-		ftui.connect();
+		poll.lastConnectTime = Date.now();
+		ftui.connect(sysid);
 	},	
 		
 	
@@ -1469,10 +1744,20 @@ var ftui = {
         return deferred.promise();
     },
 
-    getCSrf: function () {
+    getCSrf: function (sysid) {
 
-        return $.ajax({
-            'url': ftui.config.fhemDir,
+		var url = ftui.getSystemUrl(sysid);
+	
+		if(ftui.config[sysid] === undefined)
+			ftui.config[sysid] = {};
+	
+		// Do not return the ajax result directly. The getCSrf function should always "resolve",
+        // regardless whether we could determine a csrf token or not
+
+		var deferred = $.Deferred();	
+	
+        $.ajax({
+            'url': url,
             'type': 'GET',
             cache: false,
             username: ftui.config.username,
@@ -1481,21 +1766,26 @@ var ftui = {
                 XHR: "1"
             }
         }).done(function (data, textStatus, jqXHR) {
-            ftui.config.csrf = jqXHR.getResponseHeader('X-FHEM-csrfToken');
-            ftui.log(1, 'Got csrf from FHEM:' + ftui.config.csrf, "base.init");
+            ftui.config[sysid].csrf = jqXHR.getResponseHeader('X-FHEM-csrfToken');
+            ftui.log(1, 'Got csrf from FHEM ' + sysid + ' :' + ftui.config[sysid].csrf, "base.init");
         }).fail(function (jqXHR, textStatus, errorThrown) {
-            ftui.log(1, "Failed to get csrfToken: " + textStatus + ": " + errorThrown, "base.init");
-        });
+            ftui.log(1, "Failed to get csrfToken for " + sysid + " : " + textStatus + ": " + errorThrown, "base.init");
+        }).always(function () { deferred.resolve() });
+		
+		return deferred;
     },
 
     healthCheck: function () {
 		ftui.log(1,"health check","base.poll");
-        var timeDiff = Date.now() - ftui.poll.long.lastEventTimestamp;
-        if (timeDiff / 1000 > ftui.config.maxLongpollAge &&
-            ftui.config.maxLongpollAge > 0) {
-            ftui.log(1, 'No longpoll event since ' + timeDiff / 1000 + 'secondes -> restart polling', "base.poll");
-            ftui.conditionalConnect(true);
-        }
+		var systemIds = ftui.getSystemIds();
+		for(var i = 0; i < systemIds.length; i++) {
+			var timeDiff = Date.now() - ftui.poll[systemIds[i]].long.lastEventTimestamp;
+			if (timeDiff / 1000 > ftui.config.maxLongpollAge &&
+				ftui.config.maxLongpollAge > 0) {
+				ftui.log(1, 'No longpoll event since ' + timeDiff / 1000 + 'seconds -> restart polling ' + systemIds[i], "base.poll");
+				ftui.conditionalConnect(systemIds[i],true);
+			};
+		};
     },
 
     FS20: {
@@ -1646,11 +1936,20 @@ var ftui = {
             $("#shade").fadeOut(ftui.config.fadeTime);
     },
 
-	showErrorOverlay: function (showIt) {
-		if(showIt)
-			$("#ftui-error-shade").show();
-		else
+	showErrorOverlay: function (showIt, sysid) {
+		if(showIt){
+			// Disconnected from FHEM (sysid), reconnecting
+		    var message = 'Disconnected from FHEM';
+			if(sysid != undefined && ftui.isMultifhem) {
+				message += ' (' + sysid + ')';
+			};
+			message += ', reconnecting';
+			var elem = $("#ftui-error-shade");
+			elem.html(message);
+			elem.show();
+		}else{
 			$("#ftui-error-shade").hide();
+		};
 	},	
 		
     precision: function (a) {
@@ -2089,7 +2388,9 @@ function onjQueryLoaded() {
     // for widget
 
     $.fn.widgetId = function () {
-        return [$(this).data('type'), ($(this).data('device') ? $(this).data('device').replace(' ', 'default') : 'default'), $(this).data('get'), $(this).index()].join('.');
+		var elem = $(this);
+		var sysid = ftui.findSysidByElem(elem);
+        return [sysid, elem.data('type'), (elem.data('device') ? elem.data('device').replace(' ', 'default') : 'default'), elem.data('get'), elem.index()].join('.');
     };
 
     $.fn.wgid = function () {
@@ -2116,14 +2417,49 @@ function onjQueryLoaded() {
             return $(this).matchDeviceReading(key, device, param);
         });
     };
+	
+	
+	$.fn.filterDevice = function (key, device) {
+        return $(this).filter(function () {
+            return $(this).matchDevice(key, device);
+        });
+    };
+	
+	
+	// matchDevice checks whether <device> is in data(key)
+	$.fn.matchDevice = function (key, device) {
+		var elem = $(this);
+		var devices = elem.data(key);
+		if (!$.isArray(devices)) {
+			if (ftui.isValid(devices)) {
+			    devices = new Array(devices.toString());
+			}else{
+			    devices = new Array();
+			};		
+        };
+		var sysidElem = ftui.findSysidByElem(elem);
+		var devToMatch = ftui.splitDeviceKey(device);  // sysid, device
+		if(sysidElem != devToMatch.sysid) {
+			// system ids do not match
+			return false;
+		};
+		return $.inArray(devToMatch.device, devices) > -1;	
+	};	
+	
 
     $.fn.matchDeviceReading = function (key, device, param) {
         var elem = $(this);
         var value = elem.data(key);
-        return (String(value) === param && String(elem.data('device')) === device) ||
-            (value === device + ':' + param || value === '[' + device + ':' + param + ']') ||
-            ($.inArray(param, value) > -1 && String(elem.data('device')) === device) ||
-            ($.inArray(device + ':' + param, value) > -1);
+		var sysidElem = ftui.findSysidByElem(elem);
+		var devToMatch = ftui.splitDeviceKey(device);  // sysid, device
+		if(sysidElem != devToMatch.sysid) {
+			// system ids do not match
+			return false;
+		};	
+        return (String(value) === param && String(elem.data('device')) === devToMatch.device) ||
+            (value === devToMatch.device + ':' + param || value === '[' + devToMatch.device + ':' + param + ']') ||
+            ($.inArray(param, value) > -1 && String(elem.data('device')) === devToMatch.device) ||
+            ($.inArray(devToMatch.device + ':' + param, value) > -1);
     };
 
     $.fn.isValidData = function (key) {
@@ -2163,6 +2499,7 @@ function onjQueryLoaded() {
             return '';
         }
         var elm = $(this);
+		var sysid = ftui.findSysidByElem(elm);
         var state = String(ftui.getPart(value, elm.data(key + '-part')));
         var onData = elm.data(key + '-on');
         var offData = elm.data(key + '-off');
@@ -2170,7 +2507,7 @@ function onjQueryLoaded() {
         var temp, device, reading, param;
         if (on.match(/:/)) {
             temp = on.split(':');
-            device = temp[0].replace('[', '');
+            device = sysid + '-' + temp[0].replace('[', '');
             reading = temp[1].replace(']', '');
             param = ftui.getDeviceParameter(device, reading);
             if (param && ftui.isValid(param)) {
@@ -2180,7 +2517,7 @@ function onjQueryLoaded() {
         var off = String(offData);
         if (off.match(/:/)) {
             temp = off.split(':');
-            device = temp[0].replace('[', '');
+            device = sysid + '-' + temp[0].replace('[', '');
             reading = temp[1].replace(']', '');
             param = ftui.getDeviceParameter(device, reading);
             if (param && ftui.isValid(param)) {
@@ -2253,8 +2590,10 @@ function onjQueryLoaded() {
     };
 
     $.fn.getReading = function (key, idx) {
-        var devName = String($(this).data('device'));
-        var paraName = $(this).data(key);
+		var elem = $(this);
+		var sysid = ftui.findSysidByElem(elem);
+        var devName = String(elem.data('device')); // local device name
+        var paraName = elem.data(key);
         if ($.isArray(paraName)) {
             paraName = paraName[idx];
         }
@@ -2265,7 +2604,12 @@ function onjQueryLoaded() {
             paraName = temp[1].replace(']', '');
         }
         if (devName && devName.length) {
-            var params = ftui.deviceStates[devName];
+			// complete device key is <sysid>-<device>
+			var devKey = devName;
+			if(ftui.isMultifhem()) {
+				devKey = sysid + '-' + devKey;
+			};	
+            var params = ftui.deviceStates[devKey];
             return (params && params[paraName]) ? params[paraName] : {};
         }
         return {};
@@ -2278,11 +2622,13 @@ function onjQueryLoaded() {
     };
 
     $.fn.transmitCommand = function () {
-        if ($(this).hasClass('notransmit')) return;
-        var cmdl = [$(this).valOfData('cmd'), $(this).valOfData('device') + $(this).valOfData('filter'), $(this).valOfData('set'), $(
-            this).valOfData('value')].join(' ');
-        ftui.setFhemStatus(cmdl);
-        ftui.toast(cmdl);
+		var elem = $(this);
+        if (elem.hasClass('notransmit')) return;
+        var cmd = [elem.valOfData('cmd'), elem.valOfData('device') + elem.valOfData('filter'), elem.valOfData('set'), elem.valOfData('value')].join(' ');
+			
+		var sysid = ftui.findSysidByElem(elem);	
+		ftui.sendFhemCommandWithSysid(cmd,sysid);		
+        ftui.toast(cmd);
     };
 
     $.fn.otherThen = function (elem) {
@@ -2295,7 +2641,7 @@ function onjQueryLoaded() {
 }
 
 
-// PFE log/trace settings
+// log/trace settings
 ftui.config.loglevel = $("meta[name='loglevel']").attr("content") || 0;  // 0 => no log/trace, 5 => everything
 ftui.config.logtype = $("meta[name='logtype']").attr("content") || "console";  // console, toast, localstorage  
 ftui.config.logareas = $("meta[name='logareas']").attr("content") || false;

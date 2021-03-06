@@ -933,17 +933,22 @@ var Modul_fuip_wdtimer = function () {
 		var attr_style = elem.data('style');
 		var attr_savecfg = elem.data('savecfg');
         var attr_timesteps = elem.data('timesteps');
+		var callinfo = me.getFhemCallinfo(elem);
 		$.ajax({
 			async: true,
 			timeout: 15000,
 			cache: false,
 			context:{'DEF': 'DEF','elem':elem,'attr_device':attr_device},
-			url: $("meta[name='fhemweb_url']").attr("content") || "/fhem/",
-			fwcsrf: ftui.config.csrf?ftui.config.csrf:'',
+			// TODO: Clean up comments
+			url: callinfo.url,
+			// url: $("meta[name='fhemweb_url']").attr("content") || "/fhem/",
+			fwcsrf: callinfo.csrf,
+			// fwcsrf: ftui.config.csrf?ftui.config.csrf:'',
 			data: {
 				cmd: ["list",attr_device].join(' '),
 				XHR: "1",
-				fwcsrf: ftui.config.csrf?ftui.config.csrf:''
+				fwcsrf: callinfo.csrf
+				// fwcsrf: ftui.config.csrf?ftui.config.csrf:''
 			}
 		})
 		.done(function(data ) {
@@ -1161,15 +1166,15 @@ var Modul_fuip_wdtimer = function () {
 		me.elements.filterDeviceReading('trigger', dev, par)
 		.each(function (index) {
 			ftui.log(3, 'wdtimer '+dev+' triggered: ' + par);
-			wdtimer_getProfiles($(this));			//Profildaten aktualisieren
+			me._getProfiles($(this));			//Profildaten aktualisieren
 		});	
     };
 
     var me = $.extend(new Modul_widget(), {
-
         widgetname: 'fuip_wdtimer',
         init:init,
 		update: update,
+		_getProfiles: wdtimer_getProfiles
     });
 
 	return me;

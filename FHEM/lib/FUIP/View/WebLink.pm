@@ -24,10 +24,10 @@ sub getHTML($){
 };
 	
 	
-sub getDevicesForValueHelp($) {
+sub getDevicesForValueHelp($$) {
 	# Return devices with TYPE weblink
-	my ($fuipName) = @_;
-	return FUIP::_toJson(FUIP::Model::getDevicesForType($fuipName,"weblink"));
+	my ($fuipName,$sysid) = @_;
+	return FUIP::_toJson(FUIP::Model::getDevicesForType($fuipName,"weblink",$sysid));
 }		
 	
 	

@@ -15,7 +15,7 @@ sub dimensions($;$$){
 	};
 	return ("auto","auto") if($self->{sizing} eq "auto");
 	if($self->{sizing} eq "fixed") {
-		my $device = FUIP::Model::getDevice($self->{fuip}{NAME},$self->{device},['forecastDays']);
+		my $device = FUIP::Model::getDevice($self->{fuip}{NAME},$self->{device},['forecastDays'],$self->{sysid});
 		my $forecastDays = 4;
 		if(defined($device->{Attributes}{forecastDays})) {
 			$forecastDays = $device->{Attributes}{forecastDays};
@@ -34,10 +34,10 @@ sub getHTML($){
 };
 
 	
-sub getDevicesForValueHelp($) {
+sub getDevicesForValueHelp($$) {
 	# Return devices with TYPE DWD_OpenData_Weblink
-	my ($fuipName) = @_;
-	return FUIP::_toJson(FUIP::Model::getDevicesForType($fuipName,"DWD_OpenData_Weblink"));
+	my ($fuipName,$sysid) = @_;
+	return FUIP::_toJson(FUIP::Model::getDevicesForType($fuipName,"DWD_OpenData_Weblink",$sysid));
 }	
 	
 	

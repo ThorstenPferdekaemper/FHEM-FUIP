@@ -38,10 +38,10 @@ sub dimensions($;$$){
 };	
 	
 	
-sub getDevicesForValueHelp($) {
+sub getDevicesForValueHelp($$) {
 	# Return devices with TYPE Calendar
-	my ($fuipName) = @_;
-	return FUIP::_toJson(FUIP::Model::getDevicesForType($fuipName,"Calendar"));
+	my ($fuipName,$sysid) = @_;
+	return FUIP::_toJson(FUIP::Model::getDevicesForType($fuipName,"Calendar",$sysid));
 }	
 	
 	
