@@ -1715,7 +1715,7 @@ function createClassField(selectedClass,prefix) {
 };
 	
 	
-function createSysidField(selectedSysid,prefix) {
+function createSysidField(selectedSysid,viewType,prefix) {
 	let fieldName = prefix + 'sysid';
 	let sysids =  ftui.getSystemIds();
 	
@@ -1748,7 +1748,7 @@ function createSysidField(selectedSysid,prefix) {
 	td.append(theFieldElem);
 	// and the full table line
 	// TODO: is the docid really good? Should this not be sth like "Class-sysid"?
-	let tr = $("<tr data-docid='sysid'>" +
+	let tr = $("<tr data-docid='" + viewType + "-sysid'>" +
 			   "<td style='text-align:left;'><label for='" + fieldName + 
 			   "' style='white-space:nowrap'>System Id</label></td></tr>");
 	tr.append(td);
@@ -1872,10 +1872,24 @@ function getFullName(fieldname,localName,type) {
 
 // gets sysid from the current view
 // fieldname is any field of the view
-function getSysidFromView(fieldname,type) {
+function getSysidFromView(fieldname,type) {	
+	// get name of the sysid field
 	let sysfield = getFullName(fieldname,'sysid',type);
-	// TODO: What if sysfield is empty?
-	return $('#'+sysfield).val();
+	let result = $('#'+sysfield).val();
+	if(result && result != '<inherit>') {
+		return result;
+	};
+	// sysid not found yet, check cell level
+	// if not anyway on cell level already
+	// the cell level has simple field names
+	if(sysfield != 'sysid') {
+		result = $('#sysid').val();
+		if(result && result != '<inherit>') {
+			return result;
+	    };
+	};	
+	// sysid not found on cell level, get it from page level
+	return $("html").attr("data-sysid");
 };	
 
 
@@ -2972,7 +2986,7 @@ function createSettingsTable(settings,prefix) {
 	// sysid field
 	for(var i = 0; i < settings.length; i++){
 		if(settings[i].type != 'sysid') { continue; }; 
-		resultTab.append($(createSysidField(settings[i].value,prefix)));
+		resultTab.append($(createSysidField(settings[i].value,viewType,prefix)));
 		break;
 	};
 	for(var i = 0; i < settings.length; i++){

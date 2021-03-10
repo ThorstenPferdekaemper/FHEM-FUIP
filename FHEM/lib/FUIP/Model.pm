@@ -43,6 +43,13 @@ sub _getCsrfToken($)
 
 sub _sendRemoteCommand($$$) {
 	my ($name,$url,$cmd) = @_;
+	
+	# do we have a URL?
+	unless($url) {
+		FUIP::exceptionRaise('Cannot send a remote command without a URL');
+		return undef; # make it really clear	
+	};
+	
 	# get csrf token unless buffered
 	if(not defined $buffer{$name}{csrfToken}) {
 		$buffer{$name}{csrfToken} = _getCsrfToken($url);
@@ -96,19 +103,12 @@ sub _getUrl($$) {
 	my ($fuipName,$sysid) = @_;
 	# Since "multifhem", the system id needs to be given explicitely
 	# "local" means to use the FHEM where FUIP is running on
-	# However, the old version might still kick in here and this
-	# means that the sysid might become 1
 	my $hash = $main::defs{$fuipName};
-	#if( not $sysid or $sysid == 1 ){
-	#    $sysid = FUIP::getDefaultSystem($hash);
-	#};	
 	my $url = FUIP::getSystemUrl($hash,$sysid);
-	if( not $url ){
-	    # TODO: Do not give up, but create proper error message
-	    #FUIP::giveUp('Model could not determine URL');
-		
-		#get URL of default system as fallback
-		$url = FUIP::getSystemUrl($hash,FUIP::getDefaultSystem($hash));
+	unless($url){
+		$sysid = '<undef>' unless defined $sysid;
+		FUIP::exceptionRaise('Could not determine URL for system id '.$sysid);
+		return undef; # make it really clear	
 	};	
 	return $url;
 };
@@ -121,6 +121,9 @@ sub callCoding($$$) {
 	# it is expected that the coding returns something which works with Dumper
 	
 	my $url = _getUrl($fuipName,$sysid);
+	# if there is no URL, we should already have a message in the log
+	# i.e. just return
+    return unless $url;	
 	
 	my $result;
 	if($url eq 'local') {

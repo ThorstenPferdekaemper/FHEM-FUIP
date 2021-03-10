@@ -2627,7 +2627,10 @@ function onjQueryLoaded() {
         var cmd = [elem.valOfData('cmd'), elem.valOfData('device') + elem.valOfData('filter'), elem.valOfData('set'), elem.valOfData('value')].join(' ');
 			
 		var sysid = ftui.findSysidByElem(elem);	
-		ftui.sendFhemCommandWithSysid(cmd,sysid);		
+		ftui.sendFhemCommandWithSysid(cmd,sysid);
+		if(ftui.isMultifhem()) {
+			cmd = sysid + ' : ' + cmd;
+		};	
         ftui.toast(cmd);
     };
 

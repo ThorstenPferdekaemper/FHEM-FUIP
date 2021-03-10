@@ -52,15 +52,46 @@ my $fuipPath = $main::attr{global}{modpath} . "/FHEM/lib/FUIP/";
 my $currentPage = "";
 
 
-# giveUp
-# This is called in case something went terribly wrong and we 
-# should not really go on
-sub giveUp($) {
+# Exception handling
+my %exception = ("raised" => 0);
+my $logExceptions = 1;
+
+# exceptionRaise
+# This is called in case something went wrong
+# In principle, it only stores the exception and 
+# writes it into the log
+sub exceptionRaise($) {
 	my ($reason) = @_;
-	main::stacktrace();
-	main::Log3(undef,0,"FUIP giving up: ".$reason);
-	die();
-}
+	$exception{raised} = 1;
+	$exception{reason} = $reason;
+	if($logExceptions) {
+		main::Log3(undef,0,"FUIP exception: ".$reason);
+		stacktrace();
+    }
+};
+
+# sub exceptionClear() {
+	# $exception{raised} = 0;
+# };
+
+# sub exceptionGet() {
+	# return undef unless $exception{raised};
+	# return \%exception;
+# };
+
+sub stacktrace() {
+  my $offset = 1;
+  my $line = 0;
+  main::Log3(undef,0,'FUIP stacktrace');
+  while( (my @call_details = (caller($offset++))) && ($offset < 50) ) {
+	return unless $call_details[3] =~ m/FUIP::/;
+	main::Log3(undef,0,$call_details[3].':'.$line) if $offset > 2;
+	$line = $call_details[2];  # needed in the next iteration
+  }
+};
+
+
+
 
 
 # possible values of attributes can change...
@@ -776,6 +807,20 @@ sub renderToastSetting($) {
 };
 
 
+# renderPageSysid
+# Renders sysid setting for the page-like entity
+# i.e. page, popup or viewtemplate
+sub renderPageSysid($;$) {
+	my ($page,$locked) = shift;
+	# only display?
+	return "" if $locked;
+	# might be called without a real page, e.g. by viewtemplate overview
+	return "" unless $page;  
+	my $sysid = $page->getSystem();
+	return ' data-sysid="'.$sysid.'"';
+};
+
+
 sub renderAutoReturn($$) {
 	my ($page,$locked) = @_;
 	return "" unless $page->{autoReturn} and $page->{autoReturn} eq "on";
@@ -808,7 +853,7 @@ sub renderPage($$$) {
 	my $layout = main::AttrVal($hash->{NAME},"layout","gridster");
   	my $result = 
 	   "<!DOCTYPE html>
-		<html data-name=\"".$hash->{NAME}."\"".($locked ? "" : " data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"".$layout."\"").renderToastSetting($hash).renderAutoReturn($page,$locked).">
+		<html data-name=\"".$hash->{NAME}."\"".($locked ? "" : " data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"".$layout."\"").renderToastSetting($hash).renderAutoReturn($page,$locked).renderPageSysid($page,$locked).">
 			<head>
 				".renderCommonMetas($hash)."
 				<meta name=\"widget_base_width\" content=\"".$baseWidth."\">
@@ -971,7 +1016,7 @@ sub renderPageFlexMaint($$) {
 	my $userScalable = main::AttrVal($hash->{NAME},"viewportUserScalable","no");
   	my $result = 
 	   "<!DOCTYPE html>
-		<html data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"flex\"".renderToastSetting($hash).renderAutoReturn($page,0).">
+		<html data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"flex\"".renderToastSetting($hash).renderAutoReturn($page,0).renderPageSysid($page).">
 			<head>
 				".renderCommonMetas($hash)."
 				<script type=\"text/javascript\">
@@ -1099,7 +1144,7 @@ sub renderPopupMaint($$) {
 		$result .= 'data-viewtemplate="'.$urlParams->{templateid}.'" ';
 	};	
 	$result .= "data-fieldid=\"".$urlParams->{fieldid}."\"
-				data-editonly=\"".$hash->{editOnly}."\"".renderToastSetting($hash).">
+				data-editonly=\"".$hash->{editOnly}."\"".renderToastSetting($hash).renderPageSysid($dialog).">
 			<head>
 	            <title>".$title."</title>
 				".renderCommonCss($hash).'
@@ -1193,7 +1238,7 @@ sub renderViewTemplateMaint($$) {
   	my $result = 
 	   "<!DOCTYPE html>
 		<html data-name=\"".$hash->{NAME}."\" data-viewtemplate=\"".$templateid."\" 
-				data-editonly=\"".$hash->{editOnly}."\"".renderToastSetting($hash).">
+				data-editonly=\"".$hash->{editOnly}."\"".renderToastSetting($hash).renderPageSysid($viewtemplate).">
 			<head>
 				<script type=\"text/javascript\">
 					// when using browser back or so, we should reload
