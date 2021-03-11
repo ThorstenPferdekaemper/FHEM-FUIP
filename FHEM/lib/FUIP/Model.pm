@@ -123,7 +123,7 @@ sub callCoding($$$) {
 	my $url = _getUrl($fuipName,$sysid);
 	# if there is no URL, we should already have a message in the log
 	# i.e. just return
-    return unless $url;	
+    return undef unless $url;	
 	
 	my $result;
 	if($url eq 'local') {
