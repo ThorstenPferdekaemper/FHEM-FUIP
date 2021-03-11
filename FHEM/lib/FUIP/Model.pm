@@ -41,8 +41,8 @@ sub _getCsrfToken($)
 }
 
 
-sub _sendRemoteCommand($$$) {
-	my ($name,$url,$cmd) = @_;
+sub _sendRemoteCommand($$$$) {
+	my ($name,$sysid,$url,$cmd) = @_;
 	
 	# do we have a URL?
 	unless($url) {
@@ -51,11 +51,11 @@ sub _sendRemoteCommand($$$) {
 	};
 	
 	# get csrf token unless buffered
-	if(not defined $buffer{$name}{csrfToken}) {
-		$buffer{$name}{csrfToken} = _getCsrfToken($url);
-		main::Log3('FUIP:'.$name, 3, "Determined new csrfToken: ".$buffer{$name}{csrfToken});
+	if(not defined $buffer{$name}{$sysid}{csrfToken}) {
+		$buffer{$name}{$sysid}{csrfToken} = _getCsrfToken($url);
+		main::Log3('FUIP:'.$name, 3, "Determined new csrfToken for $sysid: $buffer{$name}{$sysid}{csrfToken}");
 	};	
-	my $fullurl = $url.'?cmd='.main::urlEncode($cmd).'&XHR=1&fwcsrf='.$buffer{$name}{csrfToken};
+	my $fullurl = $url.'?cmd='.main::urlEncode($cmd).'&XHR=1&fwcsrf='.$buffer{$name}{$sysid}{csrfToken};
 	
 	my $hash = { hideurl   => 0,
                url       => $fullurl,
@@ -66,7 +66,7 @@ sub _sendRemoteCommand($$$) {
              };
 	my ($err, $ret) = main::HttpUtils_BlockingGet($hash);
 	if($err) {
-		main::Log3("FUIP:".$name, 3, "Access remote system: $err");
+		main::Log3("FUIP:".$name, 3, "Access remote system $sysid: $err");
 		return undef;
 	}
 	# do we have an issue with the csrf token?
@@ -76,14 +76,14 @@ sub _sendRemoteCommand($$$) {
 		return undef unless defined($hash->{httpheader});	
 		$hash->{httpheader} =~ /X-FHEM-csrfToken:[\x20 ](\S*)/;
 		return undef unless $1;
-		return undef if($1 eq $buffer{$name}{csrfToken});
+		return undef if($1 eq $buffer{$name}{$sysid}{csrfToken});
 		# ok, we have a different token
-		$buffer{$name}{csrfToken} = $1;  # set new token
-		main::Log3('FUIP:'.$name, 3, "Determined new csrfToken: ".$buffer{$name}{csrfToken});
+		$buffer{$name}{$sysid}{csrfToken} = $1;  # set new token
+		main::Log3('FUIP:'.$name, 3, "Determined new csrfToken for $sysid: $buffer{$name}{$sysid}{csrfToken}");
 		# retry, but only once
-		$fullurl = $url.'?cmd='.main::urlEncode($cmd).'&XHR=1&fwcsrf='.$buffer{$name}{csrfToken};
+		$fullurl = $url.'?cmd='.main::urlEncode($cmd).'&XHR=1&fwcsrf='.$buffer{$name}{$sysid}{csrfToken};
 		$hash = { hideurl   => 0,
-               url       => $url.'?cmd='.main::urlEncode($cmd).'&XHR=1&fwcsrf='.$buffer{$name}{csrfToken},
+               url       => $url.'?cmd='.main::urlEncode($cmd).'&XHR=1&fwcsrf='.$buffer{$name}{$sysid}{csrfToken},
                timeout   => undef,
                data      => undef,
                noshutdown=> undef,
@@ -91,7 +91,7 @@ sub _sendRemoteCommand($$$) {
               };
 		($err, $ret) = main::HttpUtils_BlockingGet($hash);
 		if($err) {
-			main::Log3("FUIP:".$name, 3, "Access remote system: $err");
+			main::Log3("FUIP:".$name, 3, "Access remote system $sysid: $err");
 			return undef;
 		}
 	};  
@@ -140,7 +140,7 @@ sub callCoding($$$) {
 					.' };;
 					use Data::Dumper;;
 					return Dumper(&$func());; }';
-		my $resultStr = _sendRemoteCommand($fuipName,$url,$coding);
+		my $resultStr = _sendRemoteCommand($fuipName,$sysid,$url,$coding);
 		# older versions of Dumper start with "$VAR..."
 		if($resultStr =~ m/^\$/) {
 			$resultStr = substr($resultStr,8);
@@ -269,7 +269,7 @@ sub getDevice($$$$) {
 		if($url eq 'local') {
 			$jsonResult = main::fhem($cmd,1);
 		}else{
-			$jsonResult = _sendRemoteCommand($name,$url,$cmd);
+			$jsonResult = _sendRemoteCommand($name,$sysid,$url,$cmd);
 		};
 		# the json "object" is always a proper object, but nevertheless some Perl JSON 
 		# implementations throw an error sometimes without allow_nonref
