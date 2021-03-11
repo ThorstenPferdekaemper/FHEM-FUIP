@@ -4050,6 +4050,7 @@ sub Get($$$)
 			if(not defined($view)) {
 				$view = FUIP::View::STATE->createDefaultInstance($hash);
 				$view->{device} = $a->[$i];
+				$view->{sysid} = $a->[2];
 			};			
 			$view->applyDefaults();
 			push(@views,$view->getConfigFields());

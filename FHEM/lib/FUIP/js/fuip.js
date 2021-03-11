@@ -1445,16 +1445,17 @@ function viewAddNewToArray(arrayName) {
 
 
 function viewAddNewByDevice(arrayName) {
+	let sysid = getSysidFromView(arrayName);	
 	// callback for value help 
-	var processDevices = function(devices) {
+	let processDevices = function(devices) {
 		if(devices.length == 0) { return; };
-		var cmd = "get " + fuipName() + " viewsByDevices " + devices.join(' ');
+		let cmd = "get " + fuipName() + " viewsByDevices " + sysid + " " + devices.join(' ');
 		sendFhemCommandLocal(cmd)
 			.done(function(settingsJson){
-				var views = json2object(settingsJson);
-				for(var i = 0; i < views.length; i++) {
-					var title = '';
-					for(var j = 0; j < views[i].length; j++) {
+				let views = json2object(settingsJson);
+				for(let i = 0; i < views.length; i++) {
+					let title = '';
+					for(let j = 0; j < views[i].length; j++) {
 						if(views[i][j].id == 'title') {
 							title = views[i][j].value;
 							break;
