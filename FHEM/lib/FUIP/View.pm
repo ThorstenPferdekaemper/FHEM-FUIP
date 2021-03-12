@@ -261,8 +261,10 @@ sub setAsParent($) {
 
 sub setParent($$) {
 	my ($self,$parent) = @_;
-	#main::Log3(undef,1,"setting parent: ".blessed($self)." ".blessed($parent));
-	#main::Log3(undef,1,"setting parent: ".$self->{title}." ".$parent->{title});
+	unless($parent) {
+		FUIP::exceptionRaise('Trying to set empty parent'); 
+		return;
+	};
 	$self->{parent} = $parent;
 	weaken($self->{parent});
 };
@@ -275,7 +277,6 @@ sub getSystem($) {
 	return $sysid if $sysid and $sysid ne '<inherit>';
 	# try parent
 	unless(defined($self->{parent})) {
-		main::Log3(undef,1,"undefined parent: ".$self->{class});
 		main::Log3(undef,1,"undefined parent: ".blessed($self));
 		main::Log3(undef,1,"undefined parent: ".$self->{title});
 	};
@@ -372,11 +373,11 @@ sub getDefaultFields($;$) {
 };
 
 
-sub createDefaultInstance($$) {
+sub createDefaultInstance($$$) {
 	# class method
 	# creates default instance for class $
 	# $fuip is the FUIP instance this belongs to
-	my ($class,$fuip) = @_;
+	my ($class,$fuip,$parent) = @_;
 	my $defaultFields = $class->getDefaultFields(1); #i.e. include internals
 	my $result = { fuip => $fuip };
 	# Do not create cycles (garbage collection)
@@ -391,7 +392,9 @@ sub createDefaultInstance($$) {
 			$result->{$field->{id}} = $field->{value};
 		};
 	};
-	return bless($result,$class);
+	bless($result,$class);
+	$result->setParent($parent);
+	return $result;
 };
 
 

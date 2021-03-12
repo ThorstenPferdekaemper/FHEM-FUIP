@@ -390,14 +390,14 @@ sub getDefaultSystemUrl($) {
 
 sub createRoomsMenu($$$) {
 	my ($hash,$pageid,$sysid) = @_;
-	my $cell = FUIP::Cell->createDefaultInstance($hash);
+	my $cell = FUIP::Cell->createDefaultInstance($hash,$hash->{pages}{$pageid});
 	$cell->{title} = "R&auml;ume";	
 	$cell->position(0,1);
     # create a MenuItem view for each room
 	my @rooms = FUIP::Model::getRooms($hash->{NAME},$sysid);
 	my $posY = 0; 
 	for my $room (@rooms) {
-		my $menuItem = FUIP::View::MenuItem->createDefaultInstance($hash);
+		my $menuItem = FUIP::View::MenuItem->createDefaultInstance($hash,$cell);
 		$menuItem->{text} = $room;
 		$menuItem->{pageid} = $sysid."/room/".$room;
 		$menuItem->{active} = "0";
@@ -442,39 +442,39 @@ sub addStandardCells($$$) {
 		my $systems = getSystems($hash);
 		$sysid = (sort keys %$systems)[0]
 	};
-	
+	my $page = $hash->{pages}{$pageid};		
 	# Home button
-	my $view = FUIP::View::HomeButton->createDefaultInstance($hash);
+	my $homeCell = FUIP::Cell->createDefaultInstance($hash,$page);
+	my $view = FUIP::View::HomeButton->createDefaultInstance($hash,$homeCell);
 	$view->{sysid} = $sysid;
 	$view->{active} = ($pageid eq "home" ? 1 : 0);
 	$view->position(0,0);
-	my $homeCell = FUIP::Cell->createDefaultInstance($hash);
 	$homeCell->position(0,0);
 	$homeCell->dimensions(1,$titleHeight);
 	$homeCell->{views} = [ $view ];
 	$homeCell->{title} = "Home";
 	push(@$cells,$homeCell);
 	# Clock
-	my $clockView = FUIP::View::Clock->createDefaultInstance($hash);
+	my $clockCell = FUIP::Cell->createDefaultInstance($hash,$page);
+	my $clockView = FUIP::View::Clock->createDefaultInstance($hash,$clockCell);
 	$clockView->{sysid} = $sysid;
 	$clockView->position(0,0);
 	# switch sizing of the clock to auto, e.g. to center it
 	$clockView->{sizing} = "auto";
 	$clockView->{defaulted}{sizing} = 0;
-	my $clockCell = FUIP::Cell->createDefaultInstance($hash);
 	$clockCell->position(6,0);
 	$clockCell->dimensions(1,$titleHeight);
 	$clockCell->{views} = [ $clockView ];
 	$clockCell->{title} = "Uhrzeit";
 	push(@$cells,$clockCell);
 	# Title cell
+	my $titleCell = FUIP::Cell->createDefaultInstance($hash,$page);
 	my $title = ($pageid eq "home" ? "Home, sweet home" : main::urlDecode(( split '/', $pageid )[ -1 ]));
-	$view = FUIP::View::Title->createDefaultInstance($hash);
+	$view = FUIP::View::Title->createDefaultInstance($hash,$titleCell);
 	$view->{sysid} = $sysid;
 	$view->{text} = $title;
 	$view->{icon} = "oa-control_building_s_all" if $pageid eq "home";
 	$view->position(0,0);
-	my $titleCell = FUIP::Cell->createDefaultInstance($hash);
 	$titleCell->position(1,0);
 	$titleCell->dimensions(5,$titleHeight);
 	$titleCell->{views} = [ $view ];
@@ -1111,7 +1111,7 @@ sub findDialogFromFieldId($$$;$) {
 	# if the dialog maintenance is called, we can assume that the "popup"
 	# field is not defaulted (i.e. inactive) and that we need a dialog instance
 	if( not blessed($dialog) or not $dialog->isa("FUIP::Dialog")) {
-		$dialog = FUIP::Dialog->createDefaultInstance($hash);
+		$dialog = FUIP::Dialog->createDefaultInstance($hash,$view);
 		$view->{$popupName} = $dialog;
 		$view->{defaulted}{$popupName} = 0;
 	};		
@@ -1224,7 +1224,7 @@ sub renderViewTemplateMaint($$) {
 	my $gridlines = undef;
 	if($templateid) {
 		if(not exists($hash->{viewtemplates}{$templateid})) {   
-			$hash->{viewtemplates}{$templateid} = FUIP::ViewTemplate->createDefaultInstance($hash);
+			$hash->{viewtemplates}{$templateid} = FUIP::ViewTemplate->createDefaultInstance($hash,$hash);
 			$hash->{viewtemplates}{$templateid}{id} = $templateid;
 		};
 		$viewtemplate = $hash->{viewtemplates}{$templateid};
@@ -1401,20 +1401,21 @@ sub defaultPageIndex($) {
 	
 	# Now we can be sure that we are in multifhem mode
 	# Create home page with links to each system
-		
+	
+	$hash->{pages}{"home"} = FUIP::Page->createDefaultInstance($hash,$hash);	
 	my @cells;
 	# home button and rooms menu
 	addStandardCells($hash, \@cells, 'home');
 	# TODO: get "system views", not only system menu 
 
-	my $systemsMenu = FUIP::Cell->createDefaultInstance($hash);
+	my $systemsMenu = FUIP::Cell->createDefaultInstance($hash,$hash->{pages}{"home"});
 	$systemsMenu->{title} = "Systeme";	
 	$systemsMenu->position(0,1);
     # create a MenuItem view for each system
 	my $systems = getSystems($hash);
 	my $posY = 0; 
 	foreach my $sysid (sort keys %$systems) {
-		my $menuItem = FUIP::View::MenuItem->createDefaultInstance($hash);
+		my $menuItem = FUIP::View::MenuItem->createDefaultInstance($hash,$systemsMenu);
 		$menuItem->{text} = $sysid;
 		$menuItem->{pageid} = $sysid;
 		$menuItem->{active} = "0";
@@ -1429,7 +1430,6 @@ sub defaultPageIndex($) {
 	$systemsMenu->position(0,$titleHeight);
 	push(@cells,$systemsMenu);	
 	
-	$hash->{pages}{"home"} = FUIP::Page->createDefaultInstance($hash);
 	$hash->{pages}{"home"}{cells} = \@cells;
 };
 
@@ -1440,11 +1440,14 @@ sub defaultPageIndex($) {
 sub defaultPageSystem($$) {
 	my ($hash,$sysid) = @_;
 	my @cells;
+	my $page = FUIP::Page->createDefaultInstance($hash,$hash);
+	$hash->{pages}{$sysid} = $page;
 	# home button and rooms menu
 	addStandardCells($hash, \@cells, $sysid); 
 	# get "room views" 
 	my @rooms = FUIP::Model::getRooms($hash->{NAME},$sysid);
 	foreach my $room (@rooms) {
+		my $cell = FUIP::Cell->createDefaultInstance($hash,$page);
 		my $views = getDeviceViewsForRoom($hash,$room,"overview",$sysid);
 		# we do not show empty rooms here
 		next unless @$views;
@@ -1466,7 +1469,7 @@ sub defaultPageSystem($$) {
 		@$views = (@thermostats,@shutters);
 		if(@switches) {
 			if(@$views) {
-				my $spacer = FUIP::View::Spacer->createDefaultInstance($hash);
+				my $spacer = FUIP::View::Spacer->createDefaultInstance($hash,$cell);
 				$spacer->dimensions(cellWidthToPixels($hash,2), 5);
 				push(@$views,$spacer);
 			};
@@ -1474,21 +1477,22 @@ sub defaultPageSystem($$) {
 		};
 		if(@others) {
 			if(@$views) {
-				my $spacer = FUIP::View::Spacer->createDefaultInstance($hash);
+				my $spacer = FUIP::View::Spacer->createDefaultInstance($hash,$cell);
 				$spacer->dimensions(cellWidthToPixels($hash,2), 5);
 				push(@$views,$spacer);
 			};
 			push(@$views,@others);
 		};
-	    my $cell = FUIP::Cell->createDefaultInstance($hash);
+
 		$cell->{title} = $room;
 		$cell->{views} = $views;
+		$cell->setAsParent();
 		$cell->applyDefaults();
 		$cell->dimensions(2,1);  #auto-arranging will fit the height
 		autoArrangeNewViews($cell);
 		push(@cells, $cell);
 	};
-	$hash->{pages}{$sysid} = FUIP::Page->createDefaultInstance($hash);
+
 	$hash->{pages}{$sysid}{cells} = \@cells;
 };
 
@@ -1497,6 +1501,8 @@ sub defaultPageRoom($$$){
 	my ($hash,$room,$sysid) = @_;
 	my $pageid = $sysid."/room/".$room;
 	$room = main::urlDecode($room);
+	my $page = FUIP::Page->createDefaultInstance($hash,$hash);
+	$hash->{pages}{$pageid} = $page;
 	my $viewsInRoom = getDeviceViewsForRoom($hash,$room,"room",$sysid);
 	# sort devices by type
 	my @switches;
@@ -1522,33 +1528,33 @@ sub defaultPageRoom($$$){
 	my $cell;
 	# create cells for thermostats and shutters 
 	for my $view (@thermostats) {
-		$cell = FUIP::Cell->createDefaultInstance($hash);
+		$cell = FUIP::Cell->createDefaultInstance($hash,$page);
 		$cell->{views} = [$view];
 		$cell->{title} = "Heizung";
 		push(@cells,$cell);
 	};
 	for my $view (@shutters) {
-		$cell = FUIP::Cell->createDefaultInstance($hash);
+		$cell = FUIP::Cell->createDefaultInstance($hash,$page);
 		$cell->{views} = [$view];
 		$cell->{title} = "Rollladen";
 		push(@cells,$cell);
 	};
 	# create one cell for all switches
 	if(@switches) {
-		$cell = FUIP::Cell->createDefaultInstance($hash);
+		$cell = FUIP::Cell->createDefaultInstance($hash,$page);
 		$cell->{title} = "Lampen";
 		$cell->{views} = \@switches;
 		push(@cells,$cell);
 	};	
 	# create cells for "others"
 	for my $view (@others) {
-		$cell = FUIP::Cell->createDefaultInstance($hash);
+		$cell = FUIP::Cell->createDefaultInstance($hash,$page);
 		$cell->{views} = [$view];
 		push(@cells,$cell);
 	};
 	# create one cell for all "STATE only"
 	if(@states) {
-		$cell = FUIP::Cell->createDefaultInstance($hash);
+		$cell = FUIP::Cell->createDefaultInstance($hash,$page);
 		$cell->{title} = "Sonstige";
 		$cell->{views} = \@states;
 		push(@cells,$cell);
@@ -1556,6 +1562,7 @@ sub defaultPageRoom($$$){
 	# care for proper size of the cells
 	for $cell (@cells) { 
 		$cell->applyDefaults();
+		$cell->setAsParent();
 		if($cell->{views}[0]->isa('FUIP::View::WeatherDetail') ||
 				$cell->{views}[0]->isa('FUIP::View::DwdWebLink') ||
 				$cell->{views}[0]->isa('FUIP::View::WebLink')){
@@ -1570,7 +1577,7 @@ sub defaultPageRoom($$$){
 	# home button and rooms menu
 	addStandardCells($hash, \@cells, $pageid);
 	# add to pages
-	$hash->{pages}{$pageid} = FUIP::Page->createDefaultInstance($hash);
+
 	$hash->{pages}{$pageid}{cells} = \@cells;
 };
 
@@ -1579,13 +1586,13 @@ sub defaultPageDevice($$$$){
     my ($hash,$room,$device,$sysid) = @_;
 	my $pageid = $sysid."/device/".$room."/".$device;
 	my @cells;
+	$hash->{pages}{$pageid} = FUIP::Page->createDefaultInstance($hash,$hash);
 	addStandardCells($hash, \@cells,$pageid);
-	my $deviceView = FUIP::View::ReadingsList->createDefaultInstance($hash);
+	my $cell = FUIP::Cell->createDefaultInstance($hash,$hash->{pages}{$pageid});
+	my $deviceView = FUIP::View::ReadingsList->createDefaultInstance($hash,$cell);
 	$deviceView->{device} = $device;
-	my $cell = FUIP::Cell->createDefaultInstance($hash);
 	$cell->{views} = [$deviceView];
 	push(@cells, $cell);
-	$hash->{pages}{$pageid} = FUIP::Page->createDefaultInstance($hash);
 	$hash->{pages}{$pageid}{cells} = \@cells;
 };
 
@@ -1593,8 +1600,9 @@ sub defaultPageDevice($$$$){
 sub defaultPage($$){
 	#creates a default (almost empty) page
 	my ($hash,$pageId) = @_;
-	$hash->{pages}{$pageId} = FUIP::Page->createDefaultInstance($hash);
-	$hash->{pages}{$pageId}{cells} = [];
+	my $page = FUIP::Page->createDefaultInstance($hash,$hash);
+	$page->{cells} = [];
+	$hash->{pages}{$pageId} = $page;
 };
 
 
@@ -1609,6 +1617,7 @@ sub getDeviceView($$$$){
 
 
 sub getDeviceViewInner($$$$){
+	# the views created here have the fuip instance as their parent. They will be re-ordered later anyway
 	my ($hash,$name,$level,$sysid) = @_;
 	my $device = FUIP::Model::getDevice($hash->{NAME},$name,["TYPE","subType","state","chanNo","model"],$sysid);
 	return undef unless defined $device;
@@ -1620,7 +1629,7 @@ sub getDeviceViewInner($$$$){
 	};
 	# we have something special for SYSMON
 	if($device->{Internals}{TYPE} eq "SYSMON" and not $level eq "overview") {
-		my $view = FUIP::View::Sysmon->createDefaultInstance($hash);
+		my $view = FUIP::View::Sysmon->createDefaultInstance($hash,$hash);
 		$view->{device} = $name;
 		return $view;
 	};
@@ -1637,7 +1646,7 @@ sub getDeviceViewInner($$$$){
 		$device->{Internals}{TYPE} eq "CUL_HM" and defined($device->{Internals}{chanNo}) 
 			and ( $model eq "HM-CC-RT-DN" and $device->{Internals}{chanNo} eq "04"
 			   or $model eq "HM-TC-IT-WM-W-EU" and $device->{Internals}{chanNo} eq "02" )){
-		my $view = FUIP::View::Thermostat->createDefaultInstance($hash);
+		my $view = FUIP::View::Thermostat->createDefaultInstance($hash,$hash);
 		$view->{device} = $name;
 		if($level eq 'overview') {
 			$view->{readonly} = "on";
@@ -1652,7 +1661,7 @@ sub getDeviceViewInner($$$$){
 	# weather (PROPLANTA)
 	if($device->{Internals}{TYPE} eq "PROPLANTA") {
 		if($level eq "overview") {
-			my $view = FUIP::View::WeatherOverview->createDefaultInstance($hash);
+			my $view = FUIP::View::WeatherOverview->createDefaultInstance($hash,$hash);
 			$view->{device} = $name;
 			$view->{sizing} = "resizable";
 			$view->{defaulted}{sizing} = 0;
@@ -1662,7 +1671,7 @@ sub getDeviceViewInner($$$$){
 			$view->{defaulted}{layout} = 0;
 			return $view;
 		}else{
-			my $view = FUIP::View::WeatherDetail->createDefaultInstance($hash);
+			my $view = FUIP::View::WeatherDetail->createDefaultInstance($hash,$hash);
 			$view->{device} = $name;
 			$view->{sizing} = "resizable";
 			$view->{defaulted}{sizing} = 0;
@@ -1676,7 +1685,7 @@ sub getDeviceViewInner($$$$){
 	# general weblinks seem to be too dangerous. E.g. the usual DWD-weblink destroys the flex layout
 	if($device->{Internals}{TYPE} eq "weblink"){
 		return undef;
-		#$view = FUIP::View::WebLink->createDefaultInstance($hash);
+		#$view = FUIP::View::WebLink->createDefaultInstance($hash,$hash);
 		#$view->{device} = $name;
 		#$view->{sizing} = "resizable";
 		#$view->{defaulted}{sizing} = 0;
@@ -1686,7 +1695,7 @@ sub getDeviceViewInner($$$$){
 	};
 	# DWD_OpenData_Weblink
 	if($device->{Internals}{TYPE} eq "DWD_OpenData_Weblink"){
-		$view = FUIP::View::DwdWebLink->createDefaultInstance($hash);
+		$view = FUIP::View::DwdWebLink->createDefaultInstance($hash,$hash);
 		$view->{device} = $name;
 		$view->{sizing} = "resizable";
 		$view->{defaulted}{sizing} = 0;
@@ -1696,23 +1705,23 @@ sub getDeviceViewInner($$$$){
 	};
 	# Charts
 	if($device->{Internals}{TYPE} eq "SVG"){
-		$view = FUIP::View::Chart->createDefaultInstance($hash);
+		$view = FUIP::View::Chart->createDefaultInstance($hash,$hash);
 		$view->{device} = $name;
 		return $view;
 	};
 	# TODO: Does subType "shutter" exist at all?
 	if($subType =~ /^(shutter|blind)$/){
 		if($level eq 'overview') {
-			$view = FUIP::View::ShutterOverview->createDefaultInstance($hash);
+			$view = FUIP::View::ShutterOverview->createDefaultInstance($hash,$hash);
 		}else{
-			$view = FUIP::View::ShutterControl->createDefaultInstance($hash);
+			$view = FUIP::View::ShutterControl->createDefaultInstance($hash,$hash);
 		};	
 	}else{
 		my $state = (exists($device->{Readings}{state}) ? $device->{Readings}{state} : 0);
 		if($state eq "on" or $state eq "off") {
-			$view = FUIP::View::SimpleSwitch->createDefaultInstance($hash);
+			$view = FUIP::View::SimpleSwitch->createDefaultInstance($hash,$hash);
 		}else{
-			$view = FUIP::View::STATE->createDefaultInstance($hash);
+			$view = FUIP::View::STATE->createDefaultInstance($hash,$hash);
 		};
 	};	
 	$view->{device} = $name;
@@ -2255,7 +2264,7 @@ sub getFuipPage($$) {
 		return("text/plain; charset=utf-8", "FUIP page $pageid does not exist") if($locked);
 		createPage($hash,$pageid);
 		# add a cell, as otherwise it cannot be maintained
-		push(@{$hash->{pages}{$pageid}{cells}},FUIP::Cell->createDefaultInstance($hash)) unless @{$hash->{pages}{$pageid}{cells}};
+		push(@{$hash->{pages}{$pageid}{cells}},FUIP::Cell->createDefaultInstance($hash,$hash->{pages}{$pageid})) unless @{$hash->{pages}{$pageid}{cells}};
 	};
 	# ok, we can render this	
 	if(main::AttrVal($hash->{NAME},"layout","gridster") eq "flex") {
@@ -2393,7 +2402,7 @@ sub settingsImport($$) {
 		# If we come from a dialog, we need to convert sizes
 		if($class eq "FUIP::Dialog") {
 			my $dialog = $newObject;
-			$newObject = FUIP::Cell->createDefaultInstance($hash);
+			$newObject = FUIP::Cell->createDefaultInstance($hash,$hash->{pages}{$urlParams->{pageid}});
 			$newObject->{views} = $dialog->{views};
 			$newObject->{title} = $dialog->{title};
 			$newObject->{defaulted} = $dialog->{defaulted};
@@ -2409,7 +2418,6 @@ sub settingsImport($$) {
 			delete $newObject->{posY};
 		};
 		push(@{$hash->{pages}{$urlParams->{pageid}}{cells}},$newObject);
-		$newObject->setParent($hash->{pages}{$urlParams->{pageid}});
 	}elsif($targettype eq "page"){
 		$hash->{pages}{$urlParams->{pageid}} = $newObject;
 		$newObject->setParent($hash);
@@ -3020,7 +3028,8 @@ sub setViewSettings($$$$;$) {
 		if($newclass =~ m/^FUIP::VTempl::(.*)$/) {
 			$newView = $hash->{viewtemplates}{$1}->createTemplInstance($hash);  # makes a ViewTemplInstance
 		}else{
-			$newView = $newclass->createDefaultInstance($hash);
+			# Set the fuip instance as parent here. This will be fixed later
+			$newView = $newclass->createDefaultInstance($hash,$hash);
 		};	
 		if(defined($viewlist->[$viewindex])) {
 			my $oldView = $viewlist->[$viewindex];
@@ -3287,7 +3296,7 @@ sub _setConvert($$) {
 	my $msg = _checkViewTemplateId($templateid);
 	return $msg if $msg;
 	# create new view template
-	$hash->{viewtemplates}{$templateid} = FUIP::ViewTemplate->createDefaultInstance($hash);
+	$hash->{viewtemplates}{$templateid} = FUIP::ViewTemplate->createDefaultInstance($hash,$hash);
 	$hash->{viewtemplates}{$templateid}{id} = $templateid;
 	$hash->{viewtemplates}{$templateid}->setParent($hash);
 	# create a deep copy of the cell
@@ -3445,10 +3454,9 @@ sub _innerSet($$$)
 		#get page id
 		my $pageId = (exists($a->[2]) ? $a->[2] : "");
 		return "\"set viewaddnew\": page ".$pageId." does not exist" unless defined $hash->{pages}{$pageId};
-		my $newCell = FUIP::Cell->createDefaultInstance($hash);
+		my $newCell = FUIP::Cell->createDefaultInstance($hash,$hash->{pages}{$pageId});
 		$newCell->{region} = $a->[3] if($a->[3]);	
 		push(@{$hash->{pages}{$pageId}{cells}},$newCell);
-		$newCell->setParent($hash->{pages}{$pageId});
 	}elsif($cmd eq "pagedelete") {
 		#get page id
 		my $pageId = (exists($a->[2]) ? $a->[2] : "");
@@ -4048,7 +4056,7 @@ sub Get($$$)
 		foreach my $i (3 .. $#{$a}) {
 			my $view = getDeviceView($hash, $a->[$i],"overview",$a->[2]);
 			if(not defined($view)) {
-				$view = FUIP::View::STATE->createDefaultInstance($hash);
+				$view = FUIP::View::STATE->createDefaultInstance($hash,$hash);
 				$view->{device} = $a->[$i];
 				$view->{sysid} = $a->[2];
 			};			
