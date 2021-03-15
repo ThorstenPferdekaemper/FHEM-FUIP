@@ -28,6 +28,9 @@ sub getHTML($$){
 	my $instanceStr = $self->{viewtemplate}->serialize();
 	my $evalled = eval($instanceStr);
 	my $instance = "FUIP::ViewTemplate"->reconstruct($evalled,$self->{fuip});
+	# The parent of a view template is always the FUIP instance itself,
+	# but for the rendering, we need the real parent
+	$instance->setParent($self->{parent});
 	# now replace variables
 	my $h = {};
 	my $variables = $self->{viewtemplate}{variables};
@@ -138,11 +141,11 @@ sub fixInstancesWithoutTemplates() {
 			$inst->{viewtemplate} = $inst->{fuip}{viewtemplates}{$inst->{templateid}};	
 		}else{		
 			main::Log3(undef,1,"FUIP ".$inst->{fuip}{NAME}.": View Template does not exist: ".$inst->{templateid});
-			$inst->{viewtemplate} = FUIP::ViewTemplate->createDefaultInstance($inst->{fuip});
+			$inst->{viewtemplate} = FUIP::ViewTemplate->createDefaultInstance($inst->{fuip},$inst->{fuip});
 			$inst->{viewtemplate}{id} = "<ERROR>";
 			$inst->{title} = "Error ".$inst->{templateid} unless $inst->{title};
 			$inst->{defaulted}{title} = '0';
-			my $view = "FUIP::View"->createDefaultInstance($inst->{fuip});
+			my $view = "FUIP::View"->createDefaultInstance($inst->{fuip},$inst->{viewtemplate});
 			$view->{content} = "View template <b>".$inst->{templateid}."</b> does not exist.";
 			$view->{defaulted}{content} = '0';
 			$view->{width} = 150;

@@ -373,7 +373,7 @@ sub getDefaultSystem($) {
 	my $hash = shift;
 	my $systems = getSystems($hash);
 	my $defaultSysid = main::AttrVal($hash->{NAME},"defaultBackend",undef);
-	if(defined($systems->{$defaultSysid})) {
+	if(defined($defaultSysid) && defined($systems->{$defaultSysid})) {
 	    return $defaultSysid;
 	};
 	# if there is no defaultBackend or it does not exist,
@@ -3993,7 +3993,6 @@ sub renderDocu($) {
 		};
 		$result .= '<p style="clear:left;height:0em;">
 			<ul>';
-		my $fields = $view->getStructure();
 		for my $field (@$fields) {
 			# next if $field->{id} =~ /^(class|title|label|sizing|popup)$/;
 			next if $field->{type} =~ /^(dimension|flexfields)$/;

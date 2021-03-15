@@ -279,6 +279,7 @@ sub getSystem($) {
 	unless(defined($self->{parent})) {
 		main::Log3(undef,1,"undefined parent: ".blessed($self));
 		main::Log3(undef,1,"undefined parent: ".$self->{title});
+		FUIP::exceptionRaise('undefined parent'); 
 	};
 	
 	if(blessed($self->{parent}) and $self->{parent}->isa("FUIP::View")) {

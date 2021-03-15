@@ -20,7 +20,9 @@ sub getHTML($){
 	$html =~ s/\n/\\n/g;	# replace new line by \n
 	$html =~ s/\"/\\\"/g;	# " -> \"
 	$html =~ s|<\/script>|<\\/script>|g; # </script> => <\/scipt>
-	my @flexfields = split(/,/,$self->{flexfields});
+	my @flexfields;
+	# avoid "undefined" message
+	@flexfields = split(/,/,$self->{flexfields}) if defined $self->{flexfields};
 	my $fieldStr;
 	for my $flexfield (@flexfields) {
 		if($fieldStr) {

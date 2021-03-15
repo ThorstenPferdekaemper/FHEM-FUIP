@@ -1818,24 +1818,33 @@ function getIcons() {
 	return result;
 };
 	
-	
-function createValueHelpDialog(okFunction) {
-	var valuehelp;	
-	valuehelp = $( "#valuehelp" ).dialog({
-		autoOpen: false,
-		width: 420,
-		height: 260,
-		modal: true,
-		buttons: [{
-			text: 'Ok',
-			icon: 'ui-icon-check',
-			click: okFunction,
-			showLabel: false },
-		  { text: 'Cancel',
-			icon: 'ui-icon-close',
-			click: function() {	valuehelp.dialog( "close" ); },
-			showLabel: false }
-		],
+
+// createValueHelpDialog
+// Creates and opens the value help dialog
+// returns a Promise, which resolves when the ok button is clicked
+// and rejects when the cancel button is clicked	
+function createValueHelpDialog(fieldName) {
+	return new Promise(function(resolve,reject) {
+		let valueDialog = $( "#valuehelp" );
+		valueDialog.dialog({
+			title: "Possible values for " + fieldName,
+			autoOpen: false,
+			width: 420,
+			height: 260,
+			modal: true,
+			buttons: [{
+				text: 'Ok',
+				icon: 'ui-icon-check',
+				click: resolve,
+				showLabel: false },
+			  { text: 'Cancel',
+				icon: 'ui-icon-close',
+				click: function() {	valueDialog.dialog( "close" ); reject();},
+				showLabel: false }
+			],
+		});
+		valueDialog.html("Please wait...");
+		valueDialog.dialog("open");
 	});
 };	
 
@@ -1932,18 +1941,19 @@ async function valueHelp(fieldName,type) {
 	// all others
 	let name = fuipName();
 	let sysid = getSysidFromView(fieldName,type);
-	createValueHelpDialog(function(){
-		var selected = $('#valuehelptable').attr('data-selected');
-		if(!selected) { return; };
-		var value = $('#'+selected).attr('data-key');
-		$('#'+fieldName).val(value);
-		$('#'+fieldName).trigger("input");
-		$( "#valuehelp" ).dialog("close");
-	});
-	var valueDialog = $( "#valuehelp" );
-	valueDialog.dialog("option","title","Possible values for " + fieldName); 
-	valueDialog.html("Please wait...");
-	valueDialog.dialog("open");
+	let dialogPromise = createValueHelpDialog(fieldName);
+	dialogPromise.then(
+		function(){
+			let selected = $('#valuehelptable').attr('data-selected');
+			if(!selected) { return; };
+			let value = $('#'+selected).attr('data-key');
+			$('#'+fieldName).val(value);
+			$('#'+fieldName).trigger("input");
+			$( "#valuehelp" ).dialog("close");
+		}
+	);
+		
+	let valueDialog = $( "#valuehelp" );
 
 	// put select-only-one mechanism
     var registerClicked = function() {		 
@@ -2054,7 +2064,6 @@ async function valueHelp(fieldName,type) {
 			};
 		};
 		// go on after special viewtemplate handling
-		var valueDialog = $( "#valuehelp" );
 		var selectedClass = $('#'+fieldName).val();
 		var html = "<table id='valuehelptable' class='tablesorter' data-selected='";
 		for(var i = 0; i < classList.length; i++){
@@ -2091,7 +2100,11 @@ async function valueHelp(fieldName,type) {
 		});	
 	}else{
 		valueDialog.html("No value help for this field.");
+		return;
 	};
+	
+	// wait for the user to do something
+	await dialogPromise;
 };	
 
 
@@ -2197,26 +2210,27 @@ function createValueHelpTable(tabDef,selected,multiSelect) {
 
 // type: device, devices or device-reading	
 async function valueHelpForDevice(fieldTitle, callbackFunction, type) {
-	var name = fuipName();
-	createValueHelpDialog(function(){
-		var resultArray = [];
-		$("tr[data-selected='X']").each(function(){
-			resultArray.push($(this).attr('data-key'));
-		});	
-		$( "#valuehelp" ).dialog("close");
-		if(type == 'devices') {  // multi select
-			callbackFunction(resultArray);
-		}else if(resultArray.length) {
-			callbackFunction(resultArray[0]);
-		};
-	});
+	let name = fuipName();
+	
+	let dialogPromise = createValueHelpDialog(fieldTitle);
+	dialogPromise.then(	
+		function(){
+			var resultArray = [];
+			$("tr[data-selected='X']").each(function(){
+				resultArray.push($(this).attr('data-key'));
+			});	
+			$( "#valuehelp" ).dialog("close");
+			if(type == 'devices') {  // multi select
+				callbackFunction(resultArray);
+			}else if(resultArray.length) {
+				callbackFunction(resultArray[0]);
+			};
+		}
+	);		
+	
 	var valueDialog = $( "#valuehelp" );
-	valueDialog.dialog("option","title","Possible values for " + fieldTitle); 
-	valueDialog.html("Please wait...");
-	valueDialog.dialog("open");
 	
 	// get system id
-	// TODO: This won't work if called to create views by devices
 	let sysid = getSysidFromView(fieldTitle,type);
 	
 	// do we have a device filter from the view?
@@ -2232,121 +2246,123 @@ async function valueHelpForDevice(fieldTitle, callbackFunction, type) {
 	};	
 	
 	let cmd = "get " + name + " devicelist " + sysid; 
-	sendFhemCommandLocal(cmd).done(function(deviceListJson){
-		var deviceList = json2object(deviceListJson);
-		// filter, if needed
-		// TODO: in principle, we only need to get the filter list details, 
-		//       i.e. not all devices when filtered
-		if(!allDevices) {
-			let fullList = deviceList;
-			deviceList = [];
-			for(let i = 0; i < fullList.length; i++){
-				if(deviceFilter.indexOf(fullList[i].NAME) > -1)
-					deviceList.push(fullList[i]);	
-			};	
-		};
-		var valueDialog = $( "#valuehelp" );
-		// check whether alias is used at all
-		var aliasUsed = false;
-		for(var i = 0; i < deviceList.length; i++){
-			if(deviceList[i].alias) {
-				aliasUsed = true;
-				break;
-			};	
-		};
-		var html = "<table id='valuehelptable' class='tablesorter'><thead><tr><th>Name</th>";
-		if(aliasUsed) {
-			html += "<th>Alias</th>";
-		};
-		html += "<th class=\"filter-select filter-onlyAvail\">Type</th><th>Room(s)</th></tr></thead>";
-		html += "<tbody>";
-		var roomFilters = {};
- 		// (also works for single selection)
-		let selected = $("#"+fieldTitle).val();
-		if(selected) {
-			selected = selected.split(",");
-		}else{
-			selected = [];
+	let deviceListJson = await asyncSendFhemCommandLocal(cmd);
+	let deviceList = json2object(deviceListJson);
+	// filter, if needed
+	// TODO: in principle, we only need to get the filter list details, 
+	//       i.e. not all devices when filtered
+	if(!allDevices) {
+		let fullList = deviceList;
+		deviceList = [];
+		for(let i = 0; i < fullList.length; i++){
+			if(deviceFilter.indexOf(fullList[i].NAME) > -1)
+				deviceList.push(fullList[i]);	
 		};	
-		for(var i = 0; i < deviceList.length; i++){
-			if(deviceList[i].room == "") {
-				deviceList[i].room = "unsorted";
-			};	
-			let isSel = '';
-			let style = '';
-			if(selected.indexOf(deviceList[i].NAME) > -1) {
-				isSel = 'X';
-				style = " style='background:#F39814;color:black;'";
-			};	
-			html += "<tr id='valuehelp-row-"+i+"' data-selected='"+isSel+"' data-key='"+deviceList[i].NAME+"'><td"+style+">"+deviceList[i].NAME+"</td>";
-			if(aliasUsed) {
-				html += "<td"+style+">"+deviceList[i].alias+"</td>";
-			};
-			html += "<td"+style+">"+deviceList[i].TYPE+"</td><td"+style+">"+deviceList[i].room+"</td></tr>";
-			var rooms = deviceList[i].room.split(",");
-			for(var j = 0; j < rooms.length; j++) {
-				roomFilters[rooms[j]] = valueHelpFilterRoom;
-			};	
-		};
-		html += "</tbody></table>";
-		valueDialog.dialog("option","width",650);
-		valueDialog.dialog("option","height",500);			
-		valueDialog.html(html);
-		var orderedRoomFilters = {};
-		Object.keys(roomFilters).sort().forEach(function(key) {
-			orderedRoomFilters[key] = roomFilters[key];
-		});
-		var roomFilterFunctions;
+	};
+	var valueDialog = $( "#valuehelp" );
+	// check whether alias is used at all
+	var aliasUsed = false;
+	for(var i = 0; i < deviceList.length; i++){
+		if(deviceList[i].alias) {
+			aliasUsed = true;
+			break;
+		};	
+	};
+	var html = "<table id='valuehelptable' class='tablesorter'><thead><tr><th>Name</th>";
+	if(aliasUsed) {
+		html += "<th>Alias</th>";
+	};
+	html += "<th class=\"filter-select filter-onlyAvail\">Type</th><th>Room(s)</th></tr></thead>";
+	html += "<tbody>";
+	var roomFilters = {};
+	// (also works for single selection)
+	let selected = $("#"+fieldTitle).val();
+	if(selected) {
+		selected = selected.split(",");
+	}else{
+		selected = [];
+	};	
+	for(var i = 0; i < deviceList.length; i++){
+		if(deviceList[i].room == "") {
+			deviceList[i].room = "unsorted";
+		};	
+		let isSel = '';
+		let style = '';
+		if(selected.indexOf(deviceList[i].NAME) > -1) {
+			isSel = 'X';
+			style = " style='background:#F39814;color:black;'";
+		};	
+		html += "<tr id='valuehelp-row-"+i+"' data-selected='"+isSel+"' data-key='"+deviceList[i].NAME+"'><td"+style+">"+deviceList[i].NAME+"</td>";
 		if(aliasUsed) {
-			roomFilterFunctions = { 3 : orderedRoomFilters };
-		}else{
-			roomFilterFunctions = { 2 : orderedRoomFilters };
-		};		
-		$(function() {
-			$(".tablesorter").tablesorter({
-				theme: "blue",
-				widgets: ["filter"],
-				widgetOptions: {
-					filter_functions: roomFilterFunctions
-				}	
-			});
-			$( "#valuehelptable tbody tr" ).on( "click", function() {
-				if(type == 'devices') {
-					if($(this).attr('data-selected') == 'X') {
-						$(this).attr('data-selected','');
-						$(this).children("td").removeAttr("style"); 	
-					}else{
-						$(this).attr('data-selected','X');
-						$(this).children("td").attr("style", "background:#F39814;color:black;");
-					};				
-				}else{  // single select
-					$("tr[data-selected='X']").each(function(){
-						$(this).attr('data-selected','');
-						$(this).children("td").removeAttr("style"); 							
-					});
-					$(this).attr('data-selected','X');					
-					$(this).children("td").attr("style", "background: #F39814;color:black;");
-				};	
-			});
-		});	
+			html += "<td"+style+">"+deviceList[i].alias+"</td>";
+		};
+		html += "<td"+style+">"+deviceList[i].TYPE+"</td><td"+style+">"+deviceList[i].room+"</td></tr>";
+		var rooms = deviceList[i].room.split(",");
+		for(var j = 0; j < rooms.length; j++) {
+			roomFilters[rooms[j]] = valueHelpFilterRoom;
+		};	
+	};
+	html += "</tbody></table>";
+	valueDialog.dialog("option","width",650);
+	valueDialog.dialog("option","height",500);			
+	valueDialog.html(html);
+	var orderedRoomFilters = {};
+	Object.keys(roomFilters).sort().forEach(function(key) {
+		orderedRoomFilters[key] = roomFilters[key];
+	});
+	var roomFilterFunctions;
+	if(aliasUsed) {
+		roomFilterFunctions = { 3 : orderedRoomFilters };
+	}else{
+		roomFilterFunctions = { 2 : orderedRoomFilters };
+	};		
+	$(function() {
+		$(".tablesorter").tablesorter({
+			theme: "blue",
+			widgets: ["filter"],
+			widgetOptions: {
+				filter_functions: roomFilterFunctions
+			}	
+		});
+		$( "#valuehelptable tbody tr" ).on( "click", function() {
+			if(type == 'devices') {
+				if($(this).attr('data-selected') == 'X') {
+					$(this).attr('data-selected','');
+					$(this).children("td").removeAttr("style"); 	
+				}else{
+					$(this).attr('data-selected','X');
+					$(this).children("td").attr("style", "background:#F39814;color:black;");
+				};				
+			}else{  // single select
+				$("tr[data-selected='X']").each(function(){
+					$(this).attr('data-selected','');
+					$(this).children("td").removeAttr("style"); 							
+				});
+				$(this).attr('data-selected','X');					
+				$(this).children("td").attr("style", "background: #F39814;color:black;");
+			};	
+		});
 	});	
+		
+	// wait for user action
+	await dialogPromise;		
 };	
 
 
-function valueHelpForUnit(fieldTitle, callbackFunction) {
-	createValueHelpDialog(function(){
-		let result = "";
-		$("td[data-selected='X']").each(function(){
-			result = $(this).html();
-			if($(this).data("col") == 2) result = " " + result;
-		});	
-		$( "#valuehelp" ).dialog("close");
-		callbackFunction(result);
-	});
+async function valueHelpForUnit(fieldTitle, callbackFunction) {
+	let dialogPromise = createValueHelpDialog(fieldTitle);
+	dialogPromise.then( 
+		function(){
+			let result = "";
+			$("td[data-selected='X']").each(function(){
+				result = $(this).html();
+				if($(this).data("col") == 2) result = " " + result;
+			});	
+			$( "#valuehelp" ).dialog("close");
+			callbackFunction(result);
+		}
+	);
 	var valueDialog = $( "#valuehelp" );
-	valueDialog.dialog("option","title","Possible values for " + fieldTitle); 
-	valueDialog.html("Please wait...");
-	valueDialog.dialog("open");
 
 	var unitList = [
 		[ 'Beleuchtungsstärke','lx','Lux'],
@@ -2433,27 +2449,30 @@ function valueHelpForUnit(fieldTitle, callbackFunction) {
 			selCell.attr("style", "background: #F39814;color:black;");
 		});	
 	});
+	
+	// wait for user activity
+	await dialogPromise;
 };
 
 
 async function valueHelpForOptions(fieldName, callbackFunction,multiSelect) {
-	var name = fuipName();
-	createValueHelpDialog(function(){
-		var resultArray = [];
-		$("tr[data-selected='X']").each(function(){
-			resultArray.push($(this).attr('data-key'));
-		});	
-		$( "#valuehelp" ).dialog("close");
-		if(multiSelect) {
-			callbackFunction(resultArray);
-		}else if(resultArray.length) {
-			callbackFunction(resultArray[0]);
-		};
-	});
+	let name = fuipName();
+	let dialogPromise = createValueHelpDialog(fieldName);
+	dialogPromise.then(
+		function(){
+			var resultArray = [];
+			$("tr[data-selected='X']").each(function(){
+				resultArray.push($(this).attr('data-key'));
+			});	
+			$( "#valuehelp" ).dialog("close");
+			if(multiSelect) {
+				callbackFunction(resultArray);
+			}else if(resultArray.length) {
+				callbackFunction(resultArray[0]);
+			};
+		}
+	);
 	var valueDialog = $( "#valuehelp" );
-	valueDialog.dialog("option","title","Possible values for " + fieldName); 
-	valueDialog.html("Please wait...");
-	valueDialog.dialog("open");
 	
 	var innerValueHelp = function(fName,options) {
 		// which of the options are set?
@@ -2504,12 +2523,11 @@ async function valueHelpForOptions(fieldName, callbackFunction,multiSelect) {
 	}else{
 		var refSetFullName = getFullRefName(fieldName,"refset");
 		if(refSetFullName) {  // i.e. we have a "refset"
-			var refDeviceFullName = getFullRefName(refSetFullName, "refdevice");
-			var cmd = "get " + name + " sets " + $("#"+refDeviceFullName).val() + " " + sysid;
-			sendFhemCommandLocal(cmd).done(function(json){
-				var sets = json2object(json);
-				innerValueHelp(fieldName,sets[$("#"+refSetFullName).val()]);
-			});
+			let refDeviceFullName = getFullRefName(refSetFullName, "refdevice");
+			let cmd = "get " + name + " sets " + $("#"+refDeviceFullName).val() + " " + sysid;
+			let json = await asyncSendFhemCommandLocal(cmd);
+			let sets = json2object(json);
+			innerValueHelp(fieldName,sets[$("#"+refSetFullName).val()]);
 		}else{
 			// fixed list of options?
 			if(settings.hasOwnProperty("options")) {
@@ -2517,6 +2535,7 @@ async function valueHelpForOptions(fieldName, callbackFunction,multiSelect) {
 			};		
 		};
 	};	
+	await dialogPromise;
 };	
 
 
