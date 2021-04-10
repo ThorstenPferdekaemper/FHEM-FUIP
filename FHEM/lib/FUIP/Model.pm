@@ -389,6 +389,6 @@ sub getDevicesForType($$$) {
 		'return \@result'
 	];
 	return FUIP::Model::callCoding($fuipName,$coding,$sysid);	
-}	
-	
+};	
+
 1;

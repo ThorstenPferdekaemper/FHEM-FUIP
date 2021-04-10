@@ -15,7 +15,7 @@ sub dimensions($;$$){
 	};
 	return ("auto","auto") if($self->{sizing} eq "auto");
 	if($self->{sizing} eq "fixed") {
-		my $device = FUIP::Model::getDevice($self->{fuip}{NAME},$self->{device},['forecastDays'],$self->{sysid});
+		my $device = FUIP::Model::getDevice($self->{fuip}{NAME},$self->{device},['forecastDays'],$self->getSystem());
 		my $forecastDays = 4;
 		if(defined($device->{Attributes}{forecastDays})) {
 			$forecastDays = $device->{Attributes}{forecastDays};

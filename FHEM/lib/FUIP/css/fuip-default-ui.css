@@ -3,6 +3,50 @@
    "default" style 
 */
 
+/* hack to display also "brand" icons of the fa icons */
+.fa.fa-alipay, .fa.fa-accessible-icon, .fa.fa-accusoft, .fa.fa-adversal, .fa.fa-affiliatetheme,
+.fa.fa-algolia, .fa.fa-amazon-pay, .fa.fa-amilia, .fa.fa-angrycreative, .fa.fa-angular, 
+.fa.fa-app-store, .fa.fa-app-store-ios, .fa.fa-apper, .fa.fa-apple-pay, .fa.fa-asymmetrik, 
+.fa.fa-audible, .fa.fa-autoprefixer, .fa.fa-avianex, .fa.fa-aviato, .fa.fa-aws, .fa.fa-bimobject,
+.fa.fa-bity, .fa.fa-blackberry, .fa.fa-blogger, .fa.fa-blogger-b, .fa.fa-buromobelexperte,
+.fa.fa-cc-amazon-pay, .fa.fa-cc-apple-pay, .fa.fa-centercode, .fa.fa-cloudscale, .fa.fa-cloudsmith, 
+.fa.fa-cloudversify, .fa.fa-cpanel, .fa.fa-creative-commons-by, .fa.fa-creative-commons-nc, 
+.fa.fa-creative-commons-nc-eu, .fa.fa-creative-commons-nc-jp, .fa.fa-creative-commons-nd, 
+.fa.fa-creative-commons-pd, .fa.fa-creative-commons-pd-alt, .fa.fa-creative-commons-remix, 
+.fa.fa-creative-commons-sa, .fa.fa-creative-commons-sampling, .fa.fa-creative-commons-sampling-plus, 
+.fa.fa-creative-commons-share , .fa.fa-css3-alt, .fa.fa-cuttlefish, .fa.fa-d-and-d, .fa.fa-deploydog, 
+.fa.fa-deskpro, .fa.fa-digital-ocean, .fa.fa-discord, .fa.fa-discourse, .fa.fa-dochub, .fa.fa-docker, 
+.fa.fa-draft2digital, .fa.fa-dribbble-square, .fa.fa-dyalog, .fa.fa-earlybirds, .fa.fa-ebay, 
+.fa.fa-elementor, .fa.fa-ello, .fa.fa-ember, .fa.fa-erlang, .fa.fa-ethereum, .fa.fa-facebook-messenger, 
+.fa.fa-first-order-alt, .fa.fa-firstdraft, .fa.fa-flipboard, .fa.fa-fly, .fa.fa-font-awesome-alt, 
+.fa.fa-font-awesome-flag, .fa.fa-font-awesome-logo-full, .fa.fa-fonticons-fi, .fa.fa-fort-awesome-alt, 
+.fa.fa-freebsd, .fa.fa-fulcrum, .fa.fa-galactic-republic, .fa.fa-galactic-senate, .fa.fa-gitkraken, 
+.fa.fa-gitter, .fa.fa-gofore, .fa.fa-goodreads, .fa.fa-goodreads-g, .fa.fa-google-drive, 
+.fa.fa-google-play, .fa.fa-google-plus-g, .fa.fa-gripfire, .fa.fa-grunt, .fa.fa-gulp,
+.fa.fa-hacker-news-square, .fa.fa-hackerrank, .fa.fa-hips, .fa.fa-hire-a-helper, .fa.fa-hooli, 
+.fa.fa-hornbill, .fa.fa-hotjar, .fa.fa-hubspot, .fa.fa-itunes, .fa.fa-itunes-note, .fa.fa-java, 
+.fa.fa-jedi-order, .fa.fa-jenkins, .fa.fa-joget, .fa.fa-js, .fa.fa-js-square, .fa.fa-kaggle , 
+.fa.fa-keybase, .fa.fa-keycdn, .fa.fa-kickstarter, .fa.fa-kickstarter-k, .fa.fa-korvue, .fa.fa-laravel, 
+.fa.fa-less , .fa.fa-line, .fa.fa-linkedin-in , .fa.fa-lyft, .fa.fa-magento , .fa.fa-mailchimp , 
+.fa.fa-mandalorian , .fa.fa-markdown , .fa.fa-mastodon, .fa.fa-medapps, .fa.fa-medium-m , .fa.fa-medrt , 
+.fa.fa-megaport , .fa.fa-microsoft , .fa.fa-mix , .fa.fa-mizuni, .fa.fa-monero, .fa.fa-neos, .fa.fa-nimblr, 
+.fa.fa-nintendo-switch, .fa.fa-node, .fa.fa-node-js , .fa.fa-npm, .fa.fa-ns8, .fa.fa-nutritionix , 
+.fa.fa-old-republic , .fa.fa-osi, .fa.fa-page4, .fa.fa-palfed, .fa.fa-patreon, .fa.fa-periscope, 
+.fa.fa-phabricator, .fa.fa-phoenix-framework, .fa.fa-phoenix-squadron, .fa.fa-php, .fa.fa-pied-piper-hat, 
+.fa.fa-playstation, .fa.fa-pushed, .fa.fa-python, .fa.fa-quinscape, .fa.fa-r-project, .fa.fa-react, 
+.fa.fa-readme, .fa.fa-red-river, .fa.fa-rendact, .fa.fa-replyd, .fa.fa-researchgate, .fa.fa-resolving, 
+.fa.fa-rev, .fa.fa-rocketchat, .fa.fa-rockrms, .fa.fa-sass, .fa.fa-schlix, .fa.fa-searchengin, 
+.fa.fa-sellcast, .fa.fa-servicestack, .fa.fa-shopware, .fa.fa-sistrix, .fa.fa-sith, .fa.fa-slack-hash, 
+.fa.fa-speakap, .fa.fa-squarespace, .fa.fa-staylinked, .fa.fa-steam-symbol, .fa.fa-sticker-mule, 
+.fa.fa-strava, .fa.fa-stripe, .fa.fa-stripe-s, .fa.fa-studiovinari, .fa.fa-supple, .fa.fa-teamspeak,
+.fa.fa-telegram-plane, .fa.fa-the-red-yeti, .fa.fa-themeco, .fa.fa-trade-federation, .fa.fa-typo3, 
+.fa.fa-uber, .fa.fa-uikit, .fa.fa-uniregistry, .fa.fa-untappd, .fa.fa-ussunnah, .fa.fa-vaadin, 
+.fa.fa-viber, .fa.fa-vimeo-v, .fa.fa-vnv, .fa.fa-vuejs, .fa.fa-weebly, .fa.fa-whatsapp-square, 
+.fa.fa-whmcs, .fa.fa-wix, .fa.fa-wolf-pack-battalion, .fa.fa-wordpress-simple, .fa.fa-xbox, .fa.fa-yandex, 
+.fa.fa-yandex-international, .fa.fa-zhihu
+{font-family:"Font Awesome 5 Brands";font-weight:400}
+
+
 /* ---- color variables ---- */
 :root{
 /* page background */

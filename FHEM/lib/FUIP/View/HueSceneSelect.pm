@@ -118,7 +118,7 @@ sub getHTML($){
 	$self->{scenes} = [] unless $self->{scenes};
 	my $options = '[]';
 	my $alias = '[]';
-	my $scenes = _getScenes($self->{fuip}{NAME}, $self->{device},$self->{sysid});
+	my $scenes = _getScenes($self->{fuip}{NAME}, $self->{device},$self->getSystem());
 	if(@{$self->{scenes}}) {
 		$options = '["'.join('","',@{$self->{scenes}}).'"]';
 		$alias = '["'.join('","',map { $scenes->{$_}{name} } @{$self->{scenes}}).'"]';
