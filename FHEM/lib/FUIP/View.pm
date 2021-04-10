@@ -122,7 +122,11 @@ sub getHTML($$){
 		# otherwise, we allow SCALAR, ARRAY, HASH
 		my $refType = ref($ref);
 		if(not $refType) {   #not a reference, assuming scalar
-			return "'".($ref =~ s/'/\\'/rg)."'";
+			# replace backslash with double-backslash
+			$ref =~ s/\\/\\\\/g;
+			# replace tick with backslash-tick
+			$ref =~ s/'/\\'/g;
+			return "'".$ref."'";
 		}elsif($refType eq "ARRAY") {
 			my $result = 0;
 			for my $entry (@$ref) {
