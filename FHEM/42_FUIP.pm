@@ -91,9 +91,6 @@ sub stacktrace() {
 };
 
 
-
-
-
 # possible values of attributes can change...
 sub setAttrList($) {
 	my ($hash) = @_;
@@ -301,6 +298,25 @@ sub Attr ($$$$) {
 	if($attrName eq "locked") {
 		# "locked" changed -> remove "set" locks
 		delete $main::defs{$name}->{lockIPs};	
+	};
+	# defaultBackend set to a non-existing value?
+	if($cmd eq "set" and $attrName eq "defaultBackend") {
+		my $systems = getSystems($main::defs{$name});
+		unless(defined($systems->{$attrValue})) {
+			return '"'.$attrValue.'" is not defined as a backend system. Set Attribute backend_'.$attrValue.' first.';
+		};
+	};
+	# Trying to delete the default backend?
+	if($cmd eq "del" and $attrName =~ m/^backend_(.*)$/) {
+		my $sysid = $1;
+		my $defaultSysid = main::AttrVal($name,"defaultBackend",undef);
+		if($defaultSysid and $sysid eq $defaultSysid) {
+			return 'You cannot delete the default backend "'.$sysid.'". Change or delete the attribute defaultBackend first.';
+		};
+	};	
+	# Anything about systems changed, refresh model cache
+	if($attrName =~ m/^backend_.*/ or $attrName eq "defaultBackend") {
+		FUIP::Model::refresh($name);
 	};
 	return undef;
 }
