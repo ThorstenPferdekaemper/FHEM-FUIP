@@ -103,7 +103,7 @@ UPD 2019-12-08_17:18:58 4632 FHEM/lib/FUIP/jquery-ui/images/ui-icons_cc0000_256x
 UPD 2019-12-08_17:18:58 6313 FHEM/lib/FUIP/jquery-ui/images/ui-icons_ffffff_256x240.png
 UPD 2019-12-08_17:18:58 37326 FHEM/lib/FUIP/jquery-ui/jquery-ui.css
 UPD 2019-12-08_17:18:59 253669 FHEM/lib/FUIP/jquery-ui/jquery-ui.min.js
-UPD 2021-04-10_21:55:05 126331 FHEM/lib/FUIP/js/fuip.js
+UPD 2021-04-16_20:18:24 127981 FHEM/lib/FUIP/js/fuip.js
 UPD 2020-05-16_20:54:50 3003 FHEM/lib/FUIP/js/fuip_5_resize.js
 UPD 2019-12-08_17:18:59 1421 FHEM/lib/FUIP/js/fuip_batteries.js
 UPD 2019-12-08_17:19:00 897 FHEM/lib/FUIP/js/fuip_clock.js

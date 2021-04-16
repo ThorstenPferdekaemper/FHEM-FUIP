@@ -1862,6 +1862,15 @@ function createValueHelpDialog(fieldName) {
 };	
 
 
+// valueHelpError
+// Closes value help popup and displays error message
+function valueHelpError(text) {
+	$( "#valuehelp" ).dialog("close");	
+	popupError("Keine Werthilfe verfügbar",text);
+	throw { name: 'novaluesavailable', message: 'No values available' }	
+};	
+
+
 // value help: Filter for room
 // e: value in row to check
 // f: current filter value
@@ -2005,10 +2014,15 @@ async function valueHelpInner(fieldName,type) {
 	}else if(type == "set") {	
 	    let refdeviceFullName = getFullRefName(fieldName,"refdevice");
 		let device = $('#'+refdeviceFullName).val();
-		if(!device) { return };
+		if(!device) { 
+			valueHelpError("Das zugeh&ouml;rige <i>device-</i>Feld wurde noch nicht gef&uuml;llt. Daher konnten keine passenden Kommandos ermittelt werden.");
+		};
 		let cmd = "get " + name + " sets " + device + " " + sysid;
 		let json = await asyncSendFhemCommandLocal(cmd);
 		let sets = Object.keys(json2object(json));
+		if(!Array.isArray(sets) || !sets.length) {
+			valueHelpError("Es wurden keine passenden Kommandos gefunden. M&ouml;glicherweise ist das Backend-System (" + sysid + ") momentan nicht erreichbar.<br>Es kann auch sein, dass das Device die entsprechenden Werte nicht liefern kann. In diesem Fall muss der Wert manuell eingegeben werden.");
+		};
 		let tabDef = {
 			colDef : [ 	{ title: "Name" } ],
 			rowData : sets
@@ -2267,9 +2281,13 @@ async function valueHelpForDevice(fieldTitle, type) {
 	let cmd = "get " + name + " devicelist " + sysid; 
 	let deviceListJson = await asyncSendFhemCommandLocal(cmd);
 	let deviceList = json2object(deviceListJson);
+	// if the deviceList is empty, then the system is probably invalid
+	// or cannot be reached
+	if (!Array.isArray(deviceList) || !deviceList.length) {
+		// throws an exception
+		valueHelpError("Es wurden keine Devices im System " + sysid + " gefunden. Wahrscheinlich ist dieses System momentan nicht erreichbar.");
+	};
 	// filter, if needed
-	// TODO: in principle, we only need to get the filter list details, 
-	//       i.e. not all devices when filtered
 	if(!allDevices) {
 		let fullList = deviceList;
 		deviceList = [];
@@ -2277,6 +2295,10 @@ async function valueHelpForDevice(fieldTitle, type) {
 			if(deviceFilter.indexOf(fullList[i].NAME) > -1)
 				deviceList.push(fullList[i]);	
 		};	
+		if (!deviceList.length) {
+		  // throws an exception
+		  valueHelpError("Es wurden zwar Devices im System " + sysid + " gefunden, aber keines davon scheint zur aktuellen View zu passen.");
+	    };
 	};
 	
 	let valueDialog = $( "#valuehelp" );
@@ -2505,6 +2527,14 @@ async function valueHelpForOptions(fieldName, multiSelect) {
 		// which of the options are set?
 		let selected = $("#"+fName).val();
 		let tabDef;
+		
+		if ( !options ||
+		  Array.isArray(options) && !options.length ||
+		  options.hasOwnProperty("rowData") && !options.rowData.length ) {
+		    // throws an exception
+		    valueHelpError("Es wurden keine passenden Optionen gefunden. M&ouml;glicherweise wurde das zugeh&ouml;rige <i>set</i>- bzw. <i>device-</i>Feld noch nicht gef&uuml;llt.<br>Es kann auch sein, dass das Device die entsprechenden Werte nicht liefern kann. In diesem Fall muss der Wert manuell eingegeben werden.");
+	    };
+
 		if(options.hasOwnProperty("colDef")) {
 			tabDef = options;
 		}else{	
