@@ -364,8 +364,8 @@ var Modul_widget = function () {
 	function getFhemCallinfo(param) {
 		if(!ftui.isMultifhem) {
 			return {
-				url: ftui.getFhemUrl('home'),
-				csrf: ftui.config['home'].csrf
+				url: ftui.getFhemUrl(ftui.getDefaultSystemId()),
+				csrf: ftui.config[ftui.getDefaultSystemId()].csrf
 			};		
 		};	
 		
@@ -1411,7 +1411,7 @@ var ftui = {
 			result.device = split.join('-');
 			return result;
 		}else{
-			return { sysid : 'home', device : device };
+			return { sysid : ftui.getDefaultSystemId(), device : device };
 		};	
 	},
 	
