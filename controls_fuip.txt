@@ -51,7 +51,7 @@ UPD 2019-12-08_17:18:45 7166 FHEM/lib/FUIP/View/Thermostat.pm
 UPD 2019-12-08_17:18:45 2604 FHEM/lib/FUIP/View/Title.pm
 UPD 2019-12-08_17:18:46 2702 FHEM/lib/FUIP/View/UpStopDown.pm
 UPD 2021-04-10_21:55:05 5453 FHEM/lib/FUIP/View/ViewTemplInstance.pm
-UPD 2021-04-10_21:55:05 18882 FHEM/lib/FUIP/View/ViewTemplate.pm
+UPD 2021-04-20_20:16:35 19230 FHEM/lib/FUIP/View/ViewTemplate.pm
 UPD 2021-04-10_21:55:05 4421 FHEM/lib/FUIP/View/WeatherDetail.pm
 UPD 2021-04-10_21:55:05 4309 FHEM/lib/FUIP/View/WeatherOverview.pm
 UPD 2021-04-10_21:55:05 1527 FHEM/lib/FUIP/View/WebLink.pm
