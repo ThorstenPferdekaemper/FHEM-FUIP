@@ -124,6 +124,14 @@ sub getStructure($) {
 		# add whatever has a variable as this variable
 		for my $variable (@{$self->{variables}}) {
 			for my $fieldpath (@{$variable->{fields}}) {
+				my $fieldRef = $self->_findField($conf,$fieldpath);
+				# It happened that the variable was assigned to a field which does not exist
+				# anymore. We need to ignore these, but log a message.
+				unless($fieldRef) {
+					$fieldpath = "" unless $fieldpath;
+					main::Log3(undef, 2, "FUIP: field path not found ".$fieldpath);
+					next;
+				};	
 				my $field = dclone($self->_findField($conf,$fieldpath));
 				my ($type,$basePath) = _findFieldBase($conf,$fieldpath);
 				$field->{id} = $variable->{name};
