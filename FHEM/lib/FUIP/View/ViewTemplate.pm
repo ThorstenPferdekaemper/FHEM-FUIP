@@ -132,7 +132,7 @@ sub getStructure($) {
 					main::Log3(undef, 2, "FUIP: view template $self->{id}, variable $variable->{name}: Field $fieldpath not found");
 					next;
 				};	
-				my $field = dclone($self->_findField($conf,$fieldpath));
+				my $field = dclone($fieldRef);
 				my ($type,$basePath) = _findFieldBase($conf,$fieldpath);
 				$field->{id} = $variable->{name};
 				$field->{flexfield} = 0; 

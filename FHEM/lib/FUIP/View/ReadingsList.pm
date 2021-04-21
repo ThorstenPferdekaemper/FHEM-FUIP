@@ -46,12 +46,11 @@ sub getHTML($){
 	makeArray($self->{device});
 	makeArray($self->{reading});	
 	makeArray($self->{detail});
-	$self->{sysid} = 'home' unless defined $self->{sysid};
 
 	# determine aliasse
 	my @alias;
 	for my $devkey (@{$self->{device}}) {
-		my $device = FUIP::Model::getDevice($name,$devkey,['alias'],$self->{sysid});
+		my $device = FUIP::Model::getDevice($name,$devkey,['alias'],$self->getSystem());
 		if($device->{Attributes}{alias}) {
 			push @alias, $device->{Attributes}{alias};
 		}else{

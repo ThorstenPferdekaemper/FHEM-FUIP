@@ -21,9 +21,14 @@ sub dimensions($;$$){
 	return ($self->{width},$self->{height});
 };	
 	
-	
-sub getHTML($$){
-	my ($self,$locked) = @_;
+
+# getInstantiated	
+# Determines instantiated version of the view template
+# I.e. the view template where the values are set like
+# defined in the instance (this)
+sub getInstantiated($) {
+	my ($self) = @_;
+ 
 	# a bit of brute force, but we have to copy the template
 	my $instanceStr = $self->{viewtemplate}->serialize();
 	my $evalled = eval($instanceStr);
@@ -40,6 +45,15 @@ sub getHTML($$){
 		};
 	};
 	FUIP::setViewSettings($self->{fuip},[$instance],0,$h);
+	
+	return $instance;
+};	
+	
+	
+sub getHTML($$){
+	my ($self,$locked) = @_;
+	
+	my $instance = $self->getInstantiated();
 	# Always locked...
 	return $instance->getHTML(1);
 };

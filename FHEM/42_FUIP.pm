@@ -463,7 +463,11 @@ sub addStandardCells($$$) {
 	my $homeCell = FUIP::Cell->createDefaultInstance($hash,$page);
 	my $view = FUIP::View::HomeButton->createDefaultInstance($hash,$homeCell);
 	$view->{sysid} = $sysid;
-	$view->{active} = ($pageid eq "home" ? 1 : 0);
+	if(getNumSystems($hash) > 1) {
+		$view->{active} = ($pageid eq "home" ? 1 : 0);
+	}else{
+		$view->{active} = ($pageid eq getDefaultSystem($hash) ? 1 : 0);
+	};	
 	$view->position(0,0);
 	$homeCell->position(0,0);
 	$homeCell->dimensions(1,$titleHeight);
@@ -1407,13 +1411,9 @@ sub renderViewTemplateMaint($$) {
 
 # defaultPageIndex
 # Creates default index page
+# In case there are multiple systems
 sub defaultPageIndex($) {
 	my ($hash) = @_;
-	# if we are not in multifhem mode, just create system page as the home page
-	if(getNumSystems($hash) <= 1) {
-		defaultPageSystem($hash,'home');
-		return;
-	};
 	
 	# Now we can be sure that we are in multifhem mode
 	# Create home page with links to each system
@@ -1723,6 +1723,10 @@ sub getDeviceViewInner($$$$){
 	if($device->{Internals}{TYPE} eq "SVG"){
 		$view = FUIP::View::Chart->createDefaultInstance($hash,$hash);
 		$view->{device} = $name;
+		$view->{sizing} = "resizable";
+		$view->{defaulted}{sizing} = 0;
+		$view->{width} = 280;
+		$view->{height} = 175;
 		return $view;
 	};
 	# TODO: Does subType "shutter" exist at all?
@@ -2198,7 +2202,11 @@ sub createPage($$) {
 	
 	# home page?
 	if($pageid eq "home"){
-		defaultPageIndex($hash);
+		if(getNumSystems($hash) > 1) {
+			defaultPageIndex($hash);
+		}else{
+			defaultPageSystem($hash,"home");
+		};
 		return;
 	};
 
@@ -2265,9 +2273,14 @@ sub getFuipPage($$) {
 	# if not locked, this would mean very bad performance for e.g. value help for devices
 	FUIP::Model::refresh($hash->{NAME}) if($locked);
 	
-	# "" goes to "home" 
+	#the default page is "home"  if we don't know any better
+	#...or the system name if there is only one system and it has a name 
 	if(not defined($pageid) or $pageid eq "") {
-		$pageid = "home";
+	    if(getNumSystems($hash) > 1) {
+		    $pageid = "home";
+		}else{
+		    $pageid = getDefaultSystem($hash);
+		};
 	};	
 
 	# see comment in decodePageid
@@ -3713,9 +3726,21 @@ sub _traverseViewsOfPage($$$) {
 	my $key = {};
 	
 	# define callback for the normal _traverse function
-	my $cb = sub ($$) {
+	my $cb; # recursion
+	$cb = sub ($$) {
 				my ($key, $view) = @_;
 				&$func($view);
+				# also deep-dive into template instances
+				if(blessed($view) eq "FUIP::ViewTemplInstance") {
+					my $instance = $view->getInstantiated();
+					$key->{type} = "view";
+					my $views = $instance->{views};
+					for my $viewid (0..$#$views) {
+						my $subview = $views->[$viewid];
+						$key->{viewid} = $viewid;
+						_traverseViews($hash,$cb,$key,$subview);
+					};
+				};	
 			};
 	
 	if(blessed($page)){ # dialog or view template
