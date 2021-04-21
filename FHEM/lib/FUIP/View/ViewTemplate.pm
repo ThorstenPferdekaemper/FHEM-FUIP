@@ -129,7 +129,7 @@ sub getStructure($) {
 				# anymore. We need to ignore these, but log a message.
 				unless($fieldRef) {
 					$fieldpath = "" unless $fieldpath;
-					main::Log3(undef, 2, "FUIP: field path not found ".$fieldpath);
+					main::Log3(undef, 2, "FUIP: view template $self->{id}, variable $variable->{name}: Field $fieldpath not found");
 					next;
 				};	
 				my $field = dclone($self->_findField($conf,$fieldpath));
@@ -293,6 +293,32 @@ sub setVariableDefSingle($$$$) {
 	push(@{$var->{fields}}, $newFieldName);
 };
 
+# _existsField
+# ($ref, $fieldid) 
+# Checks whether field $fieldid exists in $ref.  
+sub _existsField($$) {
+	my ($ref,$fieldid) = @_;
+	my @parts = split(/-/,$fieldid);	
+	
+	for my $part (@parts) {
+		if(blessed($ref) or ref($ref) eq "HASH") {
+			# Something which has fields
+			return 0 unless exists($ref->{$part});
+			$ref = $ref->{$part};
+		}elsif(ref($ref) eq "ARRAY"){
+			# Something which has elements
+			return 0 unless exists($ref->[$part]);
+			$ref = $ref->[$part];
+		}else{
+			# Most likely a scalar, but this cannot 
+			# have anything addressable with $part
+			return 0;
+		};	
+	};
+	# We came that far, so we must have found everything
+	return 1;
+};
+
 
 sub removeOldVariables($;$$) {
 	my ($self,$fieldid,$view) = @_;
@@ -315,13 +341,19 @@ sub removeOldVariables($;$$) {
 			# $view is now either a view template or a dialog
 			# and $field should be like views-<i>-<field> or views-<i>-<field>-<device/reading>
 			# otherwise we do not delete
-			my @parts = split(/-/,$field);
-			next unless(scalar(@parts) == 1 or scalar(@parts) == 3 or scalar(@parts) == 4);
-			# probably we do not need to check more. If the field belongs to a next level popup,
-			# then $field would look like views-<i>-popup-views-<i>-<field>(-...)
-			# i.e. we can safely delete the field here
-			$variable->{fields}[$i] = undef;
-		}
+			my @parts = split(/-/,$field);	
+			if(scalar(@parts) == 1 or scalar(@parts) == 3 or scalar(@parts) == 4) {
+				# I.e. this is simply a field or something like above
+				# We can delete this, as it anyway will be re-added later
+				$variable->{fields}[$i] = undef;	
+				next;
+			};	
+			# Now the field might belong to a popup which does not exist anymore. 
+			# I.e. $field would look like views-<i>-popup-views-<i>-<field>(-...)
+			# However, this can at least in theory also happen for other fields (i.e. not
+			# only on popups). So we better simply check whether the field exists.
+			$variable->{fields}[$i] = undef unless(_existsField($view,$field));
+		};
 		# now really remove from the fields array
 		@{$variable->{fields}} = grep { $_ } @{$variable->{fields}};
 	};	
@@ -391,7 +423,7 @@ sub _findField($$$) {
 				return undef unless blessed($dialog);
 				$result = $dialog->getConfigFields();
 			};	
-			# if the field does not exist (or belongs to a "higher" popup,
+			# if the field does not exist (or belongs to a "higher" popup),
 			# then this is not an array now
 			return undef unless ref($result) eq "ARRAY";
 			# find the field def with the id 
