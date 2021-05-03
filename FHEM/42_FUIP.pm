@@ -157,7 +157,7 @@ sub setAttrListDevice($) {
 	setAttrList($main::modules{FUIP});
 	$hash->{'.AttrList'} = $main::modules{FUIP}{AttrList};
 	
-	my $systems = getSystems($hash);
+	my $systems = getExplicitSystems($hash);
     # Add backend-attributes
 	for my $system (sort keys %$systems) {
 		$hash->{'.AttrList'} .= " backend_".$system;
@@ -473,7 +473,7 @@ sub Undef($$) {
 
 
 sub Attr ($$$$) {
-	my ( $cmd, $name, $attrName, $attrValue  ) = @_;
+	my ( $cmd, $name, $attrName, $attrValue ) = @_;
 	# if fhemwebUrl is changed, we need to refresh the buffer
 	if($cmd eq "set" and $attrName eq "pageWidth") {
 		if($attrValue < 100 or $attrValue > 2500) {
@@ -519,6 +519,7 @@ sub Attr ($$$$) {
 		if($cmd eq "set" and $attrName =~ m/^backend_(.*)$/ 
 				and not main::AttrVal($name,"defaultBackend",undef)
 				and $main::defs{$name}{pages} ) {
+			my $sysid = $1;
 			my $found = 0;
 			for my $attrName (keys %{$main::attr{$name}}) {
 				next unless $attrName =~ m/^backend_(.*)$/;
@@ -529,14 +530,17 @@ sub Attr ($$$$) {
 				#Make sure that the defaultBackend is kept
 			    attrLowLevel($main::defs{$name},'set','defaultBackend',getDefaultSystem($main::defs{$name}));
 			}else{
-				my $oldSystemId;
-				if($attrName eq "backend_home") {
-					$oldSystemId = "local";
-				}else{
-					$oldSystemId = "home";
-				};	
-				attrLowLevel($main::defs{$name},'set','backend_'.$oldSystemId,"local");	
-				attrLowLevel($main::defs{$name},'set','defaultBackend',$oldSystemId);
+				#Make sure that we have a system with URL "local"
+				if($attrValue ne "local") {
+					#We are not creating the "local" systen, do it now
+					if($attrName eq "backend_home") {
+						$sysid = "local";
+					}else{
+						$sysid = "home";
+					};	
+					attrLowLevel($main::defs{$name},'set','backend_'.$sysid,"local");
+				};		
+				attrLowLevel($main::defs{$name},'set','defaultBackend',$sysid);
 			};
 		};	
 	};
@@ -556,26 +560,41 @@ sub getCellMargin($) {
 };
 
 
-# getSystems
-# Returns all connected FHEM systems
-# This depends on attributes backend_.* 
-# - nothing of these is set 
-#     => result is { home => local }
-#        i.e. the default system name is "home"
-# - backend_.* is/are set
-#     => result is { <name> => $backend_<name> }
-#        with one entry for each backend_.*
+# getExplicitSystems
+# Returns all connected FHEM systems, which are set
+# explicitly in backend_.* attributes
+# => result is { <name> => $backend_<name> }
+#    with one entry for each backend_.*
 # TODO: Performance, i.e. buffer somewhere or so
-sub getSystems($) {
+sub getExplicitSystems($) {
 	my $hash = shift;
 	
 	my %result;
-	# are there backend_.* attributes?
+	# backend_.* attributes?
 	for my $attrName (keys %{$main::attr{$hash->{NAME}}}) {
 		next unless $attrName =~ m/^backend_(.*)$/;
 		$result{$1} = $main::attr{$hash->{NAME}}{$attrName};
 	};
 	return \%result if(%result); 
+	return undef;
+};
+
+
+# getSystems
+# Returns all connected FHEM systems
+# This depends on attributes backend_.* 
+# - no backend_.* attributes set 
+#     => result is { home => local }
+#        i.e. the default system name is "home"
+# - backend_.* is/are set
+#     => result is { <name> => $backend_<name> }
+#        with one entry for each backend_.*
+sub getSystems($) {
+	my $hash = shift;
+	
+	my $result = getExplicitSystems($hash);
+	# are there backend_.* attributes?
+	return $result if($result); 
 	
 	# return 'local' only
 	return { 'home' => 'local' }; 
@@ -4401,12 +4420,12 @@ sub Get($$$)
   Definiert ein "FHEM User Interface Painter Device" (FUIP Device), welches ein "FUIP Frontend" repr&auml;sentiert. D.h. wenn man FUIP nutzen will, muss man mindestens ein FUIP Device anlegen.	
   <br><br>
 
-  <a name="FUIPdefine"></a>
+  <a id="FUIP-define"></a>
   <b>Define</b><br>
   <code>define &lt;name&gt; FUIP</code><br>
 	Mehr ist hier nicht notwendig, alles andere wird &uuml;ber Attribute und set-Kommandos bzw. Klickibunti und M&auml;useschubsen gemacht.
   <br><br>
-  <a name="FUIPset"></a>
+  <a id="FUIP-set"></a>
   <b>Set</b>
   <ul>
   	<li><a id="FUIP-set-save">save</a>: Speichern des aktuellen Zustands der Oberfl&auml;che<br>
@@ -4448,9 +4467,25 @@ sub Get($$$)
   </ul>
   <br>
 
-  <a name="FUIPattr"></a>
+  <a id="FUIP-attr"></a>
   <b>Attributes</b>
   <ul>
+	<li><a id="FUIP-attr-backendNames">backendNames</a>:Liste von Namen f&uuml;r Backend-FHEMs<br>
+		Wenn man eine FUIP-Instanz mit einem entfernten FHEM oder mit mehreren FHEM-Systemen verbinden will, wird jedes verbundene FHEM-System einem symbolischen Namen zugeordnet. Dies geschieht im Prinzip dadurch, dass die Adresse des Systems in ein Attribut der Form <i>backend_&lt;name&gt;</i> eingetragen wird. Im Weiteren wird dann &lt;name&gt; als Kennung f&uuml;r das entsprechende System benutzt. Daf&uuml;r schl&auml;gt FUIP f&uuml;r die ersten paar Systeme Namen vor. Das erste System hei&szlig; "home" und weitere Systeme erhalten weibliche Namen aus "Per Anhalter durch die Galaxis". Wem das nicht gef&auml;llt, der kann die <i>backend_</i>-Attribute manuell setzen (<code>attr ui backend_zaphod http://eccentrica:8083/gallumbits</code> w&uuml;rde ein FHEM mit den Namen "zaphod" definieren). Alternativ kann man &uuml;ber das Attribut <i>backendNames</i> eigene Namensvorschl&auml;ge machen. Z.B. <code>attr ui backendNames arthur,ford,marvin,zaphod</code> produziert Vorschl&auml;ge mit m&auml;nnliche Namen aus dem Adams'schen Universum.<br>
+		Die Liste darf nur Zeichen enthalten, aus denen auch Attribute bestehen k&ouml;nnen. Die System-Namen m&uuml;ssen durch Komma getrennt werden und die Liste darf keine Leerzeichen enthalten. Sicherheitshalber sollte man nur Kleinbuchstaben und Zahlen verwenden. (Ja, auch der Unterstrich und das Minus-Zeichen k&ouml;nnten Probleme machen.)	
+	</li>
+  	<li><a id="FUIP-attr-backend_" data-pattern="backend_.*">backend_.*</a>: Adresse eines (entfernten) Backend-FHEMs<br>
+Mit FUIP kann man sich an ein "entferntes" FHEM oder sogar mehrere FHEM-Instanzen ankoppeln. Die Attribute der Form <code>backend_.*</code> enthalten dann die Adresse(n) der "entfernten" FHEMWEB-Instanz(en), die man verwenden m&ouml;chte. 
+Man darf ein backend_-Attribut auf keinen Fall auf eine Adresse oder IP setzen (auch nicht auf 127.0.0.1), wenn man sich auf das lokale FHEM beziehen soll. Wenn man festlegen will, dass ein Backend-System die eigene (lokale) FHEM-Instanz ist, dann muss man das backend_-Attribut auf "local" setzen.<br>
+Ansonsten muss das backend_-Attribut die ganze Adresse enthalten, inklusive Port und abschlie&szlig;endem "fhem".<br>
+Beispiel:<br>
+<code>attr ui backend_fenchurch http://fenchurch:8086/fhem</code><br>
+<code>attr ui backend_home http://192.168.178.73:8086/fhem</code><br>
+<code>attr ui backend_self local</code><br>
+Damit kennt die FUIP-Instanz <i>ui</i> drei Backend-FHEMs (oder auch Backend-Systeme): fenchurch, home und self. Die ersten beiden beziehen sich auf "entfernte" FHEMs, die dritte Instanz ist dasselbe System, auf dem auch das FUIP-Device definiert ist.<br>
+Das Attribut <code>CORS</code> entfernter FHEMWEB-Instanz(en) muss dann auf "1" stehen. Au&szlig;erdem d&uuml;rfen diese FHEMWEB-Instanzen keine Passwort-Pr&uuml;fung haben. Stattdessen kann man mit dem Attribut <code>allowedfrom</code> oder einer allowed-Instanz den Zugriff einschr&auml;nken.<br>
+Wenn man ein "entferntes" FHEM benutzt, dann k&ouml;nnen einige Funktionen der Konfigurationsoberfl&auml;che etwas Zeit brauchen. Zum Beispiel m&uuml;ssen für die Eingabehilfe f&uuml;r Devices alle Devices aus dem entfernten FHEM gelesen werden. Das ist so implementiert, dass das entfernte FHEM m&ouml;glichst wenig belastet wird, was aber zu Lasten des FUIP-FHEM geht. Siehe auch das Set-Kommando <code>refreshBuffer</code> zu diesem Thema.	
+</li>	
     <li><a id="FUIP-attr-baseHeight">baseHeight</a>: Basish&ouml;he einer Zelle<br>
 	Eine 1x1-Zelle ist <code>baseHeight</code> Pixel hoch. Standardwert ist 108.
 	</li> 
@@ -4462,16 +4497,10 @@ sub Get($$$)
 	Damit beeinflusst <code>cellMargin</code> auch die Gr&ouml;&szlig;e von mehrspaltigen und mehrzeiligen Zellen. Ansonsten w&uuml;rde das ganze nicht mehr zusammenpassen. Eine dreispaltige Zelle ist beispielsweise standardm&auml;&szlig;ig 446 Pixel breit. Dies ergibt sich aus 3 Spalten zu 142 Pixeln (<code>baseWidth</code>) plus zwei Zwischenr&auml;umen zu je 10 Pixeln (je 2 mal <code>cellMargin</code>).<br>
 	Bei Verwendung des "flex" Layouts (siehe Attribut <code>layout</code>) liefert diese Berechnung die Mindestgr&ouml;&szlig;e der Zellen. Je nach Browserfenster k&ouml;nnen die Zellen auch gr&ouml;&szlig;er werden.
 	</li>
-	<li><a id="FUIP-attr-backend_" data-pattern="backend_.*">backend_.*</a>: Adresse eines (entfernten) Backend-FHEMs<br>
-Mit FUIP kann man sich an ein "entferntes" FHEM oder sogar mehrere FHEM-Instanzen ankoppeln. Die Attribute der Form <code>backend_*</code> enthalten dann die Adresse(n) der "entfernten" FHEMWEB-Instanz(en), die man verwenden m&ouml;chte. Das Attribut <code>CORS</code> entfernter FHEMWEB-Instanz(en) muss dann auf "1" stehen. Au&szlig;erdem d&uuml;rfen diese FHEMWEB-Instanzen keine Passwort-Pr&uuml;fung haben. Stattdessen kann man mit dem Attribut <code>allowedfrom</code> oder einer allowed-Instanz den Zugriff einschr&auml;nken.<br>
-Man darf ein backend_-Attribut auf keinen Fall auf eine Adresse oder IP setzen (auch nicht auf 127.0.0.1), wenn man sich auf das lokale FHEM beziehen soll. In diesem Fall muss das backend_-Attribut auf "local" gesetzt werden, wenn man festlegen will, dass das Backend-System "home" die eigene (lokale) FHEM-Instanz ist.<br>
-Das backend_-Attribut muss die ganze Adresse, inklusive Port und abschlie&szlig;endem "fhem" enthalten. Mit der folgenden Konfiguration legt man z.B. fest, dass sich die FUIP-Instanz <i>ui</i> um drei FHEMs "k&uuml;mmern soll:<br>
-<code>attr ui backend_fenchurch http://fenchurch:8086/fhem</code><br>
-<code>attr ui backend_home http://192.168.178.73:8086/fhem</code><br>
-<code>attr ui backend_self local</code><br>
-Dadurch kennt die FUIP-Instanz <i>ui</i> drei Backend-FHEMs (oder auch Backend-Systeme): fenchurch, home und self.<br>
-Wenn man ein "entferntes" FHEM benutzt, dann k&ouml;nnen einige Funktionen der Konfigurationsoberfl&auml;che etwas Zeit brauchen. Zum Beispiel m&uuml;ssen für die Eingabehilfe f&uuml;r Devices alle Devices aus dem entfernten FHEM gelesen werden. Das ist so implementiert, dass das entfernte FHEM m&ouml;glichst wenig belastet wird, was aber zu Lasten des FUIP-FHEM geht. Siehe auch das Set-Kommando <code>refreshBuffer</code> zu diesem Thema.	
-</li>	
+	<li><a id="FUIP-attr-defaultBackend">defaultBackend</a>: FHEM-System, welches verwendet wird, wenn kein System explizit angegeben ist<br>
+	Wenn mehrere Backend-FHEMs verwendet werden, dann sollte immer eines davon als <i>defaultBackend</i> ausgew&auml;hlt werden. Im Prinzip kann man in FUIP auf jeder Ebene (View, Zelle, Seite) das zugeh&ouml;rige Backend-System festlegen. Das muss man aber nicht machen und es w&auml;re bei der Umstellung auf ein Mehrsystem-FUIP auch etwas schwierig. Dar&uuml;ber hinaus gibt es Situationen, in denen ein eindeutiges System festgelegt sein muss. In allen diesen F&auml;llen wird das <i>defaultBackend</i> herangezogen.<br>
+	Das <i>defaultBackend</i> wird automatisch gesetzt, wenn es ben&ouml;tigt wird. Man muss sich also nicht unbedingt selbst darum k&uuml;mmern.	
+	</li>
 	<li><a id="FUIP-attr-gridlines">gridlines</a>: Anzeige eines Gitters aus Hilfslinien<br>
 	Das Attribut <code>gridlines</code> kann die Werte "show" und "hide" annehmen. Bei "show" wird im Bearbeitungsmodus ein Gitter aus Hilfslinien angezeigt. Der Defaultwert ist "hide".<br>
 	Der Abstand der Linien wird aus <code>baseWidth</code> und <code>baseHeight</code> ermittelt und wird so berechnet, dass sich sowohl der linke Rand jeder Zelle mit einer Linie deckt und der untere Rand des Headers jeder Zelle. Ansonsten ist der Abstand der Linien etwa 30 Pixel. 
