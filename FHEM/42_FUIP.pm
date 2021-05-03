@@ -19,6 +19,7 @@ FUIP_Initialize($) {
     $hash->{UndefFn}   = "FUIP::Undef";
 	FUIP::setAttrList($hash);
 	$hash->{AttrFn}    = "FUIP::Attr";
+	$hash->{NotifyFn}  = "FUIP::Notify";
 	$hash->{parseParams} = 1;	
 	# For FHEMWEB
 	$hash->{'FW_detailFn'}    = 'FUIP::fhemwebShowDetail';
@@ -79,6 +80,38 @@ sub exceptionRaise($) {
 	# return \%exception;
 # };
 
+# Messages
+my %messages;
+# Messages have probably been seen by the user
+# (Hash by FUIP device name)
+my %messagesSeen;
+
+sub setMessage($$$) {
+	my ($hash,$id,$message) = @_;
+	my $name = $hash->{NAME};
+	$messages{$name} = {} unless exists $messages{$name};
+	$messages{$name}{$id} = $message;
+	$messagesSeen{$name} = 0;
+};
+
+sub removeMessage($$) {
+	my ($hash,$id) = @_;
+	my $name = $hash->{NAME};
+	return unless exists $messages{$name};
+	delete $messages{$name}{$id};
+};
+
+sub getMessages($) {
+	my ($hash) = @_;
+	my $name = $hash->{NAME};
+	my @result;
+	return \@result unless exists $messages{$name};
+	for my $key (sort keys %{$messages{$name}}) {
+		push(@result,$messages{$name}{$key});
+	};
+	return \@result;
+};
+
 sub stacktrace() {
   my $offset = 1;
   my $line = 0;
@@ -94,7 +127,7 @@ sub stacktrace() {
 # possible values of attributes can change...
 sub setAttrList($) {
 	my ($hash) = @_;
-    $hash->{AttrList}  = "layout:gridster,flex locked:0,1 fhemwebUrl backend_.* defaultBackend baseWidth baseHeight cellMargin:0,1,2,3,4,5,6,7,8,9,10 pageWidth styleSchema:default,blue,green,mobil,darkblue,darkgreen,bright-mint styleColor viewportUserScalable:yes,no viewportInitialScale gridlines:show,hide snapTo:gridlines,halfGrid,quarterGrid,nothing toastMessages:all,errors,off styleBackgroundImage:";
+    $hash->{AttrList}  = "layout:gridster,flex locked:0,1 backend_.* backendNames baseWidth baseHeight cellMargin:0,1,2,3,4,5,6,7,8,9,10 pageWidth styleSchema:default,blue,green,mobil,darkblue,darkgreen,bright-mint styleColor viewportUserScalable:yes,no viewportInitialScale gridlines:show,hide snapTo:gridlines,halfGrid,quarterGrid,nothing toastMessages:all,errors,off styleBackgroundImage:";
 	my $imageNames = getImageNames();
 	$hash->{AttrList} .= join(",",@$imageNames);
 	my $cssNames = getUserCssFileNames();
@@ -105,10 +138,41 @@ sub setAttrList($) {
 	if(@$htmlNames) {
 		$hash->{AttrList} .= " userHtmlBodyStart:".join(",",@$htmlNames);
 	};	
-	#longPollType is only there for compatibility with earlier versions. It does not have any 
-	#meaning anymore
-	$hash->{AttrList} .= " loglevel:0,1,2,3,4,5 logtype:console,localstorage logareas longPollType";
+
+	$hash->{AttrList} .= " loglevel:0,1,2,3,4,5 logtype:console,localstorage logareas";
+
+	# Extra attribute for compatibility
+	#fhemwebUrl and longPollType are only there for compatibility with earlier versions.
+	if(not $main::init_done) {
+		$hash->{AttrList} .= " fhemwebUrl longPollType";	
+	};
 }
+
+
+# setAttrListDevice
+# Set device specific attribute list
+sub setAttrListDevice($) {
+	my ($hash) = @_;
+	# update module specific attribute list, just in case
+	setAttrList($main::modules{FUIP});
+	$hash->{'.AttrList'} = $main::modules{FUIP}{AttrList};
+	
+	my $systems = getSystems($hash);
+    # Add backend-attributes
+	for my $system (sort keys %$systems) {
+		$hash->{'.AttrList'} .= " backend_".$system;
+	};
+	# Add the first "free" from backend names
+	my @backendNames = split(/,/, main::AttrVal($hash->{NAME},'backendNames','home,trillian,fenchurch,lintilla,alice,dionah'));	
+	for my $system (@backendNames) {
+		next if exists $systems->{$system};
+		$hash->{'.AttrList'} .= " backend_".$system;
+		last;
+	};
+	
+	# Add possible values for defaultBackend
+	$hash->{'.AttrList'} .= ' defaultBackend:'.join(",",sort keys %$systems);
+};
 
 
 # load view modules
@@ -264,9 +328,138 @@ sub Define($$$) {
   # load old definition, if exists
   load($hash);
   $hash->{autosave} = "none";  # in case config file does not yet exist
-  checkForAutosave($hash);
+  checkForAutosave($hash); 
+  # Get device specific attributes
+  setAttrListDevice($hash);
+	
+  # Do some stuff after init is ready	
+  $hash->{NOTIFYDEV} = "global";
+  
   return undef;
 }
+
+
+# attrLowLevel
+# Set/delete attribute for automatic fixes
+sub attrLowLevel($$$;$) {
+	my ($hash,$cmd,$attr,$value) = @_;
+	
+	my $oldValue = main::AttrVal($hash->{NAME},$attr,undef);
+	
+	if($cmd eq 'set') {
+		# Anyway like it should be
+		return if(defined($oldValue) and $oldValue eq $value); 
+		$main::attr{$hash->{NAME}}{$attr} = $value;	
+		setMessage($hash,$attr.'Set',"Attribute $attr set to $value");
+		$main::defs{global}{init_errors} .= "\nFUIP device ".$hash->{NAME}.": Attribute $attr set to $value";
+		main::addStructChange("attr", $hash->{NAME}, "$hash->{NAME} $attr $value");
+	}elsif($cmd eq 'del') {
+		# Anyway like it should be
+		return unless defined($oldValue);
+		delete $main::attr{$hash->{NAME}}{$attr};
+		setMessage($hash,$attr.'Del',"Attribute $attr deleted");
+		$main::defs{global}{init_errors} .= "\nFUIP device ".$hash->{NAME}.": Attribute $attr deleted";
+		main::addStructChange("deleteAttr", $hash->{NAME}, $attr);
+	};
+	
+	# Anything about systems changed, refresh model cache
+	if($attr =~ m/^backend_.*/ or $attr eq "defaultBackend") {
+		FUIP::Model::refresh($hash->{NAME});
+		setAttrListDevice($hash);
+	};
+
+};
+
+
+sub Notify($$){
+	my ($hash, $evtHash) = @_;
+	my $ownName = $hash->{NAME}; # own name / hash
+ 
+	my $devName = $evtHash->{NAME}; # Device that created the events
+	my $events = main::deviceEvents($evtHash, 1);
+	
+	# SAVE? Check whether user might have seen messages and remove them
+	if($devName eq "global" && grep(m/^SAVE$/, @{$events})) {
+		if($messagesSeen{$ownName}) {
+			delete $messages{$ownName};
+		};	
+	};
+
+	# Only INITIALIZED and REREADCFG from global	
+	return unless($devName eq "global" && grep(m/^INITIALIZED|REREADCFG$/, @{$events}));
+	
+	# The following is only for downward compatibility and to fix broken setups
+	
+	# Like in getSystems, but only backend_*-Attributes
+	# TODO: Probably getSystems will later be anyway like that
+	my %systems;
+	# are there backend_.* attributes?
+	for my $attrName (keys %{$main::attr{$hash->{NAME}}}) {
+		next unless $attrName =~ m/^backend_(.*)$/;
+		$systems{$1} = $main::attr{$hash->{NAME}}{$attrName};
+	};
+	
+	# If fhemwebUrl is defined
+	my $fhemweburl = main::AttrVal($hash->{NAME},"fhemwebUrl",undef);
+	if($fhemweburl) {
+	# 1. If there is already at least one backend_* Attribute
+		if(%systems) {
+	#    Check if the value of fhemwebUrl is in any of these
+			unless(grep {$_ eq $fhemweburl} values %systems) {
+	#    If yes, just remove it
+	#    If no: 
+	#         make sure that defaultBackend is set
+				attrLowLevel($hash,'set','defaultBackend',getDefaultSystem($hash));
+	#         create a new backend_* Attribute with the value of fhemwebUrl
+				my $num = 0;
+				my $attrName = 'backend_old';
+				while(exists $main::attr{$hash->{NAME}}{$attrName}) {
+					$num++;
+					$attrName = 'backend_old'.$num;
+				};
+				attrLowLevel($hash,'set',$attrName,$fhemweburl);
+			};		
+		}else{
+	# 2. If there is no backend_* Attribute, but defaultBackend is set:
+	#    create a backend_* Attribute with systemid "home" and value of fhemwebUrl
+	#    set defaultBackend to "home"
+	#    remove fhemwebUrl
+	# 3. If there is no defaultBackend either
+	#    same as 2
+			attrLowLevel($hash,'set','backend_home',$fhemweburl);
+			attrLowLevel($hash,'set','defaultBackend','home');
+		};
+		attrLowLevel($hash,'del','fhemwebUrl');
+	}else{
+	# If there is no fhemwebUrl defined
+	# 1. If there is already at least one backend_* Attribute
+	#    Do nothing
+	# 2. If there is no backend_* Attribute, but defaultBackend is set:
+	#    create a backend_* Attribute with systemid "home" and value "local"
+	#    set defaultBackend to "home"
+	# 3. If there is no defaultBackend either
+	#    Do nothing
+		if(not %systems and exists $main::attr{$hash->{NAME}}{defaultBackend}) {
+			attrLowLevel($hash,'set','backend_home','local');
+			attrLowLevel($hash,'set','defaultBackend','home');
+		};
+	};	
+	
+	# If a backend_* Attribute is there, but defaultBackend is not set or set to a
+	# wrong system id
+	# Determine defaultBackend and set it explicitly
+	if(%systems) {
+		attrLowLevel($hash,'set','defaultBackend',getDefaultSystem($hash));
+	};
+	
+	# remove longPollType
+	attrLowLevel($hash,'del','longPollType');
+	
+	# re-determine attribute list to remove longPollType and fhemwebUrl
+	setAttrListDevice($hash);
+	
+};
+
 
 ##################
 sub Undef($$) {
@@ -282,9 +475,6 @@ sub Undef($$) {
 sub Attr ($$$$) {
 	my ( $cmd, $name, $attrName, $attrValue  ) = @_;
 	# if fhemwebUrl is changed, we need to refresh the buffer
-	if($attrName eq "fhemwebUrl") {
-		FUIP::Model::refresh($name);
-	};
 	if($cmd eq "set" and $attrName eq "pageWidth") {
 		if($attrValue < 100 or $attrValue > 2500) {
 			return "pageWidth must be a number between 100 and 2500";
@@ -314,9 +504,47 @@ sub Attr ($$$$) {
 			return 'You cannot delete the default backend "'.$sysid.'". Change or delete the attribute defaultBackend first.';
 		};
 	};	
+	
+	# When the first backend_.* attribute is introduced, we might have to make
+	# sure that the "old" stuff still works.
+	# I.e. if...
+	# - A backend_.* attribute is set and
+	# - defaultBackend is not set (yet) and
+	# - there are already pages 
+	# -> 
+	# Make sure that defaultBackend is set 
+	# If no backend-Attributes are set so far, make 
+	# sure that there is a "local" backend
+	if($main::init_done) {
+		if($cmd eq "set" and $attrName =~ m/^backend_(.*)$/ 
+				and not main::AttrVal($name,"defaultBackend",undef)
+				and $main::defs{$name}{pages} ) {
+			my $found = 0;
+			for my $attrName (keys %{$main::attr{$name}}) {
+				next unless $attrName =~ m/^backend_(.*)$/;
+				$found = 1;
+				last;
+			};	
+			if($found) {
+				#Make sure that the defaultBackend is kept
+			    attrLowLevel($main::defs{$name},'set','defaultBackend',getDefaultSystem($main::defs{$name}));
+			}else{
+				my $oldSystemId;
+				if($attrName eq "backend_home") {
+					$oldSystemId = "local";
+				}else{
+					$oldSystemId = "home";
+				};	
+				attrLowLevel($main::defs{$name},'set','backend_'.$oldSystemId,"local");	
+				attrLowLevel($main::defs{$name},'set','defaultBackend',$oldSystemId);
+			};
+		};	
+	};
+	
 	# Anything about systems changed, refresh model cache
-	if($attrName =~ m/^backend_.*/ or $attrName eq "defaultBackend") {
+	if($attrName =~ m/^backend_.*/ or $attrName eq "defaultBackend" or $attrName eq "backendNames") {
 		FUIP::Model::refresh($name);
+		main::InternalTimer( main::gettimeofday(), 'FUIP::setAttrListDevice', $main::defs{$name}, 0);
 	};
 	return undef;
 }
@@ -330,12 +558,10 @@ sub getCellMargin($) {
 
 # getSystems
 # Returns all connected FHEM systems
-# This depends on attributes backend_.* and fhemwebUrl
+# This depends on attributes backend_.* 
 # - nothing of these is set 
 #     => result is { home => local }
 #        i.e. the default system name is "home"
-# - fhemwebUrl is set, but no backend_.*
-#     => result is { home => $fhemweburl }
 # - backend_.* is/are set
 #     => result is { <name> => $backend_<name> }
 #        with one entry for each backend_.*
@@ -351,9 +577,8 @@ sub getSystems($) {
 	};
 	return \%result if(%result); 
 	
-	# is fhemwebUrl set? (if not, return 'local' only)
-	my $fhemweburl = main::AttrVal($hash->{NAME},"fhemwebUrl",'local');
-	return { 'home' => $fhemweburl }; 
+	# return 'local' only
+	return { 'home' => 'local' }; 
 };
 
 
@@ -2807,8 +3032,17 @@ sub fhemwebShowDetail($$$) {
 	my ($fwName, $name, $roomName) = @_;
 	my $hash = $main::defs{$name};
 	my $message = checkCrashedMessage($hash);
-	return "" unless $message;
-	return "<div style='color:red'>".$message."</div>";
+	my $messages = getMessages($hash);
+	unshift(@$messages,$message) if $message;
+	return undef unless @$messages;
+	# we assume that the user has seen the messages
+	$messagesSeen{$name} = 1;
+	my $result = "<table class='block wide'>";
+	for $message (@$messages) {
+		$result .= "<tr><td style='color:red'>".$message."</td></tr>";
+    };	
+	$result .= "</table>";
+	return $result;
 };
 
 
@@ -4161,7 +4395,7 @@ sub Get($$$)
 
 =begin html_DE
 
-<a name="FUIP"></a>
+<a id="FUIP"></a>
 <h3>FUIP</h3>
 <ul>
   Definiert ein "FHEM User Interface Painter Device" (FUIP Device), welches ein "FUIP Frontend" repr&auml;sentiert. D.h. wenn man FUIP nutzen will, muss man mindestens ein FUIP Device anlegen.	
@@ -4175,15 +4409,15 @@ sub Get($$$)
   <a name="FUIPset"></a>
   <b>Set</b>
   <ul>
-  	<li><a name="save">save</a>: Speichern des aktuellen Zustands der Oberfl&auml;che<br>
+  	<li><a id="FUIP-set-save">save</a>: Speichern des aktuellen Zustands der Oberfl&auml;che<br>
 	Das Kommando <code>set...save</code> speichert den momentanen Bearbeitungszustand der Oberfl&auml;che. Dies beinhaltet alles, was man per Klickibunti und M&auml;useschubsen macht, aber nicht die Einstellungen in der FHEMWEB-Oberfl&auml;che. Die FUIP-Oberfl&auml;che wird in einer Datei namens "FUIP_&lt;name&gt;.cfg" gespeichert, wobei &lt;name&gt; der Name des FUIP-Device ist. Normalerweise liegt diese Datei im Verzeichnis "/opt/fhem/FHEM/lib/FUIP/config". 	
 	<br>Zus&auml;tzlich zum expliziten <code>set...save</code> gibt es noch einen Autosave-Mechanismus. Die entstehenden Dateien k&ouml;nnen einfach per <code>set...load</code> geladen werden.</li>
 
-	<li><a name="load">load</a>: Laden eines zuvor gespeicherten Zustands der Oberfl&auml;che<br>
+	<li><a id="FUIP-set-load">load</a>: Laden eines zuvor gespeicherten Zustands der Oberfl&auml;che<br>
 	Das Kommando <code>set...load</code> akzeptiert einen Parameter, &uuml;ber den angegeben werden kann, ob man die normal abgespeicherte Konfiguration laden will ("lastSaved" oder einfach leer lassen) oder eine der Autosave-Dateien.
 	FUIP speichert jede &Auml;nderung automatisch ab. Dadurch entstehen für jedes FUIP-Device bis zu 5 Autosave-Dateien, die bei <code>set...load</code> ausgew&auml;hlt werden k&ouml;nnen. </li>
 	
-	<li><a name="lock">lock</a>: Sperren der Oberfl&auml;che gegen &Auml;nderungen<br>
+	<li><a id="FUIP-set-lock">lock</a>: Sperren der Oberfl&auml;che gegen &Auml;nderungen<br>
 	Der Befehl <code>set...lock</code> sperrt die Oberfl&auml;che vor&uuml;bergehend gegen &Auml;nderungen, w&auml;hrend das Attribut <code>locked</code> (noch) nicht gesetzt ist (oder explizit auf "0"), bzw. sperrt die Oberfl&auml;che wieder, nachdem sie mit <code>set...unlock</code> vor&uuml;bergehend in den &Auml;nderungsmodus geschaltet wurde.<br>
 	Als weiteren Parameter kann man entweder "client", "all" oder eine IP-Adresse angeben: 
 	<ul>
@@ -4193,7 +4427,7 @@ sub Get($$$)
 		<li>Wird <code>set...lock</code> ohne weiteren Parameter aufgerufen, dann h&auml;ngt die Wirkung vom Attribut <code>locked</code> ab. Ist <code>locked=1</code>, dann ist der Default wie "all". Ansonsten ist der Default wie "client".</li> 
 	</ul>		
 	</li>
-	<li><a name="unlock">unlock</a>: Die Oberfl&auml;che in den &Auml;nderungsmodus schalten<br>
+	<li><a id="FUIP-set-unlock">unlock</a>: Die Oberfl&auml;che in den &Auml;nderungsmodus schalten<br>
 	Der Befehl <code>set...unlock</code> schaltet die Oberfl&auml;che vor&uuml;bergehend in den &Auml;nderungsmodus, w&auml;hrend das Attribut <code>locked</code> (schon) auf "1" gesetzt ist, bzw. entsperrt die Oberfl&auml;che wieder, nachdem sie mit <code>set...lock</code> vor&uuml;bergehend in den Anzeigemodus geschaltet wurde.<br>
 	Als weiteren Parameter kann man entweder "client", "all" oder eine IP-Adresse angeben: 
 	<ul>
@@ -4203,12 +4437,12 @@ sub Get($$$)
 		<li>Wird <code>set...unlock</code> ohne weiteren Parameter aufgerufen, dann h&auml;ngt die Wirkung vom Attribut <code>locked</code> ab. Ist <code>locked=1</code>, dann ist der Default wie "client". Ansonsten ist der Default wie "all".</li> 
 	</ul>		
 	</li>	
-	<li><a name="pagedelete">pagedelete</a>: FUIP-Seiten l&ouml;schen<br>
+	<li><a id="FUIP-set-pagedelete">pagedelete</a>: FUIP-Seiten l&ouml;schen<br>
 	FUIP-Seiten k&ouml;nnen nicht &uuml;ber die Frontend-Bearbeitung gel&ouml;scht werden. Au&szlig;erdem kann es schnell passieren, dass man eine FUIP-Seite aus Versehen anlegt. Diese k&ouml;nnen dann per <code>set...pagedelete</code> gel&ouml;scht werden.<br>
 	Das L&ouml;schen einer Seite ist eine &Auml;nderung des Frontends und muss mit <code>set...save</code> explizit gespeichert werden.
 	</li>	
-	<li><a name="refreshBuffer">refreshBuffer</a>: Device-Puffer l&ouml;schen<br>
-	FUIP verwendet Informationen aus dem "eigentlichen" FHEM, wie z.B. die Liste aller Devices sowie bestimmte Readings, Internals und Attribute. Insbesondere bei "entferntem" FUIP, also bei Verwendung des Attributs fhemwebUrl, kann die Ermittlung dieser Daten l&auml;nger dauern. Daher wird praktisch alles durch FUIP zwischengespeichert ("gepuffert"). Wenn man nun neue Devices anlegt bzw. bestehende Devices &auml;ndert, dann bekommt das FUIP-Device davon unter Umst&auml;nden nichts mit. In so einem Fall kann man mit <code>set...refreshBuffer</code> den Zwischenspeicher l&ouml;schen, um FUIP dazu zu zwingen, die Informationen erneut zu ermitteln.<br>
+	<li><a id="FUIP-set-refreshBuffer">refreshBuffer</a>: Device-Puffer l&ouml;schen<br>
+	FUIP verwendet Informationen aus dem "eigentlichen" FHEM, wie z.B. die Liste aller Devices sowie bestimmte Readings, Internals und Attribute. Insbesondere bei "entferntem" FUIP, also bei Verwendung der backend_-Attribute, kann die Ermittlung dieser Daten l&auml;nger dauern. Daher wird praktisch alles durch FUIP zwischengespeichert ("gepuffert"). Wenn man nun neue Devices anlegt bzw. bestehende Devices &auml;ndert, dann bekommt das FUIP-Device davon unter Umst&auml;nden nichts mit. In so einem Fall kann man mit <code>set...refreshBuffer</code> den Zwischenspeicher l&ouml;schen, um FUIP dazu zu zwingen, die Informationen erneut zu ermitteln.<br>
 	Im Anzeigemodus (also Attribut locked=1 oder <code>set...locked</code> wurde benutzt) treten diese Effekte nicht auf, da der Puffer bei jedem Seitenaufruf automatisch gel&ouml;scht wird.	
 	</li>	
   </ul>
@@ -4217,28 +4451,32 @@ sub Get($$$)
   <a name="FUIPattr"></a>
   <b>Attributes</b>
   <ul>
-    <li><a name="baseHeight">baseHeight</a>: Basish&ouml;he einer Zelle<br>
+    <li><a id="FUIP-attr-baseHeight">baseHeight</a>: Basish&ouml;he einer Zelle<br>
 	Eine 1x1-Zelle ist <code>baseHeight</code> Pixel hoch. Standardwert ist 108.
 	</li> 
      <li><a name="baseWidth">baseWidth</a>: Basisbreite einer Zelle<br>
 	Eine 1x1-Zelle ist <code>baseWidth</code> Pixel breit. Standardwert ist 142.
 	</li>
-	<li><a name="cellMargin">cellMargin</a>: Zellzwischenraum<br>
+	<li><a id="FUIP-attr-cellMargin">cellMargin</a>: Zellzwischenraum<br>
 	Mit dem Attribut <code>cellMargin</code> kann man jetzt den Platz zwischen den Zellen festlegen. Der Wert muss zwischen 0 und 10 liegen, der Standardwert ist 5. Um jede Zelle herum werden <code>cellMargin</code> Pixel frei gehalten. D.h. zwischen zwei Zellen ist zweimal so viel Platz (in Pixel) wie durch <code>cellMargin</code> festgelegt. Der Rand um den ganzen Anzeigebereich herum ist <code>cellMargin</code> Pixel breit.<br>
 	Damit beeinflusst <code>cellMargin</code> auch die Gr&ouml;&szlig;e von mehrspaltigen und mehrzeiligen Zellen. Ansonsten w&uuml;rde das ganze nicht mehr zusammenpassen. Eine dreispaltige Zelle ist beispielsweise standardm&auml;&szlig;ig 446 Pixel breit. Dies ergibt sich aus 3 Spalten zu 142 Pixeln (<code>baseWidth</code>) plus zwei Zwischenr&auml;umen zu je 10 Pixeln (je 2 mal <code>cellMargin</code>).<br>
 	Bei Verwendung des "flex" Layouts (siehe Attribut <code>layout</code>) liefert diese Berechnung die Mindestgr&ouml;&szlig;e der Zellen. Je nach Browserfenster k&ouml;nnen die Zellen auch gr&ouml;&szlig;er werden.
 	</li>
-	<li><a name="fhemwebUrl">fhemwebUrl</a>: Adresse eines entfernten Backend-FHEMs<br>
-Mit FUIP kann man sich auch an ein "entferntes" FHEM ankoppeln. Das Attribut <code>fhemwebUrl</code> enth&auml;lt dann die Adresse der "entfernten" FHEMWEB-Instanz, die man verwenden m&ouml;chte. Das Attribut <code>CORS</code> dieser FHEMWEB-Instanz muss dann auf "1" stehen. Au&szlig;erdem darf die FHEMWEB-Instanz keine Passwort-Pr&uuml;fung haben. Stattdessen kann man mit dem Attribut <code>allowedfrom</code> oder einer allowed-Instanz den Zugriff einschr&auml;nken.<br>
-Man darf fhemwebUrl auf keinen Fall setzen (auch nicht auf 127.0.0.1 oder so), wenn sich die FUIP-Instanz auf das lokale FHEM beziehen soll. In dem Fall w&uuml;rde FHEM ewig auf sich selbst warten.<br>
-Das Attribut <code>fhemwebUrl</code> muss die ganze Adresse, inklusive Port und abschlie&szlig;endem "fhem" enthalten, also z.B. <code>http://fenchurch:8086/fhem</code> oder <code>http://192.168.178.73:8086/fhem</code><br>
-Wenn man ein "entferntes" FHEM benutzt, dann k&ouml;nnen einige Funktionen der Konfigurationsoberfl&auml;che etwas Zeit brauchen. Zum Beispiel müssen für die Eingabehilfe für Devices alle Devices aus dem entfernten FHEM gelesen werden. Das ist so implementiert, dass das entfernte FHEM m&ouml;glichst wenig belastet wird, was aber zu Lasten des FUIP-FHEM geht. Siehe auch das Set-Kommando <code>refreshBuffer</code> zu diesem Thema.	
+	<li><a id="FUIP-attr-backend_" data-pattern="backend_.*">backend_.*</a>: Adresse eines (entfernten) Backend-FHEMs<br>
+Mit FUIP kann man sich an ein "entferntes" FHEM oder sogar mehrere FHEM-Instanzen ankoppeln. Die Attribute der Form <code>backend_*</code> enthalten dann die Adresse(n) der "entfernten" FHEMWEB-Instanz(en), die man verwenden m&ouml;chte. Das Attribut <code>CORS</code> entfernter FHEMWEB-Instanz(en) muss dann auf "1" stehen. Au&szlig;erdem d&uuml;rfen diese FHEMWEB-Instanzen keine Passwort-Pr&uuml;fung haben. Stattdessen kann man mit dem Attribut <code>allowedfrom</code> oder einer allowed-Instanz den Zugriff einschr&auml;nken.<br>
+Man darf ein backend_-Attribut auf keinen Fall auf eine Adresse oder IP setzen (auch nicht auf 127.0.0.1), wenn man sich auf das lokale FHEM beziehen soll. In diesem Fall muss das backend_-Attribut auf "local" gesetzt werden, wenn man festlegen will, dass das Backend-System "home" die eigene (lokale) FHEM-Instanz ist.<br>
+Das backend_-Attribut muss die ganze Adresse, inklusive Port und abschlie&szlig;endem "fhem" enthalten. Mit der folgenden Konfiguration legt man z.B. fest, dass sich die FUIP-Instanz <i>ui</i> um drei FHEMs "k&uuml;mmern soll:<br>
+<code>attr ui backend_fenchurch http://fenchurch:8086/fhem</code><br>
+<code>attr ui backend_home http://192.168.178.73:8086/fhem</code><br>
+<code>attr ui backend_self local</code><br>
+Dadurch kennt die FUIP-Instanz <i>ui</i> drei Backend-FHEMs (oder auch Backend-Systeme): fenchurch, home und self.<br>
+Wenn man ein "entferntes" FHEM benutzt, dann k&ouml;nnen einige Funktionen der Konfigurationsoberfl&auml;che etwas Zeit brauchen. Zum Beispiel m&uuml;ssen für die Eingabehilfe f&uuml;r Devices alle Devices aus dem entfernten FHEM gelesen werden. Das ist so implementiert, dass das entfernte FHEM m&ouml;glichst wenig belastet wird, was aber zu Lasten des FUIP-FHEM geht. Siehe auch das Set-Kommando <code>refreshBuffer</code> zu diesem Thema.	
 </li>	
-	<li><a name="gridlines">gridlines</a>: Anzeige eines Gitters aus Hilfslinien<br>
+	<li><a id="FUIP-attr-gridlines">gridlines</a>: Anzeige eines Gitters aus Hilfslinien<br>
 	Das Attribut <code>gridlines</code> kann die Werte "show" und "hide" annehmen. Bei "show" wird im Bearbeitungsmodus ein Gitter aus Hilfslinien angezeigt. Der Defaultwert ist "hide".<br>
 	Der Abstand der Linien wird aus <code>baseWidth</code> und <code>baseHeight</code> ermittelt und wird so berechnet, dass sich sowohl der linke Rand jeder Zelle mit einer Linie deckt und der untere Rand des Headers jeder Zelle. Ansonsten ist der Abstand der Linien etwa 30 Pixel. 
 </li>
-<li><a name="layout">layout</a>: Grundlegendes Seitenlayout (Gridster oder Flexbox)<br>
+<li><a id="FUIP-attr-layout">layout</a>: Grundlegendes Seitenlayout (Gridster oder Flexbox)<br>
 Das Attribut <code>layout</code> kann zwei Werte annehmen: "gridster" oder "flex". Der Defaultwert ist "gridster".<br>
 <b>Gridster-Layout</b><br>
 <div style="padding-left:2em"> 
@@ -4254,16 +4492,16 @@ Im <b>Hauptbereich</b> ist die festgelegte Zellenbreite eine Mindestbreite. Die 
 F&uuml;r "FUIP-Anf&auml;nger" eignet sich das Gridster-Layout besser. Man kann dann sp&auml;ter auf das Flex-Layout umstellen. FUIP versucht dann, die Zellen m&ouml;glichst sinnvoll zuzuordnen, also die erste Spalte in den Men&uuml;bereich, die erste Zeile (ohne die erste Spalte) in den Titelbereich und den Rest in den Hauptbereich.<br>
 Im Flex-Layout sollte man das Attribut <code>pageWidth</code> weglassen. Au&szlig;erdem sollte man mit <code>baseHeight</code> und <code>baseWidth</code> etwas herumexperimentieren, bevor man alles genau an die richtige Stelle schiebt. 
 </li>
-	<li><a name="locked">locked</a>: Sperren gegen Frontend-&Auml;nderungen (Anzeigemodus)<br>
+	<li><a id="FUIP-attr-locked">locked</a>: Sperren gegen Frontend-&Auml;nderungen (Anzeigemodus)<br>
 Wenn locked auf "1" gesetzt wird, dann sind die FUIP-Seiten gegen Bearbeitung gesperrt. Das Zahnrad-Icon oben rechts in den Zellen erscheint dann nicht mehr. Dadurch kann ein reiner "Frontend Benutzer" die Seiten nicht mehr &auml;ndern. Zus&auml;tzlich verschwinden auch die Zellennummern rechts neben den Zellen&uuml;berschriften und Zellen ohne &Uuml;berschrift haben dann auch keinen "Titelbalken" mehr. Falls das Attribut <code>layout</code> auf "flex" steht passt sich jetzt jede Seite automatisch an die Gr&ouml;&szlig;e des Browserfensters an.<br>
 &Uuml;ber <code>set...lock</code> und <code>set...unlock</code> kann die Sperre ebenfalls gesteuert werden.
 </li>	
-	<li><a name="loglevel">loglevel</a>: Detaillierungsgrad Frontend-Log<br>
+	<li><a id="FUIP-attr-loglevel">loglevel</a>: Detaillierungsgrad Frontend-Log<br>
 	Dieses Attribut bezieht sich auf das Frontend-Log, d.h. ein Log, welches vom Browser erzeugt wird. Ein Log f&uuml;r das Backend (also FHEM selbst) kann mit dem Attribut <code>verbose</code> gesteuert werden.<br>
 	Normalerweise wird dieses Protokoll nicht ben&ouml;tigt, man l&auml;sst es also am besten aus (<code>loglevel=0</code>), au&szlig;er es ist etwas schief gegangen und man will der Sache nachgehen.<br>
 	Das Attribut <code>loglevel</code> kann Werte von 0 bis 5 annehmen. Bei 0 (Default) wird kein Protokoll geschrieben, bei 5 ein sehr detailliertes. Siehe auch die Attribute <code>logareas</code> und <code>logtype</code>. 
 	</li>
-	<li><a name="logareas">logareas</a>: Protokollierte Bereiche (Frontend-Log)<br>
+	<li><a id="FUIP-attr-logareas">logareas</a>: Protokollierte Bereiche (Frontend-Log)<br>
 	Da ein Frontend-Log unter Umst&auml;nden sehr lange laufen muss, sollte man es auf die notwendigen Bereiche beschr&auml;nken. Daf&uuml;r akzeptiert <code>logareas</code> eine Komma-separierte Liste mit folgenden Werten als Inhalt:
 	<div style="padding-left:2em">
 	<b>base.init</b> für die Initialisierungsphase<br>
@@ -4274,7 +4512,7 @@ Wenn locked auf "1" gesetzt wird, dann sind die FUIP-Seiten gegen Bearbeitung ge
 </div>
 Die obige Liste kann mit der Zeit noch wachsen. Am besten, man l&auml;sst das Log eine Weile ohne <code>logareas</code> laufen und schaut in den Logeintr&auml;gen nach, welche Bereiche interessant sein k&ouml;nnten. Siehe auch die Attribute <code>loglevel</code> und <code>logtype</code>.
 	</li> 
-	<li><a name="logtype">logtype</a>: Art des Frontend-Logs<br>
+	<li><a id="FUIP-attr-logtype">logtype</a>: Art des Frontend-Logs<br>
 	Normalerweise wird das Protokoll in die "Javascript-Konsole" der Entwicklertools des Browsers geschrieben. Bei Mobilger&auml;ten ist es allerdings etwas schwierig, an diese "Konsole" zu kommen. Daher hat FUIP die M&ouml;glichkeit, das Protokoll zuerst im lokalen Speicher ("localStorage") des Browsers abzulegen und dann sp&auml;ter an das Backend zu schicken. Das Attribut <code>logtype</code> kann dazu zwei Werte annehmen:
 		<div style="padding-left:2em">
 		<b>console</b>: schreibt das Protokoll in die Javascript-Konsole. Das ist der Defaultwert.<br>
@@ -4283,28 +4521,28 @@ Die obige Liste kann mit der Zeit noch wachsen. Am besten, man l&auml;sst das Lo
 	</div>
 	Siehe auch die Attribute <code>loglevel</code> und <code>logareas</code>.
 	</li>
-	<li><a name="pageWidth">pageWidth</a>: Seitenbreite in Pixel<br>
+	<li><a id="FUIP-attr-pageWidth">pageWidth</a>: Seitenbreite in Pixel<br>
 	 Wenn <code>pageWidth</code> nicht gesetzt ist (das ist der Default), dann wird die Seitenbreite nicht festgelegt. Bei Attribut <code>layout=gridster</code> ergibt sie sich dann aus <code>baseWidth</code> (d.h. die Breite einer 1er-Zelle) und der Anzahl der verwendeten Spalten plus die Breite der Zwischenr&auml;ume (siehe Attribut <code>cellMargin</code>. Bei <code>layout=flex</code> ist die Seitenbreite durch das Browserfenster festgelegt und beeinflusst ihrerseits die Breite und Anordnung der Zellen. D.h. in der Regel muss man bzw. sollte man <code>pageWidth</code> nicht angeben.<br>
 Die Angabe in <code>pageWidth</code> beeinflusst auch die Darstellung des Hintergrundbilds, falls das Attribut <code>styleBackgroundImage</code> gesetzt ist. 
 </li>
-<li><a name="snapTo">snapTo</a>: Automatisches "Einrasten" an den Hilfslinien<br>
+<li><a id="FUIP-attr-snapTo">snapTo</a>: Automatisches "Einrasten" an den Hilfslinien<br>
 Wird dieses Attribut gesetzt, dann werden die Views beim Drag&Drop automatisch am Raster (den Hilfslinien) ausgerichtet. (Die Views "ruckeln" dann also ein bisschen.) Wenn man w&auml;hrend des Ziehens die Alt-Taste dr&uuml;ckt, dann wird das tempor&auml;r deaktiviert, so dass man trotzdem pixelgenau positionieren kann.<br>
 Das Attribut kann die Werte "gridlines", "halfGrid", "quarterGrid" und "nothing" annehmen. Bei "gridlines" rasten die Views genau an den Hilfslinien ein, bei "halfGrid" an den Hilfslinien und in der Mitte zweier Linien und bei "quarterGrid" viermal pro Hilfslinie. Bei "nothing" wird das automatische Einrasten deaktiviert. Letzteres ist der Default.<br>
 F&uuml;r <code>snapTo</code> ist es egal, ob die Hilfslinien angezeigt werden oder nicht (Attribut <code>gridlines</code>). Die Views rasten dann eben dort ein, wo die Hilfslinien w&auml;ren.
 </li>
-	<li><a name="styleBackgroundImage">styleBackgroundImage</a>: Dateiname des Hintergrundbilds<br>
+	<li><a id="FUIP-attr-styleBackgroundImage">styleBackgroundImage</a>: Dateiname des Hintergrundbilds<br>
 	 Die Bilddatei muss sich im Verzeichnis &lt;fhem&gt;/FHEM/lib/FUIP/images befinden. (&lt;fhem&gt; steht meistens für /opt/fhem) Unterst&uuml;tzt werden jpg- und png- Dateien. Nachdem eine neue Datei hochgeladen wurde, muss man die FHEMWEB-Seite einmal neu laden, um die neue Datei verwenden zu können.<br>
 Falls das Attribut <code>pageWidth</code> gesetzt ist, dann wird die Breite des Hintergrundbilds auf die angegebene Gr&ouml;&szlig;e gesetzt. Ansonsten (ohne <code>pageWidth</code>) nimmt das Bild die Breite des Browser-Fensters ein. Die H&ouml;he des Bilds wird entsprechend skaliert, man muss sich also selbst darum k&uuml;mmern, dass das Bild ein passendes Seitenverh&auml;ltnis hat.<br>
 Bei Verwendung eines Hintergrundbilds werden die Zellenhintergr&uuml;nde automatisch auf halbtransparent gesetzt, so dass das Bild durchscheint.
 </li>
-<li><a name="styleColor">styleColor</a>: Vordergrundfarbe (veraltet)<br>
+<li><a id="FUIP-attr-styleColor">styleColor</a>: Vordergrundfarbe (veraltet)<br>
 Dieses Attribut kann verwendet werden, um die Standard-Textfarbe (Vordergrundfarbe) f&uuml;r alle Views zu setzen. Allerdings sollten Farben in FUIP inzwischen &uuml;ber das Attribut <code>styleSchema</code> bzw. den Punkt "Colours" im Zellenmenu gesetzt werden. Das Attribut <code>styleColor</code> entspricht dem Eintrag "foreground" (bzw. der CSS-Variable --fuip-color-foreground). Ist <code>styleColor</code> gesetzt, dann &uuml;berschreibt es diesen Eintrag.
 </li>
-	<li><a name="styleSchema">styleSchema</a>: Grundlegendes (Farb-)Schema<br>
+	<li><a id="FUIP-attr-styleSchema">styleSchema</a>: Grundlegendes (Farb-)Schema<br>
 	Mittels <code>styleSchema</code> kann man zwischen sieben verschiedenen "Styles" ausw&auml;hlen. Die Styles sind angelehnt an die hier beschriebenen Schema-Dateien: <a href="https://wiki.fhem.de/wiki/FHEM_Tablet_UI#Farben" target="fuipdoc">FHEM_Tablet_UI#Farben</a> D.h. die FUIP-Seiten sehen dann in etwa so aus wie auf den Screenshots dort.<br>
 	Weitere Anpassungen kann man &uuml;ber den Punkt "Colours" im Zellenmen&uuml; vornehmen. Au&szlig;erdem kann man eine eigene CSS-Datei &uuml;ber das Attribut <code>userCss</code> einbinden.	
 	</li>
-	<li><a name="toastMessages">toastMessages</a>: Konfiguration der Toast-Nachrichten<br>
+	<li><a id="FUIP-attr-toastMessages">toastMessages</a>: Konfiguration der Toast-Nachrichten<br>
 	Die Meldungen, die z.B. bei Schaltvorg&auml;ngen normalerweise links unten auftauchen, sind konfigurierbar. Dazu kann das Attribut <code>toastMessages</code> folgende Werte annehmen:
 	<div style="padding-left:2em">
 <b>all</b>: Alle Meldungen werden angezeigt. Das ist der Defaultwert.<br>
@@ -4313,20 +4551,20 @@ Dieses Attribut kann verwendet werden, um die Standard-Textfarbe (Vordergrundfar
 </div>
 Am Anfang der FUIP-Entwicklung wurden noch relativ viele (Fehler-)Meldungen &uuml;ber den Toast-Mechanismus angezeigt. Seit es das Frontent-Log gibt haben die Toast-Meldungen aber an Bedeutung verloren und st&ouml;ren kaum noch (siehe auch Attribute <code>loglevel</code>, <code>logareas</code> und <code>logtype</code>).
 	</li>	
-<li><a name="userCss">userCss</a>: Eigenes Stylesheet<br>
+<li><a id="FUIP-attr-userCss">userCss</a>: Eigenes Stylesheet<br>
 Mit diesem Attribut kann ein eigenes Stylesheet (CSS-Datei) eingebunden werden. Die zugeh&ouml;rige Datei muss im Verzeichnis &lt;fhem&gt;/FHEM/lib/FUIP/config liegen und die Endung ".css" haben.<br>
 Diese M&ouml;glichkeit sollte nicht leichtfertig eingesetzt werden. Zuerst sollte man pr&uuml;fen, ob man etwas passendes mit dem Attribut <code>styleSchema</code> einstellen kann. Die Farben kann man dann mit dem  Punkt "Colours" im Zellenmen&uuml; anpassen. Erst wenn diese M&ouml;glichkeiten ersch&ouml;pft sind, sollte man an das Attribut <code>userCss</code> denken. 
  </li>
-<li><a name="userHtmlBodyStart">userHtmlBodyStart</a>: Eigenen HTML-Text hinzuf&uuml;gen<br>
+<li><a id="FUIP-attr-userHtmlBodyStart">userHtmlBodyStart</a>: Eigenen HTML-Text hinzuf&uuml;gen<br>
 Mit diesem Attribut kann der Inhalt einer eigenen HTML-Datei eingebunden werden. Die zugeh&ouml;rige Datei muss im Verzeichnis &lt;fhem&gt;/FHEM/lib/FUIP/config liegen und die Endung ".html" haben. Dies eignet sich z.B. zum Einbinden eigener SVG-Definitionen.<br>
 Der HTML-Text wird relativ weit "oben" im generierten HTML-Code eingef&uuml;gt.<br>
 Diese M&ouml;glichkeit wird sehr selten ben&ouml;tigt. Meistens ist es besser, eigenen HTML-Code &uuml;ber die HTML-View einzubinden. 
 </li>
-<li><a name="viewportInitialScale">viewportInitialScale</a>: Anf&auml;nglicher Zoomgrad<br>
+<li><a id="FUIP-attr-viewportInitialScale">viewportInitialScale</a>: Anf&auml;nglicher Zoomgrad<br>
 FUIP generiert ein Meta-Element f&uuml;r den Viewport in jede Seite. Dabei wird der anf&auml;ngliche Zoomgrad auf 1,0 festgelegt. Dies kann mittels <code>viewportInitialScale</code> ge&auml;ndert werden. Der Wert entspricht genau dem "initial-scale"-Parameter des Meta-Elements f&uuml;r den Viewport.<br>
 Normalerweise muss man dieses Attribut nicht setzen. Wenn die FUIP-Seiten nicht (genau) in das Browserfenster passen, dann sollte man lieber mit den Attributen <code>baseWidth</code> und <code>cellMargin</code> experimentieren. Au&szlig;erdem kann es helfen, das Flex-Layout zu verwenden. Siehe dazu Attribut <code>layout</code>.
 </li>
-<li><a name="viewportUserScalable">viewportUserScalable</a>: Zoomen erlauben oder nicht<br>
+<li><a id="FUIP-attr-viewportUserScalable">viewportUserScalable</a>: Zoomen erlauben oder nicht<br>
 Dieses Attribut entspricht genau dem "user-scalable"-Parameter des Meta-Elements f&uuml;r den Viewport. Man kann damit also festlegen, ob der Benutzer die Seite zoomen darf (Wert "yes") oder nicht ("no"). Defaultwert ist "yes", also ist das Zoomen normalerweise erlaubt.
 </li>	
   </ul>
