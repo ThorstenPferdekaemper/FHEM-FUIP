@@ -20,7 +20,11 @@ sub dimensions($;$$){
 
 sub getDependencies($$) {
 	my ($self,$fuip) = @_;
-	my $sysid = $self->getSystem();
+	
+	#Determine the default system. Otherwise, we might end up with different
+	#styles from different backend systems. The result would not be really
+	#predictable.
+	my $sysid = FUIP::getDefaultSystem($fuip);
 	my $stylesheetPrefix = FUIP::Model::getStylesheetPrefix($fuip->{NAME},$sysid);
 	return [$sysid.':www/pgm2/'.$stylesheetPrefix.'svg_defs.svg',
 			$sysid.':www/pgm2/'.$stylesheetPrefix.'svg_style.css',
