@@ -163,7 +163,7 @@ sub setAttrListDevice($) {
 		$hash->{'.AttrList'} .= " backend_".$system;
 	};
 	# Add the first "free" from backend names
-	my @backendNames = split(/,/, main::AttrVal($hash->{NAME},'backendNames','home,trillian,fenchurch,lintilla,alice,dionah'));	
+	my @backendNames = split(/,/, main::AttrVal($hash->{NAME},'backendNames','trillian,fenchurch,lintilla,alice,dionah'));	
 	for my $system (@backendNames) {
 		next if exists $systems->{$system};
 		$hash->{'.AttrList'} .= " backend_".$system;
@@ -505,6 +505,11 @@ sub Attr ($$$$) {
 		};
 	};	
 	
+	# Backends cannot be named "index" or "overview"
+	if($cmd eq "set" and $attrName =~ m/^backend_(index|overview)$/) {
+		return 'A backend system cannot be named "index" or "overview". Choose a different name.'
+	};	
+	
 	# When the first backend_.* attribute is introduced, we might have to make
 	# sure that the "old" stuff still works.
 	# I.e. if...
@@ -648,8 +653,10 @@ sub getDefaultSystemUrl($) {
 };
 
 
-sub createRoomsMenu($$$) {
-	my ($hash,$pageid,$sysid) = @_;
+sub createRoomsMenu($$) {
+	my ($hash,$pageid) = @_;
+	
+	my $sysid = ( split '/', $pageid )[ 0 ];	
 	my $cell = FUIP::Cell->createDefaultInstance($hash,$hash->{pages}{$pageid});
 	$cell->{title} = "R&auml;ume";	
 	$cell->position(0,1);
@@ -694,19 +701,10 @@ sub addStandardCells($$$) {
 	# this gives more flexibility for baseHeight
 	# baseWidth is assumed something roughly around 140
 	my $titleHeight = _generateGetTitleHeight($hash);
-	my $sysid = ( split '/', $pageid )[ 0 ];	
-	# If the system id is "home", then take the first 
-	# system id (this includes the case where we do not 
-	# have multifhem, as then the system id list is just [home]
-	if($sysid eq 'home') {
-		my $systems = getSystems($hash);
-		$sysid = (sort keys %$systems)[0]
-	};
 	my $page = $hash->{pages}{$pageid};		
 	# Home button
 	my $homeCell = FUIP::Cell->createDefaultInstance($hash,$page);
 	my $view = FUIP::View::HomeButton->createDefaultInstance($hash,$homeCell);
-	$view->{sysid} = $sysid;
 	if(getNumSystems($hash) > 1) {
 		$view->{active} = ($pageid eq "home" ? 1 : 0);
 	}else{
@@ -721,7 +719,6 @@ sub addStandardCells($$$) {
 	# Clock
 	my $clockCell = FUIP::Cell->createDefaultInstance($hash,$page);
 	my $clockView = FUIP::View::Clock->createDefaultInstance($hash,$clockCell);
-	$clockView->{sysid} = $sysid;
 	$clockView->position(0,0);
 	# switch sizing of the clock to auto, e.g. to center it
 	$clockView->{sizing} = "auto";
@@ -735,7 +732,6 @@ sub addStandardCells($$$) {
 	my $titleCell = FUIP::Cell->createDefaultInstance($hash,$page);
 	my $title = ($pageid eq "home" ? "Home, sweet home" : main::urlDecode(( split '/', $pageid )[ -1 ]));
 	$view = FUIP::View::Title->createDefaultInstance($hash,$titleCell);
-	$view->{sysid} = $sysid;
 	$view->{text} = $title;
 	$view->{icon} = "oa-control_building_s_all" if $pageid eq "home";
 	$view->position(0,0);
@@ -745,11 +741,9 @@ sub addStandardCells($$$) {
 	$titleCell->{title} = $title;
 	push(@$cells,$titleCell);
 	# rooms menu unless index page and multifhem...
-	if($pageid eq "home") {
-	    return if(getNumSystems($hash) > 1);
-	};	
+	return if($pageid eq "overview");
 	
-	my $roomsMenu = createRoomsMenu($hash,$pageid,$sysid);
+	my $roomsMenu = createRoomsMenu($hash,$pageid);
 	# make sure rooms menu is under home button
 	$roomsMenu->position(0,$titleHeight);
 	push(@$cells,$roomsMenu);
@@ -1662,13 +1656,13 @@ sub defaultPageIndex($) {
 	# Now we can be sure that we are in multifhem mode
 	# Create home page with links to each system
 	
-	$hash->{pages}{"home"} = FUIP::Page->createDefaultInstance($hash,$hash);	
+	$hash->{pages}{overview} = FUIP::Page->createDefaultInstance($hash,$hash);	
 	my @cells;
 	# home button and rooms menu
-	addStandardCells($hash, \@cells, 'home');
+	addStandardCells($hash, \@cells, 'overview');
 	# TODO: get "system views", not only system menu 
 
-	my $systemsMenu = FUIP::Cell->createDefaultInstance($hash,$hash->{pages}{"home"});
+	my $systemsMenu = FUIP::Cell->createDefaultInstance($hash,$hash->{pages}{overview});
 	$systemsMenu->{title} = "Systeme";	
 	$systemsMenu->position(0,1);
     # create a MenuItem view for each system
@@ -1690,7 +1684,7 @@ sub defaultPageIndex($) {
 	$systemsMenu->position(0,$titleHeight);
 	push(@cells,$systemsMenu);	
 	
-	$hash->{pages}{"home"}{cells} = \@cells;
+	$hash->{pages}{overview}{cells} = \@cells;
 };
 
 
@@ -2444,13 +2438,9 @@ sub createPage($$) {
 	
 	main::Log3(undef, 3, "FUIP: Creating page ".$pageid);
 	
-	# home page?
-	if($pageid eq "home"){
-		if(getNumSystems($hash) > 1) {
-			defaultPageIndex($hash);
-		}else{
-			defaultPageSystem($hash,"home");
-		};
+	#System overview?
+	if($pageid eq "overview"){
+		defaultPageIndex($hash);
 		return;
 	};
 
@@ -2517,13 +2507,20 @@ sub getFuipPage($$) {
 	# if not locked, this would mean very bad performance for e.g. value help for devices
 	FUIP::Model::refresh($hash->{NAME}) if($locked);
 	
-	#the default page is "home"  if we don't know any better
-	#...or the system name if there is only one system and it has a name 
+	#If no page is explicitly given, determine default page
+	# - If there is already a page "home", but no system called "home",
+    #   then use "home" as default (this is for the case where the "home"
+    #   page already exists and is not directly connected to a system
+	# - If there is only one system, use its system id as default page
+    # - Multiple systems: default page is "overview"	
 	if(not defined($pageid) or $pageid eq "") {
-	    if(getNumSystems($hash) > 1) {
-		    $pageid = "home";
+		my $systems = getSystems($hash);
+		if(defined($hash->{pages}{home}) and not defined($systems->{home})) {
+			$pageid = "home";
+		}elsif(scalar(keys %$systems) == 1) {
+			$pageid = getDefaultSystem($hash);
 		}else{
-		    $pageid = getDefaultSystem($hash);
+			$pageid = "overview";
 		};
 	};	
 
@@ -4471,7 +4468,7 @@ sub Get($$$)
   <b>Attributes</b>
   <ul>
 	<li><a id="FUIP-attr-backendNames">backendNames</a>:Liste von Namen f&uuml;r Backend-FHEMs<br>
-		Wenn man eine FUIP-Instanz mit einem entfernten FHEM oder mit mehreren FHEM-Systemen verbinden will, wird jedes verbundene FHEM-System einem symbolischen Namen zugeordnet. Dies geschieht im Prinzip dadurch, dass die Adresse des Systems in ein Attribut der Form <i>backend_&lt;name&gt;</i> eingetragen wird. Im Weiteren wird dann &lt;name&gt; als Kennung f&uuml;r das entsprechende System benutzt. Daf&uuml;r schl&auml;gt FUIP f&uuml;r die ersten paar Systeme Namen vor. Das erste System hei&szlig; "home" und weitere Systeme erhalten weibliche Namen aus "Per Anhalter durch die Galaxis". Wem das nicht gef&auml;llt, der kann die <i>backend_</i>-Attribute manuell setzen (<code>attr ui backend_zaphod http://eccentrica:8083/gallumbits</code> w&uuml;rde ein FHEM mit den Namen "zaphod" definieren). Alternativ kann man &uuml;ber das Attribut <i>backendNames</i> eigene Namensvorschl&auml;ge machen. Z.B. <code>attr ui backendNames arthur,ford,marvin,zaphod</code> produziert Vorschl&auml;ge mit m&auml;nnliche Namen aus dem Adams'schen Universum.<br>
+		Wenn man eine FUIP-Instanz mit einem entfernten FHEM oder mit mehreren FHEM-Systemen verbinden will, wird jedes verbundene FHEM-System einem symbolischen Namen zugeordnet. Dies geschieht im Prinzip dadurch, dass die Adresse des Systems in ein Attribut der Form <i>backend_&lt;name&gt;</i> eingetragen wird. Im Weiteren wird dann &lt;name&gt; als Kennung f&uuml;r das entsprechende System benutzt. Daf&uuml;r schl&auml;gt FUIP f&uuml;r die ersten paar Systeme Namen vor. Es handelt sich dabei um weibliche Namen aus "Per Anhalter durch die Galaxis". Wem das nicht gef&auml;llt, der kann die <i>backend_</i>-Attribute manuell setzen (<code>attr ui backend_zaphod http://eccentrica:8083/gallumbits</code> w&uuml;rde ein FHEM mit den Namen "zaphod" definieren). Alternativ kann man &uuml;ber das Attribut <i>backendNames</i> eigene Namensvorschl&auml;ge machen. Z.B. <code>attr ui backendNames arthur,ford,marvin,zaphod</code> produziert Vorschl&auml;ge mit m&auml;nnliche Namen aus dem Adams'schen Universum.<br>
 		Die Liste darf nur Zeichen enthalten, aus denen auch Attribute bestehen k&ouml;nnen. Die System-Namen m&uuml;ssen durch Komma getrennt werden und die Liste darf keine Leerzeichen enthalten. Sicherheitshalber sollte man nur Kleinbuchstaben und Zahlen verwenden. (Ja, auch der Unterstrich und das Minus-Zeichen k&ouml;nnten Probleme machen.)	
 	</li>
   	<li><a id="FUIP-attr-backend_" data-pattern="backend_.*">backend_.*</a>: Adresse eines (entfernten) Backend-FHEMs<br>
@@ -4480,9 +4477,9 @@ Man darf ein backend_-Attribut auf keinen Fall auf eine Adresse oder IP setzen (
 Ansonsten muss das backend_-Attribut die ganze Adresse enthalten, inklusive Port und abschlie&szlig;endem "fhem".<br>
 Beispiel:<br>
 <code>attr ui backend_fenchurch http://fenchurch:8086/fhem</code><br>
-<code>attr ui backend_home http://192.168.178.73:8086/fhem</code><br>
-<code>attr ui backend_self local</code><br>
-Damit kennt die FUIP-Instanz <i>ui</i> drei Backend-FHEMs (oder auch Backend-Systeme): fenchurch, home und self. Die ersten beiden beziehen sich auf "entfernte" FHEMs, die dritte Instanz ist dasselbe System, auf dem auch das FUIP-Device definiert ist.<br>
+<code>attr ui backend_garden http://192.168.178.73:8086/fhem</code><br>
+<code>attr ui backend_home local</code><br>
+Damit kennt die FUIP-Instanz <i>ui</i> drei Backend-FHEMs (oder auch Backend-Systeme): fenchurch, garden und home. Die ersten beiden beziehen sich auf "entfernte" FHEMs, die dritte Instanz ist dasselbe System, auf dem auch das FUIP-Device definiert ist.<br>
 Das Attribut <code>CORS</code> entfernter FHEMWEB-Instanz(en) muss dann auf "1" stehen. Au&szlig;erdem d&uuml;rfen diese FHEMWEB-Instanzen keine Passwort-Pr&uuml;fung haben. Stattdessen kann man mit dem Attribut <code>allowedfrom</code> oder einer allowed-Instanz den Zugriff einschr&auml;nken.<br>
 Wenn man ein "entferntes" FHEM benutzt, dann k&ouml;nnen einige Funktionen der Konfigurationsoberfl&auml;che etwas Zeit brauchen. Zum Beispiel m&uuml;ssen für die Eingabehilfe f&uuml;r Devices alle Devices aus dem entfernten FHEM gelesen werden. Das ist so implementiert, dass das entfernte FHEM m&ouml;glichst wenig belastet wird, was aber zu Lasten des FUIP-FHEM geht. Siehe auch das Set-Kommando <code>refreshBuffer</code> zu diesem Thema.	
 </li>	
