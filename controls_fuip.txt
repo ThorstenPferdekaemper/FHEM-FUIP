@@ -57,6 +57,7 @@ UPD 2021-04-21_11:06:24 4294 FHEM/lib/FUIP/View/WeatherOverview.pm
 UPD 2021-04-21_11:06:24 1512 FHEM/lib/FUIP/View/WebLink.pm
 UPD 2021-04-21_11:06:24 10217 FHEM/lib/FUIP/View/WeekdayTimer.pm
 UPD 2019-12-08_17:18:47 3365 FHEM/lib/FUIP/View/Window.pm
+UPD 2021-08-25_09:38:47 3726 FHEM/lib/FUIP/View/WindowThreeState.pm
 UPD 2019-12-08_17:18:47 1054 FHEM/lib/FUIP/css/fuip-blue-ui.css
 UPD 2019-12-08_17:18:47 3770 FHEM/lib/FUIP/css/fuip-bright-mint-ui.css
 UPD 2019-12-08_17:18:47 3489 FHEM/lib/FUIP/css/fuip-darkblue-ui.css
