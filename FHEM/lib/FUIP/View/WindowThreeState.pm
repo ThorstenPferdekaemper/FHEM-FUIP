@@ -9,18 +9,18 @@ use parent -norequire, 'FUIP::View';
 	
 sub getHTML($){
 	my ($self) = @_;
-	my @States = ($self->{openstate},$self->{closedstate},$self->{tiltedstate});
-	my @iCons = ($self->{openicon},$self->{closedicon},$self->{tiltedicon});
-	my @Colors = ("red","green","red");
+	my @states = ($self->{openstate},$self->{closedstate},$self->{tiltedstate});
+	my @icons = ($self->{openicon},$self->{closedicon},$self->{tiltedicon});
+	my @colors = ("red","green","red");
 	# at least numerical states need to be sorted
 	# suppress "not a number" warnings
 	no warnings;
 	my $gt = ($states[0] > $states[2]);
 	use warnings;
 	if($gt) {
-		@States = ($states[2],$states[1], $states[0]);
-		@iCons = ($icons[2],$icons[1], $icons[0]);
-		@Colors = ($colors[2],$colors[1], $colors[0]);
+		@states = ($states[2],$states[1], $states[0]);
+		@icons = ($icons[2],$icons[1], $icons[0]);
+		@colors = ($colors[2],$colors[1], $colors[0]);
 	};
 	return '
 		<div data-type="symbol" class="compressed '.$self->{iconsize}.'" 
