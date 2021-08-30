@@ -53,33 +53,6 @@ my $fuipPath = $main::attr{global}{modpath} . "/FHEM/lib/FUIP/";
 my $currentPage = "";
 
 
-# Exception handling
-my %exception = ("raised" => 0);
-my $logExceptions = 1;
-
-# exceptionRaise
-# This is called in case something went wrong
-# In principle, it only stores the exception and 
-# writes it into the log
-sub exceptionRaise($) {
-	my ($reason) = @_;
-	$exception{raised} = 1;
-	$exception{reason} = $reason;
-	if($logExceptions) {
-		main::Log3(undef,0,"FUIP exception: ".$reason);
-		stacktrace();
-    }
-};
-
-# sub exceptionClear() {
-	# $exception{raised} = 0;
-# };
-
-# sub exceptionGet() {
-	# return undef unless $exception{raised};
-	# return \%exception;
-# };
-
 # Messages
 my %messages;
 # Messages have probably been seen by the user
@@ -386,7 +359,7 @@ sub Notify($$){
 	};
 
 	# Only INITIALIZED and REREADCFG from global	
-	return unless($devName eq "global" && grep(m/^INITIALIZED|REREADCFG$/, @{$events}));
+	return undef unless($devName eq "global" && grep(m/^INITIALIZED|REREADCFG$/, @{$events}));
 	
 	# The following is only for downward compatibility and to fix broken setups
 	
@@ -458,6 +431,8 @@ sub Notify($$){
 	# re-determine attribute list to remove longPollType and fhemwebUrl
 	setAttrListDevice($hash);
 	
+	#Avoid funny log entries
+	return undef;  
 };
 
 

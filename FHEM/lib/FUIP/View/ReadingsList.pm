@@ -13,7 +13,7 @@ sub _getVisibleReadings($) {
 	my ($self) = @_;
 	
 	my $fuipName = $self->{fuip}{NAME};
-	my $hash = FUIP::Model::getDevice($fuipName,$self->{device}[0],[],$self->{sysid}); 
+	my $hash = FUIP::Model::getDevice($fuipName,$self->{device}[0],[],$self->getSystem()); 
 	return [] unless defined $hash;
 	my $result = [];
 	foreach my $reading (sort keys %{$hash->{Readings}}) {

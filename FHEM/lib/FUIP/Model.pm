@@ -6,6 +6,8 @@ use warnings;
 #use JSON::Parse 'parse_json';
 use JSON 'from_json';
 
+use lib::FUIP::Exception;
+
 my %buffer;
 # FUIP-name => url => 
 #    {rooms => [<room>],
@@ -45,10 +47,7 @@ sub _sendRemoteCommand($$$$) {
 	my ($name,$sysid,$url,$cmd) = @_;
 	
 	# do we have a URL?
-	unless($url) {
-		FUIP::exceptionRaise('Cannot send a remote command without a URL');
-		return undef; # make it really clear	
-	};
+	FUIP::Exception::raise('Cannot send a remote command without a URL') unless $url;
 	
 	# get csrf token unless buffered
 	if(not defined $buffer{$name}{$sysid}{csrfToken}) {
@@ -65,10 +64,7 @@ sub _sendRemoteCommand($$$$) {
                loglevel  => 4,
              };
 	my ($err, $ret) = main::HttpUtils_BlockingGet($hash);
-	if($err) {
-		main::Log3("FUIP:".$name, 3, "Access remote system $sysid: $err");
-		return undef;
-	}
+	FUIP::Exception::raise(["Cannot access remote system $sysid", $err]) if $err;
 	# do we have an issue with the csrf token?
 	if($hash->{code} == 400) {
 		# no header -> sth else
@@ -90,10 +86,7 @@ sub _sendRemoteCommand($$$$) {
                loglevel  => 4,
               };
 		($err, $ret) = main::HttpUtils_BlockingGet($hash);
-		if($err) {
-			main::Log3("FUIP:".$name, 3, "Access remote system $sysid: $err");
-			return undef;
-		}
+	    FUIP::Exception::raise(["Cannot access remote system $sysid", $err]) if $err;
 	};  
 	return $ret;
 };
@@ -107,8 +100,7 @@ sub _getUrl($$) {
 	my $url = FUIP::getSystemUrl($hash,$sysid);
 	unless($url){
 		$sysid = '<undef>' unless defined $sysid;
-		FUIP::exceptionRaise('Could not determine URL for system id '.$sysid);
-		return undef; # make it really clear	
+		FUIP::Exception::raise('Could not determine URL for system id '.$sysid);
 	};	
 	return $url;
 };
@@ -332,6 +324,10 @@ sub getDevicesForReading($$$) {
 		'return \@devices'
 	];
 	my $devices = callCoding($name,$coding,$sysid);	
+	unless($devices) {
+	    main::stacktrace();
+		return undef;
+	};
 	@$devices = sort(@$devices);
 	$buffer{$name}{$sysid}{"reading-device"}{$reading} = $devices;
 	return $devices;

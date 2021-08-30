@@ -4,6 +4,8 @@ use strict;
 use warnings;
 use Scalar::Util qw(blessed weaken);
 
+use lib::FUIP::Exception;
+
 my %selectableViews;
 	
 sub dimensions($;$$){
@@ -34,7 +36,7 @@ sub getDependencies($$) {
 
 
 # get the HTML for Cell-Like Views, i.e. Cell, ViewTemplate, Dialog
-# i.e. wrap it in a popup-widegt, if needed
+# i.e. wrap it in a popup-widget, if needed
 sub getViewHTML($) {
 	# $view instead of $self for "historical" reasons
 	my ($view) = @_;
@@ -77,7 +79,18 @@ sub getViewHTML($) {
 					<div>';
 	};
 	# the normal HTML of the view
-	$result .= $view->getHTML(); 
+	# Do some exception handling stuff around it
+	my $singleHtml;
+	eval {
+		$singleHtml = $view->getHTML();
+		1;
+	} or do {
+	    my $ex = $@;
+		FUIP::Exception::log($ex);
+		$singleHtml = FUIP::Exception::getErrorHtml($ex,"View rendering error");
+	};
+	$result .= $singleHtml; 
+	
 	# and again some popup stuff
 	if($popupField) {
 		# dialog->getHTML: always locked as we cannot configure the popup directly
@@ -261,10 +274,7 @@ sub setAsParent($) {
 
 sub setParent($$) {
 	my ($self,$parent) = @_;
-	unless($parent) {
-		FUIP::exceptionRaise('Trying to set empty parent'); 
-		return;
-	};
+	FUIP::Exception::log('Trying to set empty parent') unless $parent;
 	$self->{parent} = $parent;
 	weaken($self->{parent});
 };
@@ -279,7 +289,7 @@ sub getSystem($) {
 	unless(defined($self->{parent})) {
 		main::Log3(undef,1,"undefined parent: ".blessed($self));
 		main::Log3(undef,1,"undefined parent: ".$self->{title});
-		FUIP::exceptionRaise('undefined parent'); 
+		FUIP::Exception::log('undefined parent'); 
 	};
 	
 	if(blessed($self->{parent}) and $self->{parent}->isa("FUIP::View")) {
