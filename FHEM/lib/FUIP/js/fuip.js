@@ -373,7 +373,7 @@ function toggleConfigMenu(){
 			return;  
 		let docid = "FUIP::ConfPopup::" + (mode == "cell" ? "Cell" : "Page") + "-";
 		if(mode == "cell") {
-			html += '<li onclick="toggleCellPage()" data-docid="'+docid+'gotopage"><div>Page config</div></li>'
+			html += '<li onclick="acceptSettings(toggleCellPage)" data-docid="'+docid+'gotopage"><div>Page config</div></li>'
 				+	'<li onclick="callViewTemplateMaint()" data-docid="'+docid+'gotovtemplates"><div>View Templates</div></li>'
 				+	'<li class="ui-widget-header"><div>Cell</div></li>'
 				+	'<li onclick="acceptSettings(viewAddNew)" data-docid="'+docid+'addcell"><div title="Add a new cell to this page"><span class="ui-icon ui-icon-plus"></span>Add</div></li>'
@@ -384,7 +384,7 @@ function toggleConfigMenu(){
 				+	'<li data-docid="'+docid+'makevtemplate"><div onclick="acceptSettings(dialogConvertToViewtemplate)" title="Create a view template which looks like this cell">Make view template</div></li>'
 				+	'<li data-docid="'+docid+'deletecell"><div onclick="deleteCell()"><span class="ui-icon ui-icon-trash"></span>Delete</div></li>';
 		}else{
-			html += '<li onclick="toggleCellPage()" data-docid="'+docid+'gotocell"><div>Cell config</div></li>'
+			html += '<li onclick="acceptPageSettings(toggleCellPage)" data-docid="'+docid+'gotocell"><div>Cell config</div></li>'
 				+	'<li onclick="callViewTemplateMaint()" data-docid="'+docid+'gotovtemplates"><div>View Templates</div></li>'
 				+	'<li class="ui-widget-header"><div>Page</div></li>'
 				+	'<li><div onclick="acceptPageSettings(copyCurrentPage)" data-docid="'+docid+'copypage"><span class="ui-icon ui-icon-copy"></span>Copy</div></li>'
