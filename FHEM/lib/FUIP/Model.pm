@@ -7,6 +7,7 @@ use warnings;
 use JSON 'from_json';
 
 use lib::FUIP::Exception;
+use lib::FUIP::Systems;
 
 my %buffer;
 # FUIP-name => url => 
@@ -23,9 +24,9 @@ sub refresh($) {
 };
 
 
-sub _getCsrfToken($)
+sub _getCsrfToken($$)
 {
-	my ($url) = @_;
+	my ($url,$sysid) = @_;
 	my $hash = { 
 			hideurl   => 0,
 			url       => $url,
@@ -35,12 +36,25 @@ sub _getCsrfToken($)
             loglevel  => 4,
         };
 	my ($err, $ret) = main::HttpUtils_BlockingGet($hash);
-	return "err" if $err;
-	return "err" unless defined($hash->{httpheader});
-	$hash->{httpheader} =~ /X-FHEM-csrfToken:[\x20 ](\S*)/;
-	return "" unless $1;
-	return $1;	
-}
+	#System reached?
+	if($err) {
+		#Remove the URL from the error message, as it is usually too long
+		$err =~ s{\Q$url\E}{}g;
+		#Remove leading ":" and spaces
+		$err =~ s{^[\s:]*}{};
+		FUIP::Exception::raise(["Failed to determine csrf token for $sysid", $err, "URL: $url"]);
+	};
+	#Do we have an http header?
+	unless(defined($hash->{httpheader})){
+		FUIP::Exception::raise(["Failed to determine csrf token for $sysid", "No HTTP header received", "URL: $url"]);	
+	};
+	if($hash->{httpheader} =~ /X-FHEM-csrfToken:[\x20 ](\S*)/) {
+		return "" unless defined $1;
+		return $1;
+	};	
+	#If the csrf token is switched off, then it is ok that we do not have it
+	return "";
+};
 
 
 sub _sendRemoteCommand($$$$) {
@@ -51,44 +65,62 @@ sub _sendRemoteCommand($$$$) {
 	
 	# get csrf token unless buffered
 	if(not defined $buffer{$name}{$sysid}{csrfToken}) {
-		$buffer{$name}{$sysid}{csrfToken} = _getCsrfToken($url);
-		main::Log3('FUIP:'.$name, 3, "Determined new csrfToken for $sysid: $buffer{$name}{$sysid}{csrfToken}");
+		$buffer{$name}{$sysid}{csrfToken} = _getCsrfToken($url,$sysid);
+		main::Log3('FUIP:'.$name, 3, "Determined csrfToken for $sysid: $buffer{$name}{$sysid}{csrfToken}");
 	};	
-	my $fullurl = $url.'?cmd='.main::urlEncode($cmd).'&XHR=1&fwcsrf='.$buffer{$name}{$sysid}{csrfToken};
-	
-	my $hash = { hideurl   => 0,
-               url       => $fullurl,
-               timeout   => undef,
-               data      => undef,
-               noshutdown=> undef,
-               loglevel  => 4,
-             };
-	my ($err, $ret) = main::HttpUtils_BlockingGet($hash);
-	FUIP::Exception::raise(["Cannot access remote system $sysid", $err]) if $err;
-	# do we have an issue with the csrf token?
-	if($hash->{code} == 400) {
-		# no header -> sth else
-		# TODO: really proper error management
-		return undef unless defined($hash->{httpheader});	
-		$hash->{httpheader} =~ /X-FHEM-csrfToken:[\x20 ](\S*)/;
-		return undef unless $1;
-		return undef if($1 eq $buffer{$name}{$sysid}{csrfToken});
-		# ok, we have a different token
-		$buffer{$name}{$sysid}{csrfToken} = $1;  # set new token
-		main::Log3('FUIP:'.$name, 3, "Determined new csrfToken for $sysid: $buffer{$name}{$sysid}{csrfToken}");
-		# retry, but only once
-		$fullurl = $url.'?cmd='.main::urlEncode($cmd).'&XHR=1&fwcsrf='.$buffer{$name}{$sysid}{csrfToken};
-		$hash = { hideurl   => 0,
-               url       => $url.'?cmd='.main::urlEncode($cmd).'&XHR=1&fwcsrf='.$buffer{$name}{$sysid}{csrfToken},
-               timeout   => undef,
-               data      => undef,
-               noshutdown=> undef,
-               loglevel  => 4,
-              };
-		($err, $ret) = main::HttpUtils_BlockingGet($hash);
-	    FUIP::Exception::raise(["Cannot access remote system $sysid", $err]) if $err;
-	};  
+	my ($hash,$ret) = _doBlockingGet($url,$cmd,$name,$sysid);
+	#Do we have an issue with the csrf token?
+	#We might be able to fix this automatically
+	if($hash->{code} == 400 and defined($hash->{httpheader}) and $hash->{httpheader} =~ /X-FHEM-csrfToken:[\x20 ](\S*)/) {
+		my $csrfToken = defined($1) ? $1 : "";
+		if($csrfToken ne $buffer{$name}{$sysid}{csrfToken}) {
+			# ok, we have a different token
+			$buffer{$name}{$sysid}{csrfToken} = $csrfToken;  # set new token
+			main::Log3('FUIP:'.$name, 3, "CsrfToken changed for $sysid: $buffer{$name}{$sysid}{csrfToken}");
+			# retry, but only once
+			($hash,$ret) = _doBlockingGet($url,$cmd,$name,$sysid);
+		}
+	};
+	#Could not fix csrf token or some other issue
+	#FHEMWEB should always answer with 200 in case of success
+	unless(defined($hash->{code}) and $hash->{code} == 200) {
+		my $header; 
+		if(defined($hash->{httpheader})) {
+		    my @headers = split("\r\n",$hash->{httpheader});
+			$header = $headers[0];
+		}else{
+			$header = "No HTTP header received";
+		};
+		FUIP::Exception::raise(["Sending command to $sysid failed", $header, "URL: $url", 
+		                        "Csrf token: $buffer{$name}{$sysid}{csrfToken}", "Command: $cmd"]);			
+	};
+		
 	return $ret;
+};
+
+
+sub _doBlockingGet($$$) {
+	my ($url,$cmd,$name,$sysid) = @_;
+
+	my $fullurl = $url.'?cmd='.main::urlEncode($cmd).'&XHR=1&fwcsrf='.$buffer{$name}{$sysid}{csrfToken};
+	my $hash = { hideurl   => 0,
+                 url       => $fullurl,
+                 timeout   => undef,
+                 data      => undef,
+                 noshutdown=> undef,
+                 loglevel  => 4,
+               };
+	my ($err, $ret) = main::HttpUtils_BlockingGet($hash);
+	if($err) {
+		#Remove the URL from the error message, as it is usually too long
+		$err =~ s{\Q$fullurl\E}{}g;
+		#Remove leading ":" and spaces
+		$err =~ s{^[\s:]*}{};
+		#Raise exception including URL, csrf token and command in clear text 
+	    FUIP::Exception::raise(["Cannot access remote system $sysid", $err, "URL: $url", 
+		                        "Csrf token: $buffer{$name}{$sysid}{csrfToken}", "Command: $cmd"]);
+	};	
+	return ($hash,$ret);
 };
 
 
@@ -97,7 +129,7 @@ sub _getUrl($$) {
 	# Since "multifhem", the system id needs to be given explicitely
 	# "local" means to use the FHEM where FUIP is running on
 	my $hash = $main::defs{$fuipName};
-	my $url = FUIP::getSystemUrl($hash,$sysid);
+	my $url = FUIP::Systems::getSystemUrl($hash,$sysid);
 	unless($url){
 		$sysid = '<undef>' unless defined $sysid;
 		FUIP::Exception::raise('Could not determine URL for system id '.$sysid);

@@ -5,6 +5,8 @@ use warnings;
 use Scalar::Util qw(blessed weaken);
 
 use lib::FUIP::Exception;
+use lib::FUIP::Systems;
+
 
 my %selectableViews;
 	
@@ -295,7 +297,7 @@ sub getSystem($) {
 	if(blessed($self->{parent}) and $self->{parent}->isa("FUIP::View")) {
 		return $self->{parent}->getSystem();
 	}else{
-		return FUIP::getDefaultSystem($self->{fuip});
+		return FUIP::Systems::getDefaultSystem($self->{fuip});
 	};	
 };
 
