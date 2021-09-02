@@ -3148,11 +3148,17 @@ sub _innerSet($$$)
 		return "\"set cellcopy\": needs a target page id" unless exists($a->[3]);
 		my $newPageId = $a->[3];
 		FUIP::Generator::createPage($hash,$newPageId) unless defined $hash->{pages}{$newPageId};
-		my $newCell = cloneView($hash->{pages}{$oldPageId}{cells}[$oldCellId]);
+		my $oldCell = $hash->{pages}{$oldPageId}{cells}[$oldCellId];
+		my $newCell = cloneView($oldCell);
 		delete $newCell->{posX};
 		delete $newCell->{posY};
 		push(@{$hash->{pages}{$newPageId}{cells}},$newCell);
 		$newCell->setParent($hash->{pages}{$newPageId});
+		#Make system id explicit, if it was "inherit" and would change
+		if(not defined($oldCell->{sysid}) or $oldCell->{sysid} eq '<inherit>') {
+			my $oldSysid = $oldCell->getSystem();
+			$newCell->{sysid} = $oldSysid unless $oldSysid eq $newCell->getSystem();
+        };
 	}elsif($cmd eq "pagesettings") {	
 		# get page id
 		my $pageId = $a->[2]; 
@@ -3172,6 +3178,11 @@ sub _innerSet($$$)
 			# put view into new cell 
 			push(@{$newCell->{views}},$container);
 			$container->setParent($newCell);
+			#Make system id explicit, if it was "inherit" and would change
+			if(not defined($container->{sysid}) or $container->{sysid} eq '<inherit>') {
+				my $oldSysid = $oldCell->getSystem();
+				$container->{sysid} = $oldSysid unless $oldSysid eq $newCell->getSystem();
+            };
 		};
 	}elsif($cmd eq "autoarrange") {
 		my $container = _getContainerForCommand($hash,$h);
