@@ -3757,7 +3757,7 @@ sub Get($$$)
 		my @views;
 		# format is "get viewsByDevices <sysid> <device> <device> ..."
 		foreach my $i (3 .. $#{$a}) {
-			my $view = getDeviceView($hash, $a->[$i],"overview",$a->[2]);
+			my $view = FUIP::Generator::getDeviceView($hash, $a->[$i],"overview",$a->[2]);
 			if(not defined($view)) {
 				$view = FUIP::View::STATE->createDefaultInstance($hash,$hash);
 				$view->{device} = $a->[$i];

@@ -7,8 +7,6 @@ use lib::FUIP::Systems;
 use lib::FUIP::Exception;
 
 
-
-
 sub createPage($$) {
 	my ($hash,$pageid) = @_;
 	eval {
@@ -19,6 +17,116 @@ sub createPage($$) {
 		FUIP::Exception::raise("Failed to generate page \"$pageid\"", $ex);
 	};	
 };
+
+
+sub getDeviceView($$$$){
+	# the views created here have the fuip instance as their parent. They will be re-ordered later anyway
+	my ($hash,$name,$level,$sysid) = @_;
+	my $device = FUIP::Model::getDevice($hash->{NAME},$name,["TYPE","subType","state","chanNo","model"],$sysid);
+	return undef unless defined $device;
+	# don't show FileLogs or FHEMWEBs
+	# TODO: rooms and types to ignore could be configurable
+	return undef if($device->{Internals}{TYPE} =~ m/^(FileLog|FHEMWEB|at|notify|FUIP|HMUARTLGW|HMinfo|HMtemplate|DWD_OpenData)$/);
+	if($level eq "overview") {
+		return undef if($device->{Internals}{TYPE} =~ m/^(weblink|SVG|DWD_OpenData_Weblink)$/);
+	};
+	# we have something special for SYSMON
+	if($device->{Internals}{TYPE} eq "SYSMON" and not $level eq "overview") {
+		my $view = FUIP::View::Sysmon->createDefaultInstance($hash,$hash);
+		$view->{device} = $name;
+		return $view;
+	};
+	# don't show HM485 devices, only channels
+	if($device->{Internals}{TYPE} eq "HM485") {
+		return undef unless $device->{Internals}{chanNo};
+	};	
+	my $subType = (exists($device->{Attributes}{subType}) ? $device->{Attributes}{subType} : "none");
+	# subType "key" does not make that much sense 
+	return undef if($subType eq "key");
+	my $model = (exists($device->{Attributes}{model}) ? $device->{Attributes}{model} : "none");
+	# TODO: Does subType "heating" exist at all?
+	if($subType eq "heating" or 
+		$device->{Internals}{TYPE} eq "CUL_HM" and defined($device->{Internals}{chanNo}) 
+			and ( $model eq "HM-CC-RT-DN" and $device->{Internals}{chanNo} eq "04"
+			   or $model eq "HM-TC-IT-WM-W-EU" and $device->{Internals}{chanNo} eq "02" )){
+		my $view = FUIP::View::Thermostat->createDefaultInstance($hash,$hash);
+		$view->{device} = $name;
+		if($level eq 'overview') {
+			$view->{readonly} = "on";
+			$view->{defaulted}{readonly} = 0;
+			return $view;
+		}else{
+			$view->{size} = "big";	
+			$view->{defaulted}{size} = 0;
+			return $view;
+		};	
+	};
+	# weather (PROPLANTA)
+	if($device->{Internals}{TYPE} eq "PROPLANTA") {
+		if($level eq "overview") {
+			my $view = FUIP::View::WeatherOverview->createDefaultInstance($hash,$hash);
+			$view->{device} = $name;
+			$view->{sizing} = "resizable";
+			$view->{defaulted}{sizing} = 0;
+			$view->{width} = 80;
+			$view->{height} = 70;
+			$view->{layout} = "small";
+			$view->{defaulted}{layout} = 0;
+			return $view;
+		}else{
+			my $view = FUIP::View::WeatherDetail->createDefaultInstance($hash,$hash);
+			$view->{device} = $name;
+			$view->{sizing} = "resizable";
+			$view->{defaulted}{sizing} = 0;
+			$view->{width} = 560;
+			$view->{height} = 335;
+			return $view;
+		};	
+	};
+    my $view;
+	# weblink -> no...
+	# general weblinks seem to be too dangerous. E.g. the usual DWD-weblink destroys the flex layout
+	if($device->{Internals}{TYPE} eq "weblink"){
+		return undef;
+	};
+	# DWD_OpenData_Weblink
+	if($device->{Internals}{TYPE} eq "DWD_OpenData_Weblink"){
+		$view = FUIP::View::DwdWebLink->createDefaultInstance($hash,$hash);
+		$view->{device} = $name;
+		$view->{sizing} = "resizable";
+		$view->{defaulted}{sizing} = 0;
+		$view->{width} = 600;
+		$view->{height} = 175;
+		return $view;
+	};
+	# Charts
+	if($device->{Internals}{TYPE} eq "SVG"){
+		$view = FUIP::View::Chart->createDefaultInstance($hash,$hash);
+		$view->{device} = $name;
+		$view->{sizing} = "resizable";
+		$view->{defaulted}{sizing} = 0;
+		$view->{width} = 280;
+		$view->{height} = 175;
+		return $view;
+	};
+	# TODO: Does subType "shutter" exist at all?
+	if($subType =~ /^(shutter|blind)$/){
+		if($level eq 'overview') {
+			$view = FUIP::View::ShutterOverview->createDefaultInstance($hash,$hash);
+		}else{
+			$view = FUIP::View::ShutterControl->createDefaultInstance($hash,$hash);
+		};	
+	}else{
+		my $state = (exists($device->{Readings}{state}) ? $device->{Readings}{state} : 0);
+		if($state eq "on" or $state eq "off") {
+			$view = FUIP::View::SimpleSwitch->createDefaultInstance($hash,$hash);
+		}else{
+			$view = FUIP::View::STATE->createDefaultInstance($hash,$hash);
+		};
+	};	
+	$view->{device} = $name;
+	return $view;
+}
 
 
 sub _createPage($$) {
@@ -390,114 +498,6 @@ sub _defaultPage($$){
 };
 
 
-sub _getDeviceView($$$$){
-	# the views created here have the fuip instance as their parent. They will be re-ordered later anyway
-	my ($hash,$name,$level,$sysid) = @_;
-	my $device = FUIP::Model::getDevice($hash->{NAME},$name,["TYPE","subType","state","chanNo","model"],$sysid);
-	return undef unless defined $device;
-	# don't show FileLogs or FHEMWEBs
-	# TODO: rooms and types to ignore could be configurable
-	return undef if($device->{Internals}{TYPE} =~ m/^(FileLog|FHEMWEB|at|notify|FUIP|HMUARTLGW|HMinfo|HMtemplate|DWD_OpenData)$/);
-	if($level eq "overview") {
-		return undef if($device->{Internals}{TYPE} =~ m/^(weblink|SVG|DWD_OpenData_Weblink)$/);
-	};
-	# we have something special for SYSMON
-	if($device->{Internals}{TYPE} eq "SYSMON" and not $level eq "overview") {
-		my $view = FUIP::View::Sysmon->createDefaultInstance($hash,$hash);
-		$view->{device} = $name;
-		return $view;
-	};
-	# don't show HM485 devices, only channels
-	if($device->{Internals}{TYPE} eq "HM485") {
-		return undef unless $device->{Internals}{chanNo};
-	};	
-	my $subType = (exists($device->{Attributes}{subType}) ? $device->{Attributes}{subType} : "none");
-	# subType "key" does not make that much sense 
-	return undef if($subType eq "key");
-	my $model = (exists($device->{Attributes}{model}) ? $device->{Attributes}{model} : "none");
-	# TODO: Does subType "heating" exist at all?
-	if($subType eq "heating" or 
-		$device->{Internals}{TYPE} eq "CUL_HM" and defined($device->{Internals}{chanNo}) 
-			and ( $model eq "HM-CC-RT-DN" and $device->{Internals}{chanNo} eq "04"
-			   or $model eq "HM-TC-IT-WM-W-EU" and $device->{Internals}{chanNo} eq "02" )){
-		my $view = FUIP::View::Thermostat->createDefaultInstance($hash,$hash);
-		$view->{device} = $name;
-		if($level eq 'overview') {
-			$view->{readonly} = "on";
-			$view->{defaulted}{readonly} = 0;
-			return $view;
-		}else{
-			$view->{size} = "big";	
-			$view->{defaulted}{size} = 0;
-			return $view;
-		};	
-	};
-	# weather (PROPLANTA)
-	if($device->{Internals}{TYPE} eq "PROPLANTA") {
-		if($level eq "overview") {
-			my $view = FUIP::View::WeatherOverview->createDefaultInstance($hash,$hash);
-			$view->{device} = $name;
-			$view->{sizing} = "resizable";
-			$view->{defaulted}{sizing} = 0;
-			$view->{width} = 80;
-			$view->{height} = 70;
-			$view->{layout} = "small";
-			$view->{defaulted}{layout} = 0;
-			return $view;
-		}else{
-			my $view = FUIP::View::WeatherDetail->createDefaultInstance($hash,$hash);
-			$view->{device} = $name;
-			$view->{sizing} = "resizable";
-			$view->{defaulted}{sizing} = 0;
-			$view->{width} = 560;
-			$view->{height} = 335;
-			return $view;
-		};	
-	};
-    my $view;
-	# weblink -> no...
-	# general weblinks seem to be too dangerous. E.g. the usual DWD-weblink destroys the flex layout
-	if($device->{Internals}{TYPE} eq "weblink"){
-		return undef;
-	};
-	# DWD_OpenData_Weblink
-	if($device->{Internals}{TYPE} eq "DWD_OpenData_Weblink"){
-		$view = FUIP::View::DwdWebLink->createDefaultInstance($hash,$hash);
-		$view->{device} = $name;
-		$view->{sizing} = "resizable";
-		$view->{defaulted}{sizing} = 0;
-		$view->{width} = 600;
-		$view->{height} = 175;
-		return $view;
-	};
-	# Charts
-	if($device->{Internals}{TYPE} eq "SVG"){
-		$view = FUIP::View::Chart->createDefaultInstance($hash,$hash);
-		$view->{device} = $name;
-		$view->{sizing} = "resizable";
-		$view->{defaulted}{sizing} = 0;
-		$view->{width} = 280;
-		$view->{height} = 175;
-		return $view;
-	};
-	# TODO: Does subType "shutter" exist at all?
-	if($subType =~ /^(shutter|blind)$/){
-		if($level eq 'overview') {
-			$view = FUIP::View::ShutterOverview->createDefaultInstance($hash,$hash);
-		}else{
-			$view = FUIP::View::ShutterControl->createDefaultInstance($hash,$hash);
-		};	
-	}else{
-		my $state = (exists($device->{Readings}{state}) ? $device->{Readings}{state} : 0);
-		if($state eq "on" or $state eq "off") {
-			$view = FUIP::View::SimpleSwitch->createDefaultInstance($hash,$hash);
-		}else{
-			$view = FUIP::View::STATE->createDefaultInstance($hash,$hash);
-		};
-	};	
-	$view->{device} = $name;
-	return $view;
-}
 
 
 sub _getDeviceViewsForRoom($$$$) {
@@ -505,7 +505,7 @@ sub _getDeviceViewsForRoom($$$$) {
 	my @views;
 	my $devices = FUIP::Model::getDevicesForRoom($hash->{NAME},$room,$sysid);
 	foreach my $d (@$devices) {
-		my $deviceView = _getDeviceView($hash,$d,$level,$sysid);
+		my $deviceView = getDeviceView($hash,$d,$level,$sysid);
 		next unless $deviceView;
 		push(@views,$deviceView);
 	};
