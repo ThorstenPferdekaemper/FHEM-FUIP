@@ -138,7 +138,7 @@ sub getHTML($$){
 		# otherwise, we allow SCALAR, ARRAY, HASH
 		my $refType = ref($ref);
 		if(not $refType) {   #not a reference, assuming scalar
-		    # replace backslash with double-backslash
+			# replace backslash with double-backslash
 			$ref =~ s/\\/\\\\/g;
 			# replace tick with backslash-tick
 			$ref =~ s/'/\\'/g;
