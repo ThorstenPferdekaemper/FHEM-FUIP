@@ -25,7 +25,7 @@ UPD 2021-02-20_23:51:16 6368 FHEM/lib/FUIP/View/Cell.pm
 UPD 2021-08-31_16:08:55 10455 FHEM/lib/FUIP/View/Chart.pm
 UPD 2021-03-05_21:00:01 1933 FHEM/lib/FUIP/View/Clock.pm
 UPD 2019-12-08_17:18:40 3429 FHEM/lib/FUIP/View/Colorwheel.pm
-UPD 2021-02-20_23:50:25 2560 FHEM/lib/FUIP/View/Dialog.pm
+UPD 2021-09-04_14:40:38 2491 FHEM/lib/FUIP/View/Dialog.pm
 UPD 2021-03-28_21:16:41 1992 FHEM/lib/FUIP/View/DwdWebLink.pm
 UPD 2019-12-08_17:18:41 3791 FHEM/lib/FUIP/View/HeatingControl.pm
 UPD 2019-12-08_17:18:41 4330 FHEM/lib/FUIP/View/HeatingOverview.pm
@@ -54,7 +54,7 @@ UPD 2021-01-06_22:58:15 2155 FHEM/lib/FUIP/View/Sysmon.pm
 UPD 2019-12-08_17:18:45 7166 FHEM/lib/FUIP/View/Thermostat.pm
 UPD 2019-12-08_17:18:45 2604 FHEM/lib/FUIP/View/Title.pm
 UPD 2019-12-08_17:18:46 2702 FHEM/lib/FUIP/View/UpStopDown.pm
-UPD 2021-04-21_13:06:03 5732 FHEM/lib/FUIP/View/ViewTemplInstance.pm
+UPD 2021-09-04_14:24:50 5732 FHEM/lib/FUIP/View/ViewTemplInstance.pm
 UPD 2021-09-03_20:44:20 22562 FHEM/lib/FUIP/View/ViewTemplate.pm
 UPD 2021-01-06_22:57:46 4421 FHEM/lib/FUIP/View/WeatherDetail.pm
 UPD 2021-01-06_22:57:12 4309 FHEM/lib/FUIP/View/WeatherOverview.pm

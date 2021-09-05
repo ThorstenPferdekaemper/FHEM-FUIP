@@ -1,6 +1,3 @@
-
-# $Id: Dialog.pm 0099 2019-11-16 15:00:00Z ThorstenPferdekaemper $
-
 package FUIP::Dialog;
 # Popup, like FUIP::Cell
 
