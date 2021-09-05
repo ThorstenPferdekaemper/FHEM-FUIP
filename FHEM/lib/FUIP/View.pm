@@ -4,6 +4,10 @@ use strict;
 use warnings;
 use Scalar::Util qw(blessed weaken);
 
+use lib::FUIP::Exception;
+use lib::FUIP::Systems;
+
+
 my %selectableViews;
 	
 sub dimensions($;$$){
@@ -34,7 +38,7 @@ sub getDependencies($$) {
 
 
 # get the HTML for Cell-Like Views, i.e. Cell, ViewTemplate, Dialog
-# i.e. wrap it in a popup-widegt, if needed
+# i.e. wrap it in a popup-widget, if needed
 sub getViewHTML($) {
 	# $view instead of $self for "historical" reasons
 	my ($view) = @_;
@@ -77,7 +81,18 @@ sub getViewHTML($) {
 					<div>';
 	};
 	# the normal HTML of the view
-	$result .= $view->getHTML(); 
+	# Do some exception handling stuff around it
+	my $singleHtml;
+	eval {
+		$singleHtml = $view->getHTML();
+		1;
+	} or do {
+	    my $ex = $@;
+		FUIP::Exception::log($ex);
+		$singleHtml = FUIP::Exception::getErrorHtml($ex,"View rendering error");
+	};
+	$result .= $singleHtml; 
+	
 	# and again some popup stuff
 	if($popupField) {
 		# dialog->getHTML: always locked as we cannot configure the popup directly
@@ -116,6 +131,7 @@ sub getHTML($$){
 		my $blanks = " " x $indent;
 		my $class = blessed($ref);
 		if(defined($class)) {
+			# main::Log3(undef,1,"Serializing $class");
 			return $ref->serialize($indent) if($ref->isa("FUIP::View"));
 			return "";  #we can only handle views here
 		};
@@ -151,6 +167,7 @@ sub getHTML($$){
 				}else{	
 					$result = "{";
 				};
+			    # main::Log3(undef,1,"Serializing $key");
 				$result .= "\n".$blanks."    ".$key." => ".serializeRef($ref->{$key}, $indent + 4); 		
 			};	
 			if($result) {
@@ -172,6 +189,7 @@ sub getHTML($$){
 			# fuip is the reference to the FUIP object, don't serialize this
 			next if $field eq "fuip";
 			next if $field eq "class";
+			next if $field eq "parent";
 			$result .= ",\n".$blanks."   ".$field." => ".serializeRef($self->{$field},$indent);
 		};
 		$result .= "\n".$blanks."}";
@@ -223,16 +241,75 @@ sub getHTML($$){
 	};
 	
 	
-	sub reconstruct($$$) {
-		my ($class,$conf,$fuip) = @_;
-		# this expects that $conf is already hash reference
-		# and key "class" is already deleted
-		my $self = reconstructRec($conf,$fuip);
-		$self->{fuip} = $fuip;
-		weaken($self->{fuip});
-		return bless($self,$class);
+sub reconstruct($$$) {
+	my ($class,$conf,$fuip) = @_;
+	# this expects that $conf is already hash reference
+	# and key "class" is already deleted
+	my $self = reconstructRec($conf,$fuip);
+	$self->{fuip} = $fuip;
+	weaken($self->{fuip});
+	$self = bless($self,$class);
+	$self->setAsParent();
+	return $self;
+};
+
+
+sub setAsParent($) {
+	my ($self) = @_;
+	for my $field (keys %$self) {
+		# by default, we assume that all arrays
+		# contain some subclass of FUIP::View
+		next if $field eq 'fuip';
+		next if $field eq 'parent';
+		if(ref($self->{$field}) eq "ARRAY") {
+		    for my $entry (@{$self->{$field}}) {
+			    # set me as parent
+				if(blessed($entry) and $entry->isa("FUIP::View")) {
+				    $entry->setParent($self);
+				};	
+		    };
+		}elsif(blessed($self->{$field}) and $self->{$field}->isa("FUIP::View")) {
+			# this is mainly for popups
+			$self->{$field}->setParent($self);
+		};	
+	};		
+};
+
+
+sub setParent($$) {
+	my ($self,$parent) = @_;
+	FUIP::Exception::log('Trying to set empty parent') unless $parent;
+	$self->{parent} = $parent;
+	weaken($self->{parent});
+};
+
+
+sub getSystem($) {
+	my $self = shift;
+	my $sysid = defined($self->{sysid}) ? $self->{sysid} : '<inherit>';
+	# sysid set and not set to inherit?
+	return $sysid if $sysid and $sysid ne '<inherit>';
+	# try parent
+	unless(defined($self->{parent})) {
+		main::Log3(undef,1,"undefined parent: ".blessed($self));
+		main::Log3(undef,1,"undefined parent: ".$self->{title});
+		FUIP::Exception::log('undefined parent'); 
 	};
 	
+	if(blessed($self->{parent}) and $self->{parent}->isa("FUIP::View")) {
+		return $self->{parent}->getSystem();
+	}else{
+		return FUIP::Systems::getDefaultSystem($self->{fuip});
+	};	
+};
+
+
+sub getHTML_sysid($$) {
+	my ($self,$view) = @_;
+	my $sysid = $view->getSystem();
+	return ' data-sysid="'.$sysid.'"';
+};
+
 
 sub getStructure($) {
 	# class method
@@ -256,6 +333,11 @@ sub _fillFieldDefault($$) {
 	#the class field?
 	if($fType eq "class") {
 		$field->{value} = $class;
+		return;
+	};
+	#System id
+	if($fType eq "sysid") {
+		$field->{value} = '<inherit>';
 		return;
 	};
 	# structured field?
@@ -290,6 +372,10 @@ sub getDefaultFields($;$) {
 	# $includes is a list of field types which are normally not visible
 	my ($class,$includesInternals) = @_;
 	my $result = $class->getStructure();  # without values
+	# always add sysid
+	# TODO: Maybe add on top somewhere
+	# TODO: Maybe do the same for the class, if not there anyway
+	push(@$result, { id => "sysid", type => "sysid" } );
 	
 	if(not $includesInternals) {
 		my @withoutInternals = grep {$_->{type} ne "internal"} @$result;
@@ -302,11 +388,11 @@ sub getDefaultFields($;$) {
 };
 
 
-sub createDefaultInstance($$) {
+sub createDefaultInstance($$$) {
 	# class method
 	# creates default instance for class $
 	# $fuip is the FUIP instance this belongs to
-	my ($class,$fuip) = @_;
+	my ($class,$fuip,$parent) = @_;
 	my $defaultFields = $class->getDefaultFields(1); #i.e. include internals
 	my $result = { fuip => $fuip };
 	# Do not create cycles (garbage collection)
@@ -321,7 +407,9 @@ sub createDefaultInstance($$) {
 			$result->{$field->{id}} = $field->{value};
 		};
 	};
-	return bless($result,$class);
+	bless($result,$class);
+	$result->setParent($parent);
+	return $result;
 };
 
 
@@ -362,6 +450,11 @@ sub _fillField($$;$$) {
 		if(defined($defaultRef)) {
 			$field->{default}{used} = $defaultRef;
 		};	
+	};
+	
+	# For system ids, empty or blank means <inherit>
+	if($fType eq 'sysid' and not $field->{value}) {
+		$field->{value} = '<inherit>';
 	};
 };	
 	
@@ -486,7 +579,7 @@ sub getConfigFields($) {
 	# do we have flex fields?
 	$self->addFlexFields($result);
 	return $result;
-}
+};
 
 my %docu = (
 	general => "Es wurde keine spezifische Dokumentation gefunden.<br>

@@ -373,7 +373,7 @@ function toggleConfigMenu(){
 			return;  
 		let docid = "FUIP::ConfPopup::" + (mode == "cell" ? "Cell" : "Page") + "-";
 		if(mode == "cell") {
-			html += '<li onclick="toggleCellPage()" data-docid="'+docid+'gotopage"><div>Page config</div></li>'
+			html += '<li onclick="acceptSettings(toggleCellPage)" data-docid="'+docid+'gotopage"><div>Page config</div></li>'
 				+	'<li onclick="callViewTemplateMaint()" data-docid="'+docid+'gotovtemplates"><div>View Templates</div></li>'
 				+	'<li class="ui-widget-header"><div>Cell</div></li>'
 				+	'<li onclick="acceptSettings(viewAddNew)" data-docid="'+docid+'addcell"><div title="Add a new cell to this page"><span class="ui-icon ui-icon-plus"></span>Add</div></li>'
@@ -384,7 +384,7 @@ function toggleConfigMenu(){
 				+	'<li data-docid="'+docid+'makevtemplate"><div onclick="acceptSettings(dialogConvertToViewtemplate)" title="Create a view template which looks like this cell">Make view template</div></li>'
 				+	'<li data-docid="'+docid+'deletecell"><div onclick="deleteCell()"><span class="ui-icon ui-icon-trash"></span>Delete</div></li>';
 		}else{
-			html += '<li onclick="toggleCellPage()" data-docid="'+docid+'gotocell"><div>Cell config</div></li>'
+			html += '<li onclick="acceptPageSettings(toggleCellPage)" data-docid="'+docid+'gotocell"><div>Cell config</div></li>'
 				+	'<li onclick="callViewTemplateMaint()" data-docid="'+docid+'gotovtemplates"><div>View Templates</div></li>'
 				+	'<li class="ui-widget-header"><div>Page</div></li>'
 				+	'<li><div onclick="acceptPageSettings(copyCurrentPage)" data-docid="'+docid+'copypage"><span class="ui-icon ui-icon-copy"></span>Copy</div></li>'
@@ -1115,7 +1115,7 @@ async function asyncSendFhemCommandLocal(cmdline) {
 		}).done((result) => { 
 				// set-commands should not return a result, otherwise we have an error
 				if(cmdline.startsWith("set ") && result.length > 0) {
-					popupError("FHEM error", result);
+					popupError("FHEM error", result + "<p>Check the FHEM log file for more details");
 					reject(new Error("FHEM says: " + result));
 				}else{	
 					resolve(result);
@@ -1155,11 +1155,13 @@ async function asyncPostImportCommand(content,type,pageid) {
 };
 		
 
-async function callBackendFunc(funcname,args) {
+async function callBackendFunc(funcname,args,sysid) {
 	let argstr = '"' + fuipName() + '"';
 	if(args.length) {
 		argstr += ',"' + args.join('","') + '"';
 	};	
+	// add system id
+	argstr += ',"' + sysid + '"';
 	let cmd = '{' + funcname + '(' + argstr + ')}';
 	let result = await sendFhemCommandLocal(cmd);	
 	return json2object(result);	
@@ -1442,28 +1444,38 @@ function viewAddNewToArray(arrayName) {
 };
 
 
-function viewAddNewByDevice(arrayName) {
-	// callback for value help 
-	var processDevices = function(devices) {
-		if(devices.length == 0) { return; };
-		var cmd = "get " + fuipName() + " viewsByDevices " + devices.join(' ');
-		sendFhemCommandLocal(cmd)
-			.done(function(settingsJson){
-				var views = json2object(settingsJson);
-				for(var i = 0; i < views.length; i++) {
-					var title = '';
-					for(var j = 0; j < views[i].length; j++) {
-						if(views[i][j].id == 'title') {
-							title = views[i][j].value;
-							break;
-						};								
-					};
-					viewAddKnownToArray(arrayName,views[i],title);
-				};
-			});
-	};	
+async function viewAddNewByDevice(arrayName) {
+
 	// bring up list of devices
-	valueHelpForDevice(arrayName, processDevices, true);
+	let devices;
+	try {
+		devices = await valueHelpForDevice(arrayName, 'devices');
+	} catch(e) {
+		if(e.name == 'cancelled') {
+			// this means that the user decided otherwise
+			// TODO: Do we need some info message?
+			return;
+		}else{
+			throw e;
+		}		
+	};	
+	
+	// TODO: Do we need any message if the user has not selected anything?
+	if(devices.length == 0) { return; };
+	let sysid = getSysidFromView(arrayName);	
+	let cmd = "get " + fuipName() + " viewsByDevices " + sysid + " " + devices.join(' ');
+	let settingsJson = await asyncSendFhemCommandLocal(cmd);
+	let views = json2object(settingsJson);
+	for(let i = 0; i < views.length; i++) {
+		let title = '';
+		for(let j = 0; j < views[i].length; j++) {
+			if(views[i][j].id == 'title') {
+				title = views[i][j].value;
+				break;
+ 		    };								
+		};
+	    viewAddKnownToArray(arrayName,views[i],title);
+	};
 };	
 					
 					
@@ -1713,6 +1725,47 @@ function createClassField(selectedClass,prefix) {
 };
 	
 	
+function createSysidField(selectedSysid,viewType,prefix) {
+	let fieldName = prefix + 'sysid';
+	let sysids =  ftui.getSystemIds();
+	
+	//Do not show if there is only one system anyway
+	if(sysids.length < 2) {
+		return null;
+	};	
+	
+	//Add <inherit> as (the first) selectable value
+	sysids.unshift('&lt;inherit&gt;');
+
+	//If the selected system id is not there, add it
+	if(selectedSysid != '<inherit>' && sysids.indexOf(selectedSysid) < 0) {
+		sysids.push(selectedSysid);	
+	};	
+	
+	// a select element with all system ids as option
+	let theFieldElem = $("<select class='fuip' name='" + fieldName + "' id='" + fieldName + "' " +
+		                 "style='visibility: visible;' />");
+	for(var i = 0; i < sysids.length; i++) {
+		let optionElem = $("<option class='fuip' value='" + sysids[i] + "'>" + sysids[i] + "</option>");
+		if(sysids[i] == selectedSysid || i == 0 && selectedSysid == '<inherit>') {
+			optionElem.attr("selected","selected");
+		};
+		theFieldElem.append(optionElem);	
+	};
+	
+	// table cell with the dummy checkbox field in front
+	let td = $("<td style='text-align:left;'><input type='checkbox' style='visibility:hidden;'></td>");
+	td.append(theFieldElem);
+	// and the full table line
+	// TODO: is the docid really good? Should this not be sth like "Class-sysid"?
+	let tr = $("<tr data-docid='" + viewType + "-sysid'>" +
+			   "<td style='text-align:left;'><label for='" + fieldName + 
+			   "' style='white-space:nowrap'>System Id</label></td></tr>");
+	tr.append(td);
+	return tr;		
+};	
+	
+	
 function getIcons() {
 	//if(document.styleSheets.length == 0) {
 	//	window.setTimeout(getIcons,1000);
@@ -1774,25 +1827,47 @@ function getIcons() {
 	return result;
 };
 	
+
+// createValueHelpDialog
+// Creates and opens the value help dialog
+// returns a Promise, which resolves when the ok button is clicked
+// and rejects when the cancel button is clicked	
+function createValueHelpDialog(fieldName) {
 	
-function createValueHelpDialog(okFunction) {
-	var valuehelp;	
-	valuehelp = $( "#valuehelp" ).dialog({
-		autoOpen: false,
-		width: 420,
-		height: 260,
-		modal: true,
-		buttons: [{
-			text: 'Ok',
-			icon: 'ui-icon-check',
-			click: okFunction,
-			showLabel: false },
-		  { text: 'Cancel',
-			icon: 'ui-icon-close',
-			click: function() {	valuehelp.dialog( "close" ); },
-			showLabel: false }
-		],
+	let cancelled = { name: 'cancelled', message: 'The value help dialog was cancelled by the user' }; 
+	
+	return new Promise(function(resolve,reject) {
+		let valueDialog = $( "#valuehelp" );
+		valueDialog.dialog({
+			title: "Possible values for " + fieldName,
+			autoOpen: false,
+			width: 420,
+			height: 260,
+			modal: true,
+			close: function() { reject(cancelled) },
+			buttons: [{
+				text: 'Ok',
+				icon: 'ui-icon-check',
+				click: resolve,
+				showLabel: false },
+			  { text: 'Cancel',
+				icon: 'ui-icon-close',
+				click: function() {	valueDialog.dialog( "close" ); },
+				showLabel: false }
+			],
+		});
+		valueDialog.html("Please wait...");
+		valueDialog.dialog("open");
 	});
+};	
+
+
+// valueHelpError
+// Closes value help popup and displays error message
+function valueHelpError(text) {
+	$( "#valuehelp" ).dialog("close");	
+	popupError("Keine Werthilfe verfügbar",text);
+	throw { name: 'novaluesavailable', message: 'No values available' }	
 };	
 
 
@@ -1812,38 +1887,83 @@ function getFullRefName(fieldname,reftype) {
 	let shortRefName = settings[reftype];
 	if(!shortRefName) 
 		return false; 
-	var nameArray = fieldname.split("-").slice(0,-1);
-	nameArray.push(shortRefName);
-	return nameArray.join("-");
+	return getFullName(fieldname,shortRefName);
 };
-	
-	
+
+
+// replace last part of the field name
+function getFullName(fieldname,localName,type) {
+	let parts = -1;
+	if(type == 'device-reading') 
+	    parts = -2;	
+	let nameArray = fieldname.split("-").slice(0,parts);
+	nameArray.push(localName);
+	return nameArray.join("-");
+};	
+
+
+// gets sysid from the current view
+// fieldname is any field of the view
+function getSysidFromView(fieldname,type) {	
+	// get name of the sysid field
+	let sysfield = getFullName(fieldname,'sysid',type);
+	let result = $('#'+sysfield).val();
+	if(result && result != '<inherit>') {
+		return result;
+	};
+	// sysid not found yet, check cell level
+	// if not anyway on cell level already
+	// the cell level has simple field names
+	if(sysfield != 'sysid') {
+		result = $('#sysid').val();
+		if(result && result != '<inherit>') {
+			return result;
+	    };
+	};	
+	// sysid not found on cell level, get it from page level
+	return $("html").attr("data-sysid");
+};	
+
+
+// valueHelp
+// This includes changing the field content
 async function valueHelp(fieldName,type) {
-	// device help has its own function
+	try {
+		await valueHelpInner(fieldName,type);		
+	}catch(e) {
+		if(e.name == 'cancelled' || e.name == 'noselection') {
+			return;  // nothing selected TODO: do we need a info message for this one?	
+		}else{ throw e; };
+	};
+};	
+
+
+// valueHelpInner
+// Contains the valueHelp functionality, but might throw...
+// name: 'cancelled' if the user has cancelled the dialog
+// name: 'noselection' if the user has used 'ok', but not selected anything
+//                   (only in single select mode or other cases where there must be
+//                   at least one entry)
+async function valueHelpInner(fieldName,type) {
+	// device(s)
 	if(type == "device" || type == "devices" || type == "device-reading" && fieldName.match(/-device$/) ) {
-		valueHelpForDevice(fieldName, 
-			function(value) {
-				$('#'+fieldName).val(value);
-				$('#'+fieldName).trigger("input");
-			},(type == "devices"));
+		let result = await valueHelpForDevice(fieldName, type);
+		$('#'+fieldName).val(result);
+		$('#'+fieldName).trigger("input");
 		return;
 	};	
 	// setoptions
 	if(type == "setoptions") {
-		valueHelpForOptions(fieldName,
-			function(selected) {
-				$('#'+fieldName).val(selected);
-				$('#'+fieldName).trigger("input");
-			},true);	
+		let result = await valueHelpForOptions(fieldName,true);
+		$('#'+fieldName).val(result);
+		$('#'+fieldName).trigger("input");
 		return;	
 	};	
 	// setoption (single)
 	if(type == "setoption") {
-		valueHelpForOptions(fieldName,
-			function(selected) {
-				$('#'+fieldName).val(selected);
-				$('#'+fieldName).trigger("input");
-			},false);	
+		let result = await valueHelpForOptions(fieldName,false);
+		$('#'+fieldName).val(result);
+		$('#'+fieldName).trigger("input");
 		return;	
 	};	
 	if(type == "unit") {
@@ -1854,68 +1974,61 @@ async function valueHelp(fieldName,type) {
 		return;
 	};	
 	// all others
-	var name = fuipName();
-	createValueHelpDialog(function(){
-		var selected = $('#valuehelptable').attr('data-selected');
-		if(!selected) { return; };
-		var value = $('#'+selected).attr('data-key');
-		$('#'+fieldName).val(value);
-		$('#'+fieldName).trigger("input");
-		$( "#valuehelp" ).dialog("close");
-	});
-	var valueDialog = $( "#valuehelp" );
-	valueDialog.dialog("option","title","Possible values for " + fieldName); 
-	valueDialog.html("Please wait...");
-	valueDialog.dialog("open");
+	let name = fuipName();
+	let sysid = getSysidFromView(fieldName,type);
+	let dialogPromise = createValueHelpDialog(fieldName);
+		
+	let valueDialog = $( "#valuehelp" );
 
 	// put select-only-one mechanism
     var registerClicked = function() {		 
 		$( "#valuehelptable tbody tr" ).on( "click", function() {
-			var oldSelected = $('#valuehelptable').attr('data-selected');
-			if(oldSelected.length) {
-				$('#'+oldSelected).children("td").removeAttr("style"); 	
-			};	
-			$('#valuehelptable').attr('data-selected',$(this).attr('id'));
-			$(this).children("td").attr("style", "background:#F39814;color:black;");
+			$("tr[data-selected='X']").each(function(){
+				$(this).attr('data-selected','');
+				$(this).children("td").removeAttr("style"); 							
+			});
+			$(this).attr('data-selected','X');					
+			$(this).children("td").attr("style", "background: #F39814;color:black;");			
 		});
 	};
 
+	let selected = $("#"+fieldName).val();
+	
 	if(type == "device-reading" && fieldName.match(/-reading$/) || type == "reading") {
-		var deviceFieldName;
+		let deviceFieldName;
 		if(type == "reading") {
 			deviceFieldName = getFullRefName(fieldName,"refdevice");
 		}else{
 			deviceFieldName = fieldName.replace(/-reading$/,"-device");
 		};	
-		var device = $('#'+deviceFieldName).val();
-		var cmd = "get " + name + " readingslist " + device;
-		sendFhemCommandLocal(cmd).done(function(readingsListJson){
-			var readingsList = json2object(readingsListJson);
-			var valueDialog = $( "#valuehelp" );
-			var html = "<table id='valuehelptable' data-selected=''><tr><th>Name</th></tr>";
-			for(var i = 0; i < readingsList.length; i++){
-				html += "<tr id='valuehelp-row-"+i+"' data-key='"+readingsList[i]+"'><td>"+readingsList[i]+"</td></tr>";
-			};
-			html += "</table>";
-			valueDialog.html(html);
-			registerClicked();
-		});
+		let device = $('#'+deviceFieldName).val();
+		let cmd = "get " + name + " readingslist " + device + " " + sysid;
+		let readingsListJson = await asyncSendFhemCommandLocal(cmd);
+		let readingsList = json2object(readingsListJson);
+		let tabDef = {
+			colDef : [ 	{ title: "Name" } ],
+			rowData : readingsList
+		};				
+		createValueHelpTable(tabDef,selected,false);		
+		
 	}else if(type == "set") {	
-	    var refdeviceFullName = getFullRefName(fieldName,"refdevice");
-		var device = $('#'+refdeviceFullName).val();
-		if(!device) { return };
-		var cmd = "get " + name + " sets " + device;
-		sendFhemCommandLocal(cmd).done(function(json){
-			var sets = Object.keys(json2object(json));
-			var valueDialog = $( "#valuehelp" );
-			var html = "<table id='valuehelptable' data-selected=''><tr><th>Name</th></tr>";
-			for(var i = 0; i < sets.length; i++){
-				html += "<tr id='valuehelp-row-"+i+"' data-key='"+sets[i]+"'><td>"+sets[i]+"</td></tr>";
-			};
-			html += "</table>";
-			valueDialog.html(html);
-			registerClicked();
-		});	
+	    let refdeviceFullName = getFullRefName(fieldName,"refdevice");
+		let device = $('#'+refdeviceFullName).val();
+		if(!device) { 
+			valueHelpError("Das zugeh&ouml;rige <i>device-</i>Feld wurde noch nicht gef&uuml;llt. Daher konnten keine passenden Kommandos ermittelt werden.");
+		};
+		let cmd = "get " + name + " sets " + device + " " + sysid;
+		let json = await asyncSendFhemCommandLocal(cmd);
+		let sets = Object.keys(json2object(json));
+		if(!Array.isArray(sets) || !sets.length) {
+			valueHelpError("Es wurden keine passenden Kommandos gefunden. M&ouml;glicherweise ist das Backend-System (" + sysid + ") momentan nicht erreichbar.<br>Es kann auch sein, dass das Device die entsprechenden Werte nicht liefern kann. In diesem Fall muss der Wert manuell eingegeben werden.");
+		};
+		let tabDef = {
+			colDef : [ 	{ title: "Name" } ],
+			rowData : sets
+		};				
+		createValueHelpTable(tabDef,selected,false);		
+
 	}else if(type == "icon") {
 		var allIcons = getIcons();
 		var html = "<table id='valuehelptable' class='tablesorter' data-selected=''><thead><th>Icon</th><th>Name</th></thead><tbody>";
@@ -1962,7 +2075,7 @@ async function valueHelp(fieldName,type) {
 	}else if(type == "class") {
 		let cmd = "get " + name + " viewclasslist";
 		let classListJson = await asyncSendFhemCommandLocal(cmd);
-		var classList = json2object(classListJson);
+		let classList = json2object(classListJson);
 		// if this is a view template maintenance, we need to remove
 		// view templates which use the one we are maintaining
 		if($("html").attr("data-viewtemplate")) {
@@ -1977,11 +2090,9 @@ async function valueHelp(fieldName,type) {
 			};
 		};
 		// go on after special viewtemplate handling
-		var valueDialog = $( "#valuehelp" );
-		var selectedClass = $('#'+fieldName).val();
 		var html = "<table id='valuehelptable' class='tablesorter' data-selected='";
 		for(var i = 0; i < classList.length; i++){
-			if(classList[i].id == selectedClass) {
+			if(classList[i].id == selected) {
 				html += 'valuehelp-row-'+i;
 				break;
 			};
@@ -1990,7 +2101,7 @@ async function valueHelp(fieldName,type) {
 		html += "<tbody>";
 		for(var i = 0; i < classList.length; i++){
 			var style = "";
-			if(classList[i].id == selectedClass) {
+			if(classList[i].id == selected) {
 				style = " style='background:#F39814;color:black;'";
 			};	
 			html += "<tr id='valuehelp-row-"+i+"' data-key='"+classList[i].id+"'><td"+style+">"+classList[i].id+"</td><td"+style+">"+classList[i].title+"</td><td"+style+">";
@@ -2014,11 +2125,20 @@ async function valueHelp(fieldName,type) {
 		});	
 	}else{
 		valueDialog.html("No value help for this field.");
+		return;
 	};
+	
+	// wait for the user to do something
+	await dialogPromise;
+	
+	let result = valueHelpGetSelected();
+	$('#'+fieldName).val(result);
+	$('#'+fieldName).trigger("input");
+
 };	
 
 
-function createValueHelpTable(tabDef,selected,multiSelect) {
+function createValueHelpTable(tabDef,selectedValue,multiSelect) {
 // create the table for value help
 // tabDef has the following structure:
 //	colDef: table of 
@@ -2028,6 +2148,16 @@ function createValueHelpTable(tabDef,selected,multiSelect) {
 //	keyCol: number of column which contains the key
 //	rowData: table of table of values 
 //			the inner table must have as many entries as colDef	
+
+	// the selected value might be...
+	//	- a single value (without commas)
+	//  - a json array
+	//  - a list of single values separated by comma
+	let selected = json2object(selectedValue);
+	if(!(selected instanceof Array)) {
+		// the following also works for single values
+		selected = selectedValue.split(",");
+	};	
 
 	let valueDialog = $( "#valuehelp" );
 //	TODO: implement colDef.display = ifDifferent/always
@@ -2061,6 +2191,10 @@ function createValueHelpTable(tabDef,selected,multiSelect) {
 	// append row data
 	for(let i = 0; i < tabDef.rowData.length; i++){
 		let row = tabDef.rowData[i];
+		// if this has only one column, we allow non-arrays as rows
+		if(!(row instanceof Array)) {
+			row = [row];
+		};	
 		// is this row selected?
 		let keyValue = row[tabDef.keyCol];
 		let isSel = '';
@@ -2118,25 +2252,20 @@ function createValueHelpTable(tabDef,selected,multiSelect) {
 };	
 
 
-
-async function valueHelpForDevice(fieldTitle, callbackFunction, multiSelect) {
-	var name = fuipName();
-	createValueHelpDialog(function(){
-		var resultArray = [];
-		$("tr[data-selected='X']").each(function(){
-			resultArray.push($(this).attr('data-key'));
-		});	
-		$( "#valuehelp" ).dialog("close");
-		if(multiSelect) {
-			callbackFunction(resultArray);
-		}else if(resultArray.length) {
-			callbackFunction(resultArray[0]);
-		};
-	});
-	var valueDialog = $( "#valuehelp" );
-	valueDialog.dialog("option","title","Possible values for " + fieldTitle); 
-	valueDialog.html("Please wait...");
-	valueDialog.dialog("open");
+// type: device, devices or device-reading	
+// Throws (or rejects with) 
+// name: 'cancelled' if the user has cancelled the dialog
+// name: 'noselection' if the user has used "ok", but not selected anything 
+//                     (only in single select mode) 
+async function valueHelpForDevice(fieldTitle, type) {
+	let name = fuipName();
+	
+	// open the dialog and display "please wait" message
+	let dialogPromise = createValueHelpDialog(fieldTitle);
+	
+	// get system id
+	let sysid = getSysidFromView(fieldTitle,type);
+	
 	// do we have a device filter from the view?
 	let field = $("#"+fieldTitle);
 	let allDevices = true;
@@ -2144,127 +2273,153 @@ async function valueHelpForDevice(fieldTitle, callbackFunction, multiSelect) {
 	if(field.length) {
 		let fieldSettings = field.data("settings");
 		if(fieldSettings && fieldSettings.hasOwnProperty("filterfunc")) {
-			deviceFilter = await callBackendFunc(fieldSettings.filterfunc,[]);
+			deviceFilter = await callBackendFunc(fieldSettings.filterfunc,[],sysid);
 			allDevices = false;
 		};
 	};	
 	
-	var cmd = "get " + name + " devicelist";
-	sendFhemCommandLocal(cmd).done(function(deviceListJson){
-		var deviceList = json2object(deviceListJson);
-		// filter, if needed
-		// TODO: in principle, we only need to get the filter list details, 
-		//       i.e. not all devices when filtered
-		if(!allDevices) {
-			let fullList = deviceList;
-			deviceList = [];
-			for(let i = 0; i < fullList.length; i++){
-				if(deviceFilter.indexOf(fullList[i].NAME) > -1)
-					deviceList.push(fullList[i]);	
-			};	
-		};
-		var valueDialog = $( "#valuehelp" );
-		// check whether alias is used at all
-		var aliasUsed = false;
-		for(var i = 0; i < deviceList.length; i++){
-			if(deviceList[i].alias) {
-				aliasUsed = true;
-				break;
-			};	
-		};
-		var html = "<table id='valuehelptable' class='tablesorter'><thead><tr><th>Name</th>";
-		if(aliasUsed) {
-			html += "<th>Alias</th>";
-		};
-		html += "<th class=\"filter-select filter-onlyAvail\">Type</th><th>Room(s)</th></tr></thead>";
-		html += "<tbody>";
-		var roomFilters = {};
- 		// (also works for single selection)
-		let selected = $("#"+fieldTitle).val();
-		if(selected) {
-			selected = selected.split(",");
-		}else{
-			selected = [];
+	let cmd = "get " + name + " devicelist " + sysid; 
+	let deviceListJson = await asyncSendFhemCommandLocal(cmd);
+	let deviceList = json2object(deviceListJson);
+	// if the deviceList is empty, then the system is probably invalid
+	// or cannot be reached
+	if (!Array.isArray(deviceList) || !deviceList.length) {
+		// throws an exception
+		valueHelpError("Es wurden keine Devices im System " + sysid + " gefunden. Wahrscheinlich ist dieses System momentan nicht erreichbar.");
+	};
+	// filter, if needed
+	if(!allDevices) {
+		let fullList = deviceList;
+		deviceList = [];
+		for(let i = 0; i < fullList.length; i++){
+			if(deviceFilter.indexOf(fullList[i].NAME) > -1)
+				deviceList.push(fullList[i]);	
 		};	
-		for(var i = 0; i < deviceList.length; i++){
-			if(deviceList[i].room == "") {
-				deviceList[i].room = "unsorted";
-			};	
-			let isSel = '';
-			let style = '';
-			if(selected.indexOf(deviceList[i].NAME) > -1) {
-				isSel = 'X';
-				style = " style='background:#F39814;color:black;'";
-			};	
-			html += "<tr id='valuehelp-row-"+i+"' data-selected='"+isSel+"' data-key='"+deviceList[i].NAME+"'><td"+style+">"+deviceList[i].NAME+"</td>";
-			if(aliasUsed) {
-				html += "<td"+style+">"+deviceList[i].alias+"</td>";
-			};
-			html += "<td"+style+">"+deviceList[i].TYPE+"</td><td"+style+">"+deviceList[i].room+"</td></tr>";
-			var rooms = deviceList[i].room.split(",");
-			for(var j = 0; j < rooms.length; j++) {
-				roomFilters[rooms[j]] = valueHelpFilterRoom;
-			};	
-		};
-		html += "</tbody></table>";
-		valueDialog.dialog("option","width",650);
-		valueDialog.dialog("option","height",500);			
-		valueDialog.html(html);
-		var orderedRoomFilters = {};
-		Object.keys(roomFilters).sort().forEach(function(key) {
-			orderedRoomFilters[key] = roomFilters[key];
-		});
-		var roomFilterFunctions;
+		if (!deviceList.length) {
+		  // throws an exception
+		  valueHelpError("Es wurden zwar Devices im System " + sysid + " gefunden, aber keines davon scheint zur aktuellen View zu passen.");
+	    };
+	};
+	
+	let valueDialog = $( "#valuehelp" );
+	// check whether alias is used at all
+	let aliasUsed = false;
+	for(let i = 0; i < deviceList.length; i++){
+		if(deviceList[i].alias) {
+			aliasUsed = true;
+			break;
+		};	
+	};
+	let html = "<table id='valuehelptable' class='tablesorter'><thead><tr><th>Name</th>";
+	if(aliasUsed) {
+		html += "<th>Alias</th>";
+	};
+	html += "<th class=\"filter-select filter-onlyAvail\">Type</th><th>Room(s)</th></tr></thead>";
+	html += "<tbody>";
+	let roomFilters = {};
+	// (also works for single selection)
+	let selected = $("#"+fieldTitle).val();
+	if(selected) {
+		selected = selected.split(",");
+	}else{
+		selected = [];
+	};	
+	for(let i = 0; i < deviceList.length; i++){
+		if(deviceList[i].room == "") {
+			deviceList[i].room = "unsorted";
+		};	
+		let isSel = '';
+		let style = '';
+		if(selected.indexOf(deviceList[i].NAME) > -1) {
+			isSel = 'X';
+			style = " style='background:#F39814;color:black;'";
+		};	
+		html += "<tr id='valuehelp-row-"+i+"' data-selected='"+isSel+"' data-key='"+deviceList[i].NAME+"'><td"+style+">"+deviceList[i].NAME+"</td>";
 		if(aliasUsed) {
-			roomFilterFunctions = { 3 : orderedRoomFilters };
-		}else{
-			roomFilterFunctions = { 2 : orderedRoomFilters };
-		};		
-		$(function() {
-			$(".tablesorter").tablesorter({
-				theme: "blue",
-				widgets: ["filter"],
-				widgetOptions: {
-					filter_functions: roomFilterFunctions
-				}	
-			});
-			$( "#valuehelptable tbody tr" ).on( "click", function() {
-				if(multiSelect) {
-					if($(this).attr('data-selected') == 'X') {
-						$(this).attr('data-selected','');
-						$(this).children("td").removeAttr("style"); 	
-					}else{
-						$(this).attr('data-selected','X');
-						$(this).children("td").attr("style", "background:#F39814;color:black;");
-					};				
-				}else{  // single select
-					$("tr[data-selected='X']").each(function(){
-						$(this).attr('data-selected','');
-						$(this).children("td").removeAttr("style"); 							
-					});
-					$(this).attr('data-selected','X');					
-					$(this).children("td").attr("style", "background: #F39814;color:black;");
-				};	
-			});
-		});	
+			html += "<td"+style+">"+deviceList[i].alias+"</td>";
+		};
+		html += "<td"+style+">"+deviceList[i].TYPE+"</td><td"+style+">"+deviceList[i].room+"</td></tr>";
+		let rooms = deviceList[i].room.split(",");
+		for(let j = 0; j < rooms.length; j++) {
+			roomFilters[rooms[j]] = valueHelpFilterRoom;
+		};	
+	};
+	html += "</tbody></table>";
+	valueDialog.dialog("option","width",650);
+	valueDialog.dialog("option","height",500);			
+	valueDialog.html(html);
+	let orderedRoomFilters = {};
+	Object.keys(roomFilters).sort().forEach(function(key) {
+		orderedRoomFilters[key] = roomFilters[key];
+	});
+	let roomFilterFunctions;
+	if(aliasUsed) {
+		roomFilterFunctions = { 3 : orderedRoomFilters };
+	}else{
+		roomFilterFunctions = { 2 : orderedRoomFilters };
+	};		
+	$(function() {
+		$(".tablesorter").tablesorter({
+			theme: "blue",
+			widgets: ["filter"],
+			widgetOptions: {
+				filter_functions: roomFilterFunctions
+			}	
+		});
+		$( "#valuehelptable tbody tr" ).on( "click", function() {
+			if(type == 'devices') {
+				if($(this).attr('data-selected') == 'X') {
+					$(this).attr('data-selected','');
+					$(this).children("td").removeAttr("style"); 	
+				}else{
+					$(this).attr('data-selected','X');
+					$(this).children("td").attr("style", "background:#F39814;color:black;");
+				};				
+			}else{  // single select
+				$("tr[data-selected='X']").each(function(){
+					$(this).attr('data-selected','');
+					$(this).children("td").removeAttr("style"); 							
+				});
+				$(this).attr('data-selected','X');					
+				$(this).children("td").attr("style", "background: #F39814;color:black;");
+			};	
+		});
 	});	
+		
+	// wait for user action
+	// might throw { name: 'cancelled' }
+	await dialogPromise;	
+
+	// return value(s)	
+	let resultArray = [];
+	$("tr[data-selected='X']").each(function(){
+		resultArray.push($(this).attr('data-key'));
+	});	
+	$( "#valuehelp" ).dialog("close");
+	if(type == 'devices') {  // multi select
+		return resultArray;
+	}else if(resultArray.length) {
+		return resultArray[0];
+	}else{
+		throw { name: 'noselection', message: 'The dialog was closed without selection' }	
+	};
 };	
 
 
-function valueHelpForUnit(fieldTitle, callbackFunction) {
-	createValueHelpDialog(function(){
-		let result = "";
-		$("td[data-selected='X']").each(function(){
-			result = $(this).html();
-			if($(this).data("col") == 2) result = " " + result;
-		});	
-		$( "#valuehelp" ).dialog("close");
-		callbackFunction(result);
-	});
+async function valueHelpForUnit(fieldTitle, callbackFunction) {
+	let dialogPromise = createValueHelpDialog(fieldTitle);
+	dialogPromise.then( 
+		function(){
+			let result = "";
+			$("td[data-selected='X']").each(function(){
+				result = $(this).html();
+				if($(this).data("col") == 2) result = " " + result;
+			});	
+			$( "#valuehelp" ).dialog("close");
+			callbackFunction(result);
+		}
+	);
 	var valueDialog = $( "#valuehelp" );
-	valueDialog.dialog("option","title","Possible values for " + fieldTitle); 
-	valueDialog.html("Please wait...");
-	valueDialog.dialog("open");
 
 	var unitList = [
 		[ 'Beleuchtungsstärke','lx','Lux'],
@@ -2351,37 +2506,35 @@ function valueHelpForUnit(fieldTitle, callbackFunction) {
 			selCell.attr("style", "background: #F39814;color:black;");
 		});	
 	});
+	
+	// wait for user activity
+	await dialogPromise;
 };
 
 
-async function valueHelpForOptions(fieldName, callbackFunction,multiSelect) {
-	var name = fuipName();
-	createValueHelpDialog(function(){
-		var resultArray = [];
-		$("tr[data-selected='X']").each(function(){
-			resultArray.push($(this).attr('data-key'));
-		});	
-		$( "#valuehelp" ).dialog("close");
-		if(multiSelect) {
-			callbackFunction(resultArray);
-		}else if(resultArray.length) {
-			callbackFunction(resultArray[0]);
-		};
-	});
-	var valueDialog = $( "#valuehelp" );
-	valueDialog.dialog("option","title","Possible values for " + fieldName); 
-	valueDialog.html("Please wait...");
-	valueDialog.dialog("open");
+// valueHelpForOptions
+// Throws (or rejects with) 
+// name: 'cancelled' if the user has cancelled the dialog
+// name: 'noselection' if the user has used "ok", but not selected anything 
+//                     (only in single select mode) 
+async function valueHelpForOptions(fieldName, multiSelect) {
+	let name = fuipName();
+	let dialogPromise = createValueHelpDialog(fieldName);
+
+	let valueDialog = $( "#valuehelp" );
 	
-	var innerValueHelp = function(fName,options) {
+	let innerValueHelp = function(fName,options) {
 		// which of the options are set?
-		// the following is partially for compatibility with earlier versions
-		let selected = json2object($("#"+fName).val());
-		if(!(selected instanceof Array)) {
-			// new coding (also works for single selection)
-			selected = $("#"+fName).val().split(",");
-		};	
+		let selected = $("#"+fName).val();
 		let tabDef;
+		
+		if ( !options ||
+		  Array.isArray(options) && !options.length ||
+		  options.hasOwnProperty("rowData") && !options.rowData.length ) {
+		    // throws an exception
+		    valueHelpError("Es wurden keine passenden Optionen gefunden. M&ouml;glicherweise wurde das zugeh&ouml;rige <i>set</i>- bzw. <i>device-</i>Feld noch nicht gef&uuml;llt.<br>Es kann auch sein, dass das Device die entsprechenden Werte nicht liefern kann. In diesem Fall muss der Wert manuell eingegeben werden.");
+	    };
+
 		if(options.hasOwnProperty("colDef")) {
 			tabDef = options;
 		}else{	
@@ -2389,7 +2542,7 @@ async function valueHelpForOptions(fieldName, callbackFunction,multiSelect) {
 				colDef : [ 	{ display: "none" },
 							{ title: "Name" } ],
 				rowData : [] };				
-			for(var i = 0; i < options.length; i++){
+			for(let i = 0; i < options.length; i++){
 				let option = options[i];
 				if(typeof option === 'object') {
 					tabDef.rowData.push([option.value,option.label]);
@@ -2400,6 +2553,9 @@ async function valueHelpForOptions(fieldName, callbackFunction,multiSelect) {
 		};	
 		createValueHelpTable(tabDef,selected,multiSelect);
 	};	
+	
+	// get sysid
+	let sysid = getSysidFromView(fieldName);
 	
 	// get set name and device name
 	// reference function to call? (Get options from backend function.)
@@ -2414,17 +2570,16 @@ async function valueHelpForOptions(fieldName, callbackFunction,multiSelect) {
 				args.push($("#"+fullRefName).val());
 			};	
 		};	
-		let opts = await callBackendFunc(settings.reffunc,args);
+		let opts = await callBackendFunc(settings.reffunc,args,sysid);
 		innerValueHelp(fieldName,opts);
 	}else{
-		var refSetFullName = getFullRefName(fieldName,"refset");
+		let refSetFullName = getFullRefName(fieldName,"refset");
 		if(refSetFullName) {  // i.e. we have a "refset"
-			var refDeviceFullName = getFullRefName(refSetFullName, "refdevice");
-			var cmd = "get " + name + " sets " + $("#"+refDeviceFullName).val();
-			sendFhemCommandLocal(cmd).done(function(json){
-				var sets = json2object(json);
-				innerValueHelp(fieldName,sets[$("#"+refSetFullName).val()]);
-			});
+			let refDeviceFullName = getFullRefName(refSetFullName, "refdevice");
+			let cmd = "get " + name + " sets " + $("#"+refDeviceFullName).val() + " " + sysid;
+			let json = await asyncSendFhemCommandLocal(cmd);
+			let sets = json2object(json);
+			innerValueHelp(fieldName,sets[$("#"+refSetFullName).val()]);
 		}else{
 			// fixed list of options?
 			if(settings.hasOwnProperty("options")) {
@@ -2432,6 +2587,42 @@ async function valueHelpForOptions(fieldName, callbackFunction,multiSelect) {
 			};		
 		};
 	};	
+	
+	// wait for user reaction
+	await dialogPromise;
+	
+	let resultArray = [];
+	$("tr[data-selected='X']").each(function(){
+		resultArray.push($(this).attr('data-key'));
+	});	
+	$( "#valuehelp" ).dialog("close");
+	if(multiSelect) {
+		return resultArray;
+	}else if(resultArray.length) {
+		return resultArray[0];
+	}else{ 
+		throw { name: 'noselection', message: 'The dialog was closed without selection' };
+	};	
+};	
+
+
+// valueHelpGetSelected
+// Find selected entries and return them
+// Might throw "noselection"
+function valueHelpGetSelected(multiSelect) {
+	let resultArray = [];
+	$("#valuehelp tr[data-selected='X']").each(function(){
+		resultArray.push($(this).attr('data-key'));
+	});	
+	$( "#valuehelp" ).dialog("close");
+	if(multiSelect) {
+		return resultArray;
+	}else if(resultArray.length) {
+		return resultArray[0];
+	}else{ 
+		throw { name: 'noselection', message: 'The dialog was closed without selection' };
+	};		
+	
 };	
 
 
@@ -2888,6 +3079,7 @@ function createSettingsTable(settings,prefix) {
 	let resultTab = $("<table/>");
 	let vArray = false;
 	let viewType = false;
+	// class field
 	for(var i = 0; i < settings.length; i++){
 		if(settings[i].type != 'class') { continue; }; 
 		viewType = settings[i].value;
@@ -2898,8 +3090,15 @@ function createSettingsTable(settings,prefix) {
 		resultTab.append($(createClassField(viewType,prefix)));
 		break;
 	};
+	// sysid field
+	for(var i = 0; i < settings.length; i++){
+		if(settings[i].type != 'sysid') { continue; }; 
+		resultTab.append($(createSysidField(settings[i].value,viewType,prefix)));
+		break;
+	};
 	for(var i = 0; i < settings.length; i++){
 		if(settings[i].type == 'class') { continue; };
+		if(settings[i].type == 'sysid') { continue; };
 		if(settings[i].type == 'dimension') { continue; };
 		if(settings[i].type == 'variables') { continue; };
 		if(settings[i].type == 'flexfields') { continue; };

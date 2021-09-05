@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>FUIP Log Management</title>
+
+
+</head>
+<body>
+FUIP Log Management
+
+<div id="messagelist">
+</div>
+<div id="others">
+</div>
+
+<script type="text/javascript">
+
+	function deleteLog(logid) {
+		var keys2remove = [];
+		for (var i = 0; i < localStorage.length; i++) {
+			var key = localStorage.key(i);
+			if(!key.startsWith("ftui.log." + logid)) 
+				continue;
+			keys2remove.push(key);	
+		};
+		for (var i = 0; i < keys2remove.length; i++) {
+			localStorage.removeItem(keys2remove[i]);	
+		};	
+		refreshList();
+	};
+
+	function refreshList() {
+		// get all entries in localStorage
+		var log = new Object();
+		var others = new Object();
+		for (var i = 0; i < localStorage.length; i++) {
+			var key = localStorage.key(i);
+			if(!key.startsWith("ftui.log.")){ 
+				others[key] = localStorage.getItem(key);
+				continue;
+			};	
+			var logid = key.substr(9);
+			logid = logid.substr(0,logid.length - 9);
+			if(!log[logid]) {
+				log[logid] = [];
+			};	
+			log[logid].push({index: key.substr(-8), content: localStorage.getItem(key)});
+
+		}
+		var logIds = [];
+		for(var logid in log) {
+			logIds.push(logid);
+			log[logid].sort((a,b) => parseInt(a.index) - parseInt(b.index));
+		};
+		logIds.sort();
+	
+		var html = "";
+		for(var i = 0; i < logIds.length; i++) {
+			html += "<h2>Log " + logIds[i] + "  <button onclick=\"deleteLog('"+logIds[i]+"')\">Delete</button></h2>\n";
+			for(var j = 0; j < log[logIds[i]].length; j++) {
+				var entry = log[logIds[i]][j];
+				html += entry.index + " " + entry.content + "<br>\n";
+			};
+		};	
+		document.getElementById("messagelist").innerHTML = html;
+		// other localStorage entries
+		html = "";
+		for(var key in others) {
+			html += key + ": " + others[key] + "<p>\n";
+		};
+		document.getElementById("others").innerHTML = html;
+	};
+	
+	refreshList();
+</script>
+
+</body>
+</html>
+		

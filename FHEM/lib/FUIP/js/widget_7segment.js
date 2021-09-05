@@ -98,9 +98,15 @@ var Modul_7segment = function () {
             if (elem.matchDeviceReading('get-value', device, reading)) {
                 var value = elem.getReading('get-value').val
                 if (items[index].oldvalues['get-value'] !== value) {
-                    setColor(index, value);
-                    setNumber(index, value);
-                    items[index].oldvalues['get-value'] = value;
+					items[index].oldvalues['get-value'] = value;
+					var number = parseFloat(value);
+					if(isNaN(number)) {
+						var msg = '7segment widget: "' + value + '" (' + device + '-' + reading	+ ') is not a number';
+						ftui.toast(msg,'error');	
+					}else{	
+                      setColor(index, value);
+                      setNumber(index, value);
+					};
                 }
             }
 

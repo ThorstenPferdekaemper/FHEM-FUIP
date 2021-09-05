@@ -408,11 +408,12 @@ var Modul_weatherdetail = function() {
 
 	function update(device, reading) {
 		// we need only updates for our device, so filter out all other widgets
-		me.elements.filter('div[data-device="' + device + '"]').each(function(index) {
+		me.elements.filterDevice('device', device).each(function(index) {
 			var pathImage = getImgPath();
 			var elem = $(this);
 			var myHtml = elem.data('detail').length ? "<div class='ftuiWeatherdetailTab' style='white-space:nowrap;text-align:left;'>" : "<div style='white-space:nowrap;height:100%;float:left'>";
-			var fhemJSON = ftui.sendFhemCommand("jsonlist2 WEB," + device + strDaten).done(function(fhemJSON) {
+			var dev = ftui.splitDeviceKey(device);
+			var fhemJSON = ftui.sendFhemCommandWithSysid("jsonlist2 WEB," + dev.device + strDaten, dev.sysid).done(function(fhemJSON) {
 				var res = fhemJSON.Results[1]; // 0 = Arg, 1 =Results
 				for (var i = elem.data("startday"); i < elem.data("startday") + elem.data("days"); i++) {
 					if(elem.data('detail').length) {

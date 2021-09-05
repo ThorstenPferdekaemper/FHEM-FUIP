@@ -19,6 +19,7 @@ FUIP_Initialize($) {
     $hash->{UndefFn}   = "FUIP::Undef";
 	FUIP::setAttrList($hash);
 	$hash->{AttrFn}    = "FUIP::Attr";
+	$hash->{NotifyFn}  = "FUIP::Notify";
 	$hash->{parseParams} = 1;	
 	# For FHEMWEB
 	$hash->{'FW_detailFn'}    = 'FUIP::fhemwebShowDetail';
@@ -42,6 +43,8 @@ use File::Basename qw(basename);
 
 use lib::FUIP::Model;
 use lib::FUIP::View;
+use lib::FUIP::Systems;
+use lib::FUIP::Generator;
 
 # selectable views
 my $selectableViews = \%FUIP::View::selectableViews;
@@ -51,10 +54,44 @@ my $fuipPath = $main::attr{global}{modpath} . "/FHEM/lib/FUIP/";
 
 my $currentPage = "";
 
+
+# Messages
+my %messages;
+# Messages have probably been seen by the user
+# (Hash by FUIP device name)
+my %messagesSeen;
+
+sub setMessage($$$) {
+	my ($hash,$id,$message) = @_;
+	my $name = $hash->{NAME};
+	$messages{$name} = {} unless exists $messages{$name};
+	$messages{$name}{$id} = $message;
+	$messagesSeen{$name} = 0;
+};
+
+sub removeMessage($$) {
+	my ($hash,$id) = @_;
+	my $name = $hash->{NAME};
+	return unless exists $messages{$name};
+	delete $messages{$name}{$id};
+};
+
+sub getMessages($) {
+	my ($hash) = @_;
+	my $name = $hash->{NAME};
+	my @result;
+	return \@result unless exists $messages{$name};
+	for my $key (sort keys %{$messages{$name}}) {
+		push(@result,$messages{$name}{$key});
+	};
+	return \@result;
+};
+
+
 # possible values of attributes can change...
 sub setAttrList($) {
 	my ($hash) = @_;
-    $hash->{AttrList}  = "layout:gridster,flex locked:0,1 fhemwebUrl baseWidth baseHeight cellMargin:0,1,2,3,4,5,6,7,8,9,10 pageWidth styleSchema:default,blue,green,mobil,darkblue,darkgreen,bright-mint styleColor viewportUserScalable:yes,no viewportInitialScale gridlines:show,hide snapTo:gridlines,halfGrid,quarterGrid,nothing toastMessages:all,errors,off styleBackgroundImage:";
+    $hash->{AttrList}  = "layout:gridster,flex locked:0,1 backend_.* backendNames baseWidth baseHeight cellMargin:0,1,2,3,4,5,6,7,8,9,10 pageWidth styleSchema:default,blue,green,mobil,darkblue,darkgreen,bright-mint styleColor viewportUserScalable:yes,no viewportInitialScale gridlines:show,hide snapTo:gridlines,halfGrid,quarterGrid,nothing toastMessages:all,errors,off styleBackgroundImage:";
 	my $imageNames = getImageNames();
 	$hash->{AttrList} .= join(",",@$imageNames);
 	my $cssNames = getUserCssFileNames();
@@ -65,8 +102,41 @@ sub setAttrList($) {
 	if(@$htmlNames) {
 		$hash->{AttrList} .= " userHtmlBodyStart:".join(",",@$htmlNames);
 	};	
-	$hash->{AttrList} .= " loglevel:0,1,2,3,4,5 logtype:console,localstorage logareas longPollType:websocket,ajax";
+
+	$hash->{AttrList} .= " loglevel:0,1,2,3,4,5 logtype:console,localstorage logareas";
+
+	# Extra attribute for compatibility
+	#fhemwebUrl and longPollType are only there for compatibility with earlier versions.
+	if(not $main::init_done) {
+		$hash->{AttrList} .= " fhemwebUrl longPollType";	
+	};
 }
+
+
+# setAttrListDevice
+# Set device specific attribute list
+sub setAttrListDevice($) {
+	my ($hash) = @_;
+	# update module specific attribute list, just in case
+	setAttrList($main::modules{FUIP});
+	$hash->{'.AttrList'} = $main::modules{FUIP}{AttrList};
+	
+	my $systems = FUIP::Systems::getExplicitSystems($hash);
+    # Add backend-attributes
+	for my $system (sort keys %$systems) {
+		$hash->{'.AttrList'} .= " backend_".$system;
+	};
+	# Add the first "free" from backend names
+	my @backendNames = split(/,/, main::AttrVal($hash->{NAME},'backendNames','trillian,fenchurch,lintilla,alice,dionah'));	
+	for my $system (@backendNames) {
+		next if exists $systems->{$system};
+		$hash->{'.AttrList'} .= " backend_".$system;
+		last;
+	};
+	
+	# Add possible values for defaultBackend
+	$hash->{'.AttrList'} .= ' defaultBackend:'.join(",",sort keys %$systems);
+};
 
 
 # load view modules
@@ -222,9 +292,140 @@ sub Define($$$) {
   # load old definition, if exists
   load($hash);
   $hash->{autosave} = "none";  # in case config file does not yet exist
-  checkForAutosave($hash);
+  checkForAutosave($hash); 
+  # Get device specific attributes
+  setAttrListDevice($hash);
+	
+  # Do some stuff after init is ready	
+  $hash->{NOTIFYDEV} = "global";
+  
   return undef;
 }
+
+
+# attrLowLevel
+# Set/delete attribute for automatic fixes
+sub attrLowLevel($$$;$) {
+	my ($hash,$cmd,$attr,$value) = @_;
+	
+	my $oldValue = main::AttrVal($hash->{NAME},$attr,undef);
+	
+	if($cmd eq 'set') {
+		# Anyway like it should be
+		return if(defined($oldValue) and $oldValue eq $value); 
+		$main::attr{$hash->{NAME}}{$attr} = $value;	
+		setMessage($hash,$attr.'Set',"Attribute $attr set to $value");
+		$main::defs{global}{init_errors} .= "\nFUIP device ".$hash->{NAME}.": Attribute $attr set to $value";
+		main::addStructChange("attr", $hash->{NAME}, "$hash->{NAME} $attr $value");
+	}elsif($cmd eq 'del') {
+		# Anyway like it should be
+		return unless defined($oldValue);
+		delete $main::attr{$hash->{NAME}}{$attr};
+		setMessage($hash,$attr.'Del',"Attribute $attr deleted");
+		$main::defs{global}{init_errors} .= "\nFUIP device ".$hash->{NAME}.": Attribute $attr deleted";
+		main::addStructChange("deleteAttr", $hash->{NAME}, $attr);
+	};
+	
+	# Anything about systems changed, refresh model cache
+	if($attr =~ m/^backend_.*/ or $attr eq "defaultBackend") {
+		FUIP::Model::refresh($hash->{NAME});
+		setAttrListDevice($hash);
+	};
+
+};
+
+
+sub Notify($$){
+	my ($hash, $evtHash) = @_;
+	my $ownName = $hash->{NAME}; # own name / hash
+ 
+	my $devName = $evtHash->{NAME}; # Device that created the events
+	my $events = main::deviceEvents($evtHash, 1);
+	
+	# SAVE? Check whether user might have seen messages and remove them
+	if($devName eq "global" && grep(m/^SAVE$/, @{$events})) {
+		if($messagesSeen{$ownName}) {
+			delete $messages{$ownName};
+		};	
+	};
+
+	# Only INITIALIZED and REREADCFG from global	
+	return undef unless($devName eq "global" && grep(m/^INITIALIZED|REREADCFG$/, @{$events}));
+	
+	# The following is only for downward compatibility and to fix broken setups
+	
+	# Like in getSystems, but only backend_*-Attributes
+	# TODO: Probably getSystems will later be anyway like that
+	my %systems;
+	# are there backend_.* attributes?
+	for my $attrName (keys %{$main::attr{$hash->{NAME}}}) {
+		next unless $attrName =~ m/^backend_(.*)$/;
+		$systems{$1} = $main::attr{$hash->{NAME}}{$attrName};
+	};
+	
+	# If fhemwebUrl is defined
+	my $fhemweburl = main::AttrVal($hash->{NAME},"fhemwebUrl",undef);
+	if($fhemweburl) {
+	# 1. If there is already at least one backend_* Attribute
+		if(%systems) {
+	#    Check if the value of fhemwebUrl is in any of these
+			unless(grep {$_ eq $fhemweburl} values %systems) {
+	#    If yes, just remove it
+	#    If no: 
+	#         make sure that defaultBackend is set
+				attrLowLevel($hash,'set','defaultBackend',FUIP::Systems::getDefaultSystem($hash));
+	#         create a new backend_* Attribute with the value of fhemwebUrl
+				my $num = 0;
+				my $attrName = 'backend_old';
+				while(exists $main::attr{$hash->{NAME}}{$attrName}) {
+					$num++;
+					$attrName = 'backend_old'.$num;
+				};
+				attrLowLevel($hash,'set',$attrName,$fhemweburl);
+			};		
+		}else{
+	# 2. If there is no backend_* Attribute, but defaultBackend is set:
+	#    create a backend_* Attribute with systemid "home" and value of fhemwebUrl
+	#    set defaultBackend to "home"
+	#    remove fhemwebUrl
+	# 3. If there is no defaultBackend either
+	#    same as 2
+			attrLowLevel($hash,'set','backend_home',$fhemweburl);
+			attrLowLevel($hash,'set','defaultBackend','home');
+		};
+		attrLowLevel($hash,'del','fhemwebUrl');
+	}else{
+	# If there is no fhemwebUrl defined
+	# 1. If there is already at least one backend_* Attribute
+	#    Do nothing
+	# 2. If there is no backend_* Attribute, but defaultBackend is set:
+	#    create a backend_* Attribute with systemid "home" and value "local"
+	#    set defaultBackend to "home"
+	# 3. If there is no defaultBackend either
+	#    Do nothing
+		if(not %systems and exists $main::attr{$hash->{NAME}}{defaultBackend}) {
+			attrLowLevel($hash,'set','backend_home','local');
+			attrLowLevel($hash,'set','defaultBackend','home');
+		};
+	};	
+	
+	# If a backend_* Attribute is there, but defaultBackend is not set or set to a
+	# wrong system id
+	# Determine defaultBackend and set it explicitly
+	if(%systems) {
+		attrLowLevel($hash,'set','defaultBackend',FUIP::Systems::getDefaultSystem($hash));
+	};
+	
+	# remove longPollType
+	attrLowLevel($hash,'del','longPollType');
+	
+	# re-determine attribute list to remove longPollType and fhemwebUrl
+	setAttrListDevice($hash);
+	
+	#Avoid funny log entries
+	return undef;  
+};
+
 
 ##################
 sub Undef($$) {
@@ -238,11 +439,8 @@ sub Undef($$) {
 
 
 sub Attr ($$$$) {
-	my ( $cmd, $name, $attrName, $attrValue  ) = @_;
+	my ( $cmd, $name, $attrName, $attrValue ) = @_;
 	# if fhemwebUrl is changed, we need to refresh the buffer
-	if($attrName eq "fhemwebUrl") {
-		FUIP::Model::refresh($name);
-	};
 	if($cmd eq "set" and $attrName eq "pageWidth") {
 		if($attrValue < 100 or $attrValue > 2500) {
 			return "pageWidth must be a number between 100 and 2500";
@@ -257,6 +455,72 @@ sub Attr ($$$$) {
 		# "locked" changed -> remove "set" locks
 		delete $main::defs{$name}->{lockIPs};	
 	};
+	# defaultBackend set to a non-existing value?
+	if($cmd eq "set" and $attrName eq "defaultBackend") {
+		my $systems = FUIP::Systems::getSystems($main::defs{$name});
+		unless(defined($systems->{$attrValue})) {
+			return '"'.$attrValue.'" is not defined as a backend system. Set Attribute backend_'.$attrValue.' first.';
+		};
+	};
+	# Trying to delete the default backend?
+	if($cmd eq "del" and $attrName =~ m/^backend_(.*)$/) {
+		my $sysid = $1;
+		my $defaultSysid = main::AttrVal($name,"defaultBackend",undef);
+		if($defaultSysid and $sysid eq $defaultSysid) {
+			return 'You cannot delete the default backend "'.$sysid.'". Change or delete the attribute defaultBackend first.';
+		};
+	};	
+	
+	# Backends cannot be named "index" or "overview"
+	if($cmd eq "set" and $attrName =~ m/^backend_(index|overview)$/) {
+		return 'A backend system cannot be named "index" or "overview". Choose a different name.'
+	};	
+	
+	# When the first backend_.* attribute is introduced, we might have to make
+	# sure that the "old" stuff still works.
+	# I.e. if...
+	# - A backend_.* attribute is set and
+	# - defaultBackend is not set (yet) and
+	# - there are already pages 
+	# -> 
+	# Make sure that defaultBackend is set 
+	# If no backend-Attributes are set so far, make 
+	# sure that there is a "local" backend
+	if($main::init_done) {
+		if($cmd eq "set" and $attrName =~ m/^backend_(.*)$/ 
+				and not main::AttrVal($name,"defaultBackend",undef)
+				and $main::defs{$name}{pages} ) {
+			my $sysid = $1;
+			my $found = 0;
+			for my $attrName (keys %{$main::attr{$name}}) {
+				next unless $attrName =~ m/^backend_(.*)$/;
+				$found = 1;
+				last;
+			};	
+			if($found) {
+				#Make sure that the defaultBackend is kept
+			    attrLowLevel($main::defs{$name},'set','defaultBackend',FUIP::Systems::getDefaultSystem($main::defs{$name}));
+			}else{
+				#Make sure that we have a system with URL "local"
+				if($attrValue ne "local") {
+					#We are not creating the "local" system, do it now
+					if($attrName eq "backend_home") {
+						$sysid = "local";
+					}else{
+						$sysid = "home";
+					};	
+					attrLowLevel($main::defs{$name},'set','backend_'.$sysid,"local");
+				};		
+				attrLowLevel($main::defs{$name},'set','defaultBackend',$sysid);
+			};
+		};	
+	};
+	
+	# Anything about systems changed, refresh model cache
+	if($attrName =~ m/^backend_.*/ or $attrName eq "defaultBackend" or $attrName eq "backendNames") {
+		FUIP::Model::refresh($name);
+		main::InternalTimer( main::gettimeofday(), 'FUIP::setAttrListDevice', $main::defs{$name}, 0);
+	};
 	return undef;
 }
 
@@ -264,87 +528,6 @@ sub Attr ($$$$) {
 sub getCellMargin($) {
 	my $hash = shift;
 	return main::AttrVal($hash->{NAME},"cellMargin",5);	
-};
-
-
-sub createRoomsMenu($$) {
-	my ($hash,$pageid) = @_;
-	my $cell = FUIP::Cell->createDefaultInstance($hash);
-	$cell->{title} = "R&auml;ume";	
-	$cell->position(0,1);
-    # create a MenuItem view for each room
-	my @rooms = FUIP::Model::getRooms($hash->{NAME});
-	my $posY = 0; 
-	for my $room (@rooms) {
-		my $menuItem = FUIP::View::MenuItem->createDefaultInstance($hash);
-		$menuItem->{text} = $room;
-		$menuItem->{pageid} = "room/".$room;
-		$menuItem->{active} = "0";
-		my @parts = split('/',$pageid);
-		if(@parts > 1) {
-			if($parts[0] =~ /room|device/ and main::urlDecode($parts[1]) eq $room) {
-				$menuItem->{active} = "1";
-			};
-		};	
-		$menuItem->position(0,$posY);
-		my (undef,$h) = $menuItem->dimensions();
-		$posY += $h;  
-		push(@{$cell->{views}}, $menuItem);												
-	};
-	$cell->dimensions(1,undef);
-    return $cell;
-};
-
-
-sub addStandardCells($$$) {
-	my ($hash,$cells,$pageid) = @_;
-	# determine height of title line
-	# this gives more flexibility for baseHeight
-	# baseWidth is assumed something roughly around 140
-	my $baseHeight = main::AttrVal($hash->{NAME},"baseHeight",108);	
-	use integer;
-	my $titleHeight = 60 / $baseHeight;
-	$titleHeight += 1 if 60 % $baseHeight;
-	no integer;
-	# Home button
-	my $view = FUIP::View::HomeButton->createDefaultInstance($hash);
-	$view->{active} = ($pageid eq "home" ? 1 : 0);
-	$view->position(0,0);
-	my $homeCell = FUIP::Cell->createDefaultInstance($hash);
-	$homeCell->position(0,0);
-	$homeCell->dimensions(1,$titleHeight);
-	$homeCell->{views} = [ $view ];
-	$homeCell->{title} = "Home";
-	push(@$cells,$homeCell);
-	# Clock
-	my $clockView = FUIP::View::Clock->createDefaultInstance($hash);
-	$clockView->position(0,0);
-	# switch sizing of the clock to auto, e.g. to center it
-	$clockView->{sizing} = "auto";
-	$clockView->{defaulted}{sizing} = 0;
-	my $clockCell = FUIP::Cell->createDefaultInstance($hash);
-	$clockCell->position(6,0);
-	$clockCell->dimensions(1,$titleHeight);
-	$clockCell->{views} = [ $clockView ];
-	$clockCell->{title} = "Uhrzeit";
-	push(@$cells,$clockCell);
-	# Title cell
-	my $title = ($pageid eq "home" ? "Home, sweet home" : main::urlDecode(( split '/', $pageid )[ -1 ]));
-	$view = FUIP::View::Title->createDefaultInstance($hash);
-	$view->{text} = $title;
-	$view->{icon} = "oa-control_building_s_all" if $pageid eq "home";
-	$view->position(0,0);
-	my $titleCell = FUIP::Cell->createDefaultInstance($hash);
-	$titleCell->position(1,0);
-	$titleCell->dimensions(5,$titleHeight);
-	$titleCell->{views} = [ $view ];
-	$titleCell->{title} = $title;
-	push(@$cells,$titleCell);
-	# rooms menu
-	my $roomsMenu = createRoomsMenu($hash,$pageid);
-	# make sure rooms menu is under home button
-	$roomsMenu->position(0,$titleHeight);
-	push(@$cells,$roomsMenu);
 };
 
 
@@ -393,50 +576,8 @@ sub renderFuipInit($;$) {
 };
 
 
-sub getViewClassesSingle($$);  # recursion
-
-sub getViewClassesSingle($$) {
-	# get classes of one view. This might be a dialog or view template, so recursive
-	my ($view,$viewClasses) = @_;
-	# first the view itself
-	$viewClasses->{blessed($view)} = 1;
-	# is this a view template instance?
-	if(blessed($view) eq "FUIP::ViewTemplInstance") {
-		for my $subview (@{$view->{viewtemplate}{views}}) {
-			getViewClassesSingle($subview,$viewClasses);
-		};
-	};
-	# check whether the view has a popup, i.e. a component of type "dialog"
-	# which is actually switched on
-	my $viewStruc = $view->getStructure(); 
-	my $popupField;
-	for my $field (@$viewStruc) {
-		if($field->{type} eq "dialog") {
-			$popupField = $field;
-			last;
-		};	
-	};
-	return unless $popupField;
-	# if we have a default as "no popup", then we might not want a popup
-	if($popupField and exists($popupField->{default})) {
-		unless(exists($view->{defaulted}) and exists($view->{defaulted}{$popupField->{id}})
-				and $view->{defaulted}{$popupField->{id}} == 0) {
-			return;
-		};	
-	};
-	# now we know that there is a popup field 
-	# do we have a popup?
-	my $dialog = $view->{$popupField->{id}};
-	return if( not blessed($dialog) or not $dialog->isa("FUIP::Dialog"));
-	# ok, we have a dialog, get the classes of the views of the dialog
-	for my $subview (@{$dialog->{views}}) {
-		getViewClassesSingle($subview,$viewClasses);
-	};
-};
-
-
 sub getViewDependencies($$$) {
-	my ($hash,$pageId,$suffix) = @_;
+	my ($hash,$page,$suffix) = @_;
 	
 	# pageId might also be a dialog/viewtemplate instance
 	
@@ -449,38 +590,21 @@ sub getViewDependencies($$$) {
 	my $pattern = '(.*)\.('.$suffix.')$';
 	my $rex = qr/$pattern/;
 	
-	my %viewClasses;
-	if(blessed($pageId)){ # this should always have views
-		return unless exists $pageId->{views};
-		for my $view (@{$pageId->{views}}) {
-			getViewClassesSingle($view,\%viewClasses);		
-		};
-	}elsif(ref($pageId) eq "HASH") {
-		# in this case, the hash elements should contain something with views
-		# e.g. for view template overview
-		for my $elem (values %$pageId) {
-			next unless exists $elem->{views};
-			for my $view (@{$elem->{views}}) {
-				getViewClassesSingle($view,\%viewClasses);		
-			};			
-		};	
-	}else{
-		return unless exists $hash->{pages}{$pageId};
-		my $cells = $hash->{pages}{$pageId}{cells};
-		for my $cell (@{$cells}) {
-			for my $view (@{$cell->{views}}) {
-				getViewClassesSingle($view,\%viewClasses);
-			};
-		};
-	};
 	my %dependencies;
-	for my $class (keys %viewClasses) {
-		my $deps = $class->getDependencies($hash);
-		for my $dep (@$deps) {
-			next unless $dep =~ m/$rex/;
-			$dependencies{$dep} = 1;
-		};
-	};
+
+	# callback function to collect dependencies	
+	my $cb = sub ($) {
+				my ($view) = @_;
+				my $deps = $view->getDependencies($hash);
+				for my $dep (@$deps) {
+					next unless $dep =~ m/$rex/;
+					$dependencies{$dep} = 1;
+				};
+			};	
+	
+	# do this for all views
+	_traverseViewsOfPage($hash,$cb,$page);
+
 	my @result = sort keys %dependencies;
 	return \@result;
 };
@@ -491,6 +615,7 @@ sub renderHeaderHTML($$) {
 	my $dependencies = getViewDependencies($hash,$pageId,"js");
 	# common script parts
 	my $result = '<script src="'.urlBase($hash).'/fuip/js/fuip_common.js"></script>'."\n";
+	$result .= renderSystemsFunction($hash);					
 	for my $dep (@$dependencies) {
 		$result .= '<script src="'.urlBase($hash).'/fuip/'.$dep.'"></script>'."\n";
 	};
@@ -522,13 +647,14 @@ sub renderBackgroundImage($$){
 
 
 sub readTextFile($$) {
-	my ($hash,$filename) = @_;
-	my $forceLocal = 1;
-	if($filename =~ m/^remote:/) {
-		$forceLocal = 0;
-		$filename = substr($filename,7);
+	my ($hash,$locator) = @_;
+	# Filename starts with "<sysid>:" ?
+	my ($sysid,$filename) = split(/:/,$locator,2);
+	unless($filename) {
+		$sysid = 'local';
+		$filename = $locator;
 	};
-	return FUIP::Model::readTextFile($hash->{NAME},$filename,$forceLocal);
+	return FUIP::Model::readTextFile($hash->{NAME},$filename,$sysid);
 };
 
 
@@ -642,10 +768,11 @@ sub renderCommonCss($) {
 			<link rel="stylesheet" href="'.urlBase($hash).'/fuip/fonts/nesges.css" type="text/css" />'."\n";
 };
 
+
 sub renderFhemwebUrl($) {
 	my $hash = shift;
-	my $fhemweburl = main::AttrVal($hash->{NAME},"fhemwebUrl",undef);
-	if(not defined($fhemweburl)) {
+	my $fhemweburl = FUIP::Systems::getDefaultSystemUrl($hash);
+	if($fhemweburl eq 'local') {
 		# if we do not have an external fhem, then we might still 
 		# have a webname defined for the FHEMWEB device. In this 
 		# case, the default /fhem does not work either in FTUI
@@ -653,6 +780,44 @@ sub renderFhemwebUrl($) {
 	};
 	return '<meta name="fhemweb_url" content="'.$fhemweburl.'" />';
 };
+
+
+sub renderSystemsFunction($) {
+	my $hash = shift;
+	my $systems = FUIP::Systems::getSystems($hash);
+	
+	# getSystemUrl
+	my $result = '<script type="text/javascript">
+		ftui.getSystemUrl = function(sysid) {'."\n";
+	foreach my $sysid (sort keys %$systems) {
+		$result .= '    if(sysid == "'.$sysid.'"){'."\n";
+		if($systems->{$sysid} eq 'local') {
+			$result .= '    	return location.origin + "/'.substr($main::FW_ME,1).'";'."\n";
+		}else{
+			$result .= '        return "'.$systems->{$sysid}.'";'."\n";
+		};
+		$result .= '    };'."\n";			
+	};
+	# Always use the "default" connection as fallback
+	$result .= '    return ftui.config.fhemDir;'."\n";
+	$result .= '};'."\n";
+	
+	#getSystemIds
+	$result .= 'ftui.getSystemIds = function() {'."\n";	
+	$result .= '    return ["';
+	$result .= join('","',(sort keys %$systems));
+	$result .= '"];'."\n";
+	$result .= '};'."\n";	
+	
+	#getDefaultSystemId
+	$result .= 'ftui.getDefaultSystemId = function() {'."\n";
+	$result .= '    return "'.FUIP::Systems::getDefaultSystem($hash).'"'."\n";
+	$result .= '};'."\n";	
+	
+	$result .= '</script>'."\n";
+	return $result;
+};
+
 
 sub renderCommonMetas($) {
 	my $hash = shift;
@@ -678,6 +843,20 @@ sub renderToastSetting($) {
 	my $toast = main::AttrVal($hash->{NAME},"toastMessages",0);
 	return "" unless $toast;
 	return ' data-fuip-toast="'.$toast.'"';
+};
+
+
+# renderPageSysid
+# Renders sysid setting for the page-like entity
+# i.e. page, popup or viewtemplate
+sub renderPageSysid($;$) {
+	my ($page,$locked) = shift;
+	# only display?
+	return "" if $locked;
+	# might be called without a real page, e.g. by viewtemplate overview
+	return "" unless $page;  
+	my $sysid = $page->getSystem();
+	return ' data-sysid="'.$sysid.'"';
 };
 
 
@@ -713,7 +892,7 @@ sub renderPage($$$) {
 	my $layout = main::AttrVal($hash->{NAME},"layout","gridster");
   	my $result = 
 	   "<!DOCTYPE html>
-		<html data-name=\"".$hash->{NAME}."\"".($locked ? "" : " data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"".$layout."\"").renderToastSetting($hash).renderAutoReturn($page,$locked).">
+		<html data-name=\"".$hash->{NAME}."\"".($locked ? "" : " data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"".$layout."\"").renderToastSetting($hash).renderAutoReturn($page,$locked).renderPageSysid($page,$locked).">
 			<head>
 				".renderCommonMetas($hash)."
 				<meta name=\"widget_base_width\" content=\"".$baseWidth."\">
@@ -725,7 +904,7 @@ sub renderPage($$$) {
 					// when using browser back or so, we should reload
 					if(performance.navigation.type == 2){
 						location.reload(true);
-					};	
+					};
 				</script>
 				<title>".$title."</title>"
 				.'<link rel="stylesheet" href="'.urlBase($hash).'/lib/jquery.gridster.min.css" type="text/css">'
@@ -876,7 +1055,7 @@ sub renderPageFlexMaint($$) {
 	my $userScalable = main::AttrVal($hash->{NAME},"viewportUserScalable","no");
   	my $result = 
 	   "<!DOCTYPE html>
-		<html data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"flex\"".renderToastSetting($hash).renderAutoReturn($page,0).">
+		<html data-name=\"".$hash->{NAME}."\" data-pageid=\"".$currentLocation."\" data-editonly=\"".$hash->{editOnly}."\" data-layout=\"flex\"".renderToastSetting($hash).renderAutoReturn($page,0).renderPageSysid($page).">
 			<head>
 				".renderCommonMetas($hash)."
 				<script type=\"text/javascript\">
@@ -971,7 +1150,7 @@ sub findDialogFromFieldId($$$;$) {
 	# if the dialog maintenance is called, we can assume that the "popup"
 	# field is not defaulted (i.e. inactive) and that we need a dialog instance
 	if( not blessed($dialog) or not $dialog->isa("FUIP::Dialog")) {
-		$dialog = FUIP::Dialog->createDefaultInstance($hash);
+		$dialog = FUIP::Dialog->createDefaultInstance($hash,$view);
 		$view->{$popupName} = $dialog;
 		$view->{defaulted}{$popupName} = 0;
 	};		
@@ -1004,11 +1183,10 @@ sub renderPopupMaint($$) {
 		$result .= 'data-viewtemplate="'.$urlParams->{templateid}.'" ';
 	};	
 	$result .= "data-fieldid=\"".$urlParams->{fieldid}."\"
-				data-editonly=\"".$hash->{editOnly}."\"".renderToastSetting($hash).">
+				data-editonly=\"".$hash->{editOnly}."\"".renderToastSetting($hash).renderPageSysid($dialog).">
 			<head>
-	            <title>".$title."</title>"
-				.renderCommonCss($hash)
-				.'
+	            <title>".$title."</title>
+				".renderCommonCss($hash).'
 				<script type="text/javascript" src="'.urlBase($hash).'/lib/jquery.min.js"></script>
 		        <script type="text/javascript" src="'.urlBase($hash).'/fuip/jquery-ui/jquery-ui.min.js"></script>'.
 				'<link rel="stylesheet" href="'.urlBase($hash).'/fuip/jquery-ui/jquery-ui.css">
@@ -1085,7 +1263,7 @@ sub renderViewTemplateMaint($$) {
 	my $gridlines = undef;
 	if($templateid) {
 		if(not exists($hash->{viewtemplates}{$templateid})) {   
-			$hash->{viewtemplates}{$templateid} = FUIP::ViewTemplate->createDefaultInstance($hash);
+			$hash->{viewtemplates}{$templateid} = FUIP::ViewTemplate->createDefaultInstance($hash,$hash);
 			$hash->{viewtemplates}{$templateid}{id} = $templateid;
 		};
 		$viewtemplate = $hash->{viewtemplates}{$templateid};
@@ -1099,7 +1277,7 @@ sub renderViewTemplateMaint($$) {
   	my $result = 
 	   "<!DOCTYPE html>
 		<html data-name=\"".$hash->{NAME}."\" data-viewtemplate=\"".$templateid."\" 
-				data-editonly=\"".$hash->{editOnly}."\"".renderToastSetting($hash).">
+				data-editonly=\"".$hash->{editOnly}."\"".renderToastSetting($hash).renderPageSysid($viewtemplate).">
 			<head>
 				<script type=\"text/javascript\">
 					// when using browser back or so, we should reload
@@ -1249,285 +1427,6 @@ sub renderViewTemplateMaint($$) {
     return ("text/html; charset=utf-8", $result);
 };
 
-
-sub defaultPageIndex($) {
-	my ($hash) = @_;
-	my @cells;
-	# home button and rooms menu
-	addStandardCells($hash, \@cells, "home");
-	# get "room views" 
-	my @rooms = FUIP::Model::getRooms($hash->{NAME});
-	foreach my $room (@rooms) {
-		my $views = getDeviceViewsForRoom($hash,$room,"overview");
-		# we do not show empty rooms here
-		next unless @$views;
-		my @switches;
-		my @thermostats;
-		my @shutters;
-		my @others;  
-		for my $view (@$views) {
-			if($view->isa('FUIP::View::SimpleSwitch')) {
-				push(@switches,$view);
-			}elsif($view->isa('FUIP::View::Thermostat')) {	
-				push(@thermostats,$view);
-			}elsif($view->isa('FUIP::View::ShutterOverview')) {	
-				push(@shutters,$view);	
-			}else{
-				push(@others, $view);
-			};		
-		};
-		@$views = (@thermostats,@shutters);
-		if(@switches) {
-			if(@$views) {
-				my $spacer = FUIP::View::Spacer->createDefaultInstance($hash);
-				$spacer->dimensions(cellWidthToPixels($hash,2), 5);
-				push(@$views,$spacer);
-			};
-			push(@$views,@switches);
-		};
-		if(@others) {
-			if(@$views) {
-				my $spacer = FUIP::View::Spacer->createDefaultInstance($hash);
-				$spacer->dimensions(cellWidthToPixels($hash,2), 5);
-				push(@$views,$spacer);
-			};
-			push(@$views,@others);
-		};
-	    my $cell = FUIP::Cell->createDefaultInstance($hash);
-		$cell->{title} = $room;
-		$cell->{views} = $views;
-		$cell->applyDefaults();
-		$cell->dimensions(2,1);  #auto-arranging will fit the height
-		autoArrangeNewViews($cell);
-		push(@cells, $cell);
-	};
-	$hash->{pages}{"home"} = FUIP::Page->createDefaultInstance($hash);
-	$hash->{pages}{"home"}{cells} = \@cells;
-};
-
-
-sub defaultPageRoom($$){
-	my ($hash,$room) = @_;
-	my $pageid = "room/".$room;
-	$room = main::urlDecode($room);
-	my $viewsInRoom = getDeviceViewsForRoom($hash,$room,"room");
-	# sort devices by type
-	my @switches;
-	my @thermostats;
-	my @shutters;
-	my @states;  # i.e. STATE only
-	my @others;  
-	for my $view (@$viewsInRoom) {
-		if($view->isa('FUIP::View::SimpleSwitch')) {
-			push(@switches,$view);
-		}elsif($view->isa('FUIP::View::Thermostat')) {	
-			push(@thermostats,$view);
-		}elsif($view->isa('FUIP::View::ShutterControl')) {	
-			push(@shutters,$view);	
-		}elsif($view->isa('FUIP::View::STATE')) {	
-			push(@states,$view);		
-		}else{
-			push(@others, $view);
-		};		
-	};
-	# now render thermostats - shutters - switches (one cell only) - others - states (one cell only)
-	my @cells;
-	my $cell;
-	# create cells for thermostats and shutters 
-	for my $view (@thermostats) {
-		$cell = FUIP::Cell->createDefaultInstance($hash);
-		$cell->{views} = [$view];
-		$cell->{title} = "Heizung";
-		push(@cells,$cell);
-	};
-	for my $view (@shutters) {
-		$cell = FUIP::Cell->createDefaultInstance($hash);
-		$cell->{views} = [$view];
-		$cell->{title} = "Rollladen";
-		push(@cells,$cell);
-	};
-	# create one cell for all switches
-	if(@switches) {
-		$cell = FUIP::Cell->createDefaultInstance($hash);
-		$cell->{title} = "Lampen";
-		$cell->{views} = \@switches;
-		push(@cells,$cell);
-	};	
-	# create cells for "others"
-	for my $view (@others) {
-		$cell = FUIP::Cell->createDefaultInstance($hash);
-		$cell->{views} = [$view];
-		push(@cells,$cell);
-	};
-	# create one cell for all "STATE only"
-	if(@states) {
-		$cell = FUIP::Cell->createDefaultInstance($hash);
-		$cell->{title} = "Sonstige";
-		$cell->{views} = \@states;
-		push(@cells,$cell);
-	};	
-	# care for proper size of the cells
-	for $cell (@cells) { 
-		$cell->applyDefaults();
-		if($cell->{views}[0]->isa('FUIP::View::WeatherDetail') ||
-				$cell->{views}[0]->isa('FUIP::View::DwdWebLink') ||
-				$cell->{views}[0]->isa('FUIP::View::WebLink')){
-			$cell->dimensions(4,1);
-			autoArrangeNewViews($cell);
-			$cell->{views}[0]{sizing} = "auto";
-		}else{	
-			$cell->dimensions(2,1);
-			autoArrangeNewViews($cell);
-		};
-	};
-	# home button and rooms menu
-	addStandardCells($hash, \@cells, $pageid);
-	# add to pages
-	$hash->{pages}{$pageid} = FUIP::Page->createDefaultInstance($hash);
-	$hash->{pages}{$pageid}{cells} = \@cells;
-};
-
-
-sub defaultPageDevice($$$){
-    my ($hash,$room,$device) = @_;
-	my $pageid = "device/".$room."/".$device;
-	my @cells;
-	addStandardCells($hash, \@cells,$pageid);
-	my $deviceView = FUIP::View::ReadingsList->createDefaultInstance($hash);
-	$deviceView->{device} = $device;
-	my $cell = FUIP::Cell->createDefaultInstance($hash);
-	$cell->{views} = [$deviceView];
-	push(@cells, $cell);
-	$hash->{pages}{$pageid} = FUIP::Page->createDefaultInstance($hash);
-	$hash->{pages}{$pageid}{cells} = \@cells;
-};
-
-
-sub defaultPage($$){
-	#creates a default (almost empty) page
-	my ($hash,$pageId) = @_;
-	$hash->{pages}{$pageId} = FUIP::Page->createDefaultInstance($hash);
-	$hash->{pages}{$pageId}{cells} = [];
-};
-
-
-sub getDeviceView($$$){
-	my ($hash,$name, $level) = @_;
-	my $device = FUIP::Model::getDevice($hash->{NAME},$name,["TYPE","subType","state","chanNo","model"]);
-	return undef unless defined $device;
-	# don't show FileLogs or FHEMWEBs
-	# TODO: rooms and types to ignore could be configurable
-	return undef if($device->{Internals}{TYPE} =~ m/^(FileLog|FHEMWEB|at|notify|FUIP|HMUARTLGW|HMinfo|HMtemplate|DWD_OpenData)$/);
-	if($level eq "overview") {
-		return undef if($device->{Internals}{TYPE} =~ m/^(weblink|SVG|DWD_OpenData_Weblink)$/);
-	};
-	# we have something special for SYSMON
-	if($device->{Internals}{TYPE} eq "SYSMON" and not $level eq "overview") {
-		my $view = FUIP::View::Sysmon->createDefaultInstance($hash);
-		$view->{device} = $name;
-		return $view;
-	};
-	# don't show HM485 devices, only channels
-	if($device->{Internals}{TYPE} eq "HM485") {
-		return undef unless $device->{Internals}{chanNo};
-	};	
-	my $subType = (exists($device->{Attributes}{subType}) ? $device->{Attributes}{subType} : "none");
-	# subType "key" does not make that much sense 
-	return undef if($subType eq "key");
-	my $model = (exists($device->{Attributes}{model}) ? $device->{Attributes}{model} : "none");
-	# TODO: Does subType "heating" exist at all?
-	if($subType eq "heating" or 
-		$device->{Internals}{TYPE} eq "CUL_HM" and defined($device->{Internals}{chanNo}) 
-			and ( $model eq "HM-CC-RT-DN" and $device->{Internals}{chanNo} eq "04"
-			   or $model eq "HM-TC-IT-WM-W-EU" and $device->{Internals}{chanNo} eq "02" )){
-		my $view = FUIP::View::Thermostat->createDefaultInstance($hash);
-		$view->{device} = $name;
-		if($level eq 'overview') {
-			$view->{readonly} = "on";
-			$view->{defaulted}{readonly} = 0;
-			return $view;
-		}else{
-			$view->{size} = "big";	
-			$view->{defaulted}{size} = 0;
-			return $view;
-		};	
-	};
-	# weather (PROPLANTA)
-	if($device->{Internals}{TYPE} eq "PROPLANTA") {
-		if($level eq "overview") {
-			my $view = FUIP::View::WeatherOverview->createDefaultInstance($hash);
-			$view->{device} = $name;
-			$view->{sizing} = "resizable";
-			$view->{defaulted}{sizing} = 0;
-			$view->{width} = 80;
-			$view->{height} = 70;
-			$view->{layout} = "small";
-			$view->{defaulted}{layout} = 0;
-			return $view;
-		}else{
-			my $view = FUIP::View::WeatherDetail->createDefaultInstance($hash);
-			$view->{device} = $name;
-			$view->{sizing} = "resizable";
-			$view->{defaulted}{sizing} = 0;
-			$view->{width} = 560;
-			$view->{height} = 335;
-			return $view;
-		};	
-	};
-    my $view;
-	# weblink -> no...
-	# general weblinks seem to be too dangerous. E.g. the usual DWD-weblink destroys the flex layout
-	if($device->{Internals}{TYPE} eq "weblink"){
-		return undef;
-		#$view = FUIP::View::WebLink->createDefaultInstance($hash);
-		#$view->{device} = $name;
-		#$view->{sizing} = "resizable";
-		#$view->{defaulted}{sizing} = 0;
-		#$view->{width} = 600;
-		#$view->{height} = 300;
-		#return $view;
-	};
-	# DWD_OpenData_Weblink
-	if($device->{Internals}{TYPE} eq "DWD_OpenData_Weblink"){
-		$view = FUIP::View::DwdWebLink->createDefaultInstance($hash);
-		$view->{device} = $name;
-		$view->{sizing} = "resizable";
-		$view->{defaulted}{sizing} = 0;
-		$view->{width} = 600;
-		$view->{height} = 175;
-		return $view;
-	};
-	# TODO: Does subType "shutter" exist at all?
-	if($subType =~ /^(shutter|blind)$/){
-		if($level eq 'overview') {
-			$view = FUIP::View::ShutterOverview->createDefaultInstance($hash);
-		}else{
-			$view = FUIP::View::ShutterControl->createDefaultInstance($hash);
-		};	
-	}else{
-		my $state = (exists($device->{Readings}{state}) ? $device->{Readings}{state} : 0);
-		if($state eq "on" or $state eq "off") {
-			$view = FUIP::View::SimpleSwitch->createDefaultInstance($hash);
-		}else{
-			$view = FUIP::View::STATE->createDefaultInstance($hash);
-		};
-	};	
-	$view->{device} = $name;
-	return $view;
-}
-
-
-sub getDeviceViewsForRoom($$$) {
-	my ($hash,$room,$level) = @_;
-	my @views;
-	my $devices = FUIP::Model::getDevicesForRoom($hash->{NAME},$room);
-	foreach my $d (@$devices) {
-		my $deviceView = getDeviceView($hash,$d,$level);
-		next unless $deviceView;
-		push(@views,$deviceView);
-	};
-	return \@views;
-};
 
 sub findPositions($$;$); # forward declaration as it calls itself
 
@@ -1961,30 +1860,6 @@ sub FW_setPositionsAndDimensions($$$) {
 };
 
 
-sub createPage($$) {
-	# creates a new page
-	# there is no check whether the page exists, i.e. might be overwritten
-	my ($hash,$pageid) = @_;
-	if($pageid eq "home"){
-		defaultPageIndex($hash);
-	}else{
-		my @path = split(/\//,$pageid);
-		if($path[0] eq "room" and defined($path[1])) {
-			shift(@path);
-			defaultPageRoom($hash,join("/",@path));
-		}elsif($path[0] eq "device" and defined($path[1]) and defined($path[2])){
-			shift(@path);
-			my $room = shift(@path);
-			# we need to put the paths together again in case there are further "/"
-			# this is in principle rubbish but we need to avoid crashes
-			defaultPageDevice($hash,$room,join("/",@path));
-		}else{		
-			defaultPage($hash,$pageid);
-		};
-	};		
-};
-
-
 sub decodePageid($$) {
 	# for weird characters in page names etc., URLs are encoded
 	# and the page keys also need to be stored encoded. However, 
@@ -2016,9 +1891,21 @@ sub getFuipPage($$) {
 	# if not locked, this would mean very bad performance for e.g. value help for devices
 	FUIP::Model::refresh($hash->{NAME}) if($locked);
 	
-	# "" goes to "home" 
+	#If no page is explicitly given, determine default page
+	# - If there is already a page "home", but no system called "home",
+    #   then use "home" as default (this is for the case where the "home"
+    #   page already exists and is not directly connected to a system
+	# - If there is only one system, use its system id as default page
+    # - Multiple systems: default page is "overview"	
 	if(not defined($pageid) or $pageid eq "") {
-		$pageid = "home";
+		my $systems = FUIP::Systems::getSystems($hash);
+		if(defined($hash->{pages}{home}) and not defined($systems->{home})) {
+			$pageid = "home";
+		}elsif(scalar(keys %$systems) == 1) {
+			$pageid = FUIP::Systems::getDefaultSystem($hash);
+		}else{
+			$pageid = "overview";
+		};
 	};	
 
 	# see comment in decodePageid
@@ -2029,9 +1916,9 @@ sub getFuipPage($$) {
 	# do we need to create the page?
 	if(not defined($hash->{pages}{$pageid})) {
 		return("text/plain; charset=utf-8", "FUIP page $pageid does not exist") if($locked);
-		createPage($hash,$pageid);
+		FUIP::Generator::createPage($hash,$pageid);
 		# add a cell, as otherwise it cannot be maintained
-		push(@{$hash->{pages}{$pageid}{cells}},FUIP::Cell->createDefaultInstance($hash)) unless @{$hash->{pages}{$pageid}{cells}};
+		push(@{$hash->{pages}{$pageid}{cells}},FUIP::Cell->createDefaultInstance($hash,$hash->{pages}{$pageid})) unless @{$hash->{pages}{$pageid}{cells}};
 	};
 	# ok, we can render this	
 	if(main::AttrVal($hash->{NAME},"layout","gridster") eq "flex") {
@@ -2162,13 +2049,14 @@ sub settingsImport($$) {
 			$dialog->{width} =  $newObject->{width};
 			$dialog->{height} =  $newObject->{height};
 		};
+		# parent stays like it is
 	}elsif($targettype eq "cell") {
 		# importing as a cell
 		# This always creates a new cell
 		# If we come from a dialog, we need to convert sizes
 		if($class eq "FUIP::Dialog") {
 			my $dialog = $newObject;
-			$newObject = FUIP::Cell->createDefaultInstance($hash);
+			$newObject = FUIP::Cell->createDefaultInstance($hash,$hash->{pages}{$urlParams->{pageid}});
 			$newObject->{views} = $dialog->{views};
 			$newObject->{title} = $dialog->{title};
 			$newObject->{defaulted} = $dialog->{defaulted};
@@ -2186,6 +2074,7 @@ sub settingsImport($$) {
 		push(@{$hash->{pages}{$urlParams->{pageid}}{cells}},$newObject);
 	}elsif($targettype eq "page"){
 		$hash->{pages}{$urlParams->{pageid}} = $newObject;
+		$newObject->setParent($hash);
 	}elsif($targettype eq "viewtemplate") {
 		# make sure to use a new name
 		my $id = $newObject->{id};
@@ -2196,6 +2085,7 @@ sub settingsImport($$) {
 		};
 		$newObject->{id} = $id;
 		$hash->{viewtemplates}{$id} = $newObject;
+		$newObject->setParent($hash);
 		return ("text/plain; charset=utf-8", "OK".$id);
 	};	
 	return("text/plain; charset=utf-8", "OK");
@@ -2311,12 +2201,7 @@ sub CGI_inner($) {
 	# very special logic for tablet-ui kernel
 	if($path[0] ne "fuip" and ( $path[-1] eq "fhem-tablet-ui.js")) {
 		unshift(@path,"fuip");
-		my $longpolltype = main::AttrVal($name,"longPollType","websocket");
-		if($longpolltype eq 'ajax') {
-			$path[-1] = "fuip_tablet_ui_longpoll.js";  
-		}else{
-			$path[-1] = "fuip_tablet_ui.js";
-		};
+		$path[-1] = "fuip_tablet_ui_multifhem.js";  		
 	};	
 	
 	# special logic for weatherdetail and readingsgroup
@@ -2325,6 +2210,7 @@ sub CGI_inner($) {
 								$path[-1] eq "widget_dwdweblink.js" or
 								$path[-1] eq "widget_dwdweblink.css" or
 								$path[-1] eq "widget_readingsgroup.js" or 
+								$path[-1] eq "widget_chart.js" or 
 								$path[-1] eq "widget_fuip_wdtimer.js" or
 								$path[-1] eq "widget_fuip_wdtimer.css" or
 								$path[-1] eq "widget_fuip_colorwheel.js" or
@@ -2411,7 +2297,17 @@ sub CGI($) {
 	# the following avoids the FHEMWEB overhead (like f18 style data)
 	# and allows for own control over HTTP headers etc.
 	my ($request) = @_;   # /$infix/filename
-	my ($rettype, $data) = CGI_inner($request); 
+	my ($rettype, $data);
+
+	eval {
+		($rettype, $data) = CGI_inner($request); 
+		1;
+	} or do {
+		my $ex = $@;
+		FUIP::Exception::log($ex);
+		$rettype = "text/html; charset=utf-8";
+		$data = FUIP::Exception::getErrorPage($ex);
+	};
 	finishCgiAnswer($rettype, $data);
 	return (undef,undef);
 };	
@@ -2546,8 +2442,17 @@ sub fhemwebShowDetail($$$) {
 	my ($fwName, $name, $roomName) = @_;
 	my $hash = $main::defs{$name};
 	my $message = checkCrashedMessage($hash);
-	return "" unless $message;
-	return "<div style='color:red'>".$message."</div>";
+	my $messages = getMessages($hash);
+	unshift(@$messages,$message) if $message;
+	return undef unless @$messages;
+	# we assume that the user has seen the messages
+	$messagesSeen{$name} = 1;
+	my $result = "<table class='block wide'>";
+	for $message (@$messages) {
+		$result .= "<tr><td style='color:red'>".$message."</td></tr>";
+    };	
+	$result .= "</table>";
+	return $result;
 };
 
 
@@ -2692,6 +2597,7 @@ sub load($;$) {
 		delete($conf->{class});
 		$hash->{viewtemplates}{$id} = $class->reconstruct($conf,$hash);
 		$hash->{viewtemplates}{$id}{id} = $id;
+		$hash->{viewtemplates}{$id}->setParent($hash);
 	};
 	# now the pages
 	for my $pageid (keys %$cPages) {
@@ -2699,6 +2605,7 @@ sub load($;$) {
 		my $class = $pageConf->{class}; # This allows for other page-implementations (???)
 		delete($pageConf->{class});
 		$hash->{pages}{$pageid} = $class->reconstruct($pageConf,$hash);
+		$hash->{pages}{$pageid}->setParent($hash);
 	};
 	# there might be view templates, which use other view templates, but "reconstructed"
 	# in opposite order...
@@ -2721,7 +2628,9 @@ sub cloneView($) {
 	my $conf = eval($view->serialize());
 	my $class = $conf->{class}; 
 	delete($conf->{class});
-	return $class->reconstruct($conf,$view->{fuip});
+	my $result = $class->reconstruct($conf,$view->{fuip});
+	$result->setParent($view->{parent});
+	return $result;
 };
 
 
@@ -2792,7 +2701,8 @@ sub setViewSettings($$$$;$) {
 		if($newclass =~ m/^FUIP::VTempl::(.*)$/) {
 			$newView = $hash->{viewtemplates}{$1}->createTemplInstance($hash);  # makes a ViewTemplInstance
 		}else{
-			$newView = $newclass->createDefaultInstance($hash);
+			# Set the fuip instance as parent here. This will be fixed later
+			$newView = $newclass->createDefaultInstance($hash,$hash);
 		};	
 		if(defined($viewlist->[$viewindex])) {
 			my $oldView = $viewlist->[$viewindex];
@@ -2859,6 +2769,8 @@ sub setViewSettings($$$$;$) {
 							},[],$h,$prefix);
 		};
 	};
+	# parents need to be refreshed
+	$view->setAsParent();
 };
 
 
@@ -3057,8 +2969,9 @@ sub _setConvert($$) {
 	my $msg = _checkViewTemplateId($templateid);
 	return $msg if $msg;
 	# create new view template
-	$hash->{viewtemplates}{$templateid} = FUIP::ViewTemplate->createDefaultInstance($hash);
+	$hash->{viewtemplates}{$templateid} = FUIP::ViewTemplate->createDefaultInstance($hash,$hash);
 	$hash->{viewtemplates}{$templateid}{id} = $templateid;
+	$hash->{viewtemplates}{$templateid}->setParent($hash);
 	# create a deep copy of the cell
 	my $instanceStr = $origin->serialize();
 	my $instance = "FUIP::Cell"->reconstruct(eval($instanceStr),$hash);
@@ -3214,7 +3127,7 @@ sub _innerSet($$$)
 		#get page id
 		my $pageId = (exists($a->[2]) ? $a->[2] : "");
 		return "\"set viewaddnew\": page ".$pageId." does not exist" unless defined $hash->{pages}{$pageId};
-		my $newCell = FUIP::Cell->createDefaultInstance($hash);
+		my $newCell = FUIP::Cell->createDefaultInstance($hash,$hash->{pages}{$pageId});
 		$newCell->{region} = $a->[3] if($a->[3]);	
 		push(@{$hash->{pages}{$pageId}{cells}},$newCell);
 	}elsif($cmd eq "pagedelete") {
@@ -3234,11 +3147,18 @@ sub _innerSet($$$)
 		return $oldCellId unless(defined($oldPageId));
 		return "\"set cellcopy\": needs a target page id" unless exists($a->[3]);
 		my $newPageId = $a->[3];
-		createPage($hash,$newPageId) unless defined $hash->{pages}{$newPageId};
-		my $newCell = cloneView($hash->{pages}{$oldPageId}{cells}[$oldCellId]);
+		FUIP::Generator::createPage($hash,$newPageId) unless defined $hash->{pages}{$newPageId};
+		my $oldCell = $hash->{pages}{$oldPageId}{cells}[$oldCellId];
+		my $newCell = cloneView($oldCell);
 		delete $newCell->{posX};
 		delete $newCell->{posY};
 		push(@{$hash->{pages}{$newPageId}{cells}},$newCell);
+		$newCell->setParent($hash->{pages}{$newPageId});
+		#Make system id explicit, if it was "inherit" and would change
+		if(not defined($oldCell->{sysid}) or $oldCell->{sysid} eq '<inherit>') {
+			my $oldSysid = $oldCell->getSystem();
+			$newCell->{sysid} = $oldSysid unless $oldSysid eq $newCell->getSystem();
+        };
 	}elsif($cmd eq "pagesettings") {	
 		# get page id
 		my $pageId = $a->[2]; 
@@ -3257,6 +3177,12 @@ sub _innerSet($$$)
 			splice(@{$oldCell->{views}},$h->{viewid},1);
 			# put view into new cell 
 			push(@{$newCell->{views}},$container);
+			$container->setParent($newCell);
+			#Make system id explicit, if it was "inherit" and would change
+			if(not defined($container->{sysid}) or $container->{sysid} eq '<inherit>') {
+				my $oldSysid = $oldCell->getSystem();
+				$container->{sysid} = $oldSysid unless $oldSysid eq $newCell->getSystem();
+            };
 		};
 	}elsif($cmd eq "autoarrange") {
 		my $container = _getContainerForCommand($hash,$h);
@@ -3292,7 +3218,15 @@ sub _innerSet($$$)
 
 sub Set($$$) {
 	my ( $hash, $a, $h ) = @_;
-	my $result = _innerSet($hash,$a,$h);
+	my $result = undef;
+	eval {	
+		$result = _innerSet($hash,$a,$h);
+		1;
+	} or do {
+		my $ex = $@;
+		FUIP::Exception::log($ex);
+		$result = FUIP::Exception::getShortText($ex);
+	};
 	return $result if $result;  # error message
 	my $cmd = $a->[1]; # this exists, otherwise _innerSet returns error
 	return undef if $cmd =~ m/^(save|load|lock|unlock)$/;  # no auto-save for save and load
@@ -3341,13 +3275,12 @@ sub _toJson($){
 };
 
 
-sub _getDeviceList($) {
-	my ($name) = @_;
+sub _getDeviceList($$) {
+	my ($name,$sysid) = @_;
 	my $result = [];
-	
-	my $keys = FUIP::Model::getDeviceKeys($name);
+	my $keys = FUIP::Model::getDeviceKeys($name,$sysid);
 	for my $key (sort { lc($a) cmp lc($b) } @$keys) {
-		my $device = FUIP::Model::getDevice($name,$key,["TYPE","room","alias"]);
+		my $device = FUIP::Model::getDevice($name,$key,["TYPE","room","alias"],$sysid);
 		push(@$result, {
 			NAME => $key,
 			TYPE => $device->{Internals}{TYPE},
@@ -3355,6 +3288,24 @@ sub _getDeviceList($) {
 			alias => $device->{Attributes}{alias}
 			});
 	};
+	return $result;
+};
+
+
+sub keyToString($) {
+	my $key = shift;
+	my $result = $key->{type}.':';
+	if($key->{type} eq "page") { 
+		$result .= $key->{pageid};
+	}elsif($key->{type} eq 'cell') {
+		$result .= $key->{cellid};
+	}elsif($key->{type} eq 'dialog') {
+		$result .= $key->{fieldid};
+	}elsif($key->{type} eq 'viewtemplate') {
+		$result .= $key->{templateid};
+	}elsif($key->{type} eq 'view') {
+		$result .= $key->{viewid};
+	};	
 	return $result;
 };
 
@@ -3386,6 +3337,9 @@ sub _traverseViews($$;$$) {
 		};
 		return;
 	};	
+	
+	# main::Log3(undef,1,"Traversing ".keyToString($startkey));
+	
 	my $key = { %$startkey };
 	# traverse single page
 	if($startkey->{type} eq "page") { 
@@ -3410,6 +3364,7 @@ sub _traverseViews($$;$$) {
 		&$func($key,$startobj);
 		# check for dialogs (popups)
 		for my $fieldname (keys %$startobj) { 
+			next if $fieldname eq 'parent';
 			next unless blessed($startobj->{$fieldname}) and $startobj->{$fieldname}->isa("FUIP::Dialog");
 			$key->{type} = "dialog";
 			if($key->{fieldid}) {
@@ -3422,6 +3377,52 @@ sub _traverseViews($$;$$) {
 		};
 	};	
 };
+
+
+# simplified form to traverse views of the currently rendered "thing",
+# usually called the current page, even if it is a dialog, view template
+# or the whole set of view templates
+# It does not use the "key" part of the callback, as this is anyway not
+# really clean
+sub _traverseViewsOfPage($$$) {
+	my ($hash,$func,$page) = @_;
+	my $key = {};
+	
+	# define callback for the normal _traverse function
+	my $cb; # recursion
+	$cb = sub ($$) {
+				my ($key, $view) = @_;
+				&$func($view);
+				# also deep-dive into template instances
+				if(blessed($view) eq "FUIP::ViewTemplInstance") {
+					my $instance = $view->getInstantiated();
+					$key->{type} = "view";
+					my $views = $instance->{views};
+					for my $viewid (0..$#$views) {
+						my $subview = $views->[$viewid];
+						$key->{viewid} = $viewid;
+						_traverseViews($hash,$cb,$key,$subview);
+					};
+				};	
+			};
+	
+	if(blessed($page)){ # dialog or view template
+		$key->{type} = 'dialog';  # does not really matter here
+		_traverseViews($hash,$cb,$key,$page);
+	}elsif(ref($page) eq "HASH") { # view template overview
+		# in this case, the hash elements should contain something with views
+		# e.g. for view template overview
+		$key->{type} = 'viewtemplate';
+		for my $elem (values %$page) {
+			_traverseViews($hash,$cb,$key,$elem);
+		};	
+	}else{ # should be a page id
+		return unless exists $hash->{pages}{$page};
+		$key->{type} = 'page';
+		_traverseViews($hash,$cb,$key,$hash->{pages}{$page});
+	};
+};
+
 
 
 sub _getWhereUsedList($$;$); # recursion
@@ -3696,7 +3697,6 @@ sub renderDocu($) {
 		};
 		$result .= '<p style="clear:left;height:0em;">
 			<ul>';
-		my $fields = $view->getStructure();
 		for my $field (@$fields) {
 			# next if $field->{id} =~ /^(class|title|label|sizing|popup)$/;
 			next if $field->{type} =~ /^(dimension|flexfields)$/;
@@ -3755,11 +3755,13 @@ sub Get($$$)
 		};	
 	}elsif($opt eq "viewsByDevices") {
 		my @views;
-		foreach my $i (2 .. $#{$a}) {
-			my $view = getDeviceView($hash, $a->[$i],"overview");
+		# format is "get viewsByDevices <sysid> <device> <device> ..."
+		foreach my $i (3 .. $#{$a}) {
+			my $view = FUIP::Generator::getDeviceView($hash, $a->[$i],"overview",$a->[2]);
 			if(not defined($view)) {
-				$view = FUIP::View::STATE->createDefaultInstance($hash);
+				$view = FUIP::View::STATE->createDefaultInstance($hash,$hash);
 				$view->{device} = $a->[$i];
+				$view->{sysid} = $a->[2];
 			};			
 			$view->applyDefaults();
 			push(@views,$view->getConfigFields());
@@ -3776,12 +3778,15 @@ sub Get($$$)
 		my $page = $hash->{pages}{$pageId};	
 		return _toJson($page->getConfigFields());			
 	}elsif($opt eq "devicelist"){
-		return _toJson(_getDeviceList($hash->{NAME}));
-	}elsif($opt eq "readingslist") {
 		# TODO: check if $a->[2] exists
-		return _toJson(FUIP::Model::getReadingsOfDevice($hash->{NAME},$a->[2]));
+		return "\"get devicelist\" needs a system id" unless(defined($a->[2]));
+		return _toJson(_getDeviceList($hash->{NAME},$a->[2]));
+	}elsif($opt eq "readingslist") {
+		# TODO: check if $a->[2] and $a->[3] exists
+		return _toJson(FUIP::Model::getReadingsOfDevice($hash->{NAME},$a->[2],$a->[3]));
 	}elsif($opt eq "sets") {
-		return _toJson(FUIP::Model::getSetsOfDevice($hash->{NAME},$a->[2]));
+		# TODO: check if $a->[2] and $a->[3] exists
+		return _toJson(FUIP::Model::getSetsOfDevice($hash->{NAME},$a->[2],$a->[3]));
 	}elsif($opt eq "docu") {
 		return _getDocu($hash,$a->[2]);
 	}else{
@@ -3819,29 +3824,29 @@ sub Get($$$)
 
 =begin html_DE
 
-<a name="FUIP"></a>
+<a id="FUIP"></a>
 <h3>FUIP</h3>
 <ul>
   Definiert ein "FHEM User Interface Painter Device" (FUIP Device), welches ein "FUIP Frontend" repr&auml;sentiert. D.h. wenn man FUIP nutzen will, muss man mindestens ein FUIP Device anlegen.	
   <br><br>
 
-  <a name="FUIPdefine"></a>
+  <a id="FUIP-define"></a>
   <b>Define</b><br>
   <code>define &lt;name&gt; FUIP</code><br>
 	Mehr ist hier nicht notwendig, alles andere wird &uuml;ber Attribute und set-Kommandos bzw. Klickibunti und M&auml;useschubsen gemacht.
   <br><br>
-  <a name="FUIPset"></a>
+  <a id="FUIP-set"></a>
   <b>Set</b>
   <ul>
-  	<li><a name="save">save</a>: Speichern des aktuellen Zustands der Oberfl&auml;che<br>
+  	<li><a id="FUIP-set-save">save</a>: Speichern des aktuellen Zustands der Oberfl&auml;che<br>
 	Das Kommando <code>set...save</code> speichert den momentanen Bearbeitungszustand der Oberfl&auml;che. Dies beinhaltet alles, was man per Klickibunti und M&auml;useschubsen macht, aber nicht die Einstellungen in der FHEMWEB-Oberfl&auml;che. Die FUIP-Oberfl&auml;che wird in einer Datei namens "FUIP_&lt;name&gt;.cfg" gespeichert, wobei &lt;name&gt; der Name des FUIP-Device ist. Normalerweise liegt diese Datei im Verzeichnis "/opt/fhem/FHEM/lib/FUIP/config". 	
 	<br>Zus&auml;tzlich zum expliziten <code>set...save</code> gibt es noch einen Autosave-Mechanismus. Die entstehenden Dateien k&ouml;nnen einfach per <code>set...load</code> geladen werden.</li>
 
-	<li><a name="load">load</a>: Laden eines zuvor gespeicherten Zustands der Oberfl&auml;che<br>
+	<li><a id="FUIP-set-load">load</a>: Laden eines zuvor gespeicherten Zustands der Oberfl&auml;che<br>
 	Das Kommando <code>set...load</code> akzeptiert einen Parameter, &uuml;ber den angegeben werden kann, ob man die normal abgespeicherte Konfiguration laden will ("lastSaved" oder einfach leer lassen) oder eine der Autosave-Dateien.
 	FUIP speichert jede &Auml;nderung automatisch ab. Dadurch entstehen für jedes FUIP-Device bis zu 5 Autosave-Dateien, die bei <code>set...load</code> ausgew&auml;hlt werden k&ouml;nnen. </li>
 	
-	<li><a name="lock">lock</a>: Sperren der Oberfl&auml;che gegen &Auml;nderungen<br>
+	<li><a id="FUIP-set-lock">lock</a>: Sperren der Oberfl&auml;che gegen &Auml;nderungen<br>
 	Der Befehl <code>set...lock</code> sperrt die Oberfl&auml;che vor&uuml;bergehend gegen &Auml;nderungen, w&auml;hrend das Attribut <code>locked</code> (noch) nicht gesetzt ist (oder explizit auf "0"), bzw. sperrt die Oberfl&auml;che wieder, nachdem sie mit <code>set...unlock</code> vor&uuml;bergehend in den &Auml;nderungsmodus geschaltet wurde.<br>
 	Als weiteren Parameter kann man entweder "client", "all" oder eine IP-Adresse angeben: 
 	<ul>
@@ -3851,7 +3856,7 @@ sub Get($$$)
 		<li>Wird <code>set...lock</code> ohne weiteren Parameter aufgerufen, dann h&auml;ngt die Wirkung vom Attribut <code>locked</code> ab. Ist <code>locked=1</code>, dann ist der Default wie "all". Ansonsten ist der Default wie "client".</li> 
 	</ul>		
 	</li>
-	<li><a name="unlock">unlock</a>: Die Oberfl&auml;che in den &Auml;nderungsmodus schalten<br>
+	<li><a id="FUIP-set-unlock">unlock</a>: Die Oberfl&auml;che in den &Auml;nderungsmodus schalten<br>
 	Der Befehl <code>set...unlock</code> schaltet die Oberfl&auml;che vor&uuml;bergehend in den &Auml;nderungsmodus, w&auml;hrend das Attribut <code>locked</code> (schon) auf "1" gesetzt ist, bzw. entsperrt die Oberfl&auml;che wieder, nachdem sie mit <code>set...lock</code> vor&uuml;bergehend in den Anzeigemodus geschaltet wurde.<br>
 	Als weiteren Parameter kann man entweder "client", "all" oder eine IP-Adresse angeben: 
 	<ul>
@@ -3861,42 +3866,56 @@ sub Get($$$)
 		<li>Wird <code>set...unlock</code> ohne weiteren Parameter aufgerufen, dann h&auml;ngt die Wirkung vom Attribut <code>locked</code> ab. Ist <code>locked=1</code>, dann ist der Default wie "client". Ansonsten ist der Default wie "all".</li> 
 	</ul>		
 	</li>	
-	<li><a name="pagedelete">pagedelete</a>: FUIP-Seiten l&ouml;schen<br>
+	<li><a id="FUIP-set-pagedelete">pagedelete</a>: FUIP-Seiten l&ouml;schen<br>
 	FUIP-Seiten k&ouml;nnen nicht &uuml;ber die Frontend-Bearbeitung gel&ouml;scht werden. Au&szlig;erdem kann es schnell passieren, dass man eine FUIP-Seite aus Versehen anlegt. Diese k&ouml;nnen dann per <code>set...pagedelete</code> gel&ouml;scht werden.<br>
 	Das L&ouml;schen einer Seite ist eine &Auml;nderung des Frontends und muss mit <code>set...save</code> explizit gespeichert werden.
 	</li>	
-	<li><a name="refreshBuffer">refreshBuffer</a>: Device-Puffer l&ouml;schen<br>
-	FUIP verwendet Informationen aus dem "eigentlichen" FHEM, wie z.B. die Liste aller Devices sowie bestimmte Readings, Internals und Attribute. Insbesondere bei "entferntem" FUIP, also bei Verwendung des Attributs fhemwebUrl, kann die Ermittlung dieser Daten l&auml;nger dauern. Daher wird praktisch alles durch FUIP zwischengespeichert ("gepuffert"). Wenn man nun neue Devices anlegt bzw. bestehende Devices &auml;ndert, dann bekommt das FUIP-Device davon unter Umst&auml;nden nichts mit. In so einem Fall kann man mit <code>set...refreshBuffer</code> den Zwischenspeicher l&ouml;schen, um FUIP dazu zu zwingen, die Informationen erneut zu ermitteln.<br>
+	<li><a id="FUIP-set-refreshBuffer">refreshBuffer</a>: Device-Puffer l&ouml;schen<br>
+	FUIP verwendet Informationen aus dem "eigentlichen" FHEM, wie z.B. die Liste aller Devices sowie bestimmte Readings, Internals und Attribute. Insbesondere bei "entferntem" FUIP, also bei Verwendung der backend_-Attribute, kann die Ermittlung dieser Daten l&auml;nger dauern. Daher wird praktisch alles durch FUIP zwischengespeichert ("gepuffert"). Wenn man nun neue Devices anlegt bzw. bestehende Devices &auml;ndert, dann bekommt das FUIP-Device davon unter Umst&auml;nden nichts mit. In so einem Fall kann man mit <code>set...refreshBuffer</code> den Zwischenspeicher l&ouml;schen, um FUIP dazu zu zwingen, die Informationen erneut zu ermitteln.<br>
 	Im Anzeigemodus (also Attribut locked=1 oder <code>set...locked</code> wurde benutzt) treten diese Effekte nicht auf, da der Puffer bei jedem Seitenaufruf automatisch gel&ouml;scht wird.	
 	</li>	
   </ul>
   <br>
 
-  <a name="FUIPattr"></a>
+  <a id="FUIP-attr"></a>
   <b>Attributes</b>
   <ul>
-    <li><a name="baseHeight">baseHeight</a>: Basish&ouml;he einer Zelle<br>
+	<li><a id="FUIP-attr-backendNames">backendNames</a>:Liste von Namen f&uuml;r Backend-FHEMs<br>
+		Wenn man eine FUIP-Instanz mit einem entfernten FHEM oder mit mehreren FHEM-Systemen verbinden will, wird jedes verbundene FHEM-System einem symbolischen Namen zugeordnet. Dies geschieht im Prinzip dadurch, dass die Adresse des Systems in ein Attribut der Form <i>backend_&lt;name&gt;</i> eingetragen wird. Im Weiteren wird dann &lt;name&gt; als Kennung f&uuml;r das entsprechende System benutzt. Daf&uuml;r schl&auml;gt FUIP f&uuml;r die ersten paar Systeme Namen vor. Es handelt sich dabei um weibliche Namen aus "Per Anhalter durch die Galaxis". Wem das nicht gef&auml;llt, der kann die <i>backend_</i>-Attribute manuell setzen (<code>attr ui backend_zaphod http://eccentrica:8083/gallumbits</code> w&uuml;rde ein FHEM mit den Namen "zaphod" definieren). Alternativ kann man &uuml;ber das Attribut <i>backendNames</i> eigene Namensvorschl&auml;ge machen. Z.B. <code>attr ui backendNames arthur,ford,marvin,zaphod</code> produziert Vorschl&auml;ge mit m&auml;nnliche Namen aus dem Adams'schen Universum.<br>
+		Die Liste darf nur Zeichen enthalten, aus denen auch Attribute bestehen k&ouml;nnen. Die System-Namen m&uuml;ssen durch Komma getrennt werden und die Liste darf keine Leerzeichen enthalten. Sicherheitshalber sollte man nur Kleinbuchstaben und Zahlen verwenden. (Ja, auch der Unterstrich und das Minus-Zeichen k&ouml;nnten Probleme machen.)	
+	</li>
+  	<li><a id="FUIP-attr-backend_" data-pattern="backend_.*">backend_.*</a>: Adresse eines (entfernten) Backend-FHEMs<br>
+Mit FUIP kann man sich an ein "entferntes" FHEM oder sogar mehrere FHEM-Instanzen ankoppeln. Die Attribute der Form <code>backend_.*</code> enthalten dann die Adresse(n) der "entfernten" FHEMWEB-Instanz(en), die man verwenden m&ouml;chte. 
+Man darf ein backend_-Attribut auf keinen Fall auf eine Adresse oder IP setzen (auch nicht auf 127.0.0.1), wenn man sich auf das lokale FHEM beziehen soll. Wenn man festlegen will, dass ein Backend-System die eigene (lokale) FHEM-Instanz ist, dann muss man das backend_-Attribut auf "local" setzen.<br>
+Ansonsten muss das backend_-Attribut die ganze Adresse enthalten, inklusive Port und abschlie&szlig;endem "fhem".<br>
+Beispiel:<br>
+<code>attr ui backend_fenchurch http://fenchurch:8086/fhem</code><br>
+<code>attr ui backend_garden http://192.168.178.73:8086/fhem</code><br>
+<code>attr ui backend_home local</code><br>
+Damit kennt die FUIP-Instanz <i>ui</i> drei Backend-FHEMs (oder auch Backend-Systeme): fenchurch, garden und home. Die ersten beiden beziehen sich auf "entfernte" FHEMs, die dritte Instanz ist dasselbe System, auf dem auch das FUIP-Device definiert ist.<br>
+Das Attribut <code>CORS</code> entfernter FHEMWEB-Instanz(en) muss dann auf "1" stehen. Au&szlig;erdem d&uuml;rfen diese FHEMWEB-Instanzen keine Passwort-Pr&uuml;fung haben. Stattdessen kann man mit dem Attribut <code>allowedfrom</code> oder einer allowed-Instanz den Zugriff einschr&auml;nken.<br>
+Wenn man ein "entferntes" FHEM benutzt, dann k&ouml;nnen einige Funktionen der Konfigurationsoberfl&auml;che etwas Zeit brauchen. Zum Beispiel m&uuml;ssen für die Eingabehilfe f&uuml;r Devices alle Devices aus dem entfernten FHEM gelesen werden. Das ist so implementiert, dass das entfernte FHEM m&ouml;glichst wenig belastet wird, was aber zu Lasten des FUIP-FHEM geht. Siehe auch das Set-Kommando <code>refreshBuffer</code> zu diesem Thema.	
+</li>	
+    <li><a id="FUIP-attr-baseHeight">baseHeight</a>: Basish&ouml;he einer Zelle<br>
 	Eine 1x1-Zelle ist <code>baseHeight</code> Pixel hoch. Standardwert ist 108.
 	</li> 
      <li><a name="baseWidth">baseWidth</a>: Basisbreite einer Zelle<br>
 	Eine 1x1-Zelle ist <code>baseWidth</code> Pixel breit. Standardwert ist 142.
 	</li>
-	<li><a name="cellMargin">cellMargin</a>: Zellzwischenraum<br>
+	<li><a id="FUIP-attr-cellMargin">cellMargin</a>: Zellzwischenraum<br>
 	Mit dem Attribut <code>cellMargin</code> kann man jetzt den Platz zwischen den Zellen festlegen. Der Wert muss zwischen 0 und 10 liegen, der Standardwert ist 5. Um jede Zelle herum werden <code>cellMargin</code> Pixel frei gehalten. D.h. zwischen zwei Zellen ist zweimal so viel Platz (in Pixel) wie durch <code>cellMargin</code> festgelegt. Der Rand um den ganzen Anzeigebereich herum ist <code>cellMargin</code> Pixel breit.<br>
 	Damit beeinflusst <code>cellMargin</code> auch die Gr&ouml;&szlig;e von mehrspaltigen und mehrzeiligen Zellen. Ansonsten w&uuml;rde das ganze nicht mehr zusammenpassen. Eine dreispaltige Zelle ist beispielsweise standardm&auml;&szlig;ig 446 Pixel breit. Dies ergibt sich aus 3 Spalten zu 142 Pixeln (<code>baseWidth</code>) plus zwei Zwischenr&auml;umen zu je 10 Pixeln (je 2 mal <code>cellMargin</code>).<br>
 	Bei Verwendung des "flex" Layouts (siehe Attribut <code>layout</code>) liefert diese Berechnung die Mindestgr&ouml;&szlig;e der Zellen. Je nach Browserfenster k&ouml;nnen die Zellen auch gr&ouml;&szlig;er werden.
 	</li>
-	<li><a name="fhemwebUrl">fhemwebUrl</a>: Adresse eines entfernten Backend-FHEMs<br>
-Mit FUIP kann man sich auch an ein "entferntes" FHEM ankoppeln. Das Attribut <code>fhemwebUrl</code> enth&auml;lt dann die Adresse der "entfernten" FHEMWEB-Instanz, die man verwenden m&ouml;chte. Das Attribut <code>CORS</code> dieser FHEMWEB-Instanz muss dann auf "1" stehen. Au&szlig;erdem darf die FHEMWEB-Instanz keine Passwort-Pr&uuml;fung haben. Stattdessen kann man mit dem Attribut <code>allowedfrom</code> oder einer allowed-Instanz den Zugriff einschr&auml;nken.<br>
-Man darf fhemwebUrl auf keinen Fall setzen (auch nicht auf 127.0.0.1 oder so), wenn sich die FUIP-Instanz auf das lokale FHEM beziehen soll. In dem Fall w&uuml;rde FHEM ewig auf sich selbst warten.<br>
-Das Attribut <code>fhemwebUrl</code> muss die ganze Adresse, inklusive Port und abschlie&szlig;endem "fhem" enthalten, also z.B. <code>http://fenchurch:8086/fhem</code> oder <code>http://192.168.178.73:8086/fhem</code><br>
-Wenn man ein "entferntes" FHEM benutzt, dann k&ouml;nnen einige Funktionen der Konfigurationsoberfl&auml;che etwas Zeit brauchen. Zum Beispiel müssen für die Eingabehilfe für Devices alle Devices aus dem entfernten FHEM gelesen werden. Das ist so implementiert, dass das entfernte FHEM m&ouml;glichst wenig belastet wird, was aber zu Lasten des FUIP-FHEM geht. Siehe auch das Set-Kommando <code>refreshBuffer</code> zu diesem Thema.	
-</li>	
-	<li><a name="gridlines">gridlines</a>: Anzeige eines Gitters aus Hilfslinien<br>
+	<li><a id="FUIP-attr-defaultBackend">defaultBackend</a>: FHEM-System, welches verwendet wird, wenn kein System explizit angegeben ist<br>
+	Wenn mehrere Backend-FHEMs verwendet werden, dann sollte immer eines davon als <i>defaultBackend</i> ausgew&auml;hlt werden. Im Prinzip kann man in FUIP auf jeder Ebene (View, Zelle, Seite) das zugeh&ouml;rige Backend-System festlegen. Das muss man aber nicht machen und es w&auml;re bei der Umstellung auf ein Mehrsystem-FUIP auch etwas schwierig. Dar&uuml;ber hinaus gibt es Situationen, in denen ein eindeutiges System festgelegt sein muss. In allen diesen F&auml;llen wird das <i>defaultBackend</i> herangezogen.<br>
+	Das <i>defaultBackend</i> wird automatisch gesetzt, wenn es ben&ouml;tigt wird. Man muss sich also nicht unbedingt selbst darum k&uuml;mmern.	
+	</li>
+	<li><a id="FUIP-attr-gridlines">gridlines</a>: Anzeige eines Gitters aus Hilfslinien<br>
 	Das Attribut <code>gridlines</code> kann die Werte "show" und "hide" annehmen. Bei "show" wird im Bearbeitungsmodus ein Gitter aus Hilfslinien angezeigt. Der Defaultwert ist "hide".<br>
 	Der Abstand der Linien wird aus <code>baseWidth</code> und <code>baseHeight</code> ermittelt und wird so berechnet, dass sich sowohl der linke Rand jeder Zelle mit einer Linie deckt und der untere Rand des Headers jeder Zelle. Ansonsten ist der Abstand der Linien etwa 30 Pixel. 
 </li>
-<li><a name="layout">layout</a>: Grundlegendes Seitenlayout (Gridster oder Flexbox)<br>
+<li><a id="FUIP-attr-layout">layout</a>: Grundlegendes Seitenlayout (Gridster oder Flexbox)<br>
 Das Attribut <code>layout</code> kann zwei Werte annehmen: "gridster" oder "flex". Der Defaultwert ist "gridster".<br>
 <b>Gridster-Layout</b><br>
 <div style="padding-left:2em"> 
@@ -3912,16 +3931,16 @@ Im <b>Hauptbereich</b> ist die festgelegte Zellenbreite eine Mindestbreite. Die 
 F&uuml;r "FUIP-Anf&auml;nger" eignet sich das Gridster-Layout besser. Man kann dann sp&auml;ter auf das Flex-Layout umstellen. FUIP versucht dann, die Zellen m&ouml;glichst sinnvoll zuzuordnen, also die erste Spalte in den Men&uuml;bereich, die erste Zeile (ohne die erste Spalte) in den Titelbereich und den Rest in den Hauptbereich.<br>
 Im Flex-Layout sollte man das Attribut <code>pageWidth</code> weglassen. Au&szlig;erdem sollte man mit <code>baseHeight</code> und <code>baseWidth</code> etwas herumexperimentieren, bevor man alles genau an die richtige Stelle schiebt. 
 </li>
-	<li><a name="locked">locked</a>: Sperren gegen Frontend-&Auml;nderungen (Anzeigemodus)<br>
+	<li><a id="FUIP-attr-locked">locked</a>: Sperren gegen Frontend-&Auml;nderungen (Anzeigemodus)<br>
 Wenn locked auf "1" gesetzt wird, dann sind die FUIP-Seiten gegen Bearbeitung gesperrt. Das Zahnrad-Icon oben rechts in den Zellen erscheint dann nicht mehr. Dadurch kann ein reiner "Frontend Benutzer" die Seiten nicht mehr &auml;ndern. Zus&auml;tzlich verschwinden auch die Zellennummern rechts neben den Zellen&uuml;berschriften und Zellen ohne &Uuml;berschrift haben dann auch keinen "Titelbalken" mehr. Falls das Attribut <code>layout</code> auf "flex" steht passt sich jetzt jede Seite automatisch an die Gr&ouml;&szlig;e des Browserfensters an.<br>
 &Uuml;ber <code>set...lock</code> und <code>set...unlock</code> kann die Sperre ebenfalls gesteuert werden.
 </li>	
-	<li><a name="loglevel">loglevel</a>: Detaillierungsgrad Frontend-Log<br>
+	<li><a id="FUIP-attr-loglevel">loglevel</a>: Detaillierungsgrad Frontend-Log<br>
 	Dieses Attribut bezieht sich auf das Frontend-Log, d.h. ein Log, welches vom Browser erzeugt wird. Ein Log f&uuml;r das Backend (also FHEM selbst) kann mit dem Attribut <code>verbose</code> gesteuert werden.<br>
 	Normalerweise wird dieses Protokoll nicht ben&ouml;tigt, man l&auml;sst es also am besten aus (<code>loglevel=0</code>), au&szlig;er es ist etwas schief gegangen und man will der Sache nachgehen.<br>
 	Das Attribut <code>loglevel</code> kann Werte von 0 bis 5 annehmen. Bei 0 (Default) wird kein Protokoll geschrieben, bei 5 ein sehr detailliertes. Siehe auch die Attribute <code>logareas</code> und <code>logtype</code>. 
 	</li>
-	<li><a name="logareas">logareas</a>: Protokollierte Bereiche (Frontend-Log)<br>
+	<li><a id="FUIP-attr-logareas">logareas</a>: Protokollierte Bereiche (Frontend-Log)<br>
 	Da ein Frontend-Log unter Umst&auml;nden sehr lange laufen muss, sollte man es auf die notwendigen Bereiche beschr&auml;nken. Daf&uuml;r akzeptiert <code>logareas</code> eine Komma-separierte Liste mit folgenden Werten als Inhalt:
 	<div style="padding-left:2em">
 	<b>base.init</b> für die Initialisierungsphase<br>
@@ -3932,7 +3951,7 @@ Wenn locked auf "1" gesetzt wird, dann sind die FUIP-Seiten gegen Bearbeitung ge
 </div>
 Die obige Liste kann mit der Zeit noch wachsen. Am besten, man l&auml;sst das Log eine Weile ohne <code>logareas</code> laufen und schaut in den Logeintr&auml;gen nach, welche Bereiche interessant sein k&ouml;nnten. Siehe auch die Attribute <code>loglevel</code> und <code>logtype</code>.
 	</li> 
-	<li><a name="logtype">logtype</a>: Art des Frontend-Logs<br>
+	<li><a id="FUIP-attr-logtype">logtype</a>: Art des Frontend-Logs<br>
 	Normalerweise wird das Protokoll in die "Javascript-Konsole" der Entwicklertools des Browsers geschrieben. Bei Mobilger&auml;ten ist es allerdings etwas schwierig, an diese "Konsole" zu kommen. Daher hat FUIP die M&ouml;glichkeit, das Protokoll zuerst im lokalen Speicher ("localStorage") des Browsers abzulegen und dann sp&auml;ter an das Backend zu schicken. Das Attribut <code>logtype</code> kann dazu zwei Werte annehmen:
 		<div style="padding-left:2em">
 		<b>console</b>: schreibt das Protokoll in die Javascript-Konsole. Das ist der Defaultwert.<br>
@@ -3941,28 +3960,28 @@ Die obige Liste kann mit der Zeit noch wachsen. Am besten, man l&auml;sst das Lo
 	</div>
 	Siehe auch die Attribute <code>loglevel</code> und <code>logareas</code>.
 	</li>
-	<li><a name="pageWidth">pageWidth</a>: Seitenbreite in Pixel<br>
+	<li><a id="FUIP-attr-pageWidth">pageWidth</a>: Seitenbreite in Pixel<br>
 	 Wenn <code>pageWidth</code> nicht gesetzt ist (das ist der Default), dann wird die Seitenbreite nicht festgelegt. Bei Attribut <code>layout=gridster</code> ergibt sie sich dann aus <code>baseWidth</code> (d.h. die Breite einer 1er-Zelle) und der Anzahl der verwendeten Spalten plus die Breite der Zwischenr&auml;ume (siehe Attribut <code>cellMargin</code>. Bei <code>layout=flex</code> ist die Seitenbreite durch das Browserfenster festgelegt und beeinflusst ihrerseits die Breite und Anordnung der Zellen. D.h. in der Regel muss man bzw. sollte man <code>pageWidth</code> nicht angeben.<br>
 Die Angabe in <code>pageWidth</code> beeinflusst auch die Darstellung des Hintergrundbilds, falls das Attribut <code>styleBackgroundImage</code> gesetzt ist. 
 </li>
-<li><a name="snapTo">snapTo</a>: Automatisches "Einrasten" an den Hilfslinien<br>
+<li><a id="FUIP-attr-snapTo">snapTo</a>: Automatisches "Einrasten" an den Hilfslinien<br>
 Wird dieses Attribut gesetzt, dann werden die Views beim Drag&Drop automatisch am Raster (den Hilfslinien) ausgerichtet. (Die Views "ruckeln" dann also ein bisschen.) Wenn man w&auml;hrend des Ziehens die Alt-Taste dr&uuml;ckt, dann wird das tempor&auml;r deaktiviert, so dass man trotzdem pixelgenau positionieren kann.<br>
 Das Attribut kann die Werte "gridlines", "halfGrid", "quarterGrid" und "nothing" annehmen. Bei "gridlines" rasten die Views genau an den Hilfslinien ein, bei "halfGrid" an den Hilfslinien und in der Mitte zweier Linien und bei "quarterGrid" viermal pro Hilfslinie. Bei "nothing" wird das automatische Einrasten deaktiviert. Letzteres ist der Default.<br>
 F&uuml;r <code>snapTo</code> ist es egal, ob die Hilfslinien angezeigt werden oder nicht (Attribut <code>gridlines</code>). Die Views rasten dann eben dort ein, wo die Hilfslinien w&auml;ren.
 </li>
-	<li><a name="styleBackgroundImage">styleBackgroundImage</a>: Dateiname des Hintergrundbilds<br>
+	<li><a id="FUIP-attr-styleBackgroundImage">styleBackgroundImage</a>: Dateiname des Hintergrundbilds<br>
 	 Die Bilddatei muss sich im Verzeichnis &lt;fhem&gt;/FHEM/lib/FUIP/images befinden. (&lt;fhem&gt; steht meistens für /opt/fhem) Unterst&uuml;tzt werden jpg- und png- Dateien. Nachdem eine neue Datei hochgeladen wurde, muss man die FHEMWEB-Seite einmal neu laden, um die neue Datei verwenden zu können.<br>
 Falls das Attribut <code>pageWidth</code> gesetzt ist, dann wird die Breite des Hintergrundbilds auf die angegebene Gr&ouml;&szlig;e gesetzt. Ansonsten (ohne <code>pageWidth</code>) nimmt das Bild die Breite des Browser-Fensters ein. Die H&ouml;he des Bilds wird entsprechend skaliert, man muss sich also selbst darum k&uuml;mmern, dass das Bild ein passendes Seitenverh&auml;ltnis hat.<br>
 Bei Verwendung eines Hintergrundbilds werden die Zellenhintergr&uuml;nde automatisch auf halbtransparent gesetzt, so dass das Bild durchscheint.
 </li>
-<li><a name="styleColor">styleColor</a>: Vordergrundfarbe (veraltet)<br>
+<li><a id="FUIP-attr-styleColor">styleColor</a>: Vordergrundfarbe (veraltet)<br>
 Dieses Attribut kann verwendet werden, um die Standard-Textfarbe (Vordergrundfarbe) f&uuml;r alle Views zu setzen. Allerdings sollten Farben in FUIP inzwischen &uuml;ber das Attribut <code>styleSchema</code> bzw. den Punkt "Colours" im Zellenmenu gesetzt werden. Das Attribut <code>styleColor</code> entspricht dem Eintrag "foreground" (bzw. der CSS-Variable --fuip-color-foreground). Ist <code>styleColor</code> gesetzt, dann &uuml;berschreibt es diesen Eintrag.
 </li>
-	<li><a name="styleSchema">styleSchema</a>: Grundlegendes (Farb-)Schema<br>
+	<li><a id="FUIP-attr-styleSchema">styleSchema</a>: Grundlegendes (Farb-)Schema<br>
 	Mittels <code>styleSchema</code> kann man zwischen sieben verschiedenen "Styles" ausw&auml;hlen. Die Styles sind angelehnt an die hier beschriebenen Schema-Dateien: <a href="https://wiki.fhem.de/wiki/FHEM_Tablet_UI#Farben" target="fuipdoc">FHEM_Tablet_UI#Farben</a> D.h. die FUIP-Seiten sehen dann in etwa so aus wie auf den Screenshots dort.<br>
 	Weitere Anpassungen kann man &uuml;ber den Punkt "Colours" im Zellenmen&uuml; vornehmen. Au&szlig;erdem kann man eine eigene CSS-Datei &uuml;ber das Attribut <code>userCss</code> einbinden.	
 	</li>
-	<li><a name="toastMessages">toastMessages</a>: Konfiguration der Toast-Nachrichten<br>
+	<li><a id="FUIP-attr-toastMessages">toastMessages</a>: Konfiguration der Toast-Nachrichten<br>
 	Die Meldungen, die z.B. bei Schaltvorg&auml;ngen normalerweise links unten auftauchen, sind konfigurierbar. Dazu kann das Attribut <code>toastMessages</code> folgende Werte annehmen:
 	<div style="padding-left:2em">
 <b>all</b>: Alle Meldungen werden angezeigt. Das ist der Defaultwert.<br>
@@ -3971,20 +3990,20 @@ Dieses Attribut kann verwendet werden, um die Standard-Textfarbe (Vordergrundfar
 </div>
 Am Anfang der FUIP-Entwicklung wurden noch relativ viele (Fehler-)Meldungen &uuml;ber den Toast-Mechanismus angezeigt. Seit es das Frontent-Log gibt haben die Toast-Meldungen aber an Bedeutung verloren und st&ouml;ren kaum noch (siehe auch Attribute <code>loglevel</code>, <code>logareas</code> und <code>logtype</code>).
 	</li>	
-<li><a name="userCss">userCss</a>: Eigenes Stylesheet<br>
+<li><a id="FUIP-attr-userCss">userCss</a>: Eigenes Stylesheet<br>
 Mit diesem Attribut kann ein eigenes Stylesheet (CSS-Datei) eingebunden werden. Die zugeh&ouml;rige Datei muss im Verzeichnis &lt;fhem&gt;/FHEM/lib/FUIP/config liegen und die Endung ".css" haben.<br>
 Diese M&ouml;glichkeit sollte nicht leichtfertig eingesetzt werden. Zuerst sollte man pr&uuml;fen, ob man etwas passendes mit dem Attribut <code>styleSchema</code> einstellen kann. Die Farben kann man dann mit dem  Punkt "Colours" im Zellenmen&uuml; anpassen. Erst wenn diese M&ouml;glichkeiten ersch&ouml;pft sind, sollte man an das Attribut <code>userCss</code> denken. 
  </li>
-<li><a name="userHtmlBodyStart">userHtmlBodyStart</a>: Eigenen HTML-Text hinzuf&uuml;gen<br>
+<li><a id="FUIP-attr-userHtmlBodyStart">userHtmlBodyStart</a>: Eigenen HTML-Text hinzuf&uuml;gen<br>
 Mit diesem Attribut kann der Inhalt einer eigenen HTML-Datei eingebunden werden. Die zugeh&ouml;rige Datei muss im Verzeichnis &lt;fhem&gt;/FHEM/lib/FUIP/config liegen und die Endung ".html" haben. Dies eignet sich z.B. zum Einbinden eigener SVG-Definitionen.<br>
 Der HTML-Text wird relativ weit "oben" im generierten HTML-Code eingef&uuml;gt.<br>
 Diese M&ouml;glichkeit wird sehr selten ben&ouml;tigt. Meistens ist es besser, eigenen HTML-Code &uuml;ber die HTML-View einzubinden. 
 </li>
-<li><a name="viewportInitialScale">viewportInitialScale</a>: Anf&auml;nglicher Zoomgrad<br>
+<li><a id="FUIP-attr-viewportInitialScale">viewportInitialScale</a>: Anf&auml;nglicher Zoomgrad<br>
 FUIP generiert ein Meta-Element f&uuml;r den Viewport in jede Seite. Dabei wird der anf&auml;ngliche Zoomgrad auf 1,0 festgelegt. Dies kann mittels <code>viewportInitialScale</code> ge&auml;ndert werden. Der Wert entspricht genau dem "initial-scale"-Parameter des Meta-Elements f&uuml;r den Viewport.<br>
 Normalerweise muss man dieses Attribut nicht setzen. Wenn die FUIP-Seiten nicht (genau) in das Browserfenster passen, dann sollte man lieber mit den Attributen <code>baseWidth</code> und <code>cellMargin</code> experimentieren. Au&szlig;erdem kann es helfen, das Flex-Layout zu verwenden. Siehe dazu Attribut <code>layout</code>.
 </li>
-<li><a name="viewportUserScalable">viewportUserScalable</a>: Zoomen erlauben oder nicht<br>
+<li><a id="FUIP-attr-viewportUserScalable">viewportUserScalable</a>: Zoomen erlauben oder nicht<br>
 Dieses Attribut entspricht genau dem "user-scalable"-Parameter des Meta-Elements f&uuml;r den Viewport. Man kann damit also festlegen, ob der Benutzer die Seite zoomen darf (Wert "yes") oder nicht ("no"). Defaultwert ist "yes", also ist das Zoomen normalerweise erlaubt.
 </li>	
   </ul>

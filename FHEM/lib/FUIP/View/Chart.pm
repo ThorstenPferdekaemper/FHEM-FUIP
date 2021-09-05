@@ -3,6 +3,7 @@ package FUIP::View::Chart;
 use strict;
 use warnings;
 
+use lib::FUIP::Systems;
 use lib::FUIP::View;
 use parent -norequire, 'FUIP::View';
 
@@ -19,10 +20,15 @@ sub dimensions($;$$){
 
 
 sub getDependencies($$) {
-	my (undef,$fuip) = @_;
-	my $stylesheetPrefix = FUIP::Model::getStylesheetPrefix($fuip->{NAME});
-	return ['remote:www/pgm2/'.$stylesheetPrefix.'svg_defs.svg',
-			'remote:www/pgm2/'.$stylesheetPrefix.'svg_style.css',
+	my ($self,$fuip) = @_;
+	
+	#Determine the default system. Otherwise, we might end up with different
+	#styles from different backend systems. The result would not be really
+	#predictable.
+	my $sysid = FUIP::Systems::getDefaultSystem($fuip);
+	my $stylesheetPrefix = FUIP::Model::getStylesheetPrefix($fuip->{NAME},$sysid);
+	return [$sysid.':www/pgm2/'.$stylesheetPrefix.'svg_defs.svg',
+			$sysid.':www/pgm2/'.$stylesheetPrefix.'svg_style.css',
 			'FHEM/lib/FUIP/css/fuipchart.css'];
 };
 
@@ -68,8 +74,8 @@ sub _convertTicks($) {
 	
 sub getHTML($){
 	my ($self) = @_; 
-	
-	my $gplot = FUIP::Model::getGplot($self->{fuip}{NAME},$self->{device});
+	my $sysid = $self->getSystem();
+	my $gplot = FUIP::Model::getGplot($self->{fuip}{NAME},$self->{device},$sysid);
 	return "Error getting gplot information" unless $gplot;
 	# my $device = FUIP::Model::getDevice($self->{fuip}{NAME},$self->{device},["GPLOTFILE"]);
 	# main::Log3(undef,1,main::Dumper($gplot));
@@ -80,7 +86,7 @@ sub getHTML($){
 	my @svgidx;
 	for my $logdevice (@{$gplot->{srcDesc}{order}}) {  #FileLog_HM_21F923
 		# DbLog? - need type of logdevice
-		my $ldev = FUIP::Model::getDevice($self->{fuip}{NAME},$logdevice,["TYPE"]);
+		my $ldev = FUIP::Model::getDevice($self->{fuip}{NAME},$logdevice,["TYPE"],$sysid);
 		my @lspecs = split(/ /,$gplot->{srcDesc}{src}{$logdevice}{arg}); 
 		# (4:HM_21F923.measured-temp\\x3a::, 4:HM_21F923.desired-temp\\x3a::, 4:HM_21F923.actuator\\x3a::')
 		my $i = 0;
@@ -186,7 +192,7 @@ sub getHTML($){
 	
 	# fixedrange -> data-daysago_start, data-daysago_end
 	my $svgDevice = FUIP::Model::getDevice($self->{fuip}{NAME},$self->{device},
-						["fixedrange","endPlotNow","endPlotToday"]);
+						["fixedrange","endPlotNow","endPlotToday"],$sysid);
 	my $daysago_start;
 	my $daysago_end;
 	my $nofulldays = "false";
@@ -268,10 +274,10 @@ sub getHTML($){
 };
 	
 	
-sub getDevicesForValueHelp($) {
+sub getDevicesForValueHelp($$) {
 	# Return devices with TYPE SVG
-	my ($fuipName) = @_;
-	return FUIP::_toJson(FUIP::Model::getDevicesForType($fuipName,"SVG"));
+	my ($fuipName,$sysid) = @_;
+	return FUIP::_toJson(FUIP::Model::getDevicesForType($fuipName,"SVG",$sysid));
 }	
 	
 	

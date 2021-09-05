@@ -20,8 +20,9 @@ sub _getDevices($){
 	my %devices;
 	my @readings = qw(battery batteryLevel batVoltage batteryPercent);
 	push(@readings,"Activity") if($deviceFilter eq "all");
+	my $sysid = $self->getSystem();
 	for my $reading (@readings) {
-		for my $dev (@{FUIP::Model::getDevicesForReading($name,$reading)}) {
+		for my $dev (@{FUIP::Model::getDevicesForReading($name,$reading,$sysid)}) {
 			$devices{$dev}{$reading} = 1;
 		};	
 	};
@@ -45,7 +46,7 @@ sub _getDevices($){
 		delete $devices{$excl};
 	};
 	for my $dev (keys(%devices)) {
-		my $device = FUIP::Model::getDevice($name,$dev,$fields);
+		my $device = FUIP::Model::getDevice($name,$dev,$fields,$sysid);
 		unless(exists($device->{Internals}{NAME})) {
 			delete $devices{$dev};
 			next;
@@ -241,16 +242,16 @@ sub reconstruct($$$) {
 };
 	
 	
-sub getDevicesForValueHelp($) {
+sub getDevicesForValueHelp($$) {
 	# Return all devices which might appear in the view
 	# TODO: combine with _getDevices
-	my ($fuipName) = @_;
+	my ($fuipName,$sysid) = @_;
 	my %devices;
 	my @readings = qw(battery batteryLevel batVoltage batteryPercent Activity);
 	# TODO: deviceFilter?
 	# push(@readings,"Activity") if($deviceFilter eq "all");
 	for my $reading (@readings) {
-		for my $dev (@{FUIP::Model::getDevicesForReading($fuipName,$reading)}) {
+		for my $dev (@{FUIP::Model::getDevicesForReading($fuipName,$reading,$sysid)}) {
 			$devices{$dev} = 1;
 		};	
 	};

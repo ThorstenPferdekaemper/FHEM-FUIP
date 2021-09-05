@@ -4,6 +4,7 @@ DIR FHEM/lib/FUIP/css
 DIR FHEM/lib/FUIP/fonts
 DIR FHEM/lib/FUIP/images
 DIR FHEM/lib/FUIP/doc
+DIR FHEM/lib/FUIP/html
 DIR FHEM/lib/FUIP/view-images
 DIR FHEM/lib/FUIP/js
 DIR FHEM/lib/FUIP/View

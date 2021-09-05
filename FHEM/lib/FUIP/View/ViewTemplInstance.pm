@@ -21,13 +21,21 @@ sub dimensions($;$$){
 	return ($self->{width},$self->{height});
 };	
 	
-	
-sub getHTML($$){
-	my ($self,$locked) = @_;
+
+# getInstantiated	
+# Determines instantiated version of the view template
+# I.e. the view template where the values are set like
+# defined in the instance (this)
+sub getInstantiated($) {
+	my ($self) = @_;
+ 
 	# a bit of brute force, but we have to copy the template
 	my $instanceStr = $self->{viewtemplate}->serialize();
 	my $evalled = eval($instanceStr);
 	my $instance = "FUIP::ViewTemplate"->reconstruct($evalled,$self->{fuip});
+	# The parent of a view template is always the FUIP instance itself,
+	# but for the rendering, we need the real parent
+	$instance->setParent($self->{parent});
 	# now replace variables
 	my $h = {};
 	my $variables = $self->{viewtemplate}{variables};
@@ -37,6 +45,15 @@ sub getHTML($$){
 		};
 	};
 	FUIP::setViewSettings($self->{fuip},[$instance],0,$h);
+	
+	return $instance;
+};	
+	
+	
+sub getHTML($$){
+	my ($self,$locked) = @_;
+	
+	my $instance = $self->getInstantiated();
 	# Always locked...
 	return $instance->getHTML(1);
 };
@@ -95,6 +112,7 @@ sub serialize($;$) {
 		# fuip is the reference to the FUIP object, don't serialize this
 		next if $field eq "fuip";
 		next if $field eq "class";
+		next if $field eq "parent";
 		# do not serialize the viewtemplate instance, only store the id
 		next if $field eq "viewtemplate";
 		$result .= ",\n".$blanks."   ".$field." => ".FUIP::View::serializeRef($self->{$field},$indent);
@@ -121,7 +139,9 @@ sub reconstruct($$$) {
 		# including usage on popups (on popups...), which are part of templates.
 		push(@instancesWithoutTemplates,$self);
 	};	
-	return bless($self,$class);
+	$self = bless($self,$class);
+	$self->setAsParent();
+	return $self;
 };
 
 
@@ -135,11 +155,11 @@ sub fixInstancesWithoutTemplates() {
 			$inst->{viewtemplate} = $inst->{fuip}{viewtemplates}{$inst->{templateid}};	
 		}else{		
 			main::Log3(undef,1,"FUIP ".$inst->{fuip}{NAME}.": View Template does not exist: ".$inst->{templateid});
-			$inst->{viewtemplate} = FUIP::ViewTemplate->createDefaultInstance($inst->{fuip});
+			$inst->{viewtemplate} = FUIP::ViewTemplate->createDefaultInstance($inst->{fuip},$inst->{fuip});
 			$inst->{viewtemplate}{id} = "<ERROR>";
 			$inst->{title} = "Error ".$inst->{templateid} unless $inst->{title};
 			$inst->{defaulted}{title} = '0';
-			my $view = "FUIP::View"->createDefaultInstance($inst->{fuip});
+			my $view = "FUIP::View"->createDefaultInstance($inst->{fuip},$inst->{viewtemplate});
 			$view->{content} = "View template <b>".$inst->{templateid}."</b> does not exist.";
 			$view->{defaulted}{content} = '0';
 			$view->{width} = 150;

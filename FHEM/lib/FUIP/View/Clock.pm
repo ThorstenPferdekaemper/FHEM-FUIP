@@ -59,6 +59,6 @@ sub getStructure($) {
 
 
 # register me as selectable
-$FUIP::View::selectableViews{"FUIP::View::Clock"}{title} = "Clock (client time)"; 
+$FUIP::View::selectableViews{"FUIP::View::Clock"}{title} = "Eine Uhr mit Anpassung an die Server-Zeit"; 
 	
 1;	

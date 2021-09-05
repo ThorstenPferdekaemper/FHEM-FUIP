@@ -106,10 +106,10 @@ sub reconstruct($$$) {
 };
 	
 
-sub getDevicesForValueHelp($) {
+sub getDevicesForValueHelp($$) {
 	# Return devices with TYPE WeekdayTimer
-	my ($fuipName) = @_;
-	return FUIP::_toJson(FUIP::Model::getDevicesForType($fuipName,"PROPLANTA"));
+	my ($fuipName,$sysid) = @_;
+	return FUIP::_toJson(FUIP::Model::getDevicesForType($fuipName,"PROPLANTA",$sysid));
 }		
 	
 	

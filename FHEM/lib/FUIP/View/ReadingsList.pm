@@ -9,9 +9,11 @@ use parent -norequire, 'FUIP::View';
 use lib::FUIP::Model;	
 	
 
-sub getVisibleReadings($$) {
-	my ($fuipName,$deviceName) = @_;
-	my $hash = FUIP::Model::getDevice($fuipName,$deviceName,[]); 
+sub _getVisibleReadings($) {
+	my ($self) = @_;
+	
+	my $fuipName = $self->{fuip}{NAME};
+	my $hash = FUIP::Model::getDevice($fuipName,$self->{device}[0],[],$self->getSystem()); 
 	return [] unless defined $hash;
 	my $result = [];
 	foreach my $reading (sort keys %{$hash->{Readings}}) {
@@ -48,7 +50,7 @@ sub getHTML($){
 	# determine aliasse
 	my @alias;
 	for my $devkey (@{$self->{device}}) {
-		my $device = FUIP::Model::getDevice($name,$devkey,['alias']);
+		my $device = FUIP::Model::getDevice($name,$devkey,['alias'],$self->getSystem());
 		if($device->{Attributes}{alias}) {
 			push @alias, $device->{Attributes}{alias};
 		}else{
@@ -60,7 +62,7 @@ sub getHTML($){
 	my $readings = $self->{reading};
 	unless(@$readings) {
 		if(@{$self->{device}} == 1) {
-			$readings = getVisibleReadings($name,$self->{device}[0]);
+			$readings = $self->_getVisibleReadings();
 		}else{
 			$readings = [ "state" ];
 		};
@@ -110,11 +112,11 @@ sub dimensions($;$$){
 };		
 	
 	
-sub getReadingsForValueHelp($$) {
+sub getReadingsForValueHelp($$$) {
 	# get all Readings for all devices
 	# for FUIP's value help
-	my ($fuipName,$devStr) = @_; 	
-	return FUIP::_toJson(FUIP::Model::getReadingsOfDevice($fuipName,$devStr));	
+	my ($fuipName,$devStr,$sysid) = @_; 	
+	return FUIP::_toJson(FUIP::Model::getReadingsOfDevice($fuipName,$devStr,$sysid));	
 };	
 	
 	

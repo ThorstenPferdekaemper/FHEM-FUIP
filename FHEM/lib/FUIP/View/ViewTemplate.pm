@@ -17,7 +17,7 @@ sub dimensions($;$$){
 	}	
 	return ($self->{width},$self->{height});
 };	
-	
+
 	
 sub getHTML_swiper($$){
 	my ($self,$locked) = @_;
@@ -36,7 +36,7 @@ sub getHTML_swiper($$){
 		$result .= '
 		<li>
 			<div style="position:absolute;left:'.($self->{navbuttons} eq "on" ? '37' : '0').'px;width:'.($self->{navbuttons} eq "on" ? 'calc(100% - 74px)' : '100%').';">
-				<div data-viewid="'.$i.'"'.($locked ? '' : ' class="fuip-draggable'.$resizable.'"').' style="';
+				<div data-viewid="'.$i.'"'.$self->getHTML_sysid($view).($locked ? '' : ' class="fuip-draggable'.$resizable.'"').' style="';
 		if($width eq "auto") {
 			$result .= 'width:100%;';
 			# It seems that the swiper widget does some funny computations for the height, so 100% and calculations do not 
@@ -76,7 +76,7 @@ sub getHTML($$){
 		my ($left,$top) = $view->position();
 		my ($width,$height) = $view->dimensions();
 		my $resizable = ($view->isResizable() ? " fuip-resizable" : "");
-		$result .= '<div><div data-viewid="'.$i.'"'.($locked ? '' : ' class="fuip-draggable'.$resizable.'"').' style="position:absolute;left:'.$left.'px;top:'.$top.'px;';
+		$result .= '<div><div data-viewid="'.$i.'"'.$self->getHTML_sysid($view).($locked ? '' : ' class="fuip-draggable'.$resizable.'"').' style="position:absolute;left:'.$left.'px;top:'.$top.'px;';
 		if($width eq "auto") {
 			$result .= 'width:calc(100% - '.$left.'px);';
 			$result .= 'height:calc(100% - '.$top.'px);'; 
@@ -132,7 +132,7 @@ sub getStructure($) {
 					main::Log3(undef, 2, "FUIP: view template $self->{id}, variable $variable->{name}: Field $fieldpath not found");
 					next;
 				};	
-				my $field = dclone($self->_findField($conf,$fieldpath));
+				my $field = dclone($fieldRef);
 				my ($type,$basePath) = _findFieldBase($conf,$fieldpath);
 				$field->{id} = $variable->{name};
 				$field->{flexfield} = 0; 
@@ -220,12 +220,17 @@ sub getStructure($) {
 
 
 sub getDefaultFields($;$) {
+	# TODO: Why is this here and not using the version in View.pm
 	# class method
 	# returns view structure with all "const" defaults filled
 	# and defaulting set to "true"
 	# $includes is a list of field types which are normally not visible
 	my ($class,$includesInternals) = @_;
 	my $result = $class->getStructure();  # without values
+	# always add sysid
+	# TODO: Maybe add on top somewhere
+	# TODO: Maybe do the same for the class, if not there anyway
+	push(@$result, { id => "sysid", type => "sysid" } );
 	
 	if(not $includesInternals) {
 		my @withoutInternals = grep {$_->{type} ne "internal"} @$result;
@@ -263,29 +268,49 @@ sub createTemplInstance($$) {
 };	
 
 
-sub setVariableDefSingle($$$$) {
+sub _setVariableDefSingle($$$$) {
 	my ($variables,$h,$oldFieldName,$newFieldName) = @_;
-	# this is where the value is set
-	return unless defined $h->{$oldFieldName."-varcheck"};
-	return unless $h->{$oldFieldName."-varcheck"} eq "1";
-	return unless defined $h->{$oldFieldName."-variable"};
-	my $varname = $h->{$oldFieldName."-variable"};
-	return unless $varname;
-	# get entry in variables list
-	my $var;
-	for my $curr (@$variables) {
-		if($curr->{name} eq $varname) {
-			$var = $curr;
-			last;
-		};	
+	#There are two cases: 
+	# 1. The field is touched directly. In this case,
+	#    the settings ($h) should also contain the information regarding variables.
+	#    We can also assume that the values have been removed in _removeVariablesOld
+	# 2. The field is not touched directly. This means (always?) that the field
+	#    is on a popup and we might need to replace the field reference in the
+	#    list of variables
+	
+	if(exists($h->{$oldFieldName})) {
+		return unless defined $h->{$oldFieldName."-varcheck"};
+		return unless $h->{$oldFieldName."-varcheck"} eq "1";
+		return unless defined $h->{$oldFieldName."-variable"};
+		my $varname = $h->{$oldFieldName."-variable"};
+		return unless $varname;
+		# get entry in variables list
+		my $var;
+		for my $curr (@$variables) {
+			if($curr->{name} eq $varname) {
+				$var = $curr;
+				last;
+			};	
+		};
+		unless($var) {
+			$var = { name => $varname, fields => [] };
+			push(@$variables,$var);
+		};
+		# is this part of a dialog?
+		$newFieldName = $h->{fieldid}.'-'.$newFieldName if($h->{type} eq "dialog");
+		push(@{$var->{fields}}, $newFieldName);
+	}else{
+		#Replace old with field name with new field name
+		$oldFieldName = $h->{fieldid}.'-'.$oldFieldName if($h->{type} eq "dialog");
+		for my $var (@$variables) {
+			for( my $i = 0; $i < @{$var->{fields}}; $i++) {
+				 if($var->{fields}[$i] eq $oldFieldName) {
+					$newFieldName = $h->{fieldid}.'-'.$newFieldName if($h->{type} eq "dialog");
+					$var->{fields}[$i] = $newFieldName;
+				};	
+			};
+		};
 	};
-	unless($var) {
-		$var = { name => $varname, fields => [] };
-		push(@$variables,$var);
-	};
-	# is this part of a dialog?
-	$newFieldName = $h->{fieldid}.'-'.$newFieldName if($h->{type} eq "dialog");
-	push(@{$var->{fields}}, $newFieldName);
 };
 
 
@@ -316,7 +341,9 @@ sub _existsField($$) {
 };
 
 
-sub removeOldVariables($;$$) {
+#Remove variables (or rather their fields), which are now
+#re-determined
+sub _removeVariablesOld($;$$) {
 	my ($self,$fieldid,$view) = @_;
 	if($fieldid) {
 		$fieldid .= '-';
@@ -344,11 +371,6 @@ sub removeOldVariables($;$$) {
 				$variable->{fields}[$i] = undef;	
 				next;
 			};	
-			# Now the field might belong to a popup which does not exist anymore. 
-			# I.e. $field would look like views-<i>-popup-views-<i>-<field>(-...)
-			# However, this can at least in theory also happen for other fields (i.e. not
-			# only on popups). So we better simply check whether the field exists.
-			$variable->{fields}[$i] = undef unless(_existsField($view,$field));
 		};
 		# now really remove from the fields array
 		@{$variable->{fields}} = grep { $_ } @{$variable->{fields}};
@@ -358,7 +380,45 @@ sub removeOldVariables($;$$) {
 };
 
 
-sub setVariableDefs($$;$$$) {
+#Remove variables (or their fields), which do not exist anymore
+sub _removeVariablesNonexisting($) {
+	my ($self) = @_;
+	for my $variable (@{$self->{variables}}) {
+		for my $i (0 .. $#{$variable->{fields}}) {
+			my $field = $variable->{fields}[$i];
+			# The field might belong to a popup which does not exist anymore. 
+			# I.e. $field would look like views-<i>-popup-views-<i>-<field>(-...)
+			# However, this can at least in theory also happen for other fields (i.e. not
+			# only on popups). So we better simply check whether the field exists.
+			$variable->{fields}[$i] = undef unless(_existsField($self,$field));
+		};
+		# now really remove from the fields array
+		@{$variable->{fields}} = grep { $_ } @{$variable->{fields}};
+	};	
+	# remove variables with empty field list
+	@{$self->{variables}} = grep { @{$_->{fields}} } @{$self->{variables}};
+};
+
+
+sub setVariableDefs($$) {
+	my ($self,$h) = @_;
+	#Delete "old" variables/fields	
+	if($h->{type} eq "viewtemplate"){	
+		$self->_removeVariablesOld();	
+	}else{  # should be dialog
+		my $view = FUIP::findDialogFromFieldId($self->{fuip},$h,$h->{fieldid});
+		$self->_removeVariablesOld($h->{fieldid},$view);
+	};	
+	#Do the real work 	
+    _setVariableDefs($self,$h);
+	#Remove variables/fields, which do not exist anymore. 
+	#This needs to be done at the end, as some might be replaced
+	#with new ones in case views are re-ordered
+	$self->_removeVariablesNonexisting();
+};
+
+
+sub _setVariableDefs($$;$$$) {
 	# store variable definitions according to viewsettings
 	my ($self,$h,$view,$oldPrefix,$newPrefix) = @_;
 	# "loop" through all config fields
@@ -373,30 +433,38 @@ sub setVariableDefs($$;$$$) {
 	}elsif($h->{type} eq "viewtemplate"){	
 		$fields = "FUIP::ViewTemplate"->getStructure();
 		$view = $self;
-		# if this is not called for a view, we need to delete "old" variables/fields
-		$self->removeOldVariables();	
 	}else{  # should be dialog
 		$view = FUIP::findDialogFromFieldId($self->{fuip},$h,$h->{fieldid});
 		$fields = $view->getStructure();
-		$self->removeOldVariables($h->{fieldid},$view);
 	};	
 	$view->addFlexFields($fields);
 	for my $field (@$fields) {
 		if($field->{type} eq "device-reading") {
-			setVariableDefSingle($self->{variables},$h,$oldPrefix.$field->{id}.'-device',$newPrefix.$field->{id}.'-device');
-			setVariableDefSingle($self->{variables},$h,$oldPrefix.$field->{id}.'-reading',$newPrefix.$field->{id}.'-reading');
+			_setVariableDefSingle($self->{variables},$h,$oldPrefix.$field->{id}.'-device',$newPrefix.$field->{id}.'-device');
+			_setVariableDefSingle($self->{variables},$h,$oldPrefix.$field->{id}.'-reading',$newPrefix.$field->{id}.'-reading');
 		}elsif($field->{type} eq "viewarray"){
-			# we must have a "sort order" argument
+			#If this call changes the sort order of this view array, then we must have 
+			#a sort order argument 
 			my @sortOrder;
 			if(defined($h->{$oldPrefix.$field->{id}})){
 				@sortOrder = split(',',$h->{$oldPrefix.$field->{id}});
+			}else{
+				@sortOrder = (0..$#{$view->{$field->{id}}});
 			};
 			for my $i (0 .. $#sortOrder) {
-				$self->setVariableDefs($h,$view->{$field->{id}}[$i],
+				$self->_setVariableDefs($h,$view->{$field->{id}}[$i],
 						$oldPrefix.$field->{id}.'-'.$sortOrder[$i].'-', $newPrefix.$field->{id}.'-'.$i.'-');
 			};
+		}elsif($field->{type} eq "dialog"){
+			#This is especially for the case when the sort order of views has been changed
+			#and we need to adapt the variables for popups used by any of the views
+			my $popup = $view->{$field->{id}};
+			if(blessed($popup)) {
+				#If not blessed, then there is no popup
+				$self->_setVariableDefs($h,$popup,$oldPrefix.$field->{id}.'-', $newPrefix.$field->{id}.'-');		
+			};			
 		}else{
-			setVariableDefSingle($self->{variables},$h,$oldPrefix.$field->{id},$newPrefix.$field->{id});
+			_setVariableDefSingle($self->{variables},$h,$oldPrefix.$field->{id},$newPrefix.$field->{id});
 		};	
 	};
 };
@@ -419,7 +487,7 @@ sub _findField($$$) {
 				return undef unless blessed($dialog);
 				$result = $dialog->getConfigFields();
 			};	
-			# if the field does not exist (or belongs to a "higher" popup,
+			# if the field does not exist (or belongs to a "higher" popup),
 			# then this is not an array now
 			return undef unless ref($result) eq "ARRAY";
 			# find the field def with the id 

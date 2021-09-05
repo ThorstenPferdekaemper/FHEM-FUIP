@@ -7,8 +7,8 @@ use lib::FUIP::View;
 use parent -norequire, 'FUIP::View';
 
 
-sub getBridge($$) {
-	my ($fuipName,$devName) = @_; 
+sub _getBridge($$$) {
+	my ($fuipName,$devName,$sysid) = @_; 
 	my $coding = [
 		'my $device = $main::defs{"'.$devName.'"}',
 		'return undef unless $device',
@@ -16,18 +16,18 @@ sub getBridge($$) {
 		'return undef unless($device->{TYPE} eq "HUEDevice")',
 		'return $device->{IODev}{NAME}'
 	];
-	return FUIP::Model::callCoding($fuipName,$coding);
+	return FUIP::Model::callCoding($fuipName,$coding,$sysid);
 }
 
 
-sub getScenes($$) {
+sub _getScenes($$$) {
 	# get all scenes for a device (group or bridge) 
-	my ($fuipName,$devName) = @_; 
+	my ($fuipName,$devName,$sysid) = @_; 
 	# find bridge and group for the device
 	# and check whether this is anything "HUE like", which can have scenes,
 	# i.e. the bridge or a group (not a device)
 	
-	my $bridgeName = getBridge($fuipName,$devName);
+	my $bridgeName = _getBridge($fuipName,$devName,$sysid);
 	return {} unless $bridgeName;
 	my $groupNumber = 0;
 	if($devName ne $bridgeName) {
@@ -37,7 +37,7 @@ sub getScenes($$) {
 			'my	$group = substr($device->{ID},1)',
 			'return $group' 
 		];	
-		$groupNumber = FUIP::Model::callCoding($fuipName,$coding);
+		$groupNumber = FUIP::Model::callCoding($fuipName,$coding,$sysid);
 		return {} if $groupNumber < 0;
 	};
 	
@@ -50,10 +50,16 @@ sub getScenes($$) {
 	# 3. Device is sth else => return empty hash (no scenes)
 
 	# get all scenes for bridge (should not be THAT many)
+	# there are some issued with the fields locked and recycle, these need to be translated
 	my $coding = [
-		'return $main::defs{"'.$bridgeName.'"}->{helper}{scenes}'
+		'my $result = $main::defs{"'.$bridgeName.'"}->{helper}{scenes}',
+		'for my $key (keys %$result) {',
+	    '    delete $result->{$key}{locked}',
+		'    delete $result->{$key}{recycle}',	
+		'}',
+		'return $result'
 	];
-	my $scenes = FUIP::Model::callCoding($fuipName,$coding);
+	my $scenes = FUIP::Model::callCoding($fuipName,$coding,$sysid);
 	return $scenes unless $groupNumber;
 	my %result;
 	for my $key (keys %$scenes) {
@@ -65,8 +71,8 @@ sub getScenes($$) {
 };
 
 
-sub getGroups($$) {
-	my ($fuipName,$bridgeName) = @_; 
+sub _getGroups($$$) {
+	my ($fuipName,$bridgeName,$sysid) = @_; 
 	# get for each group assigned to the bridge:
 	# Name of FHEM device
 	# Alias of FHEM device
@@ -76,7 +82,7 @@ sub getGroups($$) {
 	my $coding = [
 		'return $main::defs{"'.$bridgeName.'"}->{helper}{groups}'
 	];
-	my $bridgeGroups = FUIP::Model::callCoding($fuipName,$coding);
+	my $bridgeGroups = FUIP::Model::callCoding($fuipName,$coding,$sysid);
 	# no groups on bridge?
 	return {} unless $bridgeGroups and %$bridgeGroups;
 	
@@ -94,7 +100,7 @@ sub getGroups($$) {
 		'}',
 		'return $groups'
 	];
-	my $groups = FUIP::Model::callCoding($fuipName,$coding);
+	my $groups = FUIP::Model::callCoding($fuipName,$coding,$sysid);
 	# in principle, the FHEM groups can be deleted...
 	for my $key (keys %$bridgeGroups) {
 		$groups->{$key} = {} unless $groups->{$key};
@@ -112,7 +118,7 @@ sub getHTML($){
 	$self->{scenes} = [] unless $self->{scenes};
 	my $options = '[]';
 	my $alias = '[]';
-	my $scenes = getScenes($self->{fuip}{NAME}, $self->{device});
+	my $scenes = _getScenes($self->{fuip}{NAME}, $self->{device},$self->getSystem());
 	if(@{$self->{scenes}}) {
 		$options = '["'.join('","',@{$self->{scenes}}).'"]';
 		$alias = '["'.join('","',map { $scenes->{$_}{name} } @{$self->{scenes}}).'"]';
@@ -158,16 +164,16 @@ sub dimensions($;$$){
 };	
 
 
-sub getScenesForValueHelp($$) {
+sub getScenesForValueHelp($$$) {
 	# get all scenes for a device (group or bridge) as json
 	# for FUIP's value help
-	my ($fuipName,$devName) = @_; 
-	my $scenes = getScenes($fuipName,$devName); 
+	my ($fuipName,$devName,$sysid) = @_; 
+	my $scenes = _getScenes($fuipName,$devName,$sysid); 
 	return undef unless $scenes;
-	my $bridgeName = getBridge($fuipName,$devName);
+	my $bridgeName = _getBridge($fuipName,$devName,$sysid);
 	my $tabDef;
 	if($devName eq $bridgeName) {
-		my $groups = getGroups($fuipName,$bridgeName);
+		my $groups = _getGroups($fuipName,$bridgeName,$sysid);
 		$groups = {} unless $groups;
 		$tabDef = {
 				colDef => [ { display => "none" },
@@ -199,11 +205,11 @@ sub getScenesForValueHelp($$) {
 }
 
 
-sub getDevicesForValueHelp($) {
+sub getDevicesForValueHelp($$) {
 	# Return...
 	#	all HUEBridge
 	#	all HUEDevice, where ID[0] = "G"
-	my ($fuipName) = @_;
+	my ($fuipName,$sysid) = @_;
 	my $coding = [
 		'my @result',
 		'for my $dev (keys %main::defs) {',
@@ -218,7 +224,7 @@ sub getDevicesForValueHelp($) {
 		'}',
 		'return \@result'
 	];
-	my $result = FUIP::Model::callCoding($fuipName,$coding);	
+	my $result = FUIP::Model::callCoding($fuipName,$coding,$sysid);	
 	return FUIP::_toJson($result);
 }	
 	

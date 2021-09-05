@@ -19,14 +19,7 @@ var Modul_fuip_clock = function () {
         elem.initData('months', ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"]);
 
         if (!elem.hasClass("localonly")) {
-            ftui.sendFhemCommand('{localtime}')
-                .done(function (fhemResult) {
-                    var now = new Date();
-                    var ft = new Date(fhemResult);
-                    elem.data('serverDiff', now.getTime() - ft.getTime());
-					// PFE: init_ui was already processed here, so update again
-					updateText(elem);
-                });
+			getServerDiff(elem);
         }
 
         if (!$.isArray(elem.data('days'))) {
@@ -45,7 +38,7 @@ var Modul_fuip_clock = function () {
             }
         }
 		
-		// PFE: immediately update time when page comes back visible
+		// immediately update time when page comes back visible
 		$(document).on('visibilitychange', function () {
             if (document.visibilityState === 'hidden') 
                 // page is hidden
@@ -56,6 +49,23 @@ var Modul_fuip_clock = function () {
 
     }
 
+	
+	function getServerDiff(elem) {
+		ftui.sendFhemCommand('{localtime}',elem)
+            .done(function (fhemResult) {
+                var now = new Date();
+                var ft = new Date(fhemResult);
+                elem.data('serverDiff', now.getTime() - ft.getTime());
+				// init_ui was already processed here, so update again
+				updateText(elem);
+            })
+			.fail(function() {
+				// try again in 10 seconds
+				setTimeout(function() { getServerDiff(elem); },10000);
+			});
+	};	
+	
+	
     function getDateTime(elem) {
         var now = new Date();
         var now_msec = now.getTime();
