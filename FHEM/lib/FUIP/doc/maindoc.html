@@ -118,7 +118,6 @@ Genau wie FTUI ist auch FUIP nicht automatisch Teil von FHEM. Es muss explizit i
 <ul>
 <li>Die Meldung deutet darauf hin, dass die Oberfl&auml;che zwar angezeigt werden kann, aber die Verbindung zur eigentlichen FHEM-Instanz verloren gegangen ist. Man sollte also prinzipiell &uuml;berpr&uuml;fen, ob die Verbdindung zwischen Browser und FHEM-Server stabil ist.</li>
 <li>Man kann versuchen die Seite einmal neu zu laden (Browser-Reload) bzw. den Browser neu zu starten. Dies sollte allerdings nicht zur Gewohnheit werden. FUIP stellt die Verbindung im Prinzip selbst&auml;ndig wieder her.</li>
-<li>Auf iOS (Apple) Frontends, insbesondere dem Safari Browser, funktioniert die Basic Authentication f&uuml;r Websockets nicht. Das bedeutet, dass FUIP nicht funktioniert, wenn man ein iOS-Frontend hat und das FHEMWEB-Device mittels Basic Authentication abgesichert ist. Abhilfe schafft hier in der Regel, wenn man im allowed-Device das Attribut <i>basicAuthExpiry</i> auf 1 oder gr&ouml;&szlig;er setzt. Au&szlig;erdem muss der Browser Cookies setzen d&uuml;rfen. (Sollte hierzu jemand eine bessere L&ouml;sung haben, dann bitte im FHEM-Forum Bescheid geben.)</li>
 </ul>
 
 <h2 id="concepts">Grundlegende Begriffe und Konzepte</h2>

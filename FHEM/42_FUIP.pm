@@ -3813,7 +3813,7 @@ sub Get($$$)
 		# pagesettings:".join(",",@pages)." devicelist:noArg readingslist sets"
 		# However, these are only for internal use
 	}
-}
+};
    
 1;
 
@@ -3886,7 +3886,7 @@ sub Get($$$)
 	</li>
   	<li><a id="FUIP-attr-backend_" data-pattern="backend_.*">backend_.*</a>: Adresse eines (entfernten) Backend-FHEMs<br>
 Mit FUIP kann man sich an ein "entferntes" FHEM oder sogar mehrere FHEM-Instanzen ankoppeln. Die Attribute der Form <code>backend_.*</code> enthalten dann die Adresse(n) der "entfernten" FHEMWEB-Instanz(en), die man verwenden m&ouml;chte. 
-Man darf ein backend_-Attribut auf keinen Fall auf eine Adresse oder IP setzen (auch nicht auf 127.0.0.1), wenn man sich auf das lokale FHEM beziehen soll. Wenn man festlegen will, dass ein Backend-System die eigene (lokale) FHEM-Instanz ist, dann muss man das backend_-Attribut auf "local" setzen.<br>
+Man darf ein backend_-Attribut auf keinen Fall auf eine Adresse oder IP setzen (auch nicht auf 127.0.0.1), wenn man sich auf das lokale FHEM beziehen will. Wenn man festlegen will, dass ein Backend-System die eigene (lokale) FHEM-Instanz ist, dann muss man das backend_-Attribut auf "local" setzen.<br>
 Ansonsten muss das backend_-Attribut die ganze Adresse enthalten, inklusive Port und abschlie&szlig;endem "fhem".<br>
 Beispiel:<br>
 <code>attr ui backend_fenchurch http://fenchurch:8086/fhem</code><br>
