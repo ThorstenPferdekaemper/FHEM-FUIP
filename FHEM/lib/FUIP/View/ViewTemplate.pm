@@ -529,7 +529,14 @@ sub _findFieldBase($$$) {
 		};
 		$result .= ($result ? '-' : '').$key;
 	};
-	return ($baseField->{type} ? $baseField->{type} : "", $path);
+	
+	eval {
+		return ($baseField->{type} ? $baseField->{type} : "", $path);
+		1;
+	} or do {
+		my $ex = $@;
+		FUIP::Exception::raise($ex);
+	};
 };
 
 
@@ -576,7 +583,13 @@ sub getConfigFieldsSetVariables($$;$) {
 			next unless(scalar(@parts) == 1 or scalar(@parts) == 3 or scalar(@parts) == 4); 		
 			my $field = $self->_findField($conf,$fieldpath);
 			next unless $field;
-			$field->{variable} = $variable->{name};
+			eval {
+				$field->{variable} = $variable->{name};
+				1;
+			} or do {
+				my $ex = $@;
+				FUIP::Exception::raise($ex);
+			};
 		};
 	};
 };	
@@ -598,7 +611,13 @@ sub getConfigFields($) {
 		$self->_fillField($field);
 	};
 	# set variables into field definitions
-	$self->getConfigFieldsSetVariables($result);
+	eval {
+		$self->getConfigFieldsSetVariables($result);
+		1;
+	} or do {
+		my $ex = $@;
+		FUIP::Exception::log($ex);		
+	};	
 	return $result;
 }
 

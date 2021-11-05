@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>FUIP News</title>
+</head> 
+<body>
+<h1>FUIP News</h1>
+
+<h2>04.01.2021</h2>
+<h3>Alternative Pfadangaben im FHEMWEB-Device</h3>
+Mit dem Attribut <i>webname</i> des FHEMWEB-Device kann der Pfad nach http://hostname:port/ angepasst werden. Allerdings hat bisher FUIP nicht funktioniert, wenn es &uuml;ber ein solches FHEMWEB-Device aufgerufen wurde. (Im Prinzip ruft man immer FHEMWEB auf. Von dort aus wird dann der Aufruf an FUIP weitergereicht.) Jetzt funktioniert FUIP auch, wenn das Attribut <i>webname</i> verwendet wurde und der Pfad nicht mit "fhem" anf&auml;ngt.
+
+<h2>08.03.2020</h2>
+<h3>"Push" ohne Rahmen</h3>
+Bei der View "Push" kann man jetzt den Rahmen weglassen. Dadurch wird auch das Icon selbst etwas gr&ouml;&szlig;er dargestellt. 
+
+<h2>30.01.2020</h2>
+<h3>Experimentelles "Longpoll &uuml;ber Ajax"</h3>
+Wegen st&ouml;rrischer Probleme mit Websockets bei verschiedenen Apple-Ger&auml;ten gibt es jetzt eine experimentelle Longpoll-Version, die per Ajax anstatt Websockets funktioniert. Diese kann mit dem Attribut <i>longPollType</i> aktiviert werden. Einfach <i>longPollType</i> auf "ajax" stellen.<br>
+Bitte beachten, dass das noch etwas experimentell ist und wahrscheinlich noch nicht ganz so gut funktioniert, wie die Websocket-Version. (...zumindest dort, wo die Websockets &uuml;berhaupt gehen.)
+
+<h2>26.01.2020</h2>
+<h3>ReadingsList &uuml;berarbeitet</h3>
+Die View "ReadingsList" war bisher nur in Ausnahmef&auml;llen wirklich n&uuml;tzlich. Das sollte sich jetzt ge&auml;ndert haben. Man kann jetzt mehrere Devices w&auml;hlen sowie die Readings ausw&auml;hlen, die man sehen will. Zus&auml;tzlich kann man einen Filterwert angeben, der bestimmt, welche Readings angezeigt werden. Letzteres reagiert auch auf Wert&auml;nderungen (solange sie als FHEM-Events ankommen), so dass Zeilen automatisch ein- bzw. ausgeblendet werden. Das ist z.B. f&uuml;r eine Anzeige aller offenen Fenster sinnvoll.
+
+<h2>19.01.2020</h2>
+<h3>Neue View "Calendar"</h3>
+Die View "Calendar" stellt einen einfachen Wochenkalender dar. Sie arbeitet direkt mit einem oder mehreren Calendar-Devices.<br>
+Momentan ist die View noch ein wenig "experimentell". 
+
+<h2>27.12.2019</h2>
+<h3>Fehlermeldungen beim &Ouml;ffnen eines Popups</h3>
+Seit dem Update von gestern kam es beim &Ouml;ffnen von Popups zu unterschiedlichen Fehlermeldungen. Der Text dieser Fehlermeldungen hat angefangen mit "fuip_5_resize.js:11". Dieses Problem ist jetzt behoben.
+
+<h3>Erweiterung der Dokumentation</h3>
+Die FUIP-Dokumentation wurde im Abschnitt "Einf&uuml;hrung" erweitert.   
+
+<h2>26.12.2019</h2>
+<h3>Inhaltsverzeichnis zur Doku</h3>
+Die FUIP-Dokumentation hat jetzt ein Inhaltsverzeichnis. Man kann auch Verweise (Links) direkt auf die einzelnen Abschnitte setzen.
+
+<h3>Resizing von Views in Verbindung mit "snapTo"</h3>
+Wenn das Attribut <i>snapTo</i> gesetzt war, dann gab es manchmal seltsame Effekte beim &Auml;ndern der Gr&ouml;&szlig;e von Views. Manchmal hat sich die Gr&ouml;&szlig;e einzelner Elemente (z.B. der Schrift) nach einem Seiten-Reload noch einmal ge&auml;ndert. Au&szlig;erdem wurde die <i>snapTo</i>-Einstellung w&auml;hrend der Gr&ouml;&szlig;en&auml;nderung nicht beachtet.<br>
+Dies hat vor Allem die Views Reading, LabelReading, LabelTemperature und LabelHumidity betroffen und sollte jetzt auch f&uuml;r diese behoben sein.
+
+<h3>Reading View: Alles auf derselben Ebene</h3>
+Bei der View "Reading" war das Label und der Wert (bzw. Timestamp) nicht auf derselben Linie. Dies wurde behoben.
+
+<h3>Reading View: Label ohne Doppelpunkt</h3>
+Bei der View "Reading" wird nach dem Label jetzt kein Doppelpunkt mehr hinzugef&uuml;gt. Wer einen haben will, muss ihn jetzt selbst reinschreiben.
+
+<h2>25.12.2019</h2>
+<h3>Neue View "Reading"</h3>
+Es gibt jetzt eine neue View "Reading", die die Eigenschaften der Views LabelReading, LabelTemperature und LabelHumidity zusammenfasst. M&ouml;glicherweise werden diese drei Views in n&auml;chster Zeit wegfallen. (Dies wird dann keine existierenden FUIP-Oberfl&auml;chen betreffen.) 
+
+<h3>Sizing bei "Label"-Views</h3>
+Die Gr&ouml;&szlig;enanpassung (bei sizing=resizable) f&uuml;r die Views LabelReading, LabelTemperature und LabelHumidity hat nicht richtig funktioniert (auch ohne Popups gab es noch ein Problem). Dies wurde korrigiert. 
+
+<h2>24.12.2019</h2>
+<b style="color:green;">Fr&ouml;hliche Weihnachten!</b>
+<h3>Breite des Titels von Popups korrigiert</h3>
+Nach einem FTUI-Update kam es zu "&Uuml;berbreiten" der Titelzeilen von Popups. Dies wurde korrigiert.
+
+<h3>Sizing bei "Label"-Views mit Popup</h3>
+Die Gr&ouml;&szlig;enanpassung (bei sizing=resizable) f&uuml;r die Views LabelReading, LabelTemperature und LabelHumidity hat nicht richtig funktioniert, wenn f&uuml;r diese Views ein Popup definiert war. Dies wurde korrigiert.
+
+<h2>08.12.2019</h2>
+<h3>WeekdayTimer funktioniert wieder</h3>
+Wegen &Auml;nderungen im FHEM-Modul WeekdayTimer hat die View <i>WeekdayTimer</i> nicht mehr funktioniert. Dies wurde behoben. 
+
+<h2>07.12.2019</h2>
+<h3>Doku f&uuml;r ViewIcon</h3>
+Die View <i>ViewIcon</i> hat jetzt auch eine Dokumentation.
+
+<h2>28.11.2019</h2>
+<h3>Umstellung auf HTTP-POST</h3>
+Bisher lief bei der Bearbeitung des Frontends fast s&auml;mtliche Kommunikation zum Backend (also FHEM) &uuml;ber HTTP-GET. Das bedeutet, dass relativ viele Daten &uuml;ber die URL &uuml;bermittelt werden, wodurch diese sehr lang werden kann. Jetzt wurde auf HTTP-POST umgestellt. Damit sollte das Problem mit "zu langer URL" nicht mehr auftreten.  
+
+<h2>27.11.2019</h2>
+<h3>Das FUIP-Doku-System</h3>
+Im Konfigurations-Popup erscheint jetzt ein gro&szlig;es Doku-Feld, welches eine kontextsensitive Hilfe enth&auml;lt. Je nachdem, worauf gerade der Focus ist, wird ein hoffentlich hilfreicher Text angezeigt. Au&szlig;erdem gibt es einen neuen Eintrag im Men&uuml; "FUIP-Dokumentation", der ein neues Fenster mit einer ausf&uuml;hrlichen Dokumentation &ouml;ffnet.<br>
+Es sind allerdings noch nicht alle Views wirklich dokumentiert. Das ist aber f&uuml;r die n&auml;chste Zeit geplant. 
+
+<h2>20.11.2019</h2>
+<h3>Hintergrundfarbe f&uuml;r Select-Optionen bei Style-Schema darkblue</h3>
+Im Style-Schema "darkblue" war der Hintergrund der Optionen in Select-View (und anderen Views und Widgets, die das &lt;option&gt;-Element verwenden) wei&szlig;. Jetzt ist er dunkelgrau, wie bei allen anderen Style-Schemas.  
+
+<h2>18.11.2019</h2>
+<h3>Automatisches Schlie&szlig;en von Popups - jetzt aber wirklich</h3>
+Es gab einen Fehler in der Auslieferung der letzten &Auml;nderung. Dieser ist jetzt hoffentlich behoben.
+
+<h2>16.11.2019</h2>
+<a href="20191116_Autoclose.png"><img src="20191116_Autoclose.png" style="float:left;margin-right:10px;margin-bottom:10px" width=321px height=174px></a>
+<h3>Automatisches Schlie&szlig;en von Popups</h3>
+Auf dem Konfigurations-Popups f&uuml;r Popups (aka "Dialog") gibt es jetzt den Parameter <i>autoclose</i>. Hier kann man die Zeit eingeben, nachdem das Popup automatisch geschlossen wird. Die Eingabe erfolgt in Sekunden. Defaultwert ist 0, d.h. das Popup wird nicht automatisch geschlossen.
+<p style="clear:left;height:0.5em;"></p>
+
+<h2>14.11.2019</h2>
+
+<img src="7segment.png" style="float:left;margin-right:10px;margin-bottom:10px" width=364px height=140px>
+<h3>Neue Views 7SegmentClock und 7SegmentReading</h3>
+Wer es gerne ein bisschen "retro" mag, kann sich jetzt mit den Views 7SegmentClock und 7SegmentReading ein paar sch&ouml;ne Anzeigen zusammenbasteln.<br>
+Danke an Waldmensch f&uuml;r Idee und Umsetzung des Widgets.<p>
+<b>7SegmentClock</b><br>
+Diese View zeigt eine Digitaluhr im 7-Segment-Design an. Es wird die Client-Zeit (also die Zeit des Browsers) angezeigt. Die View hat u.A. folgende Parameter:
+<ul>
+<li><b>seconds</b>: steuert, ob man nur Stunden und Minuten oder auch Sekunden sieht.</li>
+<li><b>color</b>: Farbe der Anzeige. Es k&ouml;nnen insbesondere die "FUIP-Farbsymbole" ausgew&auml;hlt werden, so dass die Anzeige zum Rest der Oberfl&auml;che passt. Ansonsten kann man so ziemlich alles eingeben, was CSS als Farbe erlaubt.</li>
+</ul> 
+Die restlichen Parameter sind die bei FUIP &uuml;blichen. W&auml;hlt man bei <i>sizing</i> "resizable" oder "auto", dann nimmt das Widget die Breite der View an. Die H&ouml;he ist f&uuml;r die Darstellung egal.<p>
+<b>7SegmentReading</b><br>
+Diese View zeigt numerische Readings im 7-Segment-Design an. Die View hat u.A. folgende Parameter:
+<ul>
+<li><b>reading</b>: Hier wird das Device und das Reading angegeben, welches angezeigt werden soll.</li>
+<li><b>digits</b>: Anzahl der Ziffern, die insgesamt dargestellt werden sollen, also inklusive der Nachkommastellen. Falls negative Werte erwartet werden, muss man auch eine Ziffer f&uuml;r das Vorzeichen vorsehen.</li> 
+<li><b>decimals</b>: Anzahl der Nachkommastellen.</li>
+<li><b>colorscheme</b>: Steuert die Farbgebung. Es sind folgende Werte vorgesehen:
+<ul>
+<li>single: Es wird eine feste Farbe verwendet. Wird dieser Wert ausgew&auml;hlt, dann erscheint der Parameter "color". Ansonsten bleibt "color" ausgeblendet.</li>
+<li>temp-air: Dies ist f&uuml;r Lufttemperaturen gedacht. Die Farbgebung erfolgt je nach Temperatur, so wie bei der View LabelTemperature, wenn man colors=air w&auml;hlt.</li>
+<li>temp-boiler: Dies ist f&uuml;r die Wassertemperatur in einer Heizung gedacht. Die Farbgebung erfolgt je nach Temperatur, so wie bei der View LabelTemperature, wenn man colors=boiler w&auml;hlt.</li>
+<li>humidity: Dies ist f&uuml;r relative Luftfeuchtigkeiten gedacht. Die Farbgebung erfolgt je nach Feuchtigkeit, so wie bei der View LabelHumidity.</li>
+</ul>
+<li><b>color</b>: Farbe der Anzeige. Es k&ouml;nnen insbesondere die "FUIP-Farbsymbole" ausgew&auml;hlt werden, so dass die Anzeige zum Rest der Oberfl&auml;che passt. Ansonsten kann man so ziemlich alles eingeben, was CSS als Farbe erlaubt.</li>
+ </ul>
+Die restlichen Parameter sind die bei FUIP &uuml;blichen. W&auml;hlt man bei <i>sizing</i> "resizable" oder "auto", dann nimmt das Widget die Breite der View an. Die H&ouml;he ist f&uuml;r die Darstellung egal.
+<p style="clear:left;height:0.5em;"></p>
+
+<h2>12.11.2019</h2>
+<h3>LabelTemperature, LabelHumidity: Titel ist per Default Device-Name</h3>
+Bei den Views LabelTemperature und LabelHumidity ist der Titel (Feld "title" im Konfigurations-Popup) jetzt standardm&auml;&szlig;ig der Device-Name und nicht mehr fix "Temperatur" bzw. "Humidity".
+
+<h2>11.11.2019</h2>
+<h3>Dokumentation des FUIP-Moduls</h3>
+FUIP enth&auml;lt jetzt eine Moduldokumentation ("Device specific help" bzw. einen eigenen Abschnitt in der lokalen Commandref), momentan jedoch nur auf Deutsch. Bei Auswahl eines set-Kommandos oder eines Attributs in FHEMWEB werden auch die zugeh&ouml;rigen Beschreibungen angezeigt.
+
+<h3>Nur noch "sinnvolle" set-Kommandos zur Auswahl</h3>
+In FHEMWEB werden f&uuml;r das FUIP-Device nur noch solche set-Kommandos angeboten, die auch f&uuml;r den Anwender gedacht sind. get-Kommandos werden gar keine mehr angeboten, da diese nur f&uuml;r die interne Verwendung durch FUIP selbst gedacht sind. 
+
+<h2>10.11.2019</h2>
+<h3>Beim Kopieren von Zellen springt FUIP zu FHEMWEB zur&uuml;ck</h3>
+Wenn im Namen des FUIP-Device Gro&szlig;buchstaben vorkommen, dann wurde beim Kopieren von Zellen zu FHEMWEB "zur&uuml;ckgesprungen". Dies ist jetzt behoben. 
+
+<h3>ShutterControl: Aktueller Stand im Select-Widget</h3>
+In der ShutterControl-View wird jetzt im Select-Widget auch etwas angezeigt, wenn der aktuelle Stand zwischen zwei Werten liegt. (Das Select-Widget ist das Element rechts neben den Hoch/Stop/Runter-Tasten, mit dem man einen bestimmten Prozentwert anfahren kann.) Es wird jetzt immer der Wert angezeigt, der am n&auml;chsten am vom Rollladen-Device zurückgemeldeten Stand liegt. Wenn der Rollladen z.B. bei 88% steht, dann wird 90% angezeigt.
+
+<h2>09.11.2019</h2>
+<h3>HTML-View: Flexible Felder mit Anf&uuml;hrungszeichen (")</h3>
+Flexible Felder, bei denen ein (oder mehrere) Anf&uuml;hrungszeichen im Wert vorkamen, haben zu Fehlern gef&uuml;hrt. (Flexible Felder sind solche, die durch die Verwendung von "fuip-field" im HTML entstehen.) Dieses Problem wurde behoben, au&szlig;er f&uuml;r Felder des Typs "setoptions". Hier sind nach wie vor keine Anführungszeichen m&ouml;glich. 
+
+<h3>ShutterControl, UpStopDown: Visualisierung der aktuellen Bewegung</h3>
+Bei den Views ShutterControl und UpStopDown kann man jetzt ein Reading angeben, welches die momentane Bewegungsrichtung enth&auml;lt. Enth&auml;lt dieses Reading den Wert f&uuml;r "hoch" (per Default "up"), dann wird der Pfeil nach oben aktiv ("on") dargestellt. Entsprechend beim Wert f&uuml;r "runter" der Pfeil nach unten. Die neuen Parameter der Views sind wie folgt:
+<ul>
+<li><b>dirReading</b> enth&auml;lt das Reading mit der Richtungs-/Bewegungsanzeige. Defaultwert ist "direction". Es sind nur Readings des Device im Parameter "device" vorgesehen.</li> 
+<li><b>dirUp</b> enth&auml;lt den Wert, den das Reading annimmt, wenn der Rollladen nach oben f&auml;hrt. Defaultwert ist "up".</li>
+<li><b>dirDown</b> enth&auml;lt den Wert, den das Reading annimmt, wenn der Rollladen nach unten f&auml;hrt. Defaultwert ist "down".</li>
+</ul>
+
+<h2>08.11.2019</h2>
+<h3>Reconnect nach langem Handy-Schlaf</h3>
+Bei manchen mobilen Browsern (bzw. mindestens bei Chrome auf meinem Telefon) konnte sich das Frontend nach "langem" Abschalten des Bildschirms nicht mehr mit FHEM verbinden. Man musste die Seite manuell aktualisieren. Dies wurde behoben (jetzt hoffentlich endgültig).<br>
+Für Interessierte: Der Browser hat nach einer Weile (etwa 15 Minuten bis 2 Stunden) ein beforeunload-Event gesendet, aber die Seite war nach dem Aufwachen immer noch da. Allerdings gab es weder ein visibilitychange-Event noch irgend ein anderes Event, welches verwendbar wäre.
+
+<h3>Reconnect-Wartezeit-Eskalation</h3>
+(Ich habe keine Ahnung, wie ich das ordentlich nennen soll.)<br>
+In manchen Situationen bricht die Verbindung ab, kann aber sofort wiederhergestellt werden. Andererseits sollte bei dauerhaftem Verbindungsabbruch nicht st&auml;ndig versucht werden, eine Verbindung herzustellen. Daher wird jetzt der erste Versuch nach einem Abbruch sofort gemacht, der nächste etwas sp&auml;ter usw. Die maximale Wartezeit zwischen zwei Verbindungsversuchen betr&auml;gt 5 Sekunden. 
+
+<h3>Keine Toast-Messages mehr bei Verbindungsproblemen</h3>
+Durch die Overlay-Meldung (alles wird rot...) kann man Verbindungsprobleme kaum noch &uuml;bersehen. Die (zus&auml;tzlichen) Toast-Meldungen waren eher verwirrend, da sie in der Regel dann auftauchen, wenn die Verbindung gerade wieder hergestellt wurde. Eine genauere Analyse von Verbindungsproblemen kann (und sollte) jetzt &uuml;ber das Log erfolgen.
+
+<h3>Komplett fehlende Aktualisierung der Readings</h3>
+Dieser Fall kam relativ selten vor, aber manchmal wurden &uuml;berhaupt keine Readings aktualisiert. Derselbe Fehler hat auch dazu gef&uuml;hrt, dass nach einem Verbindungssabbruch st&auml;ndig und sehr schnell Shortpolls versucht wurden. Beides wurde behoben.
+
+
+<h2>04.11.2019</h2>
+<h3>Verbindung zum "Backend" stabilisiert</h3>
+Da die Umstellung auf Longpoll (Ajax) vom 13.08.2019 nicht wirklich viel gebracht hat, wurde wieder auf Websocket umgestellt und der komplette Connect/Disconnect/Reconnect-Mechanismus &uuml;berarbeitet. Dabei wurden insbesondere den Seltsamkeiten bei schlafenden Mobilger&auml;ten Beachtung geschenkt. Leider musste daf&uuml;r der "FTUI-Kernel" (also die Datei fhem-tablet-ui.js) &uuml;bernommen und stark modifiziert werden. (D.h. eine Kopie davon. FUIP ver&auml;ndert keine fremden Dateien.)
+
+<h3>Fehler-Overlay bei Verbindungsabbruch</h3>
+Wenn die Verbindung zum Backend (also zu FHEM) abbricht, dann wird ein (momentan rotes) Overlay mit einer entsprechenden Meldung &uuml;ber die Oberfl&auml;che gelegt. Dies bleibt bestehen, bis die Verbindung wieder komplett wiederhergestellt ist. 
+ 
+<h3>Neues Trace- bzw. Log-Konzept</h3> 
+Um insbesondere den Besonderheiten auf Mobilger&auml;ten auf die Spur zu kommen, wurde ein neues Log-Konzept f&uuml;r das Frontend entwickelt. Daf&uuml;r gibt es drei neue Attribute im FUIP-Device:
+<ul>
+<li><b>loglevel</b> kann die Werte 0 bis 5 annehmen. Bei 0 wird kein Log geschrieben, bei 5 ein sehr detailliertes. Der Defaultwert ist 0.</li>
+<li><b>logareas</b> steuert, aus welchem Bereich Logeintr&auml;ge geschrieben werden. Es kann eine Komma-separierte Liste angegeben werden mit den folgenden Werten als Inhalt:
+<ul>
+<li><b>base.init</b> f&uuml;r die Initialisierungsphase</li>
+<li><b>base.poll</b> f&uuml;r alles rund um den Lebenszyklus der Verbindung zum Backend</li>
+<li><b>base.update</b> f&uuml;r die Aktualisierung der Werte am Frontend</li>
+<li><b>base.widget</b> f&uuml;r die Widget-Basis</li>
+<li><b>unknown</b>  f&uuml;r alle Meldungen, die momentan keine "Area" angeben. Das sind insbesondere alle Log-Eintr&auml;ge, die von den Widgets selbst kommen.</li>
+</ul>
+Der Defaultwert ist eine leere Liste, wodurch Meldungen zu allen Bereichen geschrieben werden. 
+<li><b>logtype</b> steuert, wohin das Log geschrieben wird. Es kann die folgenden Werte annehmen:
+<ul>
+<li><b>console</b> bedeutet, dass das Log auf die Javascript-Konsole geschrieben wird. D.h. es erscheint in den Entwicklerwerkzeugen/Developer Tools des Browsers. Dies ist der Defaultwert.</li>
+<li><b>localstorage</b> bedeutet, dass das Log zuerst in den lokalen Speicher des Browsers geschrieben wird. (localStorage in JavaScript) Beim Aufruf der n&auml;chsten FUIP-Seite (bzw. Neuladen der Seite) wird das Log dann zu FHEM &uuml;bertragen, welches es dann in eine Datei im Verzeichnis &lt;fhem&gt;/FHEM/lib/FUIP/log schreibt.<br>
+Der Dateiname enth&auml;lt den Namen des FUIP-Device, die IP-Adresse des Frontends (also z.B. des Mobilger&auml;ts) sowie ein Zeitstempel. So kann leicht zugeordnet werden, woher das Log kommt.</li>
+</ul>  
+</ul>
+
+<h3>Icon-Liste entfernt</h3>
+Es gab eine M&ouml;glichkeit, sich alle verwendbaren Icons &uuml;ber eine spezielle URL anzeigen zu lassen. Dies wurde entfernt. Wo Icons ben&ouml;tigt werden kann man sie sich &uuml;ber die Werthilfe auflisten lassen.
+ 
+<h3>Timing beim Widget-Resizing optimiert</h3>
+Beim Laden einer Seite kann die Gr&ouml;&szlig;e mancher Widgets erst dann angepasst werden, wenn bestimmte andere Elemente bereits geladen und initialisiert sind. Das "Warten" darauf war etwas ungeschickt programmiert und hat dadurch zu viele Systemressourcen verbraucht. Dies wurde korrigiert.
+  
+<h3>Thermostat-View: HTML-Fehler</h3>
+Beim Thermostat-View hat ein schlie&szlig;endes "&gt;" gefehlt. Dies wurde korrigiert.  
+  
+
+<h2>14.08.2019</h2>
+<h3>Clock View korrigiert</h3>
+Beim View "Clock" wurden zwei Fehler korrigiert:
+<ol>
+<li>Es wurde oft (aber nicht immer) die Client-Zeit anstatt der Server-Zeit angezeigt.</li>
+<li>Wenn der Browser wieder sichtbar wurde, dann konnte es vorkommen, dass es bis zu einer Minute dauert, bis die aktuelle Zeit angezeigt wird. (z.B. wenn das Telefon/Tablet wieder "aufgeweckt" wurde)</li>  
+</ol>
+Beide Probleme wurden behoben. FUIP verwendet jetzt ein eigenes Clock-Widget (fuip_clock anstatt clock).
+
+<h2>13.08.2019</h2>
+<h3>Umstellung von Websocket auf Longpoll</h3>
+Im "FTUI-Kernel" gibt es einen Fehler, der dafür sorgt, dass Readings nach einer gewissen Zeit nicht mehr aktualisiert werden. Dies passiert bei der Verwendung von Websocket und insbesondere auf manchen Telefonen und Tablets. Da es nicht danach aussieht, dass dieser Fehler bald behoben wird, wurde auf den "alten" Longpoll-Mechanismus (Ajax) umgestellt.
+
+<h2>12.08.2019</h2>
+<h3>Absturz beim Export behoben</h3>
+Beim Exportieren von Seiten oder Zellen konnte es zu einen kompletten FHEM-Absturz kommen, wenn der Seitenname (die Page-Id) Sonderzeichen enthalten hat. Dies wurde behoben.
+
+<h2>28.07.2019</h2>
+<h3>Chart: logProxy mit postFn und &auml;hnlichem</h3>
+F&uuml;r manche SVG-Charts, die ein logProxy Device verwendet haben, hat der Chart View nicht funktioniert. Es wurde dann gar nichts angezeigt. Dies kam vor, sobald in der Spaltendefinition ein einfacher Anf&uuml;hrungsstrich (single quote) verwendet wurde. Dies ist z.B. bei postFn der Fall. Dies ist jetzt behoben. 
+
+<h2>26.07.2019</h2>
+<h3>Neuer View "HueSceneSelect" zum Auswählen von Hue-Szenen</h3>
+Der View HueSceneSelect sieht aus wie ein "normaler" Select View (bzw. das FTUI select widget), ist aber speziell auf Szenen des Hue-Systems abgestimmt.<br>
+Die Zuordnung der Szenen zu Ger&auml;ten und Gruppen (R&auml;umen) ist mehr an die Hue-App (Android) angepasst und weicht bei der Benutzung m&ouml;glicherweise etwas von HUEDevice bzw. HUEBridge in FHEM ab. Die wesentlichen Felder sind <i>device</i> und <i>scenes</i>:
+<ul>
+<li><b>device</b>: Hier k&ouml;nnen Hue-Gruppen ausgew&auml;hlt werden, also HUEDevice-Ger&auml;te, die einer Gruppe (z.B. einem Raum) in der Hue-Bridge entsprechen. Au&szlig;erdem kann die Hue-Bridge selbst ausgew&auml;hlt werden. Einzelne Hue-Ger&auml;te k&ouml;nnen nicht benutzt werden. Wenn man eine Szene einem einzelnen Ger&auml;t (also normalerweise einer Lampe) zugeordnet hat, dann muss man hier die Hue-Bridge w&auml;hlen.</li>
+<li><b>scenes</b>: Hier kann man die Szenen ausw&auml;hlen, die man dem Benutzer zur Verf&uuml;gung stellen will. (Also die nachher im Select-Widget auftauchen.) Das Feld selbst zeigt die internen IDs der Szenen an, daher sollte man die anzuzeigenden Szenen &uuml;ber die Werthilfe ausw&auml;hlen. Dort werden entweder die zur gew&auml;hlten Gruppe passenden Szenen angezeigt oder alle Szenen, falls man die Hue-Bridge als <i>device</i> ausgew&auml;hlt hat.</li>
+</ul> 
+
+<h3>Vorauswahl bei Werthilfe zu Device-Feldern</h3>
+Bei einigen Views sind nur bestimmte Ger&auml;te ("Devices") sinnvoll, aber bisher sind immer (fast) alle in FHEM definierten Ger&auml;te in der zugeh&ouml;rigen Werthilfe aufgetaucht. Jetzt gibt es hier in einigen Views eine Vorauswahl, so dass nur noch sinnvolle Ger&auml;te angeboten werden. Dies betrifft die folgenden Views:
+<ul>
+<li>HueSceneSelect: Siehe oben.</li>
+<li>Batteries: Die Auswahl gilt hier f&uuml;r das Feld <i>exclude</i>. Es werden nur noch Ger&auml;te angeboten, die im Prinzip im Batteries-View auftauchen k&ouml;nnen.</li>
+<li>Chart: Nur SVG-Devices werden angeboten.</i>
+<li>DwdWebLink: Nur DWD_OpenData_Weblink-Devices werden angeboten.</i>
+<li>ReadingsGroup: Nur readingsGroup-Devices werden angeboten.</i>
+<li>ShutterTimer: Nur WeekdayTimer-Devices werden angeboten.</i>
+<li>Sysmon: Nur SYSMON-Devices werden angeboten.</i>
+<li>WeatherDetail: Nur PROPLANTA-Devices werden angeboten.</i>
+<li>WeatherOverview: Nur PROPLANTA-Devices werden angeboten.</i>
+<li>WebLink: Nur weblink-Devices werden angeboten.</i>
+<li>WeekdayTimer: Nur WeekdayTimer-Devices werden angeboten.</i>
+</ul>
+
+<h3>Aufr&auml;um- und Optimierungsarbeiten im Coding</h3>
+Vor Allem im Coding zum Konfigurations-Popup wurde relativ viel aufger&auml;umt, umgebaut und vereinfacht. Wahrscheinlich (oder besser: hoffentlich) merkt man davon gar nichts...
+
+
+<h2>07.07.2019</h2>
+<h3>LabelReading: Jetzt kann auch die Gr&ouml;&szlig;e eingestellt werden</h3>
+Der View LabelReading hat jetzt auch das Feld <i>sizing</i> mit den "&uuml;blichen" Optionen. Das ganze funktioniert analog zu den Views LabelTemperature, LabelHumidity und STATE. 
+
+<h3>Grad Celsius/Fahrenheit in der Einheiten-Werthilfe ge&auml;ndert</h3>  
+Die UTF-8 Darstellungen f&uuml;r Grad Celsius bzw. Fahrenheit (&#x2103; und &#x2109;) nehmen in der H&ouml;he mehr Platz ein als andere Zeichen. Dadurch kam es vor, dass das Layout des Views LabelReading etwas seltsam aussah. Dies wurde korrigiert, indem jetzt in der Werthilfe das Grad-Symbol mit einem gro&szlig;en C bzw. F verwendet wird (also °C bzw. °F). 
+
+<h2>11.06.2019</h2>
+<img src="Units.png" style="float:left;margin-right:10px;margin-bottom:10px" width=298px height=149px>
+<h3>LabelReading: Einheiten</h3>
+Im View LabelReading gibt es ein neues Feld <i>unit</i>. Wenn es gef&uuml;llt ist, dann wird der Inhalt an den Wert des Readings angeh&auml;ngt. Man kann prinzipiell alles m&ouml;gliche in dieses Feld schreiben, gedacht ist es aber f&uuml;r Einheiten. Daher kann man in der zugeh&ouml;rigen Werthilfe einige der &uuml;blichen Einheiten ausw&auml;hlen. Dabei kann man sowohl das Einheitensymbol (z.B. &#x2103;) als auch den Namen der Einheit (z.B. Grad Celsius) ausw&auml;hlen.
+<p style="clear:left;height:0.5em;"></p>
+
+<h2>05.06.2019</h2>
+<h3>MenuItem: Navigationsziel aus Reading holen (etc.)</h3>
+Im View MenuItem (und damit auch HomeButton) ist die Ermittlung des Navigationsziels flexibler (und hoffentlich klarer) geworden. Daf&uuml;r gibt es das neue Feld <i>linkType</i> mit den Optionen "fuip-page", "ftui-link" und "fhem-reading". Im Einzelnen...
+<ul>
+<li><b>fuip-page</b> bedeutet, dass das Navigationsziel eine Seite desselben FUIP-Device ist. Wenn man "fuip-page" ausw&auml;hlt, dann erscheint das Feld <i>pageid</i> mit einer Werthilfe, die alle (bereits generierten) Seiten des aktuellen FUIP-Device anzeigt. "fuip-page" ist sozusagen der Normalfall f&uuml;r ein Men&uuml; und damit auch die Voreinstellung.</li>
+<li><b>ftui-link</b> bedeutet, dass das Navigationsziel ein allgemeiner Link ist, wie man ihn auch im Tablet-UI (ohne FUIP) verwenden k&ouml;nnte. Wenn man "ftui-link" ausw&auml;hlt, dann erscheint das Feld <i>link</i>. Der Wert in diesem Feld kann dann zum Beispiel folgendes bedeuten:
+	<ul>
+	<li>Alles, was mit einem "/" beginnt, wird relativ zum FHEM-Server (auf dem FUIP l&auml;uft) interpretiert. Der Eintrag "/fhem?room=kitchen" w&uuml;rde FHEMWEB aufrufen und den Raum "kitchen" anzeigen.<br>
+	Man kann damit auch zu Seiten anderer FUIP-Instanzen springen. Der Eintrag "/fhem/ui2/page/room/kitchen" w&uuml;rde zur Seite "room/kitchen" der FUIP-Instanz "ui2" springen.</li>
+	<li>Relative links, die nicht mit "/" beginnen, rufen Dateien aus dem Tablet-UI	Installationsverzeichnis auf. Der Eintrag "demo_ftui.html" startet (zumindest bei mir) die Tablet-UI Demoseite.</i>
+	<li>Komplette URLs werden einfach so aufgerufen, wie sie sind. Man kann z.B. "http://google.de" eingeben und erh&auml;lt... (Ja was wohl?)</li>
+	</ul>
+<li><b>fhem-reading</b> ermittelt das Navigationsziel aus einem Reading eines FHEM-Devices. Wenn man "fhem-reading" ausw&auml;hlt, dann erscheinen die Felder <i>device</i> und <i>reading</i> mit den &uuml;blichen Werthilfen. Das hier gew&auml;hlte Reading muss einen Link wie oben unter "ftui-link" beschrieben enthalten. Das bedeutet, dass man nicht einfach den Namen einer FUIP-Seite eintragen kann (wie z.B. "room/kitchen"). Statt dessen muss der ganze Pfad inklusive FUIP-Device im Reading stehen, also z.B. "/fhem/ui/page/room/kitchen".</li>
+</ul>
+Bisherige Verwendungen von MenuItem und HomeButton m&uuml;ssen nicht angepasst werden. FUIP ermittelt f&uuml;r "alte" Seiten automatisch die richtige Kategorie. (Zumindest sollte das so sein.)
+
+<h2>03.06.2019</h2> 
+<h3>Autosave-Dateien und die ConfigDB</h3>
+Der Autosave-Mechanismus (siehe FUIP News vom 13.05.2019) war problematisch bei Verwendung der ConfigDB. Die Dateien wurden nicht mehr aus der Datenbank gel&ouml;scht. Außerdem hat die Werthilfe f&uuml;r <i>set load</i> in FHEMWEB nichts angezeigt. Im Prinzip war es damit fast unm&ouml;glich, automatisch gesicherte Zust&auml;nde zu finden und zu laden.</br>
+Diese Probleme sollten jetzt behoben sein. Die Autosave-Dateien werden jetzt immer ins Dateisystem geschrieben, auch wenn die ConfigDB benutzt wird.   
+
+<h2>29.05.2019</h2>
+<img src="AutoReturn.png" style="float:left;margin-right:10px;margin-bottom:10px" width=428px height=197px>
+<h3>Auto-Navigation / Return Home</h3>
+Man kann jetzt pro Seite einstellen, dass automatisch nach einer gewissen Zeit auf eine andere (FUIP-)Seite gewechselt werden soll. Damit kann man zum Beispiel ein automatisches "return home" implementieren. (Deshalb haben die neuen Felder ein "return" im Namen.)<br>
+Im Konfigurations-Popup für Seiten ("Page config") gibt es ein neues Feld <i>autoReturn</i>. Wenn man hier "on" w&auml;hlt, dann erscheinen die Felder <i>returnAfter</i> und <i>returnTo</i>. Bei <i>returnAfter</i> gibt man die Zeit (in Sekunden) ein, nach der automatisch die Seite gewechselt werden soll. Bei <i>returnTo</i> w&auml;hlt man die Seite aus, zu der navigiert werden soll. Es sind nur Seiten desselben FUIP-Device vorgesehen. Diese k&ouml;nnen &uuml;ber eine Werthilfe eingegeben werden.<br>
+Die automatische Navigation erfolgt nur bei Inaktivit&auml;t. Der Timer wird zur&uuml;ckgesetzt wenn der Benutzer die Maus bewegt, auf etwas klickt oder eine Taste dr&uuml;ckt.<br>
+Diese Einstellung wirkt sich auch auf den Bearbeitungsmodus (also <i>locked</i> = 0) aus. Allerdings k&ouml;nnte dadurch die Bearbeitung einer Seite unm&ouml;glich werden, wenn man <i>returnAfter</i> auf 0 oder 1 setzt. Daher wird im Bearbeitungsmodus immer erst nach mindestens 5 Sekunden wegnavigiert.  
+<p style="clear:left;height:0.5em;"></p>
+
+<h3>Window-View mit Zahlen in openstate/closedstate</h3>
+Wenn beim Window-View Zahlen als <i>openstate</i> bzw. <i>closedstate</i> verwendet wurden, dann hat das ganze nicht richtig funktioniert. Es kam zu keiner Fehlermeldung, aber der angezeigte Zustand war nicht immer korrekt. Das wurde behoben.
+
+<h2>28.05.2019</h2>
+<h3>Lock/Unlock per set-Befehl und &uuml;ber's Men&uuml;</h3>
+Der Mechanismus zum Sperren/Entsperren (das Attribut <i>locked</i>) wurde erweitert. Man kann jetzt &uuml;ber den Befehl <i>set &lt;fuip-device&gt; lock</i> sperren und mittels <i>set &lt;fuip-device&gt; unlock</i> entsperren. Der dadurch ge&auml;nderte Zustand wird in einem Internal gespeichert, d.h. es ist keine "strukturelle" &Auml;nderung. (Bei "Save config" erscheint kein rotes Fragezeichen.)<br>
+Standardm&auml;&szlig;ig wirken sich die neuen Befehle erst einmal nur auf den aktuellen Client aus (also auf den Rechner, vor dem man sitzt). Dadurch kann man z.B. auf dem Tablet/Telefon nachsehen, wie sich eine &Auml;nderung tats&auml;chlich auswirkt. Au&szlig;erdem bekommen Familienmitglieder niemals die Zahnr&auml;dchen angezeigt. Man kann das (Ent)Sperren auch explizit f&uuml;r eine bestimmte IP-Adresse durchf&uuml;hren, indem man die IP-Adresse als Argument verwendet, also in etwa <i>set &lt;fuip-device&gt; lock 192.168.178.45</i>.<br>
+Das war jetzt die Kurzfassung. In Wirklichkeit ist es ein bisschen komplexer, da das Attribut <i>locked</i> und die neuen <i>set</i>-Befehle zusammenpassen müssen. Das ganze wurde so gebaut, dass folgendes Vorgehen m&ouml;glich (und hoffentlich sinnvoll) ist:
+<ul>
+<li>Nach dem Anlegen eines neuen FUIP-Device ist alles "offen". D.h. das Attribut <i>locked</i> ist nicht vorhanden und wird damit wie 0 behandelt, also entsperrt. Man kann also auf jedem Client alles &auml;ndern.</li>
+<li>Insbesondere wenn man das Flex-Layout (Attribut <i>layout</i> sitzt auf "flex".) verwendet, kann das tats&auml;chliche (also "locked") Aussehen von der &Auml;nderungsansicht abweichen. Hier ist es dann sinnvoll, von Zeit zu Zeit zu sperren (<i>set &lt;fuip-device&gt; lock</i>), um sich den Zustand anzuschauen. M&ouml;glicherweise "entwickelt" man auch f&uuml;r andere Ger&auml;te auf einem gr&ouml;&szlig;eren Bildschirm. In dem Fall kann man die "anderen" sperren mittels <i>set &lt;fuip-device&gt; lock &lt;ip-address&gt;</i>. 
+<li>Sobald das ganze einen verwendbaren Stand erreicht hat, schaltet man sozusagen auf "im Prinzip gesperrt" um, also <i>attr &lt;fuip-device&gt; locked 1</i>. Falls weitere &Auml;nderungen zu machen sind, kann man dann auf dem jeweiligen "Entwicklungs-Client" entsperren mittels <i>set &lt;fuip-device&gt; unlock</i>.</li>
+</ul>
+Der Zustand der Sperren (also das, was mit den neuen Befehlen gemacht wird), wird im Internal <i>lockIPs</i> gespeichert. Das bedeutet auch, dass der Zustand nicht gespeichert wird und nach einem FHEM-Neustart wieder auf den Zustand des Attributs <i>locked</i> zur&uuml;ckgesetzt wird.<br>
+Im Konfigurations-Popup f&uuml;r Zellen und Seiten gibt es auch einen neuen Eintrag "Lock", wobei man "This client" oder "All clients" w&auml;hlen kann. Ein "Unlock" gibt es nicht, da es im gesperrten Zustand kein Konfigurations-Popup gibt.
+     
+<h3>Wechsel zu "Cell config" vom Konfig-Popup f&uuml;r Seiten</h3>
+Bei der Auswahl von "Cell config" im Konfigurations-Popup f&uuml;r Seiten kam es zu einer Fehlermeldung. Das wurde behoben.
+	 
+<h2>21.05.2019</h2>
+<img src="VariablenImViewTemplate.png" style="float:left;margin-right:10px;margin-bottom:10px" width=377px height=206px>
+<h3>Variablen in View Templates mit Swiper</h3>
+Variablen in View Templates f&uuml;r die Felder <i>layout</i>, <i>autoplay</i>, <i>navbuttons</i> und <i>pagination</i> haben nicht funktioniert. Variablen f&uuml;r diese Felder sind einfach "verschwunden", waren aber sozusagen unsichtbar noch vorhanden. Dies hat dazu gef&uuml;hrt, dass bei bei der Verwendung des View Templates dort gesetzte Werte ignoriert wurden. Dies wurde korrigiert. Variablen funktionieren jetzt auch bei diesen Feldern.
+
+<h3>Defaults f&uuml;r Variablen auf Feldern mit Defaultwert</h3>
+Wenn in einem View Template eine Variable definiert wurde f&uuml;r ein Feld, das einen Defaultwert hat, dann wurde bei der Verwendung des View Templates der urspr&uuml;ngliche Default-Wert verwendet, und nicht der im View Template angegebene Wert.<br>
+Beispiel: Der Default-Wert f&uuml;r <i>autoplay</i> beim Swiper-Layout ist "0" (also kein Autoplay). Setzt man nun im View Template einen Wert von "2000", dann wurde dies <b>nicht</b> &uuml;bernommen, wenn f&uuml;r <i>autoplay</i> eine Variable definiert ist. Statt dessen wurde immer noch der Wert "0" verwendet, au&szlig;er dies wurde in der Instanz (also bei der Verwendung) explizit &uuml;berschrieben.<br>
+Dieses Verhalten war nicht gerade intuitiv und wurde so ge&auml;ndert, dass in diesem Fall der im View Template gesetzte Wert als Default verwendet wird (also "2000" im Beispiel).
+<p style="clear:left;height:0.5em;"></p>
+
+<h2>19.05.2019</h2>
+<h3>Batteries und Arlo-Ger&auml;te</h3>
+Bei Arlo-Ger&auml;ten ist das Reading <i>batteryLevel</i> ein Prozentsatz. Das wird jetzt vom Batteries-View richtig interpretiert. 
+
+<h3>Fehler im Swiper im Gridster-Layout</h3>
+In der ersten Version zum Swiper (s.u.) kam es zu einem Fehler im Gridster-Layout. Im Bearbeitungsmodus (<i>locked</i>=0) wurden alle Views im Swiper ganz am Anfang "&uuml;bereinander gestapelt" angezeigt. Dies wurde behoben.  
+
+<h3>Swiper</h3>
+<img src="Swiper.png" style="float:left;margin-right:10px" width=322px height=298px><span style="color:red">Achtung: Dieses Feature ist momentan noch ein bisschen experimentell. Es sind zwar momentan (also am 19.Mai um 17:00) keine echten Probleme bekannt, aber es ist halt brandneu. Au&szlig;erdem k&ouml;nnen sich einzelne Feinheiten noch &auml;ndern, wie z.B. die genaue Positionierung der Views im Swiper oder das Verhalten im flex-Layout (also die "Responsiveness").</span><p>
+FUIP bietet jetzt die M&ouml;glichkeit, Views in einen Swiper (oder auch Slider) zu packen. Dazu gibt es im Konfigurations-Popup f&uuml;r Zellen und View Templates das neue Feld <i>layout</i>. W&auml;hlt man hier "slider", dann kann man keine Views mehr direkt positionieren. Statt dessen liegen dann alle Views in einem Swiper-Widget und k&ouml;nnen "durchgebl&auml;ttert" bzw. "gewischt" werden.<p>
+<b>drag&drop</b>: Es ist weiterhin m&ouml;glich, Views aus einer Zelle mit Swiper-Layout heraus- bzw. hineinzuziehen. Beim "in den Swiper Fallenlassen" wird die View momentan als letzte "Slide" angef&uuml;gt. D.h. es sieht im ersten Moment so aus, als ob die View verschwindet, sie ist aber nur ganz hinten.<br> 
+<b>autoplay</b>: Wenn hier ein Wert ungleich 0 eingegeben wird, dann werden die einzelnen Views automatisch weitergeschaltet. Der bei <i>autoplay</i> angegebene Wert ist die Zeit in Millisekunden, nachdem zur n&auml;chsten View weitergschaltet wird.<br> 
+<b>navbuttons</b>:Damit k&ouml;nnen die Navigationspfeile rechts und links ein- bzw. ausgeschaltet werden.<br> 
+<b>pagination</b>:Damit k&ouml;nnen die Punkte unterhalb ein- bzw. ausgeschaltet werden.<p>
+Man kann immer nur die ganze Zelle (oder das ganze View Template) in einen Swiper umwandeln. Wenn man eine Zelle braucht, die au&szlig;er dem Swiper noch andere Views enth&auml;lt, dann muss man den Umweg &uuml;ber ein View Template gehen. D.h. man definiert ein View Template mit Swiper-Layout und verwendet dies dann in der Zelle.<br>
+&Auml;hnliches gilt, wenn man eine Slide innerhalb des Swipers braucht, die aus mehreren Views besteht. Das geht nicht direkt, sondern auch nur &uuml;ber View Templates.<br>
+Ein Popup kann kein Swiper-Layout haben. Man kann allerdings ein View Template mit einem Swiper-Layout auf einem Popup verwenden. 
+<p style="clear:left;height:0.5em;"></p>
+
+<h2>13.05.2009</h2>
+<h3>Autosave</h3>
+FUIP speichert jetzt jede &Auml;nderung automatisch ab. Dadurch entstehen f&uuml;r jedes FUIP-Device bis zu 5 Autosave-Dateien im Ordner &lt;fhem&gt;/FHEM/lib/FUIP/config/autosave. (&lt;fhem&gt; ist normalerweise /opt/fhem) Das Kommando <i>set...load</i> akzeptiert daf&uuml;r jetzt einen Parameter, &uuml;ber den angegeben werden kann, ob man die normal abgespeicherte Konfiguration laden will (<i>lastSaved</i> oder einfach leer lassen) oder eine der Autosave-Dateien. Dabei ist ersichtlich, von wann die jeweilige Autosave-Datei stammt.<br>
+Wenn man &Auml;nderungen in FUIP gemacht hat und FHEM beendet, ohne vorher ein <i>set...save</i> ausgef&uuml;hrt zu haben, dann wird nach dem n&auml;chsten Start eine entsprechende Meldung angezeigt. Diese Meldung erscheint in der FUIP-Konfigurationsoberfläche und in der Detailanzeige des FUIP-Device in FHEMWEB. Dabei ist egal, wie FHEM beendet wurde. Es funktioniert also auch f&uuml;r Abst&uuml;rze und &auml;hnliches. 
+
+<h2>08.05.2009</h2>
+<h3>Fix vom 04.05.2019 wieder ausgebaut (Probleme mit closeConn bzw. Apple)</h3>
+Die Korrektur (aka "der Hack") wurde wieder ausgebaut, da das Problem inzwischen in FHEM (genauer: FHEMWEB) behoben wurde. D.h. es ist jetzt ein "update" notwendig, falls das Problem (wieder) auftritt.
+
+<h2>05.05.2009</h2>
+<h3>"Kaputte" WeekdayTimer in FHEM</h3>
+Die Views WeekdayTimer, ShutterTimer und ShutterControl k&ouml;nnen mit WeekdayTimer-Devices angelegt werden, die in FHEM nicht existieren. Die Views funktionieren dann auch im Prinzip, aber beim Speichern der Schaltzeiten wurde bisher in FHEM ein WeekdayTimer-Device erzeugt, das sich auf das Ger&auml;t "undefined" bezieht. Dies wurde korrigiert, so dass jetzt gar kein WeekdayTimer-Device mehr automatisch angelegt wird. Statt dessen erfolgt eine Fehlermeldung und man muss das WeekdayTimer-Device manuell in FHEM anlegen.
+
+<h2>04.05.2009</h2>
+<b style="color:red;">Happy Star Wars Day!</b>
+<h3>Leere Seite wenn closeConn gesetzt und auf Apple-Ger&auml;ten</h3>
+Unter den folgenden Voraussetzungen konnte FUIP gar nicht mehr verwendet werden. Es wurde immer nur eine Fehlerseite angezeigt, da keine Daten vom Server (d.h. von FUIP) gesendet wurden (ERR_EMPTY_RESPONSE oder ERR_CONNECTION_CLOSED). 
+<ul>
+<li>Im FHEMWEB-Device ist das Attribut <i>closeConn</i> gesetzt <b>oder</b></li>
+<li>als Frontend wird irgendetwas von Apple verwendet.</li>
+</ul>
+Dieses Problem wurde behoben. 
+
+<h2>03.05.2019</h2>
+<h3>WeekdayTimer: Tastatur abschalten f&uuml;r Zeitangaben</h3>
+Beim View WeekdayTimer ist f&uuml;r Zeitangaben jetzt die Tastatur per Voreinstellung abgeschaltet. D.h. man kann die Zeiten nur noch &uuml;ber die Drop-Down-Listen &auml;ndern und auf Mobilger&auml;ten wird keine Tastatur mehr angezeigt. Dieses Verhalten kann mit dem Parameter <i>timeInput</i> ge&auml;ndert werden. (Das ganze hat keinen Einfluss auf die Felder <i>Horizon</i> und <i>Offset</i>. Dort kann man wie bisher immer nur &uuml;ber die Tastatur etwas eingeben.)  
+
+<h3>View Templates importieren</h3>
+<img src="ImportViewTemplate.png" style="float:left;margin-right:10px" width=287px height=150px>Man kann exportierte View Templates jetzt auch importieren. Die Funktion is ein bisschen versteckt auf der Seite "Maintain View Templates". Der Name des neuen View Templates wird aus der importierten Datei genommen, falls noch kein View Template mit demselben Namen existiert. Ansonsten wird ein neuer Name automatisch erzeugt. Bei einem erfolgreichen Import wird man direkt auf die Bearbeitungsseite des neuen View Templates weitergeleitet.<br>
+Im Rahmen der daf&uuml;r gemachten &Auml;nderungen wurden auch die anderen Import-Funktionen (f&uuml;r Popups, Zellen und Seiten) &uuml;berarbeitet. Dies d&uuml;rfte aber kaum Auswirkungen auf die Benutzung haben, au&szlig;er vielleicht bei der Fehlerbehandlung.
+<p style="clear:left;height:0.5em;"></p>
+
+<h3>Fehlerbehandlung beim Import mit fehlenden View Templates</h3>
+Beim Import gab es bisher keine Fehlerbehandlung f&uuml;r fehlende View Templates. D.h. beim Import eines Objekts (Popup, Zelle oder Seite), welches ein View Template verwendet, dessen Definition im Zielsystem nicht existiert, kam es meistens zu einem kompletten FHEM-Absturz. Dies wurde behoben. Jetzt wird an Stelle des fehlenden View Templates ein spezieller View generiert, der eine Fehlermeldung anzeigt. Dieser View kann dann mit den normalen Bearbeitungsfunktionen durch etwas passendes ersetzt werden.<br>
+Das gleiche gilt auch f&uuml;r importierte View Templates. 
+
+<h3>Absturz im Konfigurationspopup bei fehlenden View Templates</h3>
+Bei Verwendung eines nicht existerenden View Templates gab es einen FHEM-Absturz beim Schlie&szlig;en des Konfigurations-Popups (z.B. einer Zelle). Dieses Szenario war zwar bisher sehr unwahrscheinlich, der Fehler musste aber wegen der Fehlerbehandlung beim Import sowieso repariert werden.
+
+<h3>Wetter-Views: Unn&ouml;tige Meldungen in Developer-Konsole</h3>
+Die Views WeatherDetail und WeatherOverview haben viele Meldungen in der Developer-Konsole (Javascript-Konsole) des Browsers erzeugt. Das ist f&uuml;r den Endbenutzer zwar meistens egal, hat aber bei der Fehlersuche gest&ouml;rt. Die Meldungen werden jetzt nicht mehr geschrieben. 
+
+<h2>30.04.2019</h2>
+<h3>Attribut <i>cellMargin</i> f&uuml;r Zellzwischenr&auml;ume</h3>
+Mit dem Attribut <i>cellMargin</i> kann man jetzt den Platz zwischen den Zellen festlegen. Der Wert muss zwischen 0 und 10 liegen, der Standardwert ist 5. Um jede Zelle herum werden <i>cellMargin</i> Pixel frei gehalten. D.h. zwischen zwei Zellen ist zweimal so viel Platz (in Pixel) wie durch <i>cellMargin</i> festgelegt. Der Rand um den ganzen Anzeigebereich herum ist <i>cellMargin</i> Pixel breit.
+
+<h3>Rand korrigiert bei <i>layout</i>=flex</h3>
+Bei Verwendung des flex-Layouts war der Rand um den Anzeigebereich zu groß. Dies wurde korrigiert.
+
+<h3>FHEMWEB-Overhead entfernt</h3>
+Diese &Auml;nderung sollte (fast) keine sichtbaren Auswirkungen haben, au&szlig;er ggf. etwas k&uuml;rzeren Ladezeiten. Es wird jetzt kein FHEMWEB-Overhead (wie z.B. f18-Style Daten) mehr hinzugef&uuml;gt und die HTTP-Header werden komplett von FUIP selbst kontrolliert.     
+
+<h2>29.04.2019</h2>
+<h3>Wetter-Icons bei "Remote FHEM"</h3>
+Bei den Views WeatherDetail und WeatherOverview wurden die Wetter-Icons nicht richtig angezeigt, wenn das Attribut <i>fhemwebUrl</i> verwendet wurde, aber dessen Inhalt am Ende keinen "/" hatte. Das sollte jetzt nicht mehr passieren.
+
+<h2>28.04.2019</h2>
+<h3>Batteries-View: Sortierung korrigiert</h3>
+Auch bei Verwendung des Parameters <i>labelRule</i> wurde immer nach Alias und Ger&auml;tename sortiert. Dies wurde korrigiert, so dass jetzt immer nach dem tats&auml;chlich angezeigten Namen sortiert wird.
+
+<h2>25.04.2019</h2>
+<h3>Batteries und PRESENCE-Ger&auml;te</h3>
+Bei PRESENCE-Ger&auml;ten ist das Reading <i>batteryLevel</i> ein Prozentsatz. Das wird jetzt vom Batteries-View richtig interpretiert. (Bei allen anderen bisher unterst&uuml;tzten Ger&auml;ten ist <i>batteryLevel</i> eine Spannung, d.h. eine Angabe in Volt.)   
+
+<h3>Batteries: Flexibleres Label</h3>
+Beim View "Batteries" kann man jetzt einstellen, wie das Label (also der dargestellte Name) zu jedem Ger&auml;t ermittelt wird. Dazu hat der View einen neuen Parameter <i>labelRule</i>. Man kann hier eine durch Komma getrennte Liste von Attributen, Internals und Readings der betreffenden Ger&auml;te eingeben. Das erste Attribut/Reading/Internal, welches beim jeweiligen Ger&auml;t existiert und auch einen Inhalt hat, wird dann als Label benutzt. Falls nichts gefunden wird, dann wird der Ger&auml;tename (also das Internal <i>NAME</i>) benutzt. Hier ein paar Beispiele. Angegeben ist jeweils der Inhalt des Felds <i>labelRule</i> und was es bewirkt.
+<ul>
+<li><b>alias,NAME</b>: Das ist die Voreinstellung. Damit ist alles so wie vorher: Falls ein Alias gesetzt ist, wird es benutzt, anonsten der Name.</li>
+<li><b>gassistantName,assistantName,alias,NAME</b>: Damit wird zuerst nach einem <i>gassistantName</i> geschaut, dann nach einem <i>assistantName</i>. Ist beides nicht vorhanden, dann geht es weiter wie bei der Voreinstellung.</li>
+<li><b>NAME,alias</b>: Damit wird immer der Ger&auml;tename (Internal <i>NAME</i>) benutzt, da dieser immer existiert. Dasselbe ist der Fall, wenn <i>labelRule</i> leer ist und meistens auch bei Tippfehlern.</li>
+</ul>
+
+<h2>24.04.2019</h2>
+<h3>Toast-Messages abschaltbar</h3>
+Die Meldungen, die z.B. bei Schaltvorg&auml;ngen normalerweise links unten auftauchen, sind jetzt konfigurierbar. Dazu gibt es das neue Attribut <i>toastMessages</i> so lange man das Attribut nicht verwendet, bleibt alles wie vorher (auch selbstgebastelte Konfigurationen &uuml;ber HTML-Views m&uuml;ssten noch funktionieren). Das Attribut kann die folgenden Werte annehmen:
+<ul>
+<li><b>all</b>: Alles bleibt im Prinzip wie vorher, d.h. alle Meldungen werden angezeigt. Selbstgebastelte Toast-Konfigurationen funktionieren damit aber wahrscheinlich nicht.</li>
+<li><b>errors</b>: Es werden nur noch Fehlermeldungen (also die roten Popups) angezeigt. Meldungen wie "set xy on" kommen nicht mehr.</li>
+<li><b>off</b>: Es werden keine Meldungen mehr angezeigt, au&szlig;er Fehlermeldungen, die von FUIP im &Auml;nderungsmodus (<i>locked = 0</i>) erzeugt werden. D.h. Lebenspartner oder andere Mitbewohner sehen wahrscheinlich tats&auml;chlich gar keine Meldungen mehr.</li>  
+</ul>
+<h3>Meldung beim L&ouml;schen verwendeter View-Templates</h3>
+View-Templates, welche verwendet werden, k&ouml;nnen nicht gel&ouml;scht werden. Die dazugeh&ouml;rige Fehlermeldung gibt es schon eine Weile, sie wurde jetzt jedoch von "Toast" auf "Popup" umgestellt. Das bedeutet auch, dass sie vom Benutzer explizit quittiert werden muss.
+
+<h2>20.04.2019</h2>
+<h3>Batteries View auf Popups: Ger&auml;tenamen wieder lesbar</h3>
+Beim View "Batteries" kam es bei der Ermittlung der L&auml;nge der Ger&auml;tenamen zu einem Fehler, wenn der View auf einem Popup verwendet wurde. Dadurch war der Ger&auml;tename extrem verk&uuml;rzt, selbst wenn noch genug Platz zur Verf&uuml;gung stand. Dies wurde korrigiert.
+
+<h2>18.04.2019</h2>
+<h3>Umbenennen von View Templates mit Verwendung auf Popups</h3>
+Beim Umbenennen von View Templates wurden Views auf Dialogen ignoriert. Deshalb blieb bei View Template Instanzen auf Popups der alte Name stehen und es kam nach einem Neustart von FHEM oder einem "set load" zum Absturz wie am 14.04.2019 beschrieben. Dabei war es egal, ob das Popup Teil eines (anderen) View Templates war oder direkt durch einen View in einer Zelle ausgelöst wurde. Dieses Problem sollte jetzt nicht mehr auftreten.     
+<h3>Verwendungsnachweis auch f&uuml;r View Templates auf Dialogen</h3>
+Im Verwendungsnachweis ("Where-used list") von View Templates wurden ebenfalls Views auf Dialogen ignoriert. Deshalb konnten auch View Templates gel&ouml;scht werden, wenn diese nur auf Popups verwendet wurden. 
+<h3>Verwendungsnachweis f&uuml;r View Templates "kompakter"</h3>
+Bisher wurden Seiten (oder View Templates) mit mehrfachen Verwendungen eines View Templates in dessen "Where-used list" mehrfach angezeigt. Das ist jetzt nicht mehr der Fall. 
+<h3>Kein Absturz mehr bei fehlenden View Templates</h3>
+Es erfolgt jetzt (hoffentlich) kein Absturz mehr, wenn ein View Template zwar verwendet wird, aber nicht (mehr) definiert ist. Statt dessen wird jetzt an Stelle der fehlerhaften View Template Instanz eine Fehlermeldung angezeigt. 
+
+<h2>14.04.2019</h2>
+<h3>View Templates auf Popups in View Templates</h3>
+Beim Aufruf einer FUIP-Seite, insbesondere der &Uuml;bersicht der View Templates, konnte es zu einem FHEM-Absturz kommen, ggf. mit einem Eintrag im FHEM-Logfile wie etwa:<br>
+<code>Can't call method "getStructure" on unblessed reference at ./FHEM/lib/FUIP/View/ViewTemplInstance.pm</code><br>
+Der Fehler war m&ouml;glicherweise nicht klar reproduzierbar und erschien beinahe zuf&auml;llig. Das Problem hing mit Popups in View Templates zusammen, welche wiederum selbst View Templates verwenden. (Also View Templates auf Popups in View Templates.) Dies wurde korrigiert.
+<h3>Verbesserte Fehlerbehandlung bei fehlenden View Templates</h3>
+F&uuml;r die Analyse von Fehlern wie oben beschrieben wurde die Fehlerbehandlung an dieser Stelle verbessert. Jetzt wird bei fehlenden View Templates eine Meldung sowie ein Stacktrace ins FHEM-Log geschrieben. (...auch wenn das jetzt hoffentlich nicht mehr passiert.)
+<h3>Export von View Templates</h3>
+View Templates k&ouml;nnen jetzt in eine Datei exportiert werden. (&Auml;hnlich wie Seiten und Zellen.) Allerdings gibt es bisher noch keine Import-Funktion. 
+<h3>Vereinheitlichung der "Neuer Name"-Dialoge</h3>
+Die Dialoge (Popups) zum Eingeben neuer Namen von Seiten und View Templates wurden vereinheitlicht. Dadurch kann es zu kleinen &Auml;nderungen im Aussehen und im Ablauf beim Anlegen, Kopieren, Importieren und Umbenennen kommen.   
+
+<h2>12.04.2019</h2>
+<h3>Batteries View: Ger&auml;te explizit herausnehmen</h3>
+Der View Batteries bietet jetzt die M&ouml;glichkeit, unerw&uuml;nschte Ger&auml;te explizit herauszunehmen. Dazu gibt es den neuen Parameter "exclude", der eine Komma-separierte Liste von Ger&auml;te-Namen (Device Keys) akzeptiert. Wie &uuml;blich gibt es auch eine Werthilfe. 
+
+<h2>10.04.2019</h2>
+<h3>Popups nah am "Ausl&ouml;ser" positionieren</h3>
+<img src="PopupPosition.png" style="float:left;margin-right:10px" width=300px height=140px>Bisher wurden Popups (Dialoge) immer zentriert auf dem Bildschirm ausgegeben. Das kann man jetzt &uuml;ber das Feld "position" im Konfigurations-Popup des Dialogs &auml;ndern. Bei Angabe von "starter-area" wird das Popup beim ausl&ouml;senden Widget angezeigt. D.h. FUIP versucht, die linke obere Ecke des Popups in die Mitte des ausl&ouml;senden Widgets zu legen. Falls rechts unterhalb des "Ausl&ouml;sers" nicht genug Platz ist, dann wird das Popup entsprechend oberhalb bzw. links vom Ausl&ouml;ser angezeigt.  
+<p>Bisher konnte es au&szlig;erdem vorkommen, dass bei "gescrolltem" Bildschirm nicht das komplette Bild beim Aktivieren des Popups grau &uuml;berdeckt wurde. Man konnte dann auch das Popup nicht mehr durch Klicken auf den Bildschirm schlie&szlig;en. Dies wurde korrigiert.  
+<p  style="clear:left;height:0.5em;"></p>
+
+<h2>03.04.2019</h2>
+<h3>STATE View resizable</h3>
+Der View STATE kann jetzt in der Gr&ouml;&szlig;e angepasst werden ("sizing resizable" und "sizing auto"). Dabei passt FUIP sowohl die Schriftgr&ouml;&szlig;e als auch die Gr&ouml;&szlig;e des Icons (falls angegeben) an. 
+<br>Zus&auml;tzlich gibt es den neuen Parameter "lines", mit dem angegeben werden kann, wie viele Zeilen in den View passen sollen. Damit kann die Schriftgr&ouml;&szlig;e gesteuert werden: Je kleiner der Wert bei "lines", desto gr&ouml;&szlig;er die Schrift.
+<br>Wenn eine der neuen M&ouml;glichkeiten verwendet wird, dann werden auch zu lange Texte im STATE abgeschnitten. Da dieses Verhalten nicht ganz kompatibel zum bisherigen ist, wird bei "sizing fixed" und "lines 3" die bisherige Logik verwendet.    
+
+<h2>01.04.2019</h2>
+<h3>MenuItem, HomeButton resizable</h3>
+Bei den Views MenuItem und HomeButton kann jetzt auch "sizing resizable" gew&auml;hlt werden. Dies ist vor Allem dann sinnvoll, wenn die Basisbreite (Attribut baseWidth) relativ klein gesetzt wird. Es wird empfohlen, in diesem Fall nicht direkt MenuItem (bzw. HomeButton) zu verwenden, sondern ein entsprechendes View Template.
+
+<h2>25.03.2019</h2>
+<h3>WeekdayTimer: Wochentage wieder anklickbar</h3>
+Bei mehreren Instanzen des WeekdayTimer auf einer Seite (dazu zählen auch solche in einem Popup sowie die Views ShutterControl und ShutterTimer) konnten die Wochentage nur auf einer Instanz ausgew&auml;hlt werden. Beim Klick auf die Wochentage "kaputter" Instanzen hat zum Teil eine andere Instanz des WeekdayTimers reagiert. Das wurde behoben.
+
+<h2>23.03.2019</h2>
+<h3>WeekdayTimer: Position des "Timepicker"-Popups korrigiert</h3>
+Beim WeekdayTimer View gab es einen Fehler bei der Positionierung des Popups zur Auswahl der Schaltzeiten. Die Position wird (vom jquery datetimepicker Plugin) bei kleinen Fensterbreiten nicht richtig berechnet, wenn horizontal gescrollt wird. Dadurch wurde das Popup auf kleinen Bildschirmen zum Teil nicht im sichtbaren Bereich angezeigt. Dies wurde korrigiert.
+
+<h2>22.03.2019</h2>
+<h3>Repariert: LabelHumidity und LabelTemperature mit Popup</h3>
+Wenn f&uuml; ein LabelHumidity oder LabelTemperature ein Popup definiert wurde, dann ist der View selbst von der Anzeige verschwunden. Es war auch nicht m&ouml;glich, das Popup aufzurufen. Genau genommen waren die Views noch vorhanden, deren Gr&ouml;&szlig;e wurde aber vom System auf Null ge&auml;ndert. Dies wurde behoben. 
+<h3>Repariert: Verschwindende Texte auf Popups mit Style-Schema bright-mint</h3>
+Das Style-Schema "bright-mint" hatte einen Fehler, durch den Texte auf Popups unsichtbar wurden. Bei der Bearbeitung des Popups (des Dialogs) waren die Texte sichtbar, aber nicht beim Aufrufen des Popups. Dies wurde repariert. Auch auf Popups haben Texte jetzt die Farbe "foreground".
+<h3>Repariert: Einmal definierte Popups konnten nicht mehr gel&ouml;scht werden</h3>
+Bei Views, f&uuml;r die man ein Popup definieren kann, war es nicht m&ouml;glich, das Popup wieder zu l&ouml;schen. Man konnte zwar die Checkbox zum "popup"-Eintrag auf dem Konfigurations-Popups abschalten, das hatte aber keinen Effekt und beim n&auml;chsten &Ouml;ffnen des Konfigurations-Popups war die Markierung wieder gesetzt. Dies wurde behoben.
+
+
+<h2>19.03.2019</h2>
+<h3>Batteries-View: Ger&auml;te mit "ignore" werden ignoriert</h3>
+Der Batteries-View zeigt keine Ger&auml;te mehr an, bei denen das Attribute "ignore" auf einen Wert ungleich 0 gesetzt ist. 
+
+<h2>18.03.2019</h2>
+<h3>Validierung der Namen von Variablen und "flexiblen Feldern"</h3>
+Ab jetzt ist es nicht mehr m&ouml;glich (oder zumindest sehr schwierig), Variablen (in View Templates) und "Flexible Felder" (im HTML-View) mit "problematischen" Namen anzulegen. Es gelten dieselben Einschr&auml;nkungen wie f&uuml;r Namen von View Templates (siehe den Eintrag vom 15.03.2019). Au&szlig;erdem gibt es eine Reihe von reservierten Namen, die nicht verwendet werden d&uuml;rfen. Dies sind...
+<ul>
+<li>F&uuml;r Variablen: class, defaulted, flexfields, height, id, sizing, templateid, title, variable, variables, views, width</li>
+<li>F&uuml;r Flexible Felder: class, defaulted, flexfields, height, html, popup, sizing, title, variable, variables, views, width</li>
+</ul>
+Beim HTML View kann es jetzt au&szlig;erdem zu Meldungen bez&uuml;glich Fehlern kommen, die vorher von FUIP ignoriert wurden. D.h. es waren auch bisher Fehler, aber jetzt wird es dem Benutzer explizit mitgeteilt.
+
+<h3>Fehlermeldung und Log-Eintr&auml;ge bei Fehlern in der cfg-Datei</h3>
+Die gr&ouml;&szlig;te Teil der Konfiguration eines FUIP-Device wird nicht in der Datei fhem.cfg gespeichert, sondern in einer f&uuml;r jedes FUIP-Device eigenen Datei. (Diese Datei liegt normalerweise im Verzeichnis "/opt/fhem/FHEM/lib/FUIP/config" und hei&szlig;t "FUIP_&lt;name&gt;.cfg", wobei &lt;name&gt; der Name des FUIP-Device ist.) 
+<p>Diese Datei wird beim Start von FHEM geladen bzw. bei einem expliziten "set &lt;name&gt; load". Dabei kann es zu Fehlern kommen, insbesondere aufgrund von Fehlern in FUIP selbst oder auch durch die Verwendung von "problematischen" Namen. Bisher kam es bei solchen Fehlern zu Abst&uuml;rzen oder es wurden die generierten Default-Seiten angezeigt. Insbesondere letzteres ist immer noch der Fall, aber jetzt wird in solchen F&auml;llen wenn m&ouml;glich eine Fehlermeldung angezeigt, sowie entsprechende Eintr&auml;ge im FHEM-Logfile erzeugt.  
+
+<h2>16.03.2019</h2>
+<h3>Validierung der Namen von View Templates</h3>
+Ab jetzt ist es nicht mehr m&ouml;glich (oder zumindest sehr schwierig), View Templates mit "problematischen" Namen anzulegen. Im Eintrag von gestern steht, was jetzt noch erlaubt ist. Alte View Templates sollten weiterhin funktionieren (insoweit sie das mit einem "problematischen" Namen &uuml;berhaupt getan haben). Es wird aber beim Anzeigen solcher View Templates eine Warnung angezeigt und es wird empfohlen, den Namen zu &auml;ndern.
+
+<h2>15.03.2019</h2>
+<h3>View Templates umbenennen</h3>
+<img src="RenameViewTemplate.png" style="float:left;margin-right:10px" width=150px height=135px>View Templates k&ouml;nnen jetzt umbenannt werden. Dabei werden auch alle Verwendungen in Zellen und anderen View Templates beachtet. Da es in JQuery-UI kein gutes "Umbenennen"-Icon gibt, hat die zugeh&ouml;rige Taste einfach ein "R" f&uuml;r "Rename".
+<p>Der Name eines View Templates nur aus normalen Buchstaben (a-z, A-Z), Ziffern (0-9) und dem Unterstrich (_) bestehen. Das erste Zeichen darf keine Ziffer sein. Bisher pr&uuml;ft FUIP den eingegebenen Namen noch nicht, was sich aber relativ sicher in Zukunft &auml;ndern wird. 
+<p  style="clear:left;height:0.5em;"></p>
+
+<h2>13.03.2019</h2>
+<h3>WeekdayTimer und ShutterControl: Dropdown-Listen korrigiert</h3>
+Bei den Views WeekdayTimer und ShutterControl sind die Dropdown-Listen (Wertauswahl) h&auml;ufig an ungeschickten Positionen erschienen oder waren teilweise verdeckt. Dadurch konnten die gew&uuml;nschten Optionen nicht immer ausgew&auml;hlt werden. Dies wurde korrigiert. Dadurch hat sich auch das Aussehen dieser Listen leicht ge&auml;ndert. Dies d&uuml;rfte aber keinen Unterschied in der Funktionalit&auml;t ergeben.   
+
+<h2>12.03.2019</h2>
+<h3>LabelReading kann jetzt auch Timestamps anzeigen</h3>
+Der LabelReading-View kann &uuml;ber den Parameter "content" dazu gebracht werden, den Timestamp des Readings anzuzeigen. Es ist m&ouml;glich, den Wert, den Timestamp oder beides anzuzeigen. Der Timestamp wird im Format "12.03. 17:28" angezeigt. 
+
+<h3>ShutterControl jetzt auch mit "inverted_shutter"</h3>
+Der ShutterControl-View hat jetzt einen Parameter "levelType". Man kann zwischen "shutter" und "inverted_shutter" ausw&auml;hlen. Die Funktion ist ansonsten so wie <a href="#inverted_shutter">inverted_shutter beim WeekdayTimer-View</a>.
+
+<h3>Batteries auch mit Prozentwerten im Reading "battery"</h3>
+Der Batteries-View versteht jetzt auch Prozentwerte im Reading "battery". Bisher wurde "battery" nur als Text ("ok" oder nicht "ok") ausgewertet.
+
+<h2>11.03.2019</h2>
+<h3>Thermostat mit minTemp, maxTemp und step</h3>
+Beim Thermostat-View ist jetzt der Temperaturbereich (minTemp, maxTemp) sowie die Schrittweite (step) einstellbar. Bitte selbst darauf achten, dass die Werte einigerma&szlig;en sinnvoll sind. Als Dezimaltrennzeichen muss der Punkt und nicht das Komma verwendet werden.
+
+<h2>10.03.2019</h2>
+<h3>SpinDim mit einstellbarer Schrittweite</h3>
+Beim View SpinDim kann jetzt über den Parameter "step" die Schrittweite eingestellt werden.
+
+<h3>Colorwheel auf Popups und in View Templates</h3>
+Da war noch einiges faul. Das sollte jetzt alles gehen. Au&szlig;erdem waren noch ein paar Feinheiten beim Sizing noch nicht wirklich "fertig".
+
+<h2>09.03.2019</h2>
+<h3>Neuer View: Colorwheel</h3>
+<img src="Colorwheel.png" style="float:left;margin-right:10px" width=100px height=100px>Es gibt jetzt den neuen View "Colorwheel". Man kann damit Ger&auml;te steuern, die Farben im RGB-Format akzeptieren bzw. bereitstellen, wie z.B. Hue-Leuchten. Der View entspricht ungef&auml;hr dem FTUI-Widget "colorwheel", wobei FUIP hier eine eigene Implementierung bereitstellt, die beim Sizing flexibler ist.
+<p  style="clear:left;height:0.5em;"></p>
+
+<h2>07.03.2019</h2>
+<h3>Farbauswahl und Werthilfe f&uuml;r Icons repariert</h3>
+Bei der Farbauswahl ("Colours" im Men&uuml;) und bei der Werthilfe f&uuml;r Icons kam es zu Fehlermeldungen wie "SecurityError" oder "cssRules cannot be accessed". (M&ouml;glicherweise tauchten die Meldungen an der Oberfl&auml;che nicht auf.) Die Farbauswahl bzw. die Icon-Liste wurde nicht richtig angezeigt bzw. hat "ewig" geladen. Das Problem sollte jetzt gel&ouml;st sein. 
+<p>Das ganze ist im Zusammenhang mit externen CSS-Dateien aufgetaucht. Bisher konnte aber noch nicht ermittelt werden, wodurch diese externen CSS-Dateien eingebunden wurden.
+
+<h3 id="inverted_shutter">WeekdayTimer kann jetzt "inverted_shutter"</h3>
+Als "levelType" kam "inverted_shutter" hinzu. Dadurch wird die Reihenfolge der Prozentangaben umgedreht und "Auf" und "Zu" werden vertauscht. D.h. "Auf" entspricht minLevel (meistens 0) und "Zu" entspricht maxLevel (meistens 100). Das klingt im ersten Moment sehr &auml;hnlich wie beim Vertauschen von minLevel und maxLevel, allerdings ist dann auch die Zuordnung der Prozentangaben zu den Werten in FHEM umgedreht. 
+<table>
+<tr><td><b>levelType</b></td><td><b>minLevel</b></td><td><b>maxLevel</b></td><td><b>Ergebnis (Anzeige in FUIP:Wert in FHEM)</b></td></tr>
+<tr><td>shutter</td><td>0</td><td>100</td><td>Auf:100, 90%:90, 80%:80,... 20%:20, 10%:10, Zu:0</td></tr>
+<tr><td>shutter</td><td>100</td><td>0</td><td>Auf:0, 90%:10, 80%:20,... 20%:80, 10%:90, Zu:100</td></tr>
+<tr><td>inverted_shutter</td><td>0</td><td>100</td><td>Auf:0, 10%:10, 20%:20,... 80%:80, 90%:90, Zu:100</td></tr>
+<tr><td>inverted_shutter</td><td>100</td><td>0</td><td>Auf:100, 10%:90, 20%:80,... 80%:20, 90%:10, Zu:0</td></tr>
+</table>
+<h3>Sinnlose Fehlermeldungen entfernt</h3>
+Bei manchen Aktionen wurde eine sinnlose Fehlermeldung angezeigt, wie z.B. bei "Make view template" oder auch manchmal beim Hinzuf&uuml;gen eines Views zu einer Zelle. Die Fehlermeldung erschien in einem Popup und zeigte meist nur eine Zahl an. Diese Fehlermeldungen sollten jetzt nicht mehr hochkommen. 
+<h2>06.03.2019</h2>
+<h3>Neuer View: WeekdayTimer</h3>
+Der neue View "FUIP::View::WeekdayTimer" ist eine Erweiterung des Views ShutterTimer und des im ShutterControl integrierten WeekdayTimer-Widgets. Anders als die beiden "alten" Views erzeugt WeekdayTimer allerdings nicht automatisch ein Popup, sondern wird ganz normal in die Zelle eingebunden. Falls man den WeekdayTimer auf einem Popup haben m&ouml;chte, muss man explizit den View FUIP::View::Popup verwenden bzw. einen anderen Popup-f&auml;higen View.
+<p>Es wird empfohlen, den View ShutterTimer nicht mehr zu verwenden, sondern nur noch WeekdayTimer. <b>Vorsicht:</b> Das Device beim WeekdayTimer muss in FHEM ein Device vom Typ WeekdayTimer sein, also nicht das zu steuernde Device wie beim ShutterControl.
+<p>Zus&auml;tzlich zum ShutterControl bzw. ShutterTimer bietet der WeekdayTimer die folgenden M&ouml;glichkeiten:
+<ul>
+<li>"save config" kann automatisch ausgel&ouml;st werden. (Feld "saveconfig" im Konfigurations-Popup)</li>
+<li>Au&szlig;er Prozents&auml;tzen (f&uuml;r Rolll&auml;den) k&ouml;nnen auch Temperaturen oder zwei beliebige Werte (wie z.B. on/off) gesetzt werden. (Feld "levelType" im Konfigurations-Popup)</li>
+<li>"sizing" (auto/fixed/resizable) wird unterst&uuml;tzt</li>
+<li>Wenn der View WeekdayTimer auf einem Popup platziert wird, dann schlie&szlig;en die Tasten "Speichern" und "Abbrechen" das Popup.</li>
+</ul>
+
+<h3>FUIP News</h3>
+...ab jetzt gibt es die Funktion "FUIP News". Sie ist erreichbar im Menu des Konfigurations-Popups unter "FUIP News".
+</body>
+</html>

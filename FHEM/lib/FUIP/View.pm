@@ -44,7 +44,16 @@ sub getViewHTML($) {
 	my ($view) = @_;
 	# check whether the view has a popup, i.e. a component of type "dialog"
 	# which is actually switched on
-	my $viewStruc = $view->getStructure(); 
+	my $viewStruc;
+	eval {
+		$viewStruc = $view->getStructure(); 
+		1;
+	} or do {
+	    my $ex = $@;
+		FUIP::Exception::log($ex);
+		return FUIP::Exception::getErrorHtml($ex,"Could not determine structure of ".ref($view));
+	};	
+	
 	my $popupField;
 	for my $field (@$viewStruc) {
 		if($field->{type} eq "dialog") {
@@ -256,6 +265,7 @@ sub reconstruct($$$) {
 
 sub setAsParent($) {
 	my ($self) = @_;
+	# main::Log3(undef,1,"setAsParent: ".blessed($self));
 	for my $field (keys %$self) {
 		# by default, we assume that all arrays
 		# contain some subclass of FUIP::View
@@ -437,8 +447,25 @@ sub _fillField($$;$$) {
 	
 	# structured field?
 	if($fType eq "device-reading") {
-		$self->_fillField($field->{device},$valueRef->{device}, $defaultRef->{device});
-		$self->_fillField($field->{reading},$valueRef->{reading}, $defaultRef->{reading});
+		# when changing the field type in the structure definition, it can happen
+		# that $valueRef is not a hash. In this case, we just set the default
+		# TODO Maybe remove completely
+		#if(ref($valueRef) ne 'HASH' || ref($defaultRef) ne 'HASH') {
+		#	$self->_fillField($field->{device}, "", $defaultRef);
+		#	$self->_fillField($field->{reading}, "", $defaultRef);
+		#}else{
+			# If valueRef is not a HASH, then we just leave the field(s) empty or try to
+			# force the default
+			if(ref($valueRef) ne 'HASH') {
+				FUIP::Exception::log("ValueRef $valueRef is not a hash.");
+				$self->_fillField($field->{device},"", 1);
+				$self->_fillField($field->{reading},"", 1);
+			}else{;				
+				#If the defaultRef is not a hash, then just use "do not default"
+				$self->_fillField($field->{device},$valueRef->{device}, ref($defaultRef) eq 'HASH' ? $defaultRef->{device} : 0);
+				$self->_fillField($field->{reading},$valueRef->{reading}, ref($defaultRef) eq 'HASH' ? $defaultRef->{reading} :0);
+			};
+		#};
 		return;
 	};
 	
@@ -471,8 +498,19 @@ sub applyDefaultToField($$$){
 	# is the default setting switched off?
 	my $defaulted = $self->{defaulted};
 	if(defined($defaulted->{$field->{id}})) {
-		$defaulted = $defaulted->{$field->{id}};	
+		$defaulted = $defaulted->{$field->{id}};
 		for my $part (@$path) {
+		
+			if(ref($defaulted) ne 'HASH') {
+				FUIP::Exception::log("$defaulted is not a hash. Path $part");
+				#Let's just assume that $defaulted is something sensible now. 
+				#Probably the view structure has changed and $defaulted is 
+				#anyway only used as a boolean below
+				last;
+			};
+		
+			# TODO maybe remove commented coding
+			# if(ref($defaulted) eq 'HASH' and defined($defaulted->{$part})) {
 			if(defined($defaulted->{$part})) {
 				$defaulted = $defaulted->{$part};
 			}else{
@@ -492,6 +530,8 @@ sub applyDefaultToField($$$){
 		my @defValPath = split(/-/,$defaultDef->{value});
 		$defaultValue = $self;
 		for my $field (@defValPath) {
+			# TODO maybe remove commented part
+			# last unless ref($defaultValue) eq 'HASH';
 			$defaultValue = $defaultValue->{$field};
 		};	
 		$defaultValue = $defaultValue.$defaultDef->{suffix} if(defined($defaultDef->{suffix})); 
@@ -501,6 +541,11 @@ sub applyDefaultToField($$$){
 	# get field reference to fill
 	my $fieldRef = \$self->{$field->{id}};
 	for my $part (@$path) {
+		#Care for structure changes
+		if(ref($$fieldRef) ne 'HASH') {
+			$$fieldRef = {};
+		};
+		$$fieldRef->{$part} = "" unless defined($$fieldRef->{$part});
 		$fieldRef = \${$fieldRef}->{$part};
 	};
 	# assign value
@@ -614,8 +659,10 @@ my %docu = (
 	navbuttons => "Navigationspfeile (de-)aktivieren (Swiper-Layout)<br>
 		Normalerweise erscheinen rechts und links vom Swiper-Widget Navigationspfeile. Diese k&ouml;nnen hiermit abgeschaltet werden.",
 	pagination => "\"Punkte\" (de-)aktivieren (Swiper-Layout)<br>
-		Normalerweise erscheinen unter dem Swiper-Widget Punkte, die den momentanen Zustand anzeigen und mit denen auch eine bestimmte View im Swiper angew&auml;hlt werden kann. Diese Punkte k&ouml;nnen hiermit abgeschaltet werden."
-		
+		Normalerweise erscheinen unter dem Swiper-Widget Punkte, die den momentanen Zustand anzeigen und mit denen auch eine bestimmte View im Swiper angew&auml;hlt werden kann. Diese Punkte k&ouml;nnen hiermit abgeschaltet werden.",
+	sysid => "System-Id, also Name des zugeh&ouml;rigen FHEM-Systems<br>
+        Dieses Feld erscheint nur, wenn tats&auml;chlich mehrere FHEM-Systeme (\"Backends\") f&uuml;r die FUIP-Instanz definiert wurden. D.h. es wurden mindestens zwei der <i>backend_</i>-Attribute gesetzt. Die dadurch definierten Systeme erscheinen dann in der Auswahl f&uuml;r das Feld <i>sysid</i>. Damit kann man dann das System zur View, zur Zelle zum Dialog (Popup) oder zur Seite ausw&auml;hlen.<br>
+		Standardwert ist <i>&lt;inherit&gt;</i>. Das bedeutet, dass das System vom &uuml;bergeordneten Objekt vererbt wird. Dabei wird von der Seite auf alle ihre Zellen und von der Zelle auf alle ihre Views vererbt. Wenn auch in der Seite <i>&lt;inherit&gt;</i> gesetzt ist, dann wird der Wert des Attributs <i>defaultBackend</i> benutzt."
 	);
 
 

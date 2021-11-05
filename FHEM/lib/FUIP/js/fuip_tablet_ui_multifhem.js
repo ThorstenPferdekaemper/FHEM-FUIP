@@ -2461,6 +2461,24 @@ function onjQueryLoaded() {
             ($.inArray(param, value) > -1 && String(elem.data('device')) === devToMatch.device) ||
             ($.inArray(devToMatch.device + ':' + param, value) > -1);
     };
+	
+	$.fn.matchDeviceReadingIndex = function (key, device, param) {
+        var elem = $(this);
+        var value = elem.data(key);
+		var sysidElem = ftui.findSysidByElem(elem);
+		var devToMatch = ftui.splitDeviceKey(device);  // sysid, device
+		if(sysidElem != devToMatch.sysid) {
+			// system ids do not match
+			return -1;
+		};	
+        if((String(value) === param && String(elem.data('device')) === devToMatch.device) ||
+            (value === devToMatch.device + ':' + param || value === '[' + devToMatch.device + ':' + param + ']')) {
+			return 0;
+		};	
+		var idx = $.inArray(param, value);
+		if( idx >= 0 && String(elem.data('device')) === devToMatch.device) return idx;
+        return $.inArray(devToMatch.device + ':' + param, value);
+    };
 
     $.fn.isValidData = function (key) {
         return ($(this).data(key) !== void 0);

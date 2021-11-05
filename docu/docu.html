@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>FUIP Dokumentation</title>
+
+<style>
+
+body {
+	line-height: 1.3;
+}	
+
+figure {
+	border-style:solid;
+	border-width:1px;
+	margin:0;
+	margin-bottom:5px;
+	text-align:center;
+}
+figure.right {
+	float:right;
+	margin-left:10px;
+	margin-right:10px;
+}
+figure.left {
+	float:left;
+	margin-left:2px;
+	margin-right:20px;
+}
+
+code {
+    background-color: #f8f9fa;
+    border: 1px solid #eaecf0;
+    border-radius: 2px;
+    padding: 1px 4px;
+}
+</style>
+
+<script>
+function createToc() {
+	var headers = document.querySelectorAll("h2,h3,h4,h5,h6");
+	var toc = document.getElementById("toc");
+	var level = 1;
+	var currentNode = toc;
+	var numbers = [];
+	headers.forEach(function(node){
+		var newLevel = parseInt(node.nodeName.substr(1));
+		for(var i = level; i > newLevel; i--) {
+			currentNode = currentNode.parentNode;
+			numbers.pop();
+		};
+		for(var i = level; i < newLevel; i++) {
+			var newNode = document.createElement("ul");
+			newNode.style.listStyleType = "none";
+			currentNode.appendChild(newNode);
+			currentNode = newNode;
+			numbers.push(0);
+		};
+		level = newLevel;
+		numbers[numbers.length-1]++;
+		var numStr = "";
+		for(var i = 0; i < numbers.length; i++) {
+			if(i) {
+				numStr += ".";
+			};
+			numStr += numbers[i].toString();
+		};
+		// do we have an id?
+		var nodeText = node.innerHTML;
+		if(node.hasAttribute("id")) {
+			nodeText = '<a href="#' + node.id + '">' + nodeText + '</a>';
+		};
+		currentNode.innerHTML += "<li>" + numStr + " " + nodeText + "</li>";
+		// create "back to contents" link
+		if(node.id != "contents") {
+			node.innerHTML += '<a style="padding-left:1em;" href="#contents"><img title="Zur&uuml;ck zum Inhaltsverzeichnis" width="16" height="16" src="doc/icon_back.png"></a>';
+		};
+	});
+};
+window.onload = createToc;
+</script>
+
+</head> 
+<body>
+<h1>FUIP - FHEM User Interface Painter</h1>
+<hr>
+<h2 id="contents">Inhaltsverzeichnis</h2>
+<div id="toc"></div>
+<hr>
+<h2 id="intro">Einf&uuml;hrung</h2>
+Der FHEM User Interface Painter (FUIP) ist ein FHEM-Modul, mit dem man FHEM Tablet UI (FTUI) Seiten graphisch ("klickibunti") erstellen kann. D.h. man kann sich ein UI zusammenklicken, welches die Tablet UI Technik verwendet, aber ohne sich selbst unbedingt mit HTML und CSS herumschlagen zu m&uuml;ssen.<br>
+Diese Dokumentation befasst sich vor Allem mit grundlegenden Erkl&auml;rungen sowie der Bearbeitungsoberfl&auml;che. Zus&auml;tzlich gibt es noch einiges, was man &uuml;ber die "klassische" FHEM-Oberfl&auml;che (also FHEMWEB) machen kann bzw. muss. Dies ist dann vorwiegend in der "Device specific help" (bzw. Commandref) erkl&auml;rt. D.h. dieser Text hier soll nicht die Commandref ersetzen, sondern erg&auml;nzen.
+
+<h3 id="installation">Installation und Upgrade in FHEM</h3>
+Genau wie FTUI ist auch FUIP nicht automatisch Teil von FHEM. Es muss explizit installiert bzw. hinzugef&uuml;gt werden. Die Installation funktioniert folgenderma&szlig;en:
+<ul><li>FUIP verwendet FTUI. D.h. man sollte zuerst einmal FTUI installieren, falls noch nicht passiert. Wie das geht steht z.B. hier: <a href="https://wiki.fhem.de/wiki/FHEM_Tablet_UI#Installation" title="FHEM Tablet UI">FHEM Tablet UI</a>. Dabei reicht der erste Schritt aus, da lediglich die FTUI-Dateien von FUIP ben&ouml;tigt werden.</li>
+<li>Dann wird das FUIP-Repository zum FHEM Update hinzugef&uuml;gt. Dazu muss man folgendes im FHEM-Kommandofeld eingeben:
+<ul><li><code>update add https://raw.githubusercontent.com/ThorstenPferdekaemper/FHEM-FUIP/master/controls_fuip.txt</code></li></ul></li>
+<li>Jetzt <code>update all fuip</code> im FHEM-Kommandofeld eingeben.</li>
+<li>Dann sollte man warten, bis man ganz sicher ist, dass alles installiert ist. Das sieht man normalerweise an der Meldung <code>update finished, "shutdown restart" is needed to activate the changes.</code> Das ganze kann etwas l&auml;nger dauern, da FUIP aus einigen Dateien besteht, von denen ein paar etwas gr&ouml;&szlig;er sind.</li>
+<li>Jetzt erst sollte ein <code>shutdown restart</code> gemacht werden.</li>
+<li>FUIP sollte jetzt installiert sein.</li></ul>
+<p>Zum Upgrade reicht ein <code>update</code>, wenn man FUIP wie oben beschrieben installiert hat. Will man nur den FUIP-Teil aktualisieren und nicht alles in FHEM, dann geht das mit <code>update all fuip</code>.
+
+<h3 id="quickstart">Erste Schritte</h3>
+<p>Nach der Installation legt man ein "FUIP Device" an, also etwa <code>define ui FUIP</code>. Dieses Device meldet sich sozusagen als Webserver bei FHEM an (wie z.B. auch <a href="https://wiki.fhem.de/wiki/HTTPSRV" title="HTTPSRV">HTTPSRV</a>), d.h. es erscheint im Menu oben links (&uuml;ber den R&auml;umen) ein Link "ui". Beim Klick auf diesen Link generiert FUIP eine &Uuml;bersichtsseite aus den R&auml;umen im FHEM System. (Das kann ein bisschen dauern, wenn man viele Devices hat.) Nun kann man durch Verschieben und gr&ouml;&szlig;er/kleiner-Ziehen der einzelnen Zellen bzw. durch Verschieben des Zelleninhalts die Gestaltung &auml;ndern. Au&szlig;erdem kann man &uuml;ber das Zahnrad rechts oben in den Zellen neuen Inhalt hinzufügen, den bestehenden Inhalt &auml;ndern und vieles mehr.</p>
+<p>Durch Klicken auf die R&auml;ume im Menu der &Uuml;bersichtsseite werden einzelne Raum-Seiten generiert. Diese kann man ebenfalls entsprechend bearbeiten. Nat&uuml;rlich k&ouml;nnen auch eigene Seiten hinzugef&uuml;gt werden.</p>
+<p>Nachdem man die Seiten entsprechend bearbeitet hat sollte man im FHEM-Kommandofeld ein <code>set ui save</code> machen. Ansonsten gehen die &Auml;nderungen beim n&auml;chsten FHEM-Neustart verloren. Ein normales <code>save config</code> reicht nicht aus und ist auch nicht notwendig.
+
+<h3 id="troubleshooting">Was tun bei Problemen?</h3>
+<p>Falls es bei oder nach der Installation oder dem Upgrade Probleme gibt (welcher Art auch immer), sollten die folgenden Punkte gepr&uuml;ft werden:
+</p>
+<ul><li>Wird das richtige Repository benutzt? Man kann das mit <code>update list</code> &uuml;berpr&uuml;fen. Wenn der Eintrag f&uuml;r fuip nicht genau so aussieht wie oben beschrieben, dann sollte er per <code>update delete</code> gel&ouml;scht werden und dann genau so eingetragen werden wie oben beschrieben.</li>
+<li>Ist der update-Prozess wirklich komplett durchgelaufen? Auch wenn es etwas l&auml;nger dauert, muss man auf die Meldung <code>update finished, "shutdown restart" is needed to activate the changes.</code> warten, bevor man durchstartet. Im Zweifelsfall einfach noch einmal <code>update all fuip</code> machen und diesmal mehr Geduld haben.</li>
+<li>FHEM braucht Schreibrechte im Verzeichnis &lt;fhem&gt;/FHEM/lib/FUIP/config (&lt;fhem&gt; steht meistens für /opt/fhem) und allen enthaltenen Dateien. Auf Betriebssystemebene (Linux) kann man das mit <code>ls -ls</code> &uuml;berpr&uuml;fen. Meistens kann es mit folgendem Befehl repariert werden: <code>chown -R fhem:dialout /opt/fhem/FHEM/lib/FUIP/config</code>. (Dieser Punkt gilt nicht unbedingt, wenn man die configDB benutzt.)</li>
+<li>Bitte auch einmal im FHEM-Logfile nachsehen, bevor man sich ans Forum wendet.</li>
+</ul>
+<p>Wenn man zwar die generierte (oder auch selbst erstellte) FUIP-Oberfl&auml;che sieht, aber alles hinter einem roten "Schleier" mit der Meldung "Disconnected from FHEM, reconnecting", dann k&ouml;nnten die folgenden Hinweise hilfreich sein.</p>
+<ul>
+<li>Die Meldung deutet darauf hin, dass die Oberfl&auml;che zwar angezeigt werden kann, aber die Verbindung zur eigentlichen FHEM-Instanz verloren gegangen ist. Man sollte also prinzipiell &uuml;berpr&uuml;fen, ob die Verbdindung zwischen Browser und FHEM-Server stabil ist.</li>
+<li>Man kann versuchen die Seite einmal neu zu laden (Browser-Reload) bzw. den Browser neu zu starten. Dies sollte allerdings nicht zur Gewohnheit werden. FUIP stellt die Verbindung im Prinzip selbst&auml;ndig wieder her.</li>
+</ul>
+
+<h2 id="concepts">Grundlegende Begriffe und Konzepte</h2>
+<figure style="float:right;margin:0;margin-left:10px;margin-bottom:5px;margin-right:10px;text-align:center">
+<a href="doc/maindoc_pageexample.png"><img src="doc/maindoc_pageexample.png" width=356px height=262px></a>
+<figcaption>Beispiel f&uuml;r eine FUIP-Seite</figcaption>
+</figure>
+
+<h3 id="concepts-page">Seite (Page)</h3>
+<p>Eine <i>Seite</i> ist in FUIP das, was man normalerweise darunter im Internet versteht. Im Zusammenhang mit FUIP wird auch von <i>FUIP-Seite</i> geredet, wenn eine Seite gemeint ist, die mittels FUIP erzeugt wird. Normalerweise geh&ouml;ren zu einem FUIP-Device mehrere Seiten. FUIP erzeugt also keine "Single Page Website" oder "Single Page Application".</p>
+<p>Wenn der Benutzer im Bearbeitungsmodus versucht, eine FUIP-Seite aufzurufen, die es nicht gibt, dann wird diese Seite von FUIP generiert. (D.h. so kann man eine neue Seite anlegen.) Dabei gibt es im Prinzip drei M&ouml;glichkeiten:
+<ol>
+	<li>Es wird eine Index- oder Home-Seite erstellt. Das ist der Fall, wenn die URL auf /fhem/&lt;fuip-device&gt;/ oder /fhem/&lt;fuip-device&gt;/page/home endet. Diese Seite enth&auml;lt dann eine &Uuml;bersicht mit allen mehr oder weniger sinnvoll darstellbaren Devices aus der FHEM-Instanz, geordnet in die jeweiligen R&auml;ume. Dazu kommt noch ein Men&uuml; mit einem Home-Link und weiteren Links zu allen R&auml;umen sowie eine Titelzeile und eine Uhr. </li>
+	<li>Es wird eine Raum-Seite erstellt. Das ist der Fall, wenn die URL auf /fhem/&lt;fuip-device&gt;/page/room/&lt;raumname&gt; endet. Dabei ist es erst einmal egal, ob es tats&auml;chlich den betreffenden Raum in FHEM gibt. Es wird eine Seite mit dem Men&uuml;, der Titelzeile und der Uhr generiert. Wenn es den betreffenden Raum tats&auml;chlich gibt, dann werden die Devices dieses Raums dargestellt.</li> 
+
+	<li>Es wird eine fast leere Seite erstellt. Das ist der Fall, wenn die URL auf /fhem/&lt;fuip-device&gt;/page/&lt;seitenname&gt; endet. Der Name der Seite ist dabei im Prinzip egal, wobei bisher noch nicht jede <s>Schweinerei</s> Kombination von Sonderzeichen ausprobiert wurde. Die generierte Seite ist nicht ganz leer. Sie enth&auml;lt eine leere Zelle, da man sonst das Konfigurations-Popup nicht aufrufen k&ouml;nnte. Das w&uuml;rde bedeuten, dass man mit der Seite &uuml;berhaupt nichts machen k&ouml;nnte.</li>   
+</ol>
+<p style="width:20em;float:left;margin:10px;margin-right:20px;border-style:solid;border-width:1px;border-color:green;"><b>Tipp: </b>Falls man die generierten Seiten &uuml;berhaupt nicht brauchen kann, dann kann man sich gr&ouml;&szlig;ere L&ouml;schorgien sparen, indem man sich erst einmal eine neue Seite macht, die so aussieht, wie man sich das w&uuml;nscht. Diese Seite kopiert man dann einfach auf die Seite "home". Damit ist die generierte Startseite verschwunden. Genauso kann man mit den einzelnen Raum-Seiten verfahren. Man kann letztere aber auch einfach ignorieren.</p>
+<p>Die oben beschriebene Generierung neuer Seiten bewirkt, dass man mit FUIP von Anfang an ein Ger&uuml;st von Seiten mit allen Devices als Inhalt hat. Man darf von den generierten Seiten nicht allzu viel erwarten. Man sollte sie nur als Startpunkt sehen, von dem aus man dann seine eigene Oberfl&auml;che zusammenklicken kann. Insbesondere kann man am Anfang die generierten FUIP-Seiten als &Uuml;bungsfeld benutzen. Sp&auml;ter wird man eigene Kopiervorlagen haben, die man stattdessen benutzt.</p>
+<p>Das Beispiel einer FUIP-Seite im Bild neben dem Text zeigt &uuml;brigens <b>keine</b> von FUIP generierte Seite. Die Seite ist aber aus einer generierten Seite mit relativ wenig Bearbeitung entstanden.</p> 
+<p style="clear:left;height:0.0em;"></p>
+<p style="clear:right;height:0.0em;"></p>
+
+<br> 
+<h3 id="concepts-cell">Zelle</h3>
+<figure style="float:right;margin:0;margin-left:10px;margin-bottom:5px;margin-right:10px;text-align:center">
+<a href="doc/maindoc_cellexample.png"><img src="doc/maindoc_cellexample.png" width=250px height=206px></a>
+<figcaption>Eine Zelle im Bearbeitungsmodus</figcaption>
+</figure>
+<p>FUIP-Seiten bestehen zuerst einmal aus <i>Zellen</i>. Im Beispiel einer FUIP-Seite auf dem Bild weiter oben sieht man, dass die Seite offensichtlich in einzelne K&auml;stchen eingeteilt ist. Diese K&auml;stchen sind die <i>Zellen</i> in FUIP. Eine FUIP-Seite muss aus mindestens einer Zelle bestehen, kann aber auch viele Zellen haben. (Zumindest scheint es keine praxisrelevante Obergrenze zu geben.)</p> 
+<p>Im Bearbeitungsmodus k&ouml;nnen Zellen mit der Maus positioniert werden durch "Anfassen" an der Titelzeile. Die Gr&ouml;&szlig;e kann durch "Anfassen" an der rechten unteren Ecke der Zelle ge&auml;ndert werden. Allerdings sind Position und Gr&ouml;&szlig;e einer Zelle nicht komplett frei festzulegen. Die Position einer Zelle h&auml;ngt auch vom Gesamtlayout ab sowie von den Positionen und Abmessungen der anderen Zellen. Au&szlig;erdem k&ouml;nnen Breite und H&ouml;he einer Zelle nur ein Vielfaches (in etwa) einer Basisbreite bzw. Basish&ouml;he annehmen. (Siehe auch die Dokumentation zu den Attributen <i>layout</i>, <i>baseWidth</i> und <i>baseHeight</i> des FUIP-Device in FHEM.) </p>
+&Uuml;ber das Zahnrad-Icon rechts oben in der Zelle &ouml;ffnet man das Konfigurations-Popup der Zelle. Dort kann man den Inhalt der Zelle bestimmen und konfigurieren. Au&szlig;erdem erreicht man von dort fast alle weiteren Bearbeitungsfunktionen. Weitere Informationen dazu gibt es im Kapitel zum <a href="#concepts-confpopup">Konfigurations-Popup</a>. 
+<p style="clear:right;height:0.0em;"></p>
+
+<h3 id="concepts-view">View</h3>
+<p>Auf dem "Beispiel f&uuml;r eine FUIP-Seite" weiter oben sieht man verschiedene Inhalte der Zellen. Alle diese Inhalte bestehen aus einer oder mehreren <i>View(s)</i>. Eine View stellt oft die Sicht auf ein Device in FHEM oder sogar nur ein einzelnes Reading dar. Ein Beispiel daf&uuml;r ist die SimpleSwitch View (die L&auml;mpchen auf dem Beispielbild) oder auch die ShutterControl View (die Rollladensteuerung). Andere Views zeigen mehrere Devices, die irgendwie zusammengeh&ouml;ren. So kann z.B. die Thermostat View Daten von mehreren Heizungsthermostaten (Stellantrieben) und Wandthemostat zusammen anzeigen. Die Batteries View zeigt sogar eine ganze Liste von Devices mit Batterien an. Es gibt auch Views, die gar keinen Bezug zu einem FHEM-Device haben. Dazu geh&ouml;ren z.B. die Uhr (die Clock View) oder auch die Title View. In diese Kategorie f&auml;llt normalerweise auch die MenuItem View.</p> 
+<p>Views werden in der Regel im Konfigurations-Popup einer Zelle (oder einem Dialog oder einem View Template) hinzugef&uuml;gt. Einzelheiten dazu findet man im Kapitel zum <a href="#concepts-confpopup">Konfigurations-Popup</a>. Die Position und oft auch die Gr&ouml;&szlig;e der Views legt man dann durch Drag&amp;Drop bzw. Ziehen mit der Maus fest. Man kann sogar eine View von einer Zelle in eine andere ziehen. Die folgenden Parameter werden von fast allen Views unterst&uuml;tzt. Daher werden diese Parameter nur einmal hier beschrieben und nicht bei jeder View einzeln.</p>
+<ul>
+	<li><b>View type</b> (oder auch "class")<br>
+		Dies ist der Typ (bzw. die "Klasse") der View. Der View-Typ bestimmt die Funktionalit&auml;t der View, welche Parameter sie hat und wie sie auf der Oberfl&auml;che aussieht.</li>
+	<li><b>title</b><br>
+		Dies ist sozusagen die &Uuml;berschrift der View-Instanz. Dieser Titel wird in der Regel nur auf dem Konfigurations-Popup verwendet. Normalerweise taucht dieses Feld nirgends auf der Oberfl&auml;che selbst auf.
+	<li><b>label</b><br>
+		Das "Label" einer View ist ein kurzer beschreibender Text, der normalerweise links oder unten in der View angezeigt wird. Es wird z.B. vor einem Reading oder unter einem Symbol angezeigt. Normalerweise kann man das Label auch weglassen, indem man es einfach leer l&auml;sst. Die meisten Views, die ein Label haben, setzen per Default den Namen des Device oder &auml;hnliches. Nicht alle Views haben ein Label.</li> 		
+	<li><b>sizing</b><br>
+		Dieser Parameter bestimmt, wie die Gr&ouml;&szlig;e der View ermittelt wird. Dazu gibt es prinzipiell drei verschiedene Mechanismen: <i>fixed</i>, <i>resizable</i> und <i>auto</i>:
+		<ul>
+			<li><b>fixed</b>: Die View berechnet selbst ihre Breite und H&ouml;he. Oft ist die Gr&ouml;&szlig;e dann tats&auml;chlich "fix", sie kann aber auch von der Konfiguration der View abh&auml;ngen.</li>
+			<li><b>resizable</b>: Man kann die Gr&ouml;&szlig;e frei einstellen. Es erscheinen dann zwei Felder zum Eingeben von Breite und H&ouml;he auf dem Konfigurations-Popup. Au&szlig;erdem kann die rechte untere Ecke der View mit der Maus "gezogen" werden.</li>
+			<li><b>auto</b>: Die View nimmt automatisch den kompletten Platz bis zur rechten unteren Ecke der Zelle (oder des Popups oder des View Templates) ein. D.h. die Gr&ouml;&szlig;e wird nur durch die Position der View bestimmt. Im Flex-Layout kann sich die View auch an Zellen flexibler Gr&ouml;&szlig;e anpassen.</li>
+		</ul>
+		Nicht alle Views unterst&uuml;tzen alle drei Sizing-Mechanismen. 
+	</li>
+	<li><b>popup</b><br>
+		Hiermit kann ein Popup angelegt werden, welches durch Klick auf die View ge&ouml;ffnet wird. Wird die Checkbox (der "Default-Haken") aktiviert, dann erscheint ein Button, &uuml;ber den das Popup bearbeitet werden kann. Ein Popup (oder auch "Dialog" erscheint auf der Bearbeitungsoberfl&auml;che wie eine FUIP-Seite mit einer einzigen Zelle.
+	</li>
+</ul>
+
+<h3 id="concepts-popup">Popup (Dialog)</h3>
+<p>Ein <i>Popup</i> ist in FUIP das, was man sich normalerweise darunter vorstellt. Wenn das ausl&ouml;sende Element angeklickt wird, dann erscheint ein Dialogfenster, welches man dann manuell wieder schlie&szlig;en kann. Man kann auch eine Zeit einstellen, nach der der Dialog von selbst wieder verschwinden soll. Fast jede View kann bei FUIP "ausl&ouml;sendes Element" f&uuml;r ein Popup sein.</p> 
+<p>Von der Bearbeitung her &auml;hneln sich Popups und Zellen sehr. Ein Popup enth&auml;lt wie eine Zelle Views, die frei positioniert werden k&ouml;nnen. Auch alle anderen Eigenschaften der Views sind gleich. Die Gr&ouml;szlig;e des Popups selbst kann allerdings pixelgenau eingestellt werden. Views auf Popups haben auch die M&ouml;glichkeit, selbst wieder ein Popup zu erzeugen. D.h. Popups in Popups sind (zumindest technisch) kein Problem.</p>
+
+
+<h3 id="concepts-confpopup">Das Konfigurations-Popup</h3>
+<figure style="float:right;margin:0;margin-left:10px;margin-bottom:5px;margin-right:10px;text-align:center">
+<a href="doc/maindoc_confpopup.png"><img src="doc/maindoc_confpopup.png" width=300px height=252px></a>
+<figcaption>Das Konfigurations-Popup</figcaption>
+</figure>
+<p>Auf den <i>Konfigurations-Popups</i> oder auch <i>Konfigurations-Dialogen</i> legt man haupts&auml;chlich den Inhalt der betreffenden Elemente fest. D.h. man kann hier Views hinzuf&uuml;gen und l&ouml;schen sowie die Views konfigurieren. Die Positionierung der Views erfolgt dann direkt auf der Oberfl&auml;che mittels Drag&amp;Drop.</p>
+<p>Man erreicht das Konfigurations-Popup durch Klick auf die kleinen Zahnr&auml;der oben rechts in jeder Zelle bzw. oben rechts neben dem Dialog (Popup) oder dem View Template auf den entsprechenden Bearbeitungsoberfl&auml;chen. Dort "erforscht" man dann am Besten die verschiedenen Funktionen durch Mausklick oder Tabulator-Taste. F&uuml;r die meisten Elemente in den Konfigurationsdialogen erscheinen dann Hilfetexte. (Buttons und manche andere Elemente muss man mittels Tabulatortaste in den Fokus holen, um deren Hilfetext zu sehen.) Bei inaktiven Feldern muss man ggf. auf den Text vor dem Feld klicken.</p>
+<p>Viele Felder auf den Konfigurationsdialogen verf&uuml;gen &uuml;ber eine Werthilfe (die Tasten mit den kleinen Dreiecken rechts neben dem Feld). Manche Felder k&ouml;nnen sogar nur &uuml;ber die Werthilfe gef&uuml;llt werden, wie z.B. der <i>View type</i>. Es wird zwar empfohlen, Felder mit Werthilfe vorwiegend &uuml;ber die Werthilfe zu f&uuml;llen, man kann aber bei den meisten Feldern mit Werthilfe auch eine manuell Eingabe machen, die nicht unbedingt einem Vorschlag der Werthilfe entsprechen muss. Dies ist in einigen (wenigen) F&auml;llen sogar sinnvoll.</p>
+<figure style="float:left;margin:0;margin-left:2px;margin-bottom:5px;margin-right:20px;text-align:center">
+<a href="doc/maindoc_defaultcheck.png"><img src="doc/maindoc_defaultcheck.png" width=200px height=74px></a>
+<figcaption>Der "Default-Haken"</figcaption>
+</figure>
+<p>Manche Views haben Parameter, die normalerweise nicht ver&auml;ndert werden m&uuml;ssen bzw. f&uuml;r die bereits (Default-)Werte vorgegeben werden. Diese Parameter sind erst einmal nicht eingabebereit und sie k&ouml;nnen auch nicht &uuml;ber die Werthilfe ver&auml;ndert werden. Es gibt in FUIP im Prinzip zwei M&ouml;glichkeiten, wie der Default-Wert ermittelt wird:
+<ul>
+<li>Ein konstanter Wert: Dieser Wert ist immer gleich, wie z.B. beim Parameter <i>icon</i> auf dem Beispielbild zum Konfigurations-Popup.</li>
+<li>Ein Wert, der von einem anderen Parameter abh&auml;ngt: Meistens wird dieser Wert einfach von einem anderen Feld &uuml;bernommen. Ein Beispiel ist <i>title</i> im Bild links. Der Wert wird von <i>device</i> &uuml;bernommen. Wenn man das "Quellfeld" &auml;ndert, dann &auml;ndert sich automatisch das abh&auml;ngige Feld mit. Dieser Mechanismus kann auch &uuml;ber mehrere Stufen gehen.</li>
+</ul>
+Um von der Vorgabe abweichende Werte einzugeben, muss man zuerst das Ankreuzfeld (die Checkbox) vor dem Feld selbst setzen. Dann wird das Feld eingabebereit und die Default-Ermittlung wird f&uuml;r dieses Feld abgeschaltet. Man kann das Ankreuzfeld auch wieder deaktivieren und so den Default-Mechanismus wieder einschalten.</p>
+<p>Wenn eine Zeile auf dem Konfigurations-Popup aus mehreren Feldern besteht, dann sind das meistens Device-Reading-Kombinationen. D.h. in das erste Feld wird ein FHEM-Device eingegeben und im zweiten Feld wird ein Reading des Device im ersten Feld erwartet. Die Werthilfe des Reading-Felds zeigt dann auch nur Readings des zugeh&ouml;rigen Device an. Der Default-Mechanismus funktioniert f&uuml;r beide Felder getrennt. D.h. beide Felder haben ihren eigenen "Default-Haken".</p>
+<p style="clear:right;height:0.0em;"></p>
+<p style="clear:left;height:0.0em;"></p>
+
+<h3 id="concepts-viewtemplate">View Templates</h3>
+<p style="width:15em;float:left;margin:10px;margin-right:20px;border-style:solid;border-width:1px;border-color:green;"><b>Tipp: </b>Wer gerade mit FUIP angefangen hat, der wird Abschnitt &uuml;ber View Templates m&ouml;glicherweise verwirrend finden. Nachdem man selbst ein paar FUIP-Seiten angelegt und bearbeitet hat, sollte man hierher zur&uuml;ckkehren und diesen Abschnitt lesen.</p>
+
+<p>Ein <i>View Template</i> ist eine benutzerdefinierte View. D.h. man kann sich aus bestehenden Views eigene <i>View Templates</i> zusammenklicken, die man dann wiederum wie normale Views (eigentlich View-Typen) verwenden kann. Das ist ganz n&uuml;tzlich, wenn man immer (oder oft) dieselbe Ansicht f&uuml;r z.B. Thermostate hat. Das definiert man sich dann einmal als View Template und verwendet es immer wieder. Ein View Template bearbeitet man im Wesentlichen wie eine normale Zelle bzw. einen Dialog (ein Popup). Zus&auml;tzlich kann man auf dem Konfigurations-Popup Felder als Variablen kennzeichnen und benennen. Dadurch ensteht dann ein neuer View-Typ mit diesen Variablen als Parameter. Die View Templates kann man dann beim Bearbeiten einer Zelle wie einen normalen View ausw&auml;hlen. Das geht auch in View Templates selbst, man kann also auch View Templates in View Templates verwenden.</p>
+
+<figure class="right">
+	<a href="doc/maindoc_viewtemplates.png"><img src="doc/maindoc_viewtemplates.png" width=534px height=157px></a>
+	<figcaption>View Template &Uuml;bersicht</figcaption>
+</figure>
+<p>Ein gutes Beispiel f&uuml;r ein View Template ist ein Men&uuml;. Die Men&uuml;s auf verschiedenen FUIP-Seiten sehen oft im Prinzip gleich aus. Wenn man das Men&uuml; zu einem View Template macht, dann kann man z.B. beim Entstehen eines neuen Men&uuml;punkts einfach das View Template &auml;ndern und der neue Men&uuml;punkt erscheint automatisch &uuml;berall.</p>
+<p>Die Bearbeitungsoberfl&auml;che f&uuml;r  View Templates erreicht man &uuml;ber das Men&uuml; im Konfigurations-Popup f&uuml;r Zellen und Seiten. Man sieht dann eine &Uuml;bersicht, die in etwa so aussieht wie im Bild rechts. (Der Inhalt und die Farben k&ouml;nnen nat&uuml;rlich abweichen.) Links sieht man eine Liste, die anfangs nur die drei ersten Punkte enth&auml;lt. Diese ersten drei Punkte sind Links, hinter denen sich die folgenden Funktionen verbergen:
+<ul>
+<li><b>Show all</b> springt zur &Uuml;bersicht (diese Seite) zur&uuml;ck.</li>
+<li><b>Create new</b> legt ein neues View Template an. Dabei wird nach einem (neuen) Namen gefragt. Der Name eines View Templates darf nur aus normalen Buchstaben (a-z, A-Z), Ziffern (0-9) und dem Unterstrich (_) bestehen.</li>  
+<li><b>Import</b> importiert ein View Template aus einer Datei, die vom Client hochgeladen wird. Das View Template wird im Prinzip mit dem in der Datei gespeicherten Namen angelegt. Wenn schon ein View Template mit demselben Namen existiert, dann wird ein Suffix an den Namen angeh&auml;ngt.</li> 
+</ul>
+<figure class="left">
+	<a href="doc/maindoc_vtemplsingle.png"><img src="doc/maindoc_vtemplsingle.png" width=416px height=144px></a>
+	<figcaption>Einzelnes View Template</figcaption>
+</figure>
+Unter diesen drei Punkten folgt die Liste der bereits existierenden View Templates. Um eines der View Templates zu bearbeiten klickt man auf den entsprechenden Eintrag. Au&szlig;erdem sieht man auf der &Uuml;bersichtsseite Vorschaubilder f&uuml;r alle View Templates. Man kann auch auf das jeweilige Bild klicken, um das View Template zu bearbeiten.  
+</p>
+Die Bearbeitungsoberfl&auml;che f&uuml;r ein einzelnes View Template sieht recht &auml;hnlich aus. Die Liste links ist dieselbe wie in der &Uuml;bersicht. In der Mitte sieht man das View Template selbst mit ein paar Tasten (Buttons). Rechts daneben ist ein Verwendungsnachweis (Where-Used List), bei dem sowohl Seiten (Pages) als auch andere View Templates vorkommen k&ouml;nnen. Die Eintr&auml;ge dieser Liste sind Links, so dass man direkt an die entsprechende Stelle navigieren kann.<br>
+Die Tasten haben die folgende Bedeutung:
+<ul>
+<li><b>Settings</b> ruft das Konfigurations-Popup auf. Das Konfigurations-Popup ist im Prinzip dasselbe wie f&uuml;r Zellen, nur ohne das Men&uuml;.</li>
+<li><b>Arrange Views</b> entspricht derselben Funktion bei Zellen. D.h. die einzelnen Views werden einigerma&szlig;en sinnvoll angeordnet.</li>
+<li><b>Export</b> speichert das View Template in eine Datei auf dem Client. Dies ist vor Allem sinnvoll, um View Templates in anderen FUIP-Instanzen zu benutzen. Man kann eine Export-Datei auch in einer ganz anderen FHEM-Instanz importieren. Insbesondere kann man damit eigene View Templates an andere Leute weitergeben.</li>
+<li><b>Rename</b> benennt ein View Template um. Dabei werden auch alle Verwendungen beachtet. D.h. durch das Umbenennen geht nichts kaputt. Es sind die beim "Create new" weiter oben beschriebenen Einschr&auml;nkungen auch beim neuen Namen zu beachten. Man kann mit "Rename" keine existierenden View Templates &uuml;berschreiben. Wenn man das will, muss man das andere View Template vorher l&ouml;schen.<br>
+(Da es in JQuery-UI kein gutes "Umbenennen"-Icon gibt, hat die zugeh&ouml;rige Taste einfach ein "R" f&uuml;r "Rename".)</li>
+<li><b>Delete</b> l&ouml;scht das View Template. Falls das View Template noch verwendet wird erfolgt eine Fehlermeldung und man kann es nicht l&ouml;schen.</li>
+</ul>
+<p>Man kann auch ein View Template aus einer bestehenden Zelle machen. (Ebenfalls über das Men&uuml; im Konfigurations-Popup.) Dadurch entsteht ein View Template, das so wie die Zelle aussieht. Dies ist wahrscheinlich der h&auml;ufigste Weg, ein View Template zu erzeugen, da man anfangs meist noch nicht wei&szlig;, dass ein View Template an einer bestimmten Stelle sinnvoll ist.</p>
+<figure class="right">
+	<a href="doc/VariablenImViewTemplate.png"><img src="doc/VariablenImViewTemplate.png" width=250px height=137px></a>
+	<figcaption>Variablen im View Template</figcaption>
+</figure>
+<p>Auf dem <b>Konfigurations-Popup</b> f&uuml;r View Templates kann man fast alle Parameter als "Variable" definieren. Das funktioniert insbesondere f&uuml;r die Parameter der verwendeten Views. Daf&uuml;r gibt es rechts neben dem jeweiligen Parameter ein Ankreuzfeld (Checkbox), mit der man die Variable aktiviert. Es wird der Name des Parameters selbst als Variablenname vorgeschlagen, man kann aber auch einen eigenen Namen eingeben. Der Name einer Variable darf nur aus normalen Buchstaben (a-z, A-Z), Ziffern (0-9) und dem Unterstrich (_) bestehen. Au&szlig;erdem sind die folgenden Namen reserviert und d&uuml;rfen nicht verwendet werden: class, defaulted, flexfields, height, id, sizing, templateid, title, variable, variables, views, width.<br>
+Wenn man ein View Template mit Variablen (z.B. in einer Zelle) verwendet, dann erscheinen die Variablen genau so wie die Parameter einer "normalen" View. Zusammen mit den "flexiblen Feldern" der HTML-View kann man sich auf diese Art fast jede m&ouml;gliche View zusammenbasteln.</p>
+<p style="clear:left;height:0.0em;"></p>
+<p style="clear:right;height:0.0em;"></p>
+
+<h2 id="views">Die Views</h2>
+
+<h3 id="views-empty">Die leere View</h3>
+Die "leere" View wird im Konfigurationsdialog vorbelegt, wenn eine neue View hinzugef&uuml;gt wird. Man ersetzt dann den <i>View type</i> durch das, was man eigentlich haben will. Ansonsten kann man die leere View theoretisch als Platzhalter verwenden oder wenn man nur einen kurzen Text darstellen will. Au&szlig;er <i>View type</i> und <i>title</i> hat die leere View nur ein Feld. (Sie ist also eigentlich gar nicht so leer.)
+<ul><li><b>content</b><br>Hier kann ein kurzer Text eingegeben werden, der dann auf der Oberfl&auml;che angezeigt wird. Allerdings kann man keinerlei Formatangaben mitgeben (wie Gr&ouml;&szlig;e, Farbe etc.). </li></ul>
+
+  
+
+
+			<h3 id="views-7SegmentClock">7SegmentClock: 7-Segment-Display clock</h3>
+			<img src="doc/FUIP-View-7SegmentClock.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Diese View zeigt eine Digitaluhr im 7-Segment-Design an.<br>
+				Es wird die Client-Zeit (also die Zeit des Browsers) angezeigt.<br>Die View 7SegmentClock l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>title</i>, <i>seconds</i>, <i>color</i>, <i>sizing</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul><li><b>7SegmentClock - seconds</b><br>Dieser Parameter steuert, ob man nur Stunden und Minuten oder 
+				auch Sekunden sieht.</li><li><b>7SegmentClock - color</b><br>Farbe der Anzeige.<br>
+			Es k&ouml;nnen insbesondere die "FUIP-Farbsymbole" ausgew&auml;hlt werden, so dass die Anzeige zum Rest der Oberfl&auml;che passt. Ansonsten kann man so ziemlich alles eingeben, was CSS als Farbe erlaubt.</li></ul><br>
+			<h3 id="views-7SegmentReading">7SegmentReading: 7-Segment-Display (Reading)</h3>
+			<img src="doc/FUIP-View-7SegmentReading.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View 7SegmentReading l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>reading</i>, <i>title</i>, <i>digits</i>, <i>decimals</i>, <i>colorscheme</i>, <i>color</i>, <i>sizing</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-Batteries">Batteries: Liste der Batterien</h3>
+			<img src="doc/FUIP-View-Batteries.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Diese View zeigt eine Liste der batteriebetriebenen Ger&auml;te mit den aktuellen Ladest&auml;nden an. Dazu werden alle FHEM-Devices mit den Readings <i>battery</i>, <i>batteryLevel</i>, <i>batVoltage</i>, <i>batteryPercent</i> und <i>Activity</i> gesucht und in einer Liste dargestellt. Devices, f&uuml;r die das Attribut <i>ignore</i> auf einen Wert ungleich 0 gesetzt ist, werden ignoriert. Je nachdem, was bei den einzelnen Devices m&ouml;glich ist, wird ein Batterie-Icon erzeugt, welches den Zustand der Batterie zeigt sowie ein Spannungs- oder Prozentwert und eine alive/dead-Angabe f&uuml;r Devices mit dem Reading <i>Activity</i>.<br>Die View Batteries l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>title</i>, <i>deviceFilter</i>, <i>exclude</i>, <i>sizing</i>, <i>columns</i>, <i>labelRule</i>.<p style="clear:left;height:0em;">
+			<ul><li><b>Batteries - deviceFilter</b><br>Hier kann angegeben werden, ob auch Devices angezeigt werden sollen, die das Reading <i>Activity</i> haben, aber gar nicht batteriebetrieben sind. Es gibt zwei m&ouml;gliche Werte:
+	<ul>
+	<li><b>all</b>: Es werden alle Devices angezeigt, auch solche, die nur das Reading <i>Activity</i> haben.</li>
+	<li><b>battery</b>: Es werden nur die Devices angezeigt, die (mindestens) eins der Batterie-Readings haben. Es wird dann f&uuml;r diese Devices trotzdem "dead" oder "alive" angezeigt, wenn sie das <i>Activity</i> Reading haben.</li></ul></li><li><b>Batteries - exclude</b><br>Hier kann eine Liste von Devices angegeben werden, die normalerweise von der <i>Batteries</i>-View angezeigt w&uuml;rden. Diese werden dann nicht angezeigt. In der zugeh&ouml;rigen Werthilfe werden nur Devices angezeigt, die normalerweise von der View gefunden werden.</li><li><b>Batteries - columns</b><br>Hier kann man angeben, ob die Liste in einer, zwei, drei oder vier Spalten ausgegeben werden soll. Es ist empfehlenswert, mit dieser Angabe im Zusammenhang mit dem Parameter <i>sizing</i> etwas zu experimentieren, bevor man sich festlegt.</li><li><b>Batteries - labelRule</b><br>Normalerweise wird der Text (das Label) zu jedem Device in der Liste vom Attribut <i>alias</i> genommen, falls dieses Attribut gesetzt ist. Ansonsten wird der Device-Name (das Internal NAME) benutzt. Mit dem Parameter <i>labelRule</i> kann man das &auml;ndern. Man gibt hier eine Komma-separierte Liste von Attributen, Internals und/oder Readings ein. Dann sucht die View f&uuml;r jedes Device nach dem ersten Eintrag, f&uuml;r den tats&auml;chlich etwas gesetzt ist. Man sollte <i>NAME</i> normalerweise immer als letztes in der Liste haben, um keine Eintr&auml;ge in der Liste ohne Text zu erzeugen.<br>
+	Hat man z.B. Devices, bei denen der "sinnvolle" Name im Internal <i>name</i> steht und andere, f&uuml;r die das Attribut <i>alias</i> gef&uuml;llt ist, dann kann man <i>labelRule</i> mit "name,alias,NAME" oder "alias,name,NAME" f&uuml;llen, je nachdem ob <i>name</i> oder <i>alias</i> h&ouml;here Priorit&auml;t hat.</li></ul><br>
+			<h3 id="views-Brightness">Brightness: Brightness</h3>
+			<img src="doc/FUIP-View-Brightness.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View Brightness l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>brightness</i>, <i>title</i>, <i>label</i>, <i>min</i>, <i>max</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-Calendar">Calendar: Kalender (experimentell)</h3>
+			<img src="doc/FUIP-View-Calendar.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Diese View ist eine einfache Darstellung eines Kalenders.<br>
+				Es wird immer eine ganze Woche angezeigt. Die Anzeige basiert auf Calendar-Devices in FHEM.<br>Die View Calendar l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>title</i>, <i>sizing</i>.<p style="clear:left;height:0em;">
+			<ul><li><b>Calendar - device</b><br>Hier gibt man ein oder mehrere Calendar-Devices an. Es werden die Termine aus allen ausgew&auml;hlten Kalendern angezeigt.</li></ul><br>
+			<h3 id="views-Chart">Chart: Chart from SVG</h3>
+			<img src="doc/FUIP-View-Chart.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View Chart l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>title</i>, <i>sizing</i>, <i>timeranges</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-Clock">Clock: Eine Uhr mit Anpassung an die Server-Zeit</h3>
+			<img src="doc/FUIP-View-Clock.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View Clock l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>title</i>, <i>sizing</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-Colorwheel">Colorwheel: Farbauswahl</h3>
+			<img src="doc/FUIP-View-Colorwheel.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Farbauswahl im RGB-Format<br>
+		Mit der View <i>Colorwheel</i> kann man Geräte steuern, die Farben im RGB-Format akzeptieren bzw. bereitstellen, wie z.B. Hue-Leuchten. Die View entspricht ungef&auml;hr dem FTUI-Widget "colorwheel", wobei FUIP eine eigene Implementierung bereitstellt, die beim Sizing flexibler ist.<br>Die View Colorwheel l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>title</i>, <i>label</i>, <i>set</i>, <i>reading</i>, <i>sizing</i>.<p style="clear:left;height:0em;">
+			<ul><li><b>Colorwheel - device</b><br>Das Device, auf das sich die Farbauswahl bezieht. Das kann z.B. eine Leuchte vom Typ HUEDevice sein.</li><li><b>Colorwheel - label</b><br>Der hier eingetragene Text erscheint unter der Farbauswahl, also am unteren Rand der View. Man kann das Label auch leer lassen.</li><li><b>Colorwheel - set</b><br>Set-Option, die eine Farbe im RGB-Hex-Format akzeptiert.<br>
+		Beim Setzen der Farbe ruft die View folgenden FHEM-Befehl auf: <i>set &lt;device&gt; &lt;set&gt; RRGGBB</i>. Defaultwert ist "rgb". Bei Hue-Leuchten ergibt sich also normalerweise so etwas wie <i>set myHueDevice rgb FF0000</i>, wenn man die Lampe auf Rot setzt.</li><li><b>Colorwheel - reading</b><br>Reading, welches die aktuelle Farbe im RGB-Hex-Format enth&auml;lt.<br>
+		Defaultwert ist das, was bei <i>set</i> eingetragen wurde.</li></ul><br>
+			<h3 id="views-DwdWebLink">DwdWebLink: DWD_OpenData_Weblink</h3>
+			<img src="doc/FUIP-View-DwdWebLink.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View DwdWebLink l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>title</i>, <i>sizing</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-HomeButton">HomeButton: Home Button</h3>
+			<img src="doc/FUIP-View-HomeButton.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View HomeButton l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>text</i>, <i>title</i>, <i>linkType</i>, <i>link</i>, <i>pageid</i>, <i>device</i>, <i>reading</i>, <i>icon</i>, <i>active</i>, <i>sizing</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-Html">Html: Alles, was mit HTML geht</h3>
+			<img src="doc/FUIP-View-Html.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Diese View kann praktisch beliebiges HTML enthalten. Es ist auch erlaubt, CSS und JavaScript zu verwenden. Allerdings sollte man sicherstellen, dass man dabei keine allzu groben Fehler macht. Syntaxfehler und &auml;hnliches werden abgefangen, aber man kann damit auch gro&szlig;en Bl&ouml;dsinn anstellen.<br>
+	Im HTML-Text k&ouml;nnen spezielle Elemente verwendet werden, um sogenannte "flexible Felder" zu erzeugen. Diese werden dann zu Parametern, die auf dem Konfigurations-Popup durch eingegebene Werte ersetzt werden k&ouml;nnen. Dies ist insbesondere im Zusammenhang mit View Templates interessant, wo man auch aus "flexiblen Feldern" Variablen machen kann.<br>Die View Html l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>title</i>, <i>html</i>, <i>sizing</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul><li><b>Html - html</b><br>Hier wird der HTML-Text eingegeben. (Man kann das Feld auch gr&ouml;&szlig;er ziehen.)<br>
+		Au&szlig;er normalem HTML (mit CSS und JavaScript) kann man mit dem Pseudo-Tag <i>fuip-field</i> "flexible Felder" definieren. Man kann z.B. folgendes in den HTML-Text einf&uuml;gen:<br>
+		<i>&lt;fuip-field fuip-name='device' fuip-type='device'&gt;somedevice&lt;/fuip-field&gt;</i><br>
+		Das kann man im HTML tats&auml;chlich &uuml;berall hinschreiben und nicht nur da, wo es normalerweise in HTML m&ouml;glich w&auml;re. Nach dem n&auml;chsten &Ouml;ffnen des Konfigurations-Popups erscheint "device" mit dem Wert "somedevice" als neues Feld unter dem HTML-Teil. Dabei kommt "device" von der Angabe bei "fuip-name" und "somedevice" ist einfach der Inhalt des <fuip-field>-Tags. Das neue Feld kann man jetzt &auml;ndern wie jedes andere auch. Durch die Angabe "device" bei "fuip-type" wei&szlig; FUIP auch, dass es die entsprechende Werthilfe liefern muss. Beim Rendern des Views (also wenn das ganze angezeigt wird), wird der &lt;fuip-field&gt;-Teil durch den Inhalt des Felds ersetzt. Im obigen Beispiel kann man also das HTML mit einem variablen Device angeben.<br>
+		Das &lt;fuip-field&gt;-Pseudo-Tag kennt die folgenden Attribute.
+		<ul>
+		<li><b>fuip-name</b> ist der Name des neuen Felds. Der Name darf nur aus normalen Buchstaben (a-z, A-Z), Ziffern (0-9) und dem Unterstrich (_) bestehen. Au&szlig;erdem sind die folgenden Namen nicht erlaubt: class, defaulted, flexfields, height, html, popup, sizing, title, variable, variables, views, width.</li>
+		<li><b>fuip-type</b> gibt den Typ des Felds an. Folgende Werte sind möglich.
+		<ul>
+			<li>text: Einfach ein Feld, ohne besondere Semantik.</li>
+			<li>device: Ein FHEM-Device. Als Werthilfe wird eine Liste aller Devices angezeigt.</li>
+			<li>reading: Ein Reading eines FHEM-Device. Wenn zus&auml;tzlich fuip-refdevice gesetzt ist, dann wird eine Liste der Readings des betreffenden Device als Werthilfe angeboten.</li>
+			<li>set: Ein set-Befehl eines FHEM-Device. Wenn zus&auml;tzlich fuip-refdevice gesetzt ist, dann wird eine Liste der set-Befehle des betreffenden Device als Werthilfe angeboten.</li>
+			<li>setoption: (Ein) Parameter zu einem set-Befehl. (Also z.B. das "22" in "set <device> desired-temp 22".) Wenn zus&auml;tzlich fuip-refset angegeben ist, dann werden die m&ouml;glichen Werte als Werthilfe angeboten.</li>
+			<li>setoptions: Wie setoption, nur dass mehrere Werte ausw&auml;hlbar sind.</li>
+			<li>icon: Ein Icon, in der "&uuml;blichen" FTUI-Codierung. Als Werthilfe wird eine Liste aller verwendbaren Icons angeboten.</li>
+		</ul>
+		</li>
+		<li><b>fuip-refdevice</b> enth&auml;lt den Namen eines Felds, das den Device-Namen enth&auml;lt. Dies wird ben&ouml;tigt für Felder vom Typ reading und set.</li>
+		<li><b>fuip-refset</b> enth&auml;lt den Namen eines Felds, das einen set-Befehl enth&auml;lt (also ein Feld vom Type set). Dies wird ben&ouml;tigt für Felder vom Typ setoption und setoptions. (Es kann aber auch sinnvoll sein, fuip-refset wegzulassen, insbesondere falls fuip-options angegeben wird.</li>
+		<li><b>fuip-options</b> enth&auml;lt eine Komma-separierte Liste der m&ouml;glichen Werte, also z.B. "on,off,5,15,25". Wenn fuip-options verwendet wird, dann sollte man fuip-refset weglassen.</li>
+		<li><b>fuip-default-type</b> zeigt an, dass es für das Feld einen Default-Wert gibt. M&ouml;gliche Werte sind "const" für einen konstanten Wert und "field", wenn der Wert aus einem anderen Feld &uuml;bernommen werden soll.</li>
+		<li><b>fuip-default-value</b> enth&auml;lt den Default-Wert bzw. den Namen des Felds, von dem der Wert &uuml;bernommen werden soll. Für Felder des Typs setoptions k&ouml;nnen mehrere Werte durch Komma getrennt angegeben werden.</li>
+		<li><b>fuip-default-suffix</b> kann verwendet werden wenn fuip-default-type "field" ist. Dann wird der Suffix an den Wert geh&auml;ngt.</li>
+		</ul></li></ul><br>
+			<h3 id="views-HueSceneSelect">HueSceneSelect: Select from Hue Scenes</h3>
+			<img src="doc/FUIP-View-HueSceneSelect.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View HueSceneSelect l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>scenes</i>, <i>sizing</i>, <i>title</i>, <i>label</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-LabelHumidity">LabelHumidity: Humidity Label</h3>
+			<img src="doc/FUIP-View-LabelHumidity.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View LabelHumidity l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>title</i>, <i>humidity</i>, <i>label</i>, <i>sizing</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-LabelReading">LabelReading: Ein Reading als Text anzeigen</h3>
+			<img src="doc/FUIP-View-LabelReading.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Diese View stellt ein beliebiges Reading dar. Der Wert (und/oder der Timestamp) wird als Text angezeigt.<br>Die View LabelReading l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>reading</i>, <i>title</i>, <i>label</i>, <i>icon</i>, <i>content</i>, <i>unit</i>, <i>border</i>, <i>sizing</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul><li><b>LabelReading - reading</b><br>Hier wird die Device-Reading-Kombination eingegeben, auf den sich die View beziehen soll.</li><li><b>LabelReading - icon</b><br>Das hier angegebene Icon wird links im View angezeigt. </li><li><b>LabelReading - content</b><br>Der Inhalt der View kann der Wert des Readings, der Timestamp oder beides sein. Entsprechend kann <i>content</i> die Werte "value", "timestamp" und "both" annehmen. Der Timestamp wird im Format "12.03. 17:28" angezeigt.</li><li><b>LabelReading - unit</b><br>Hier kann man eine Einheit eintragen, die hinter dem Wert angezeigt wird. In der Werthilfe dazu kann man sowohl die Kurzschreibweise (wie z.B. "A"), als auch den kompletten Namen der Einheit ("Ampere") ausw&auml;hlen.</li><li><b>LabelReading - border</b><br>Hier kann man angeben, ob die View einen Rahmen haben soll. Bei der Option <i>solid</i> wird ein Rahmen gezeichnet, bei der Option <i>none</i> wird kein Rahmen erzeugt.</li></ul><br>
+			<h3 id="views-LabelTemperature">LabelTemperature: Temperature Label</h3>
+			<img src="doc/FUIP-View-LabelTemperature.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View LabelTemperature l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>title</i>, <i>temperature</i>, <i>colors</i>, <i>label</i>, <i>sizing</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-MenuItem">MenuItem: Ein Menu-Eintrag</h3>
+			<img src="doc/FUIP-View-MenuItem.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Ein <i>MenuItem</i>, also ein Men&uuml;-Eintrag ist im Prinzip ein Hyperlink. D.h. beim Klick auf diese View wird normalerweise die komplette Seite durch eine neue ersetzt. Wenn man mehrere <i>MenuItems</i> &uuml;ber- oder nebeneinander setzt, dann erh&auml;lt man ein Men&uuml;. Es gibt keine eigene View f&uuml;r ein ganzes Men&uuml;, es wird aber empfohlen, die Men&uuml;s einer FUIP-Oberfl&auml;che als View Template anzulegen, da die Men&uuml;s verschiedener Seiten meistens im Wesentlichen gleich sind.<br>Die View MenuItem l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>text</i>, <i>title</i>, <i>linkType</i>, <i>link</i>, <i>pageid</i>, <i>device</i>, <i>reading</i>, <i>icon</i>, <i>active</i>, <i>sizing</i>.<p style="clear:left;height:0em;">
+			<ul><li><b>MenuItem - text</b><br>Dies ist der Text, der im Men&uuml;-Eintrag erscheint.</li><li><b>MenuItem - linkType</b><br>Die View <i>MenuItem</i> kann zu anderen FUIP-Seiten springen, aber auch zu allgemeinen Hyperlinks und zu Hyperlinks, die in Readings gespeichert sind. Daf&uuml;r kann <i>linkType</i> drei verschiedene Werte annehmen:
+		<ul>
+			<li><b>fuip-page</b> bedeutet, dass das Navigationsziel eine Seite desselben FUIP-Device ist. Wenn man "fuip-page" ausw&auml;hlt, dann erscheint der Parameter <i>pageid</i> mit einer Werthilfe, die alle (bereits generierten) Seiten des aktuellen FUIP-Device anzeigt. "fuip-page" ist sozusagen der Normalfall f&uuml;r ein Men&uuml; und damit auch die Voreinstellung.</li>
+			<li><b>ftui-link</b> bedeutet, dass das Navigationsziel ein allgemeiner Link ist, wie man ihn auch im Tablet-UI (ohne FUIP) verwenden k&ouml;nnte. Wenn man "ftui-link" ausw&auml;hlt, dann erscheint das Feld <i>link</i>.</li> 
+			<li><b>fhem-reading</b> ermittelt das Navigationsziel aus einem Reading eines FHEM-Devices. Wenn man "fhem-reading" ausw&auml;hlt, dann erscheinen die Felder <i>device</i> und <i>reading</i> mit den &uuml;blichen Werthilfen.</li>
+		</ul></li><li><b>MenuItem - link</b><br>Ein allgemeiner Hyperlink, der beim Klick auf das <i>MenuItem</i> angesprungen wird. Das Feld ist nur sichtbar, wenn der Parameter <i>linkType</i> auf "ftui-link" steht. Der Wert in diesem Feld kann dann zum Beispiel folgendes bedeuten:
+		<ul>
+			<li>Alles, was mit einem "/" beginnt, wird relativ zum FHEM-Server (auf dem FUIP l&auml;uft) interpretiert. Der Eintrag "/fhem?room=kitchen" w&uuml;rde FHEMWEB aufrufen und den Raum "kitchen" anzeigen.<br>
+			Man kann damit auch zu Seiten anderer FUIP-Instanzen springen. Der Eintrag "/fhem/ui2/page/room/kitchen" w&uuml;rde zur Seite "room/kitchen" der FUIP-Instanz "ui2" springen.</li>
+			<li>Relative links, die nicht mit "/" beginnen, rufen Dateien aus dem Tablet-UI	Installationsverzeichnis auf. Der Eintrag "demo_ftui.html" startet (zumindest bei mir) die Tablet-UI Demoseite.</li>
+			<li>Komplette URLs werden einfach so aufgerufen, wie sie sind. Man kann z.B. "http://google.de" eingeben und erh&auml;lt... (Ja was wohl?)</li>
+		</ul></li><li><b>MenuItem - pageid</b><br>Eine FUIP-Seite (derselben FUIP-Instanz). Das Feld ist nur sichtbar, wenn der Parameter <i>linkType</i> auf "fuip-page" steht. Am besten, man w&auml;hlt die gew&uuml;nschte Seite per Werthilfe aus. Man kann aber auch &uuml;ber ein <i>MenuItem</i> schnell eine neue Seite anlegen. Dazu tr&auml;gt man einfach den gew&uuml;nschten Seitennamen ein und klickt auf den Men&uuml;eintrag. Dadurch wird die Seite automatisch angelegt.</li><li><b>MenuItem - device</b><br>Dies ist das FHEM-Device zum Reading, aus dem der anzuspringende Hyperlink genommen wird. Dieses Feld wird sichtbar, wenn wenn der Parameter <i>linkType</i> auf "fhem-reading" steht. Weiteres ist beim Parameter <i>reading</i> erkl&auml;rt.</li><li><b>MenuItem - reading</b><br>Dies ist das FHEM-Reading, aus dem der anzuspringende Hyperlink genommen wird. Dieses Feld wird sichtbar, wenn wenn der Parameter <i>linkType</i> auf "fhem-reading" steht. Das hier gew&auml;hlte Reading muss einen Link wie oben unter "ftui-link" beschrieben enthalten. Das bedeutet, dass man nicht einfach den Namen einer FUIP-Seite eintragen kann (wie z.B. "room/kitchen"). Statt dessen muss der ganze Pfad inklusive FUIP-Device im Reading stehen, also z.B. "/fhem/ui/page/room/kitchen".</li><li><b>MenuItem - icon</b><br>Das hier ausgew&auml;hlte Icon wird im Men&uuml;eintrag vor dem Text angezeigt.</li><li><b>MenuItem - active</b><br>Dieses Feld zeigt an, ob der Men&uuml;eintrag als aktiv oder inaktiv dargestellt werden soll. Es wird einer der Werte 0 oder 1 erwartet. Bei "1" wird der Men&uuml;eintrag als aktiv angezeigt, bei "0" als inaktiv. Normalerweise setzt man einen Men&uuml;eintrag auf aktiv, wenn er zu der Seite geh&ouml;rt, auf der man gerade ist. Wenn man sich ein ganzes Men&uuml; als View-Template zusammenstellt, dann sollte man den Parameter <i>active</i> aller Men&uuml;eintr&auml;ge als Variable anlegen. (Nat&uuml;rlich mit unterschiedlichen Namen.) So kann man das Men&uuml; auf jeder Seite wiederverwenden und muss nur den richtigen <i>active</i>-Parameter setzen.</li></ul><br>
+			<h3 id="views-Popup">Popup: Trigger a popup</h3>
+			<img src="doc/FUIP-View-Popup.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View Popup l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>text</i>, <i>icon</i>, <i>title</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-Push">Push: Push button</h3>
+			<img src="doc/FUIP-View-Push.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Diese View ist ein Pushbutton, also eine Art Taster, der einen einzelnen Befehl an FHEM sendet.<br>Die View Push l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>icon</i>, <i>set</i>, <i>option</i>, <i>title</i>, <i>label</i>, <i>border</i>.<p style="clear:left;height:0em;">
+			<ul><li><b>Push - set</b><br>Hier wird der Befehl eingetragen, der an das Device gesendet werden soll. Wenn man z.B. ein <i>"set myHeating desired-temperature 27,5"</i> senden will, dann geh&ouml;rt hier das <i>"desired-temp"</i> hinein.</li><li><b>Push - option</b><br>Falls der Befehl, der an das Device gesendet werden soll, noch weitere Parameter hat, dann wird das hier eingetragen. Wenn man z.B. ein <i>"set myHeating desired-temperature 27,5"</i> senden will, dann geh&ouml;rt hier das <i>"27,5"</i> hinein.</li><li><b>Push - border</b><br>Hier kann man angeben, ob der Button einen Rahmen haben soll. Bei der Option <i>solid</i> wird ein Rahmen gezeichnet, bei der Option <i>none</i> wird kein Rahmen erzeugt. Ein Icon mit Rahmen wird etwas kleiner dargestellt als ein Icon ohne Rahmen. Ansonsten w&uuml;rsen die Gr&ouml;&szlig;enverh&auml;ltnisse nicht mehr passen.</li></ul><br>
+			<h3 id="views-Reading">Reading: Ein beliebiges Reading</h3>
+			<img src="doc/FUIP-View-Reading.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Diese View stellt ein beliebiges Reading dar. Der Wert (und/oder der Timestamp) wird als Text angezeigt.<br>Die View Reading l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>title</i>, <i>reading</i>, <i>icon</i>, <i>label</i>, <i>content</i>, <i>unit</i>, <i>unitSize</i>, <i>layout</i>, <i>border</i>, <i>colorscheme</i>, <i>color</i>, <i>sizing</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul><li><b>Reading - reading</b><br>Hier wird die Device-Reading-Kombination eingegeben, auf die sich die View beziehen soll.</li><li><b>Reading - icon</b><br>Das hier angegebene Icon wird links im View angezeigt. </li><li><b>Reading - content</b><br>Der Inhalt der View kann der Wert des Readings, der Timestamp oder beides sein. Entsprechend kann <i>content</i> die Werte "value", "timestamp" und "both" annehmen. Der Timestamp wird im Format "12.03. 17:28" angezeigt.</li><li><b>Reading - unit</b><br>Hier kann man eine Einheit eintragen, die hinter dem Wert angezeigt wird. In der Werthilfe dazu kann man sowohl die Kurzschreibweise (wie z.B. "A"), als auch den kompletten Namen der Einheit ("Ampere") ausw&auml;hlen. Der Parameter <i>unit</i> ist nur verf&uuml;gbar, wenn auch der Wert des Readings angezeigt werden soll, also <i>content</i> auf "value" oder "both" steht.</li><li><b>Reading - unitSize</b><br>Wenn beim Parameter <i>unit</i> etwas eingegeben wurde, dann kann hier ausgew&auml;hlt werden, ob die Einheit normal gro&szlig; ("full") oder kleiner ("half") dargestellt werden soll.</li><li><b>Reading - layout</b><br>Hier kann man ausw&auml;hlen, ob alles in einer Zeile angezeigt werden soll ("line") oder &uuml;bereinander ("column"). Wird "column" ausgew&auml;hlt, dann werden Label, Wert und Timestamp &uuml;bereinander gesetzt. Das Icon ist immer links vom Rest.</li><li><b>Reading - border</b><br>Hier kann man angeben, ob die View einen Rahmen haben soll. Bei der Option <i>solid</i> wird ein Rahmen gezeichnet, bei der Option <i>none</i> wird kein Rahmen erzeugt.</li><li><b>Reading - colorscheme</b><br>Dieser Parameter steuert die Farbgebung des Werts des Readings. Er hat keine Auswirkung auf das Icon, das Label und den Timestamp. Der Parameter <i>colorscheme</i> ist nur verf&uuml;gbar, wenn auch der Wert des Readings angezeigt werden soll, also <i>content</i> auf "value" oder "both" steht. Es sind folgende Werte vorgesehen:
+	<ul>
+		<li>single: Es wird eine feste Farbe verwendet. Wird dieser Wert ausgew&auml;hlt, dann erscheint der Parameter <i>color</i>. Ansonsten bleibt <i>color</i> ausgeblendet.</li>
+		<li>temp-air: Dies ist f&uuml;r Lufttemperaturen gedacht. Die Farbgebung erfolgt je nach Temperatur, wobei &uuml;bliche Lufttemperaturen zu Grunde gelegt werden.</li>
+		<li>temp-boiler: Dies ist f&uuml;r die Wassertemperatur in einer Heizung gedacht. Die Farbgebung erfolgt je nach Temperatur, wobei &uuml;bliche Wassertemperaturen in einem Heizkreislauf zu Grunde gelegt werden.</li>
+		<li>humidity: Dies ist f&uuml;r relative Luftfeuchtigkeiten gedacht. Die Farbgebung erfolgt je nach Feuchtigkeit, wobei f&uuml;r Menschen angenehme Luftfeuchtigkeiten zu Grunde gelegt werden.</li>
+	</ul></li><li><b>Reading - color</b><br>Hier wird die Farbe des Werts des Readings angegeben, wenn <i>colorscheme</i> auf "single" steht. Der Parameter hat keine Auswirkung auf Icon, Label und Timestamp. Es k&ouml;nnen insbesondere die "FUIP-Farbsymbole" ausgew&auml;hlt werden, so dass die Anzeige zum Rest der Oberfl&auml;che passt. Ansonsten kann man so ziemlich alles eingeben, was CSS als Farbe erlaubt.</li></ul><br>
+			<h3 id="views-ReadingsGroup">ReadingsGroup: Readings Group (HTML from FHEMWEB)</h3>
+			<img src="doc/FUIP-View-ReadingsGroup.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View ReadingsGroup l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>title</i>, <i>columns</i>, <i>sizing</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-ReadingsList">ReadingsList: Readings-Liste</h3>
+			<img src="doc/FUIP-View-ReadingsList.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Diese View zeigt ein oder mehrere Reading(s) von einem oder mehreren Device(s) als Liste an.<br>
+				Zus&auml;tzlich kann man einen Filter angeben, wodurch nur Readings angezeigt werden, deren Wert dem Filter entspricht.<br>Die View ReadingsList l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>reading</i>, <i>value</i>, <i>detail</i>, <i>title</i>, <i>sizing</i>.<p style="clear:left;height:0em;">
+			<ul><li><b>ReadingsList - device</b><br>Hier w&auml;hlt man die Devices aus, deren Readings man sehen will. Man kann mehrere Devices ausw&auml;hlen.</li><li><b>ReadingsList - reading</b><br>Hier w&auml;hlt man die Readings aus, die man sehen will. Man kann kein, ein oder mehrere Readings ausw&auml;hlen.<br> 
+	Wenn man kein Reading angibt, das Feld also leer l&auml;sst, dann kommt es darauf an, ob man nur ein Device oder mehrere Devices ausgew&auml;hlt hat. Bei einem einzelnen Device werden alle Readings angezeigt, die man normalerweise auch in FHEMWEB sehen w&uuml;rde. (Also alle, au&szlig;er die mit einem Punkt am Anfang.) Bei mehreren Devices wird dann nur das Reading <i>state</i> angezeigt.<br>
+	Wenn man mehrere Readings angibt und auch mehrere Devices angegeben hat, dann kann jedes der gew&auml;hlten Readings f&uuml;r jedes Device angezeigt werden. Dabei werden allerdings nur solche Kombinationen wirklich angezeigt, die auch tats&auml;chlich existieren.</li><li><b>ReadingsList - value</b><br>Hier gibt man einen Filterwert an. Nur Readings, die einen passenden Wert haben, werden angezeigt. &Auml;ndert sich der Wert in FHEM, dann wird die zugeh&ouml;rige Zeile automatisch aus- bzw. eingeblendet.<br>
+	Was man hier eingibt wird als regul&auml;rer Ausdruck (Regex) interpretiert. D.h. man kann damit auch nach Mustern oder mehreren Werten filtern.</li><li><b>ReadingsList - detail</b><br>Hier werden die anzuzeigenden Spalten ausgew&auml;hlt. Die folgenden Spalten stehen zur Verf&uuml;gung.
+	<ul>
+	<li><b>device</b>: das Device. Falls f&uuml;r ein Device das Attribut <i>alias</i> gesetzt ist, dann wird der entsprechende Wert angezeigt.</li>
+	<li><b>reading</b>: der Name des Readings.</li>
+	<li><b>value</b>: der Wert des Readings.</li>
+	<li><b>timestamp</b>: der Timestamp zum Reading.</li>
+	</ul>
+	Die Spalten werden in der Reihenfolge angezeigt, wie sie im Feld <i>detail</i> vorkommen. Man kann also Spalten umsortieren.<br>
+	Wenn man das Feld leer l&auml;sst, dann kommt es darauf an, ob man nur ein Device oder mehrere Devices ausgew&auml;hlt hat. Bei einem einzelnen Device werden dann die Spalten reading, value und timestamp angezeigt. Bei mehreren Devices werden die Spalten device und value angezeigt.
+	</li></ul><br>
+			<h3 id="views-STATE">STATE: Display STATE</h3>
+			<img src="doc/FUIP-View-STATE.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View STATE l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>title</i>, <i>label</i>, <i>icon</i>, <i>sizing</i>, <i>lines</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-Select">Select: Select from options</h3>
+			<img src="doc/FUIP-View-Select.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View Select l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>set</i>, <i>reading</i>, <i>options</i>, <i>width</i>, <i>title</i>, <i>label</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-ShutterControl">ShutterControl: Rollladen (Detail)</h3>
+			<img src="doc/FUIP-View-ShutterControl.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Diese View eignet sich, um einen Rollladen zu steuern. Man kann damit einen Rollladen (oder &auml;hnliches) &ouml;ffnen und schlie&szlig;en, auf einen bestimmten Prozentwert fahren sowie eine Wochen-Zeitschaltuhr aufrufen, um das ganze zu automatisieren.<br>
+	Der im Select-Widget angezeigte Prozentwert ist nicht unbedingt genau der Wert, bei dem der Rollladen momentan steht. Es wird der Wert aus der Liste der m&ouml;glichen Werte des Select-Widgets angezeigt, der am n&auml;chsten am tats&auml;chlichen Wert liegt.<br>
+	Die meisten Rollladenaktoren lassen sich &uuml;ber Prozentwerte steuern. Allerdings gibt es Unterschiede in der Interpretation, ob die 100% oben oder unten sind. Daf&uuml;r gibt es die Parameter <i>levelType</i>, <i>minLevel</i> und <i>maxLevel</i>. Durch <i>levelType</i> "inverted_shutter" wird die Reihenfolge der Prozentangaben umgedreht und "Auf" und "Zu" werden vertauscht. D.h. "Auf" entspricht <i>minLevel</i> (meistens 0) und "Zu" entspricht <i>maxLevel</i> (meistens 100). Das klingt im ersten Moment sehr &auml;hnlich wie beim Vertauschen von <i>minLevel</i> und <i>maxLevel</i>, allerdings ist dann auch die Zuordnung der Prozentangaben zu den Werten in FHEM umgedreht. Die folgende Tabelle soll das ganze verdeutlichen:
+<table>
+<tr><td><b>levelType</b></td><td><b>minLevel</b></td><td><b>maxLevel</b></td><td><b>Ergebnis (Anzeige in FUIP:Wert in FHEM)</b></td></tr>
+<tr><td>shutter</td><td>0</td><td>100</td><td>Auf:100, 90%:90, 80%:80,... 20%:20, 10%:10, Zu:0</td></tr>
+<tr><td>shutter</td><td>100</td><td>0</td><td>Auf:0, 90%:10, 80%:20,... 20%:80, 10%:90, Zu:100</td></tr>
+<tr><td>inverted_shutter</td><td>0</td><td>100</td><td>Auf:0, 10%:10, 20%:20,... 80%:80, 90%:90, Zu:100</td></tr>
+<tr><td>inverted_shutter</td><td>100</td><td>0</td><td>Auf:100, 10%:90, 20%:80,... 80%:20, 90%:10, Zu:0</td></tr>
+</table><br>Die View ShutterControl l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>title</i>, <i>label</i>, <i>setUp</i>, <i>setStop</i>, <i>setDown</i>, <i>setLevel</i>, <i>readingLevel</i>, <i>levelType</i>, <i>minLevel</i>, <i>maxLevel</i>, <i>dirReading</i>, <i>dirUp</i>, <i>dirDown</i>, <i>timer</i>.<p style="clear:left;height:0em;">
+			<ul><li><b>ShutterControl - device</b><br>Hier gibt man den Rollladen-Aktor in FHEM an, also ein Device, welches einen Rollladen oder &auml;hnliches steuert.</li><li><b>ShutterControl - label</b><br>Der hier eingegebene Text erscheint unter dem gro&szlig;en Rollladen-Icon. Man kann ihn auch weglassen.</li><li><b>ShutterControl - setUp</b><br>Hier wird die Set-Option angegeben, die den Rollladen zum Hochfahren veranlasst.</li><li><b>ShutterControl - setStop</b><br>Hier wird die Set-Option angegeben, die den Rollladen zum Anhalten veranlasst.</li><li><b>ShutterControl - setDown</b><br>Hier wird die Set-Option angegeben, die den Rollladen zum Herunterfahren veranlasst.</li><li><b>ShutterControl - setLevel</b><br>Hier wird die Set-Option angegeben, bei der man einen Anzufahrenden (Prozent-)Wert mitgeben kann.</li><li><b>ShutterControl - readingLevel</b><br>Hier wird das Reading angegeben, das den momentanen Stand des Rollladens enth&auml;lt, in der Regel in Prozent.</li><li><b>ShutterControl - levelType</b><br>Dies steuert ob 100% "oben" oder "unten" bedeutet. Die folgeden beiden Werte sind m&ouml;glich:
+			<ul>
+			<li><b>shutter</b>: Bei dieser Option bedeutet "Auf" 100%. Als m&ouml;gliche Optionen zum Anfahren werden dann "Auf", "90%", "80%",... ,"10%", "Zu" angeboten.
+			<li><b>inverted_shutter</b>: Bei dieser Option bedeutet "Auf" 0%. Als m&ouml;gliche Optionen zum Anfahren werden dann "Auf", "10%", "20%",... ,"90%", "Zu" angeboten.</li>
+			</ul></li><li><b>ShutterControl - minLevel</b><br>Hier wird der Wert eingetragen, der f&uuml;r 0% an das FHEM-Device gesendet wird. 	Es ist auch erlaubt, in <i>minLevel</i> einen gr&ouml;&szlig;eren Wert als in <i>maxLevel</i> einzutragen. In dem Fall wird r&uuml;ckw&auml;rts gerechnet. 100% entspricht immer <i>maxLevel</i>, auch wenn das 0 sein sollte. Die restlichen Werte werden dann einfach linear zwischen 0% und 100% aufgeteilt.</li><li><b>ShutterControl - maxLevel</b><br>Hier wird der Wert eingetragen, der f&uuml;r 100% an das FHEM-Device gesendet wird.
+			Es ist auch erlaubt, in <i>maxLevel</i> einen kleineren Wert als in <i>minLevel</i> einzutragen. Beim Feld <i>minLevel</i> wird erkl&auml;rt, was das bedeutet.</li><li><b>ShutterControl - dirReading</b><br>Hier kann ein Reading f&uuml;r die Richtungs- bzw. Bewegungsanzeige angegeben werden. Der Defaultwert ist "direction". Es sind nur Readings des Device im Parameter <i>device</i> vorgesehen.<br>
+	Sobald dieser Parameter gef&uuml;llt ist, versucht die View, die Bewegungsrichtung zu visualisieren: Enth&auml;lt dieses Reading den Wert für "hoch" (per Default "up"), dann wird der Pfeil nach oben aktiv dargestellt. Entsprechend beim Wert für "runter" der Pfeil nach unten.</li><li><b>ShutterControl - dirUp</b><br>Hier wird der Wert angegeben, den das Reading <i>dirReading</i> annimmt, wenn der Rollladen nach oben f&auml;hrt. Defaultwert ist "up".</li><li><b>ShutterControl - dirDown</b><br>Hier wird der Wert angegeben, den das Reading <i>dirReading</i> annimmt, wenn der Rollladen nach unten f&auml;hrt. Defaultwert ist "down".</li><li><b>ShutterControl - timer</b><br>Hier kann ein WeekdayTimer-Device angegeben werden, mit dem man den Rollladen automatisieren kann. Das eingegebene Device muss schon in FHEM existieren und ein WeekdayTimer-Device sein. Es wird nicht automatisch angelegt.<br>
+	Sobald hier etwas angegeben wird, erscheint ein "Zahnrad"-Button in der View. Klickt man auf den Button, dann erscheint ein Popup, &uuml;ber das man die Zeitschaltuhr programmieren kann. Allerdings ist dessen Funktionalit&auml;t gegen&uuml;ber der View <i>WeekdayTimer</i> etwas eingeschr&auml;nkt. Gegebenenfalls sollte man also die View <i>WeekdayTimer</i> verwenden.</li></ul><br>
+			<h3 id="views-ShutterOverview">ShutterOverview: Shutter (overview)</h3>
+			<img src="doc/FUIP-View-ShutterOverview.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View ShutterOverview l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>title</i>, <i>label</i>, <i>readingLevel</i>, <i>minLevel</i>, <i>maxLevel</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-ShutterTimer">ShutterTimer: Timer (for Shutters)</h3>
+			<img src="doc/FUIP-View-ShutterTimer.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View ShutterTimer l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>title</i>, <i>label</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-SimpleSwitch">SimpleSwitch: Simple Switch</h3>
+			<img src="doc/FUIP-View-SimpleSwitch.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View SimpleSwitch l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>title</i>, <i>label</i>, <i>set</i>, <i>reading</i>, <i>icon</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-Spacer">Spacer: Spacer (just wastes some space)</h3>
+			<img src="doc/FUIP-View-Spacer.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View Spacer l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>title</i>, <i>sizing</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-SpinDim">SpinDim: Dimmer (als Spinner-Widget)</h3>
+			<img src="doc/FUIP-View-SpinDim.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Dimmer als Spinner-Widget<br>
+		Diese View eignet sich zum Einstellen von numerischen Werten. Es wurde f&uuml;r Dimmer und &auml;hnliches entwickelt, man kann im Prinzip aber beispielsweise auch Thermostate damit steuern.<br>Die View SpinDim l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>dimmer</i>, <i>title</i>, <i>label</i>, <i>min</i>, <i>max</i>, <i>step</i>.<p style="clear:left;height:0em;">
+			<ul><li><b>SpinDim - dimmer</b><br>Device und Reading/Set-Option, welche(s) gesteuert wird<br>
+		Dieser Parameter besteht aus dem FHEM-Device, welches gesteuert werden soll, sowie dem Namen eines Readings. Es wird davon ausgegangen, dass das Device auch eine Set-Option mit demselben Namen wie das Reading hat. In der Regel ist das bei Dimmern oder auch Thermostaten der Fall.</li><li><b>SpinDim - label</b><br>Dieser Text erscheint unter dem Spinner-Widget. Man kann das Label auch leer lassen.</li><li><b>SpinDim - min</b><br>Minimaler einstellbarer/darstellbarer Wert.</li><li><b>SpinDim - max</b><br>Maximaler einstellbarer/darstellbarer Wert.</li><li><b>SpinDim - step</b><br>Schrittweite<br>
+		Jedesmal, wenn man die "hoch"- bzw. "runter"-Taste dr&uuml;ckt wird der Wert um <i>step</i> erh&ouml;ht bzw. vermindert.</li></ul><br>
+			<h3 id="views-Sysmon">Sysmon: System Monitor</h3>
+			<img src="doc/FUIP-View-Sysmon.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View Sysmon l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>title</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-Thermostat">Thermostat: Thermostat</h3>
+			<img src="doc/FUIP-View-Thermostat.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Die View <i>Thermostat</i> kann einen (Wand-)Thermostat mit Soll- und Ist-Temperatur sowie bis zu drei angeschlossene ("gepeerte") Stellantriebe (Heizk&ouml;rperthermostate) darstellen. Au&szlig;erdem kann man die Solltemperatur einstellen. Man kann auch einfach nur einen Heizk&ouml;rperthermostat darstellen und steuern.<br>Die View Thermostat l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>title</i>, <i>label</i>, <i>desiredTemp</i>, <i>desiredSet</i>, <i>measuredTemp</i>, <i>minTemp</i>, <i>maxTemp</i>, <i>step</i>, <i>valvePos1</i>, <i>valvePos2</i>, <i>valvePos3</i>, <i>size</i>, <i>readonly</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul><li><b>Thermostat - device</b><br>Dies ist das Haupt-Device der Thermostat-Kombination. Das ist immer das Device, welches die Soll- und Ist-Temperatur "enth&auml;lt". D.h. bei Kombinationen von Wand- und Heizk&ouml;rperthermostat ist das in der Regel der Wandthermostat. Wenn es nur um einen einzelnen Heizk&ouml;rperthermostat geht, dann ist es dieser.</li><li><b>Thermostat - label</b><br>Dies ist ein Text, der unter der Thermostat-Grafik angezeigt wird. Man kann ihn auch weglassen.</li><li><b>Thermostat - desiredTemp</b><br>Hier wird das Reading des Haupt-Device (im Parameter <i>device</i> angegeben, welches die Solltemperatur enth&auml;lt.</li><li><b>Thermostat - desiredSet</b><br>Hier wird die Set-Option angegeben, mit der die Solltemperatur im Haupt-Device gesetzt wird. Normalerweise ist das dasselbe wie <i>desiredTemp</i>, es kann aber auch abweichen.</li><li><b>Thermostat - measuredTemp</b><br>Hier wird das Reading des Haupt-Device (im Parameter <i>device</i> angegeben, welches die Ist-Temperatur enth&auml;lt.</li><li><b>Thermostat - minTemp</b><br>Dies ist die minimale darstellbare/einstellbare Temperatur.</li><li><b>Thermostat - maxTemp</b><br>Dies ist die maximale darstellbare/einstellbare Temperatur.</li><li><b>Thermostat - step</b><br>Hier wird die Schrittweite der Temperatureinstellung und -anzeige angegeben. Zusammen mit <i>minTemp</i> und <i>maxTemp</i> legt das fest, welche Temperaturen eingestellt werden k&ouml;nnen und wie genau die Temperaturen angezeigt werden. Man kann hier auch "Kommazahlen" eingeben (Default ist 0.5). Dabei muss man darauf achten, dass als Dezimaltrennzeichen der Punkt und nicht das Komma benutzt wird.</li><li><b>Thermostat - valvePos1</b><br>Die <i>valvePos</i>-Parameter sind Device/Reading-Kombinationen, aus denen der jeweilige Ventilstellungsgrad gelesen wird.</li><li><b>Thermostat - valvePos2</b><br>Die <i>valvePos</i>-Parameter sind Device/Reading-Kombinationen, aus denen der jeweilige Ventilstellungsgrad gelesen wird.</li><li><b>Thermostat - valvePos3</b><br>Die <i>valvePos</i>-Parameter sind Device/Reading-Kombinationen, aus denen der jeweilige Ventilstellungsgrad gelesen wird.</li><li><b>Thermostat - size</b><br>Die View <i>Thermostat</i> unterst&uuml;tzt die bei FUIP &uuml;blichen Sizing-Mechanismen nicht. Statt dessen gibt es zwei w&auml;hlbare Gr&ouml;&szlig;en "normal" und "big". Ersteres ist vor Allem f&uuml;r &Uuml;bersichtsseiten geeignet w&auml;hrend letzteres angenehmer zu bedienen ist.</li><li><b>Thermostat - readonly</b><br>Hiermit kann man das Setzen der Solltemperatur deaktivieren. D.h. die View zeigt dann die Daten nur noch an. Das ist vor Allem dann interessant, wenn man das eigentliche Bedienelement mit weiteren Details auf ein Popup auslagert.</li></ul><br>
+			<h3 id="views-ThermostatFuip">ThermostatFuip: Thermostat (Fuip Version)</h3>
+			<img src="doc/FUIP-View-ThermostatFuip.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Die View <i>ThermostatFuip</i> repr&auml;sentiert einen Heizungs- oder Wandthermostat. Sie zeigt die Soll- und die Ist-Temperatur an, wobei die Solltemperatur auch ge&auml;ndert werden kann. Zus&auml;tzlich kann die Luftfeuchtigkeit sowie die Ventilstellung von bis zu drei angeschlossenen ("gepeerten") Stellantrieben (Heizk&ouml;rperthermostaten) angezeigt werden.<br>
+	Normalerweise wird die Ist-Temperatur in der Mitte gro&szlig; angezeigt. Wenn man auf die Mitte oder auf das "-" bzw. "+" klickt, dann wird stattdessen f&uuml;r ein paar Sekunden die Solltemperatur angezeigt.<br>Die View ThermostatFuip l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>title</i>, <i>label</i>, <i>desiredTemp</i>, <i>desiredSet</i>, <i>measuredTemp</i>, <i>humidity</i>, <i>minTemp</i>, <i>maxTemp</i>, <i>step</i>, <i>valvePos1</i>, <i>valvePos2</i>, <i>valvePos3</i>, <i>readonly</i>, <i>sizing</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul><li><b>ThermostatFuip - device</b><br>Dies ist das Haupt-Device der Thermostat-Kombination. Das ist immer das Device, &uuml;ber das man die Solltemperatur einstellt. D.h. bei Kombinationen von Wand- und Heizk&ouml;rperthermostat ist das in der Regel der Wandthermostat. Wenn es nur um einen einzelnen Heizk&ouml;rperthermostat geht, dann ist es dieser.</li><li><b>ThermostatFuip - label</b><br>Dies ist ein Text, der innerhalb der Thermostat-Grafik angezeigt wird. Man kann ihn auch weglassen.</li><li><b>ThermostatFuip - desiredTemp</b><br>Hier wird das Reading angegeben, welches die Solltemperatur enth&auml;lt. Normalerweise ist das ein Reading des Haupt-Devices (im Parameter <i>device</i> angegeben). Es kann aber auch davon abweichen.</li><li><b>ThermostatFuip - desiredSet</b><br>Hier wird die Set-Option angegeben, mit der die Solltemperatur im Haupt-Device gesetzt wird. Normalerweise ist das dasselbe wie <i>desiredTemp</i>, es kann aber auch abweichen.</li><li><b>ThermostatFuip - measuredTemp</b><br>Hier wird das Reading angegeben, welches die Ist-Temperatur enth&auml;lt. Normalerweise ist das ein Reading des Haupt-Devices (im Parameter <i>device</i>). Es kann aber auch davon abweichen.</li><li><b>ThermostatFuip - humidity</b><br>Hier wird das Reading angegeben, welches die Luftfeuchtigkeit enth&auml;lt. Normalerweise ist das ein Reading des Haupt-Devices (im Parameter <i>device</i>). Es kann aber auch davon abweichen.</li><li><b>ThermostatFuip - minTemp</b><br>Dies ist die minimale darstellbare/einstellbare Temperatur.</li><li><b>ThermostatFuip - maxTemp</b><br>Dies ist die maximale darstellbare/einstellbare Temperatur.</li><li><b>ThermostatFuip - step</b><br>Hier wird die Schrittweite der Temperatureinstellung und -anzeige angegeben. Zusammen mit <i>minTemp</i> und <i>maxTemp</i> legt das fest, welche Temperaturen eingestellt werden k&ouml;nnen und wie genau die Temperaturen angezeigt werden. Man kann hier auch "Kommazahlen" eingeben (Voreinstellung ist 0.5). Dabei muss man darauf achten, dass als Dezimaltrennzeichen der Punkt und nicht das Komma benutzt wird.</li><li><b>ThermostatFuip - valvePos1</b><br>Die <i>valvePos</i>-Parameter sind Device/Reading-Kombinationen, aus denen der jeweilige Ventilstellungsgrad gelesen wird.</li><li><b>ThermostatFuip - valvePos2</b><br>Die <i>valvePos</i>-Parameter sind Device/Reading-Kombinationen, aus denen der jeweilige Ventilstellungsgrad gelesen wird.</li><li><b>ThermostatFuip - valvePos3</b><br>Die <i>valvePos</i>-Parameter sind Device/Reading-Kombinationen, aus denen der jeweilige Ventilstellungsgrad gelesen wird.</li><li><b>ThermostatFuip - readonly</b><br>Hiermit kann man das &Auml;ndern der Solltemperatur deaktivieren. D.h. die View zeigt dann die Daten nur noch an. Das ist vor Allem dann interessant, wenn man das eigentliche Bedienelement mit weiteren Details auf ein Popup auslagert.</li></ul><br>
+			<h3 id="views-Title">Title: Title</h3>
+			<img src="doc/FUIP-View-Title.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View Title l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>text</i>, <i>icon</i>, <i>title</i>, <i>sizing</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-UpStopDown">UpStopDown: Up, Stop and Down</h3>
+			<img src="doc/FUIP-View-UpStopDown.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View UpStopDown l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>setUp</i>, <i>setStop</i>, <i>setDown</i>, <i>dirReading</i>, <i>dirUp</i>, <i>dirDown</i>, <i>title</i>, <i>label</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-WeatherDetail">WeatherDetail: Detailed Forecast</h3>
+			<img src="doc/FUIP-View-WeatherDetail.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View WeatherDetail l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>title</i>, <i>startday</i>, <i>days</i>, <i>overview</i>, <i>detail</i>, <i>icons</i>, <i>sizing</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-WeatherOverview">WeatherOverview: Weather Overview</h3>
+			<img src="doc/FUIP-View-WeatherOverview.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View WeatherOverview l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>title</i>, <i>startday</i>, <i>days</i>, <i>overview</i>, <i>sizing</i>, <i>layout</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-WebLink">WebLink: HTML from FHEMWEB's weblink</h3>
+			<img src="doc/FUIP-View-WebLink.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View WebLink l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>title</i>, <i>sizing</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-WeekdayTimer">WeekdayTimer: Wochen-Zeitschaltuhr</h3>
+			<img src="doc/FUIP-View-WeekdayTimer.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Die View <i>WeekdayTimer</i> ist eine Sicht auf ein WeekdayTimer-Device in FHEM.<br>
+				Man kann damit die meisten "normalen" Einstellungen &uuml;ber die FUIP-Oberfl&auml;che vornehmen. Anders als andere &auml;hnliche Views erzeugt <i>WeekdayTimer</i> allerdings nicht automatisch ein Popup, sondern wird ganz normal in eine Zelle eingebunden. Falls man den WeekdayTimer auf einem Popup haben m&ouml;chte, muss man explizit die View <i>Popup</i> verwenden bzw. eine andere Popup-f&auml;higen View. Wenn die View WeekdayTimer auf einem Popup platziert wird, dann schlie&szlig;en die Tasten "Speichern" und "Abbrechen" das Popup.<br>
+				Die m&ouml;glichen Schaltbefehle werden durch die Parameter <i>levelType</i>, <i>minLevel</i> und <i>maxLevel</i> festgelegt. Insbesondere der Unterschied zwischen "shutter" und "inverted_shutter" ist manchmal verwirrend. Im Prinzip wird durch "inverted_shutter" nur die Reihenfolge der Prozentangaben umgedreht und "Auf" und "Zu" werden vertauscht. D.h. "Auf" entspricht <i>minLevel</i> (meistens 0) und "Zu" entspricht <i>maxLevel</i> (meistens 100). Das klingt im ersten Moment sehr &auml;hnlich wie beim Vertauschen von <i>minLevel</i> und <i>maxLevel</i>, allerdings ist dann auch die Zuordnung der Prozentangaben zu den Werten in FHEM umgedreht. Die folgende Tabelle soll das ganze verdeutlichen:
+<table>
+<tr><td><b>levelType</b></td><td><b>minLevel</b></td><td><b>maxLevel</b></td><td><b>Ergebnis (Anzeige in FUIP:Wert in FHEM)</b></td></tr>
+<tr><td>shutter</td><td>0</td><td>100</td><td>Auf:100, 90%:90, 80%:80,... 20%:20, 10%:10, Zu:0</td></tr>
+<tr><td>shutter</td><td>100</td><td>0</td><td>Auf:0, 90%:10, 80%:20,... 20%:80, 10%:90, Zu:100</td></tr>
+<tr><td>inverted_shutter</td><td>0</td><td>100</td><td>Auf:0, 10%:10, 20%:20,... 80%:80, 90%:90, Zu:100</td></tr>
+<tr><td>inverted_shutter</td><td>100</td><td>0</td><td>Auf:100, 10%:90, 20%:80,... 80%:20, 90%:10, Zu:0</td></tr>
+</table><br>Die View WeekdayTimer l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>title</i>, <i>label</i>, <i>saveconfig</i>, <i>levelType</i>, <i>minLevel</i>, <i>maxLevel</i>, <i>timeInput</i>, <i>sizing</i>.<p style="clear:left;height:0em;">
+			<ul><li><b>WeekdayTimer - device</b><br>Dieser Parameter enth&auml;lt das WeekdayTimer-Device in FHEM.<br>
+			Das Device muss ein WeekdayTimer-Device sein, andere Devices sind nicht m&ouml;glich. Insbesondere bezieht sich dieser Parameter <b>nicht</b> auf das vom WeekdayTimer gesteuerte Device.</li><li><b>WeekdayTimer - label</b><br>&Uuml;berschrift der View<br>
+			Was man hier eingibt wird in der Titelzeile der View (also oben &uuml;ber der Liste mit den Schaltzeiten) angezeigt. Gibt man hier nichts an, dann wird der Text aus dem Feld <i>title</i> genommen.</li><li><b>WeekdayTimer - saveconfig</b><br><i>save config</i> automatisch ausl&ouml;sen<br>
+			Die View <i>WeekdayTimer</i> macht eine "strukturelle &Auml;nderung" in FHEM, da die Schaltprofile Teil der Device-Definition sind. Um solche &Auml;nderungen einen FHEM-Restart &uuml;berstehen zu lassen, muss man explizit ein <i>save config</i> absetzen. Wenn <i>saveconfig</i> auf "yes" gesetzt wird, dann &uuml;bernimmt die View das automatisch. Allerdings sollte man dabei bedenken, dass dadurch jede strukturelle &Auml;nderung gespeichert wird, nicht nur die durch diese View hervorgerufene.</li><li><b>WeekdayTimer - levelType</b><br>Dies steuert, welche Schaltbefehle m&ouml;glich sind<br>
+			Dieser Parameter kann die folgenden Werte annehmen:
+			<ul>
+			<li><b>shutter</b>: Diese Option ist f&uuml;r Rollladensteuerungen gedacht, bei denen "Auf" 100% entspricht. Als m&ouml;gliche Schaltbefehle werden dann "Auf", "90%", "80%",... ,"10%", "Zu" angeboten.
+			<li><b>inverted_shutter</b>: Diese Option ist f&uuml;r Rollladensteuerungen gedacht, bei denen "Auf" 0% entspricht. Als m&ouml;gliche Schaltbefehle werden dann "Auf", "10%", "20%",... ,"90%", "Zu" angeboten.</li>
+			<li><b>heating</b>: Diese Option ist f&uuml;r Thermostate (oder allgemein: Temperaturen) gedacht. Es werden alle Werte von <i>minLevel</i> bis <i>maxLevel</i> in Schritten zu 0,5&deg; angeboten.</li>
+			<li><b>switch</b>: Bei dieser Option werden nur die zwei Werte in <i>minLevel</i> und <i>maxLevel</i> als Schaltbefehl angeboten. Dies ist insbesondere f&uuml;r reine Schalter sinnvoll. In dem Fall k&ouml;nnte dann <i>minLevel</i> = "on" und <i>maxLevel</i> = "off" gesetzt werden.</li>
+			</ul></li><li><b>WeekdayTimer - minLevel</b><br>Kleinster m&ouml;glicher Schaltbefehl<br>
+			Was das genau bedeutet, h&auml;ngt von <i>levelType</i> ab. 
+			<ul>
+			<li>Bei "shutter" ist das der Wert, der f&uuml;r "Zu" gesendet wird, also normalerweise "0".</li>
+			<li>Bei "inverted_shutter ist das der Wert, der f&uuml;r "Auf" gesendet wird.</li> 
+			<li>Bei "heating" ist es die kleinste einstellbare Temperatur (ohne das Grad-Zeichen).</li> 
+			<li>Bei "switch" ist es einfach einer der beiden Werte.</li>
+			</ul>
+			Es ist auch erlaubt, in <i>minLevel</i> einen gr&ouml;&szlig;eren Wert als in <i>maxLevel</i> einzutragen: 
+			<ul>
+			<li>Bei "shutter" oder "inverted_shutter" wird dann einfach r&uuml;ckw&auml;rts gerechnet. 100% entspricht immer <i>maxLevel</i>, auch wenn das 0 sein sollte. Die restlichen Werte werden dann einfach linear zwischen 0% und 100% aufgeteilt.</li>
+			<li>Bei "heating" wird dann <i>minLevel</i> und <i>maxLevel</i> vertauscht.</li> 
+			<li>Bei "switch" spielt es sowieso keine Rolle.</li>
+			</ul></li><li><b>WeekdayTimer - maxLevel</b><br>Gr&ouml;&szlig;ter m&ouml;glicher Schaltbefehl<br>
+			Was das genau bedeutet, h&auml;ngt von <i>levelType</i> ab. 
+			<ul>
+			<li>Bei "shutter" ist das der Wert, der f&uuml;r "Auf" gesendet wird, also normalerweise "100".</li>
+			<li>Bei "inverted_shutter ist das der Wert, der f&uuml;r "Zu" gesendet wird.</li> 
+			<li>Bei "heating" ist es die gr&ouml;&szlig;te einstellbare Temperatur (ohne das Grad-Zeichen).</li> 
+			<li>Bei "switch" ist es einfach einer der beiden Werte.</li>
+			</ul>
+			Es ist auch erlaubt, in <i>maxLevel</i> einen kleineren Wert als in <i>minLevel</i> einzutragen. Beim Feld <i>minLevel</i> wird erkl&auml;rt, was das bedeutet.</li><li><b>WeekdayTimer - timeInput</b><br>Steuert, ob die Zeiten auch &uuml;ber die Tastatur eingegeben werden d&uuml;rfen<br>
+			Normalerweise werden die Schaltzeiten nur &uuml;ber ein Dropdown-Feld ausgew&auml;hlt. (<i>timeInput</i> = "dropdownOnly"). Man kann hier aber auch "keyboardAllowed" w&auml;hlen, um Zeiten auch &uuml;ber die Tastatur eingeben zu k&ouml;nnen.</li></ul><br>
+			<h3 id="views-Window">Window: Window, Door or similar</h3>
+			<img src="doc/FUIP-View-Window.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View Window l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>reading</i>, <i>title</i>, <i>label</i>, <i>openstate</i>, <i>openicon</i>, <i>closedstate</i>, <i>closedicon</i>, <i>iconsize</i>, <i>sizing</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+			<h3 id="views-WindowThreeState">WindowThreeState: Window, Door or similar</h3>
+			<img src="doc/FUIP-View-WindowThreeState.png" style="border-style:solid;border-width:1px;float:left;margin-right:10px;margin-bottom:10px" />Es wurde keine spezifische Dokumentation gefunden.<br>
+				Eine View im Allgemeinen ist in FUIP eine zusammenh&auml;ngende Sicht auf die Daten z.B. eines Devices in FHEM. Man kann eine View normalerweise frei in einer Zelle (oder einem View Template oder auf einem Popup) frei positionieren. Au&szlig;erdem kann eine View mittels vom View-Typ abh&auml;ngiger Parameter konfiguriert werden.<br>Die View WindowThreeState l&auml;sst sich &uuml;ber die folgenden Felder konfigurieren: <i>device</i>, <i>reading</i>, <i>title</i>, <i>label</i>, <i>openstate</i>, <i>openicon</i>, <i>closedstate</i>, <i>closedicon</i>, <i>tiltedstate</i>, <i>tiltedicon</i>, <i>iconsize</i>, <i>sizing</i>, <i>popup</i>.<p style="clear:left;height:0em;">
+			<ul></ul><br>
+		</body>
+		</html>

@@ -44,7 +44,13 @@ sub getInstantiated($) {
 			$h->{$fieldPath} = $self->{$variable->{name}};
 		};
 	};
-	FUIP::setViewSettings($self->{fuip},[$instance],0,$h);
+	eval {
+		FUIP::setViewSettings($self->{fuip},[$instance],0,$h);
+		1;
+	} or do {
+		my $ex = $@;
+		FUIP::Exception::log($ex);
+	};
 	
 	return $instance;
 };	

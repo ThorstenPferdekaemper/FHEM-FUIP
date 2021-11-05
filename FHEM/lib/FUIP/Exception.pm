@@ -95,10 +95,10 @@ sub getErrorPage($;$) {
 		</head>
 		<body style='word-wrap: break-word'>
 		<h1>FUIP Exception - something went wrong</h1>";
-	if(@$reasons) {
+	if($header) {
 		$result .= "<h2>".$header."</h2>".join("<br>",@$reasons);
 	};
-	if(defined($exception->{stacktrace})) {
+	if((blessed($exception) or ref($exception) eq 'HASH') and defined($exception->{stacktrace})) {
 		$result .= "<h2>Stacktrace</h2>";
 		$result .= "<table><tr><th style='text-align:left'>Routine name</th><th style='text-align:left'>Called in file (line)</th></tr>";
 	    foreach my $entry (@{$exception->{stacktrace}}) {

@@ -2218,6 +2218,7 @@ sub CGI_inner($) {
 								$path[-1] eq "widget_fuip_clock.js" or
 								$path[-1] eq "widget_fuip_calendar.js" or
 								$path[-1] eq "widget_fuip_readingslist.js" or
+								$path[-1] eq "widget_fuip_thermostat.js" or
 								$path[-1] eq "widget_fuip_numselect.js" or
 								$path[-1] eq "widget_7segment.js" or
 								$path[-1] eq "widget_fuip_popup.js"
@@ -2646,6 +2647,8 @@ sub setField($$$$$) {
 		$refIntoView = $refIntoView->{$compName};
 		$refIntoDefaulted->{$compName} = {} unless(defined($refIntoDefaulted->{$compName}));
 		$refIntoDefaulted = $refIntoDefaulted->{$compName};
+		#For structure changes, it can happen that this is not a HASH, so we need to make it a HASH
+		$refIntoDefaulted = {} unless ref($refIntoDefaulted) eq 'HASH';
 		$refIntoField = $refIntoField->{$comp};
 		$compName = $comp;
 		$nameInValues .= "-".$comp;
