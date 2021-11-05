@@ -440,7 +440,6 @@ sub Undef($$) {
 
 sub Attr ($$$$) {
 	my ( $cmd, $name, $attrName, $attrValue ) = @_;
-	# if fhemwebUrl is changed, we need to refresh the buffer
 	if($cmd eq "set" and $attrName eq "pageWidth") {
 		if($attrValue < 100 or $attrValue > 2500) {
 			return "pageWidth must be a number between 100 and 2500";

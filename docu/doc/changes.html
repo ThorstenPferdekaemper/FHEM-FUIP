@@ -6,6 +6,23 @@
 <body>
 <h1>FUIP News</h1>
 
+<h2>05.11.2021</h2>
+Obwohl sich inzwischen viel getan hat, gab es leider seit Januar keine FUIP News mehr. Sorry for that.
+
+<h3>Neue View "ThermostatFuip"</h3>
+<img src="ThermostatFuip.png" style="float:left;margin-right:10px;margin-bottom:10px" width=312px height=158px>
+F&uuml;r die View "ThermostatFuip" wurde ein komplett neues Widget entwickelt. Im Prinzip hat die View denselben Funktionsumfang wie die View "Thermostat", ist aber moderner und insbesondere f&uuml;r die Bedienung &uuml;ber Touchscreen besser. Au&szlig;erdem unterst&uuml;tzt die View das FUIP-Sizing komplett, kann also in (fast) jeder Gr&ouml;&szlig;e dargestellt werden.<br>
+Alles Weitere dazu steht in der <a href="http://pferdekaemper.com/fuip/docu.html">FUIP-Doku</a>.
+<p style="clear:left;height:0.5em;"></p>
+
+<h3>Multifhem</h3>
+Schon seit einer ganzen Weile ist es m&ouml;glich, mehrere FHEMs (Backends) an ein FUIP-Device anzukoppeln. Welches Device dann in welchem FHEM liegt kann auf View-Ebene festgelegt werden. D.h. man kann sogar innerhalb einer Zelle verschiedene Views haben, die aus unterschiedlichen FHEMs kommen. N&auml;heres dazu findet man in der "Device specific help" bei den Attributen <i>backendNames</i>, <i>backend_*</i> und <i>defaultBackend</i>.<br>
+Durch diese &Auml;nderungen sind zwei Attribute:
+<ul>
+<li>Das Attribut <i>fhemwebUrl</i> ist weggefallen. Es wird durch ein <i>backend_*</i>-Attribut (normalerweise <i>backend_home</i>) und <i>defaultBackend</i> ersetzt. Wenn man noch <i>fhemwebUrl</i> verwendet, dann wird die Umstellung nach einem Update beim n&auml;chsten Restart automatisch vorgenommen.</li>
+<li>Das Attribut <i>longPollType</i> ist weggefallen. Es gab zum Schluss "ajax", "websocket" und "multifhem". Das wurde ein bisschen zu viel und es gibt jetzt nur noch "multifhem", welches mit klassischen Longpolls (also ajax) funktioniert. Das hat sich am stabilsten erwiesen.</i>
+</ul>
+
 <h2>04.01.2021</h2>
 <h3>Alternative Pfadangaben im FHEMWEB-Device</h3>
 Mit dem Attribut <i>webname</i> des FHEMWEB-Device kann der Pfad nach http://hostname:port/ angepasst werden. Allerdings hat bisher FUIP nicht funktioniert, wenn es &uuml;ber ein solches FHEMWEB-Device aufgerufen wurde. (Im Prinzip ruft man immer FHEMWEB auf. Von dort aus wird dann der Aufruf an FUIP weitergereicht.) Jetzt funktioniert FUIP auch, wenn das Attribut <i>webname</i> verwendet wurde und der Pfad nicht mit "fhem" anf&auml;ngt.

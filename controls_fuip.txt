@@ -10,7 +10,7 @@ DIR FHEM/lib/FUIP/js
 DIR FHEM/lib/FUIP/View
 DIR FHEM/lib/FUIP/jquery-ui
 DIR FHEM/lib/FUIP/jquery-ui/images
-UPD 2021-10-29_21:10:17 165442 FHEM/42_FUIP.pm
+UPD 2021-11-05_21:20:34 165383 FHEM/42_FUIP.pm
 UPD 2021-10-31_21:44:32 4006 FHEM/lib/FUIP/Exception.pm
 UPD 2021-09-03_19:23:12 16328 FHEM/lib/FUIP/Generator.pm
 UPD 2021-09-01_14:33:07 13190 FHEM/lib/FUIP/Model.pm
@@ -85,9 +85,10 @@ UPD 2019-12-08_16:18:51 11824 FHEM/lib/FUIP/doc/ImportViewTemplate.png
 UPD 2019-12-08_16:18:51 42416 FHEM/lib/FUIP/doc/PopupPosition.png
 UPD 2019-12-08_16:18:51 5774 FHEM/lib/FUIP/doc/RenameViewTemplate.png
 UPD 2019-12-08_16:18:51 25890 FHEM/lib/FUIP/doc/Swiper.png
+UPD 2021-11-05_21:36:21 5010 FHEM/lib/FUIP/doc/ThermostatFuip.png
 UPD 2019-12-08_16:18:51 8100 FHEM/lib/FUIP/doc/Units.png
 UPD 2019-12-08_16:18:52 19252 FHEM/lib/FUIP/doc/VariablenImViewTemplate.png
-UPD 2021-01-04_21:45:50 63825 FHEM/lib/FUIP/doc/changes.html
+UPD 2021-11-05_21:46:28 65730 FHEM/lib/FUIP/doc/changes.html
 UPD 2020-05-16_19:54:49 21406 FHEM/lib/FUIP/doc/icon_back.png
 UPD 2021-09-08_19:34:01 29967 FHEM/lib/FUIP/doc/maindoc.html
 UPD 2019-12-08_16:18:53 8295 FHEM/lib/FUIP/doc/maindoc_cellexample.png
