@@ -20,14 +20,14 @@ var Modul_fuip_thermostat = function () {
             }, 500);
             return;
         }
-		
+
 		// Signal that we are now setting the temperatur
 		// to avoid that update interferes
 		elem.clicked = true;
-		
+
 		// switch desired and measured temp in the display
 		switchToSettingDisplay(elem);
-		
+
         var step = parseFloat(elem.data('step'));
         var min = parseFloat(elem.data('min'));
         var max = parseFloat(elem.data('max'));
@@ -64,18 +64,18 @@ var Modul_fuip_thermostat = function () {
 
 	function switchToNormalDisplay(elem) {
 		// switch desired and measured temp in the display
-		elem.find("#status-temp").text(elem.data('desiredTempVal'));	
-		elem.find("#main-temp").text(elem.data('measuredTempVal'));		
-		elem.find("#status-temp-icon").removeClass("fa fa-thermometer-2").addClass("fa fa-dot-circle-o");	
-		elem.data('displaySwitchTimer', null);	
-	};	
-	
+		elem.find("#status-temp").text(elem.data('desiredTempVal'));
+		elem.find("#main-temp").text(elem.data('measuredTempVal'));
+		elem.find("#status-temp-icon").removeClass("fa fa-thermometer-2").addClass("fa fa-dot-circle-o");
+		elem.data('displaySwitchTimer', null);
+	};
+
 	function showDesiredTemp(elem) {
-	    elem.find("#main-temp").text(elem.data('desiredTempVal'));	
-		elem.find("#status-temp").text(elem.data('measuredTempVal'));	
-		elem.find("#status-temp-icon").removeClass("fa fa-dot-circle-o").addClass("fa fa-thermometer-2");		
-	};	
-	
+	    elem.find("#main-temp").text(elem.data('desiredTempVal'));
+		elem.find("#status-temp").text(elem.data('measuredTempVal'));
+		elem.find("#status-temp-icon").removeClass("fa fa-dot-circle-o").addClass("fa fa-thermometer-2");
+	};
+
 	function switchToSettingDisplay(elem) {
 		// avoid switching back too early
 		clearTimeout(elem.data('displaySwitchTimer'));
@@ -83,13 +83,13 @@ var Modul_fuip_thermostat = function () {
 		showDesiredTemp(elem);
 		// care for switching back to normal display
 		elem.data('displaySwitchTimer', setTimeout(function() { switchToNormalDisplay(elem) }, 5000));
-	};	
-	
+	};
+
     function init_attr(elem) {
 
-        //init standard attributes 
+        //init standard attributes
         _base.init_attr.call(me, elem);
-        
+
         elem.initData('left-color', 'blue');
         elem.initData('right-color', 'red');
         elem.initData('shortdelay', 80);
@@ -109,8 +109,8 @@ var Modul_fuip_thermostat = function () {
 		me.addReading(elem, 'valve');
 
     }
-	
-	
+
+
 	function colorFromCSS(name) {
 		var tmp = document.createElement("div"), color;
 		tmp.style.cssText = "position:fixed;left:-100px;top:-100px;width:1px;height:1px;background-color:"+name;
@@ -119,35 +119,35 @@ var Modul_fuip_thermostat = function () {
 		document.body.removeChild(tmp);
 		return color
 	}
-	
+
 
 	function drawValvePosition(elem,canvas) {
-		
-		var valves = elem.data('valves');	
+
+		var valves = elem.data('valves');
 		var numValves = valves.length;
-		
+
         var c = canvas.getContext("2d"); // context
 		c.fillStyle = colorFromCSS("var(--fuip-color-symbol-active)");
-		
+
 		// left arc
 		c.beginPath();
 		c.moveTo(32,32);
 		c.arc(32, 32, 28, Math.PI, 1.5 * Math.PI , false);
 		c.closePath();
 		c.fill();
-		
+
 		// right arc
 		c.beginPath();
 		c.moveTo(canvas.width - 32,32);
 		c.arc(canvas.width - 32, 32, 28, 0, 1.5 * Math.PI, true);
 		c.closePath();
 		c.fill();
-		
+
 		// main part between the arcs
 		c.fillRect(32, 4, canvas.width - 64, canvas.height);
 		c.fillRect(4, 32, 28, 32);
 		c.fillRect(canvas.width - 32, 32, 28, 32);
-		
+
 		// now remove the parts which are not needed
 		var partWidth = canvas.width / numValves;
 		for(var i = 0; i < numValves; i++) {
@@ -158,19 +158,19 @@ var Modul_fuip_thermostat = function () {
 			c.clearRect(partWidth * ( i + valves[i] / 100), 0, partWidth * (1 - valves[i] / 100), canvas.height);
 		};
 	};
-	
-	
+
+
 	function drawTicks(elem,canvas,desired,actual) {
 
-        var c = canvas.getContext("2d"); 
+        var c = canvas.getContext("2d");
         c.clearRect(0, 0, canvas.width, canvas.height);
         c.lineWidth = elem.lineWidth;
-        c.lineCap = "square"; 
+        c.lineCap = "square";
  		var step = elem.data('step');
         var maxcolor = '#ff0000';
         var mincolor = '#4477ff';
         var actcolor = "var(--fuip-color-foreground)";
-		
+
 		var max = elem.data('max');
 		var min = elem.data('min');
 		var width = canvas.width - 10;
@@ -180,13 +180,13 @@ var Modul_fuip_thermostat = function () {
 		var maxTicks = width / 32;
 		if(numTicks > maxTicks) {
 			numTicks = maxTicks;
-		};	
+		};
 
         // draw ticks
         for (var tick = 0; tick <= numTicks; tick++) {
 
 			var temp = min + (max - min) * tick / numTicks
-			
+
             c.beginPath();
 			var col = false;
             if (( temp >= desired && temp <= actual ) || (temp <= desired && temp >= actual)) {
@@ -198,7 +198,7 @@ var Modul_fuip_thermostat = function () {
                 c.strokeStyle = colorFromCSS(actcolor);
             }
 
-			var w;	
+			var w;
             // thicker lines every 10 ticks
             if (Math.round(temp / step) % 10 == 0) {
                 w = col ? 3 : 2;
@@ -223,30 +223,30 @@ var Modul_fuip_thermostat = function () {
 
         return false;
     }
-	
-	
+
+
 	function updateTicks(elem) {
 		var levelCanvas = elem.find("#desiredCanvas");
 		var desiredTemp = elem.data('desiredTempVal');
-		var measuredTemp = elem.data('measuredTempVal');	
-		drawTicks(elem,levelCanvas.get(0),desiredTemp,measuredTemp);	
-	};	
-	
-	
+		var measuredTemp = elem.data('measuredTempVal');
+		drawTicks(elem,levelCanvas.get(0),desiredTemp,measuredTemp);
+	};
+
+
 	function transformDimension(value,minInp,maxInp,minRes,maxRes) {
 		var result = (value - minInp) * (maxRes - minRes) / (maxInp - minInp) + minRes;
 		if(result > maxRes) result = maxRes;
 		if(result < minRes) result = minRes;
 		return result;
-	};	
-	
+	};
+
 
     function init_ui(elem) {
 
 		var view = elem.closest("[data-viewid]");
 		var width = view.width();
 		var height = view.height();
-		
+
         // prepare container element
         var elemWrapper = $('<div/>')
             .css({
@@ -258,26 +258,26 @@ var Modul_fuip_thermostat = function () {
 				borderRadius: '4px'
             });
 
-		var label = elem.data('label');	
-			
+		var label = elem.data('label');
+
 		// Determine sizes (heights)
 		// Min 150x75, Max 300x150
 		// Valve display max 8, min 4 px
 		var valveHeight = transformDimension(height,75,150,4,8);
-		var ticksHeight = transformDimension(height,75,150,8,15);	
+		var ticksHeight = transformDimension(height,75,150,8,15);
 		var titleHeight = 0;
 		if(label) {
 			titleHeight = height * 0.2;
 			if(titleHeight < 15) titleHeight = 15;
-		};	
+		};
 		var statusHeight = height * 0.15;
 		if(statusHeight < 15) statusHeight = 15;
 		var statusWidthFactor = 7;
 		if($.isArray(elem.data('valve'))) {
-			statusWidthFactor += 3 * elem.data('valve').length;
+			statusWidthFactor += 4 * elem.data('valve').length;
 		}else if(elem.data('valve')) {
-			statusWidthFactor += 3;
-		};	
+			statusWidthFactor += 4;
+		};
 		if(statusHeight * statusWidthFactor > width) statusHeight = width / statusWidthFactor;
 		var valveTop = 0;
 		var ticksTop = valveHeight + 2;
@@ -289,16 +289,16 @@ var Modul_fuip_thermostat = function () {
 		var tempWidth = (width -8) * 0.5;
 		if(tempWidth / tempFontSize < 12 / 5) {
 			tempFontSize = tempWidth * 5 / 12;
-		};	
+		};
 		var iconWidth = (width -8) * 0.25;
 		var iconFontSize = contentHeight * 0.8;
-		if(iconFontSize > iconWidth * 1.5) iconFontSize = iconWidth * 1.5;	
-			
-		var valveCanvas = $('<canvas style="width:' + width +'px;height:' + valveHeight + 'px;position:absolute;left:0px;top:'+valveTop+'px;" id="valveCanvas" width="' + width * 8 +'" height="'+(valveHeight * 8)+'"></canvas>').appendTo(elemWrapper);		
-		
-		var ticksCanvas = $('<canvas id="desiredCanvas" style="position:absolute;top:'+ticksTop+'px;left:5px;width:'+(width -10)+'px;height:'+ticksHeight+'px;" width="' + (width -10) * 8 +'" height="'+(ticksHeight*8)+'"></canvas>').appendTo(elemWrapper);		
-		drawTicks(elem,ticksCanvas.get(0),undefined,undefined);	
-		
+		if(iconFontSize > iconWidth * 1.5) iconFontSize = iconWidth * 1.5;
+
+		var valveCanvas = $('<canvas style="width:' + width +'px;height:' + valveHeight + 'px;position:absolute;left:0px;top:'+valveTop+'px;" id="valveCanvas" width="' + width * 8 +'" height="'+(valveHeight * 8)+'"></canvas>').appendTo(elemWrapper);
+
+		var ticksCanvas = $('<canvas id="desiredCanvas" style="position:absolute;top:'+ticksTop+'px;left:5px;width:'+(width -10)+'px;height:'+ticksHeight+'px;" width="' + (width -10) * 8 +'" height="'+(ticksHeight*8)+'"></canvas>').appendTo(elemWrapper);
+		drawTicks(elem,ticksCanvas.get(0),undefined,undefined);
+
 		if(label) {
 			$('<div>' + label + '</td>')
 				.css({ height: titleHeight + 'px',
@@ -306,17 +306,17 @@ var Modul_fuip_thermostat = function () {
 						padding: '0',
 						paddingLeft: '10px',
 						position: 'absolute', top: titleTop+'px' })
-				.appendTo(elemWrapper);	
+				.appendTo(elemWrapper);
 		};
-		
+
 		var contentLine = $('<div/>')
 		                      .css({ width : (width - 8) + 'px', height: contentHeight + 'px',
 									 position: 'absolute', top: contentTop + 'px', left: '4px',
 									 borderTopStyle: 'solid', borderColor: '#6a6a6a', borderWidth: '1px',
 									 borderBottomStyle: 'solid', borderColor: '#6a6a6a', borderWidth: '1px',
 									 })
-				              .appendTo(elemWrapper);	
-							
+				              .appendTo(elemWrapper);
+
 		// prepare left icon
         var elemLeftIcon = $('<div/>')
             .css({
@@ -327,7 +327,7 @@ var Modul_fuip_thermostat = function () {
 				fontSize: iconFontSize + 'px',
 				fontWeight: 'bold',
 				fontFamily: 'sans serif',
-				position: 'absolute', top: '3px' 
+				position: 'absolute', top: '3px'
             })
             .appendTo(contentLine);
         elemLeftIcon.html('&minus;');
@@ -355,38 +355,38 @@ var Modul_fuip_thermostat = function () {
 				fontSize: iconFontSize + 'px',
 				fontWeight: 'bold',
 				fontFamily: 'sans serif',
-				position: 'absolute', top: '3px', right: '0px' 
+				position: 'absolute', top: '3px', right: '0px'
             })
             .appendTo(contentLine);
         elemRightIcon.html('&plus;');
 
 		var statusContainer = $('<div/>')
-							.css({padding: '0px', height: statusHeight + 'px', 
+							.css({padding: '0px', height: statusHeight + 'px',
 								  fontSize:(statusHeight * 0.8) + 'px',
 							      width: width + 'px',
-								  position: 'absolute', bottom: 0  
+								  position: 'absolute', bottom: 0
 								  })
 							.appendTo(elemWrapper);
 		var statusCell = $('<div/>')
 							.css( { margin: 0, position: "absolute", top: "50%", left: "50%",
 									transform: "translate(-50%, -50%)", width: width + 'px' })
 							.appendTo(statusContainer);
-										
+
 		var statusHtml = '<i class="fa fa-dot-circle-o fuip-color" id="status-temp-icon"></i> <span id="status-temp"></span>'+elem.data('unit');  // fa fa-thermometer-2
 		if(elem.data('humidity')) {
 			statusHtml += '&nbsp;&nbsp;<i class="wi wi-raindrop fuip-color"></i>&nbsp;<span id="humidity"></span>%';
-		};	
+		};
 		var valveArr = elem.data('valve');
 		if(!valveArr) {
 			valveArr = [];
 		}else if(!$.isArray(valveArr)){
 			valveArr = [ valveArr ];
-		};	
+		};
 		for(var i = 0; i < valveArr.length; i++) {
 			statusHtml += '&nbsp;&nbsp;<i class="fa fa-gear fuip-color"></i>&nbsp;<span id="valve-' + i + '"></span>%';
 		};
-		statusCell.html(statusHtml);					
-		
+		statusCell.html(statusHtml);
+
         // event handler
         // UP button
         elemRightIcon.on(ftui.config.clickEventType, function (e) {
@@ -426,9 +426,9 @@ var Modul_fuip_thermostat = function () {
             e.stopPropagation();
             return false;
         });
-		
+
 		// click on the temperature in the big area should show desired temperature
-		levelArea.on(ftui.config.clickEventType, function() { switchToSettingDisplay(elem) } );		
+		levelArea.on(ftui.config.clickEventType, function() { switchToSettingDisplay(elem) } );
 
         //Overlay
         elem.append($('<div/>', {
@@ -437,36 +437,36 @@ var Modul_fuip_thermostat = function () {
 
         //Wrapper
         elem.html(elemWrapper);
-		
+
 		// It can happen that this is called again, e.g. when a popup is opening
 		// In this case, we need to fix some stuff
 		if(elem.data('displaySwitchTimer')) showDesiredTemp(elem);
     };
 
-	
+
 	function getValue(elem,parameter,device,reading) {
 		if (!elem.matchDeviceReading(parameter,device,reading)) return null;
         var value = elem.getReading(parameter).val;
         if (value === undefined || value === null) return null;
         return value;
-	};	
-	
-	
+	};
+
+
 	function updateValue(elem,parameter,device,reading) {
 		var value = getValue(elem,parameter,device,reading);
 		if(value === null) return null;
 		elem.find("#"+parameter).text(value);
         return value;
-	};	
-	
-	
+	};
+
+
     function update(dev, par) {
 
         me.elements.each(function (index) {
             var elem = $(this);
 
 			updateElem(elem,dev,par);
-			
+
             //extra reading for reachable
             me.updateReachable(elem, dev, par);
 
@@ -478,22 +478,22 @@ var Modul_fuip_thermostat = function () {
 
         });
     }
-	
-	
+
+
 	function updateElem(elem, dev, par) {
 
  		// desiredTemp appears in the status line, if it comes from the backend
 		// otherwise (if changing it), it appears in the big area, but this is
 		// is not done here, as it would otherwise interfere with the user changing
-		// it	
+		// it
 		if(!elem.data('displaySwitchTimer')) {
 			var desiredTemp = getValue(elem,'desired-temp',dev,par);
 			if(desiredTemp !== null) {
 				desiredTemp = parseFloat(desiredTemp).toFixed(1);
 				elem.data('desiredTempVal', desiredTemp);
-				elem.find("#status-temp").text(desiredTemp);	
+				elem.find("#status-temp").text(desiredTemp);
 				updateTicks(elem);
-			};	
+			};
 		};
 
 		// measuredTemp usually appears in the big area, but when the desired-temp
@@ -504,17 +504,17 @@ var Modul_fuip_thermostat = function () {
 			elem.data('measuredTempVal', measuredTemp);
 			updateTicks(elem);
 			if(elem.data('displaySwitchTimer')) {
-				elem.find("#status-temp").text(measuredTemp);	
+				elem.find("#status-temp").text(measuredTemp);
 			}else{
 				elem.find("#main-temp").text(measuredTemp);
-			};	
+			};
         };
 
 		// humidity
 		updateValue(elem,'humidity',dev,par);
-		
+
 		// valve
-		var idx = elem.matchDeviceReadingIndex('valve',dev,par);	
+		var idx = elem.matchDeviceReadingIndex('valve',dev,par);
 		if(idx < 0) return;
         var value = elem.getReading('valve',idx).val;
         if (value === undefined || value === null) return;
@@ -524,10 +524,10 @@ var Modul_fuip_thermostat = function () {
 		valves[idx] = value;
 		elem.data('valves',valves);
 		var valveCanvas = elem.find('#valveCanvas').get(0);
-		drawValvePosition(elem,valveCanvas);	
+		drawValvePosition(elem,valveCanvas);
     }
-	
-	
+
+
 	function resize(id) {
 		// called when the widget is resized
 		var elem = $("#"+id);
@@ -535,23 +535,23 @@ var Modul_fuip_thermostat = function () {
 			elem.data('updateAfterResizeTimeout', setTimeout(function() { init_ui(elem); updateAfterResize(elem) }, 40));
 		};
     };
-	
+
 
 	function updateAfterResize(elem) {
 		var module;
 		for(var i = 0; i < plugins.modules.length;i++) {
 			if(plugins.modules[i].widgetname === 'fuip_thermostat') {
 				module = plugins.modules[i];
-				break;	
-			}	
-		};	
+				break;
+			}
+		};
 		if(!module) return;
 		for (var key in module.subscriptions) {
             updateElem(elem, module.subscriptions[key].device, module.subscriptions[key].reading)
 		};
 		elem.data('updateAfterResizeTimeout',0)
-	};	
-	
+	};
+
 
     // public
     // inherit all public members from base class
@@ -567,6 +567,6 @@ var Modul_fuip_thermostat = function () {
     });
 
 	fuip_resize_register("fuip-thermostat",resize);
-	
+
     return me;
 };
