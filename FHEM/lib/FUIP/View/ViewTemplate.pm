@@ -97,6 +97,46 @@ sub getHTML($$){
 };
 
 
+sub _findFieldBase($$) {
+	# if device-reading, return (device-reading, path without last bit)
+	# otherwise, return (type,path)
+	my ($conf,$path) = @_;
+	my $baseField = $conf;
+	my $result = "";
+	my @parts = split(/-/,$path);
+	for my $key (@parts) {
+		my $type = (ref($baseField) eq "HASH" && defined($baseField->{type})) ? $baseField->{type} : "";
+		if($type eq "viewarray"){
+			$baseField = $baseField->{value}[$key];
+		}elsif($type eq "device-reading"){
+			return ('device-reading',$result);
+		}else{
+			if($type eq "dialog") {
+				my $dialog = $baseField->{value};
+				$baseField = $dialog->getConfigFields();
+			};
+			# find the field def with the id 
+			for my $field (@$baseField) {
+				next unless $field->{id} eq $key;
+				$baseField = $field;
+				last;
+			};
+		};
+		$result .= ($result ? '-' : '').$key;
+	};
+	
+	my @ret;
+	eval {
+		@ret = ($baseField->{type} ? $baseField->{type} : "", $path);
+		1;
+	} or do {
+		my $ex = $@;
+		FUIP::Exception::raise($ex);
+	};
+	return @ret;
+};
+
+
 sub getStructure($) {
 	# class method
 	# returns general structure of the view without instance values
@@ -134,6 +174,7 @@ sub getStructure($) {
 				};	
 				my $field = dclone($fieldRef);
 				my ($type,$basePath) = _findFieldBase($conf,$fieldpath);
+						
 				$field->{id} = $variable->{name};
 				$field->{flexfield} = 0; 
 				# for fields with a reference, we can only take this (TODO: for now?), if the reference 
@@ -150,8 +191,6 @@ sub getStructure($) {
 				};
 				# default[type=field]-value
 				if(exists($field->{default}) and $field->{default}{type} eq "field") {
-					#main::Log3(undef,1,"Find var for default field ".$field->{default}{value});
-					#main::Log3(undef,1,"Find var for base path ".$basePath);
 					$field->{default}{value} = _findVariableForReffield($self->{variables},$basePath,$field->{default}{value});
 					delete $field->{default} unless $field->{default}{value};
 				};
@@ -170,6 +209,7 @@ sub getStructure($) {
 						# otherwise, check the content of the original field and
 						# remove the depends-part or the whole field
 						my $depField = $self->_findReffield($conf,$basePath,$field->{depends}{field});
+						
 						if($depField->{value} eq $field->{depends}{value}) {
 							delete $field->{depends};
 						}else{
@@ -502,42 +542,6 @@ sub _findField($$$) {
 };
 
 
-sub _findFieldBase($$$) {
-	# if device-reading, return (device-reading, path without last bit)
-	# otherwise, return (type,path)
-	my ($conf,$path) = @_;
-	my $baseField = $conf;
-	my $result = "";
-	my @parts = split(/-/,$path);
-	for my $key (@parts) {
-		my $type = (ref($baseField) eq "HASH" && defined($baseField->{type})) ? $baseField->{type} : "";
-		if($type eq "viewarray"){
-			$baseField = $baseField->{value}[$key];
-		}elsif($type eq "device-reading"){
-			return ('device-reading',$result);
-		}else{
-			if($type eq "dialog") {
-				my $dialog = $baseField->{value};
-				$baseField = $dialog->getConfigFields();
-			};
-			# find the field def with the id 
-			for my $field (@$baseField) {
-				next unless $field->{id} eq $key;
-				$baseField = $field;
-				last;
-			};
-		};
-		$result .= ($result ? '-' : '').$key;
-	};
-	
-	eval {
-		return ($baseField->{type} ? $baseField->{type} : "", $path);
-		1;
-	} or do {
-		my $ex = $@;
-		FUIP::Exception::raise($ex);
-	};
-};
 
 
 sub _findVariableForReffield($$$) {
