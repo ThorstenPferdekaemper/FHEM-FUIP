@@ -88,7 +88,7 @@ UPD 2021-11-11_21:02:49 25890 FHEM/lib/FUIP/doc/Swiper.png
 UPD 2021-11-11_21:02:49 5010 FHEM/lib/FUIP/doc/ThermostatFuip.png
 UPD 2021-11-11_21:02:49 8100 FHEM/lib/FUIP/doc/Units.png
 UPD 2021-11-11_21:02:50 19252 FHEM/lib/FUIP/doc/VariablenImViewTemplate.png
-UPD 2021-11-11_22:49:46 66093 FHEM/lib/FUIP/doc/changes.html
+UPD 2021-11-11_22:55:38 66097 FHEM/lib/FUIP/doc/changes.html
 UPD 2021-11-11_21:02:50 21406 FHEM/lib/FUIP/doc/icon_back.png
 UPD 2021-11-11_21:02:50 29967 FHEM/lib/FUIP/doc/maindoc.html
 UPD 2021-11-11_21:02:50 8295 FHEM/lib/FUIP/doc/maindoc_cellexample.png
