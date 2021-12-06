@@ -452,14 +452,6 @@ var Modul_fuip_thermostat = function () {
 	};
 
 
-	function updateValue(elem,parameter,device,reading) {
-		var value = getValue(elem,parameter,device,reading);
-		if(value === null) return null;
-		elem.find("#"+parameter).text(value);
-        return value;
-	};
-
-
     function update(dev, par) {
 
         me.elements.each(function (index) {
@@ -483,7 +475,7 @@ var Modul_fuip_thermostat = function () {
 	function updateElem(elem, dev, par) {
 
  		// desiredTemp appears in the status line, if it comes from the backend
-		// otherwise (if changing it), it appears in the big area, but this is
+		// otherwise (if changing it), it appears in the big area, but this 
 		// is not done here, as it would otherwise interfere with the user changing
 		// it
 		if(!elem.data('displaySwitchTimer')) {
@@ -511,13 +503,18 @@ var Modul_fuip_thermostat = function () {
         };
 
 		// humidity
-		updateValue(elem,'humidity',dev,par);
+		var humidity = getValue(elem,par,dev,'humidity');
+		if(humidity != null){
+		    humidity = parseFloat(humidity).toFixed(0);
+		    elem.find("#humidity").text(humidity);
+		};
 
 		// valve
 		var idx = elem.matchDeviceReadingIndex('valve',dev,par);
 		if(idx < 0) return;
         var value = elem.getReading('valve',idx).val;
         if (value === undefined || value === null) return;
+		value = parseFloat(value).toFixed(0);
 		elem.find("#valve-"+idx).text(value);
 		var valves = elem.data('valves');
 		if(!valves) valves = [];

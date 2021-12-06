@@ -11,7 +11,7 @@ use warnings;
 #First copy files
 
 my $devdir = '/opt/fhem';
-my $gitdir = '~thorsten/Dokumente/GitHub/FHEM-FUIP';
+my $gitdir = '~thorsten/git/FHEM-FUIP';
 
 my @filelist1 = (
   'FHEM/42_FUIP.pm',
