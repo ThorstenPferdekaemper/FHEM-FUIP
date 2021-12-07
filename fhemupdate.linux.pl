@@ -36,6 +36,7 @@ foreach my $fspec (@filelist1) {
   my $gitpath = "$gitdir/$dir";
   my $cmd = "cp $devpath $gitpath";
   system($cmd);
+  system("rm $gitpath/*.bak");
 };
 
 
