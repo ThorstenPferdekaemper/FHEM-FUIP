@@ -826,14 +826,14 @@ var Modul_fuip_wdtimer = function () {
 				if(/^\s\s/.test(lines[i])) break;
 				timespec += "\n" + lines[i].trim();
 			};	
-			// now we need to search for "TAGE"
+			// now we need to search for "TAGE" (or DAYS for a later version)
 			// if we don't find it, then there is something wrong
 			// and we just revert to the "old" algorithm
 			var iSave = i;
 			var weekdays = "";
 			var found = false;
 			for(;i < lines.length;i++) {
-				if(!/^TAGE/.test(lines[i].trim())) 
+				if(!/^TAGE|^DAYS/.test(lines[i].trim())) 
 					continue;
 				found = true;
 				break;
