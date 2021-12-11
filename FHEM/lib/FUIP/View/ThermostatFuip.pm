@@ -42,6 +42,8 @@ sub getStructure($) {
 		{ id => "valvePos3", type => "device-reading",  
 			device => { default => { type => "const", value => ""} },
 			reading => { default => { type => "const", value => "ValvePosition"} } },
+		{ id => "mainDisplay", type => "text", options => [ "measured-temp", "desired-temp" ],
+		    default => { type => "const", value => "measured-temp" } },		
 		{ id => "readonly", type => "text", options => [ "on", "off" ], 
 			default => { type => "const", value => "off" } },
 		{ id => "width", type => "dimension" },
@@ -117,6 +119,7 @@ sub getHTML($){
 	if(ref($self->{humidity}) ne 'HASH') {
 		$self->{humidity} = { device => $self->{device}, reading => $self->{humidity} };
 	};
+	$self->{mainDisplay} = 'measured-temp' unless $self->{mainDisplay};
 	
 	my $result = '';
 	$result .= '<div';
@@ -130,7 +133,8 @@ sub getHTML($){
 		data-measured-temp="'.$self->{measuredTemp}{device}.':'.$self->{measuredTemp}{reading}.'" 
 		data-min="'.$self->{minTemp}.'" 
 		data-max="'.$self->{maxTemp}.'" 	
-		data-step="'.$self->{step}.'" ';
+		data-step="'.$self->{step}.'" 
+		data-main-display="'.$self->{mainDisplay}.'" ';
 	$result .= _getHTML_getHumidity($self);
 	my $valves = _getHTML_getValve($self, 'valvePos1');
 	my $valve = _getHTML_getValve($self, 'valvePos2');
@@ -151,8 +155,7 @@ sub getHTML($){
 
 
 our %docu = (
-	general => "Die View <i>ThermostatFuip</i> repr&auml;sentiert einen Heizungs- oder Wandthermostat. Sie zeigt die Soll- und die Ist-Temperatur an, wobei die Solltemperatur auch ge&auml;ndert werden kann. Zus&auml;tzlich kann die Luftfeuchtigkeit sowie die Ventilstellung von bis zu drei angeschlossenen (\"gepeerten\") Stellantrieben (Heizk&ouml;rperthermostaten) angezeigt werden.<br>
-	Normalerweise wird die Ist-Temperatur in der Mitte gro&szlig; angezeigt. Wenn man auf die Mitte oder auf das \"-\" bzw. \"+\" klickt, dann wird stattdessen f&uuml;r ein paar Sekunden die Solltemperatur angezeigt.",
+	general => "Die View <i>ThermostatFuip</i> repr&auml;sentiert einen Heizungs- oder Wandthermostat. Sie zeigt die Soll- und die Ist-Temperatur an, wobei die Solltemperatur auch ge&auml;ndert werden kann. Zus&auml;tzlich kann die Luftfeuchtigkeit sowie die Ventilstellung von bis zu drei angeschlossenen (\"gepeerten\") Stellantrieben (Heizk&ouml;rperthermostaten) angezeigt werden.",
 	device => "Dies ist das Haupt-Device der Thermostat-Kombination. Das ist immer das Device, &uuml;ber das man die Solltemperatur einstellt. D.h. bei Kombinationen von Wand- und Heizk&ouml;rperthermostat ist das in der Regel der Wandthermostat. Wenn es nur um einen einzelnen Heizk&ouml;rperthermostat geht, dann ist es dieser.",
 	label => "Dies ist ein Text, der innerhalb der Thermostat-Grafik angezeigt wird. Man kann ihn auch weglassen.",
 	desiredTemp => "Hier wird das Reading angegeben, welches die Solltemperatur enth&auml;lt. Normalerweise ist das ein Reading des Haupt-Devices (im Parameter <i>device</i> angegeben). Es kann aber auch davon abweichen.",
@@ -165,6 +168,12 @@ our %docu = (
 	valvePos1 => "Die <i>valvePos</i>-Parameter sind Device/Reading-Kombinationen, aus denen der jeweilige Ventilstellungsgrad gelesen wird.",
 	valvePos2 => "Die <i>valvePos</i>-Parameter sind Device/Reading-Kombinationen, aus denen der jeweilige Ventilstellungsgrad gelesen wird.",
 	valvePos3 => "Die <i>valvePos</i>-Parameter sind Device/Reading-Kombinationen, aus denen der jeweilige Ventilstellungsgrad gelesen wird.",
+	mainDisplay => "Hier kann man steuern, was in der Hauptanzeige in der Mitte des Widgets angezeigt wird. Die folgenden zwei Werte sind m&ouml;glich:
+	<ul>
+	    <li><b>measured-temp</b>: Normalerweise wird die Isttemperatur in der Mitte gro&szlig; angezeigt. Wenn man auf die Mitte oder auf das \"-\" bzw. \"+\" klickt, dann wird stattdessen f&uuml;r ein paar Sekunden die Solltemperatur angezeigt. Das ist die Voreinstellung.</li>
+		<li><b>desired-temp</b>: Es wird immer die Solltemperatur in der Mitte gro&szlig; angezeigt.</li>
+    </ul>	
+	Die jeweils andere Temperatur wird immer in der Zeile unter der Hauptanzeige klein angezeigt.",
 	readonly => "Hiermit kann man das &Auml;ndern der Solltemperatur deaktivieren. D.h. die View zeigt dann die Daten nur noch an. Das ist vor Allem dann interessant, wenn man das eigentliche Bedienelement mit weiteren Details auf ein Popup auslagert."
 );
 

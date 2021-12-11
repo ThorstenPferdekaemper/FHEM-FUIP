@@ -63,10 +63,12 @@ var Modul_fuip_thermostat = function () {
     }
 
 	function switchToNormalDisplay(elem) {
-		// switch desired and measured temp in the display
-		elem.find("#status-temp").text(elem.data('desiredTempVal'));
-		elem.find("#main-temp").text(elem.data('measuredTempVal'));
-		elem.find("#status-temp-icon").removeClass("fa fa-thermometer-2").addClass("fa fa-dot-circle-o");
+		// switch desired and measured temp in the display (if needed)
+		if(elem.data('main-display') == 'measured-temp'){
+		    elem.find("#status-temp").text(elem.data('desiredTempVal'));
+		    elem.find("#main-temp").text(elem.data('measuredTempVal'));
+		    elem.find("#status-temp-icon").removeClass("fa fa-thermometer-2").addClass("fa fa-dot-circle-o");
+		};
 		elem.data('displaySwitchTimer', null);
 	};
 
@@ -102,6 +104,12 @@ var Modul_fuip_thermostat = function () {
         elem.initData('step', '0.5');
         elem.initData('fix', ftui.precision(elem.data('step')));
         elem.initData('unit', '');
+		// main-display determines what is shown in the main display
+		// currently supported:
+		// - measured-temp: Measured temperature is usually shown, switches
+		//                  to desired temperatur when the widget is touched
+		// - desired-temp:  Always display the desired temperature
+		elem.initData('main-display', 'measured-temp');
 
 		me.addReading(elem, 'desired-temp');
 		me.addReading(elem, 'measured-temp');
@@ -372,7 +380,7 @@ var Modul_fuip_thermostat = function () {
 									transform: "translate(-50%, -50%)", width: width + 'px' })
 							.appendTo(statusContainer);
 
-		var statusHtml = '<i class="fa fa-dot-circle-o fuip-color" id="status-temp-icon"></i> <span id="status-temp"></span>'+elem.data('unit');  // fa fa-thermometer-2
+		var statusHtml = '<i class="fuip-color" id="status-temp-icon"></i> <span id="status-temp"></span>'+elem.data('unit');  
 		if(elem.data('humidity')) {
 			statusHtml += '&nbsp;&nbsp;<i class="wi wi-raindrop fuip-color"></i>&nbsp;<span id="humidity"></span>%';
 		};
@@ -428,7 +436,7 @@ var Modul_fuip_thermostat = function () {
         });
 
 		// click on the temperature in the big area should show desired temperature
-		levelArea.on(ftui.config.clickEventType, function() { switchToSettingDisplay(elem) } );
+        levelArea.on(ftui.config.clickEventType, function() { switchToSettingDisplay(elem) } );
 
         //Overlay
         elem.append($('<div/>', {
@@ -440,7 +448,11 @@ var Modul_fuip_thermostat = function () {
 
 		// It can happen that this is called again, e.g. when a popup is opening
 		// In this case, we need to fix some stuff
-		if(elem.data('displaySwitchTimer')) showDesiredTemp(elem);
+		if(elem.data('main-display') == 'desired-temp' || elem.data('displaySwitchTimer')){ 
+	        showDesiredTemp(elem);
+		}else{
+			switchToNormalDisplay(elem);
+		};	
     };
 
 
@@ -478,12 +490,19 @@ var Modul_fuip_thermostat = function () {
 		// otherwise (if changing it), it appears in the big area, but this 
 		// is not done here, as it would otherwise interfere with the user changing
 		// it
+		// (displaySwitchTimer is also used when the main display always shows
+		// the desired temperature. In this case it is only used to avoid that
+		// it is reset from the backend while the user is changing it.)
 		if(!elem.data('displaySwitchTimer')) {
 			var desiredTemp = getValue(elem,'desired-temp',dev,par);
 			if(desiredTemp !== null) {
 				desiredTemp = parseFloat(desiredTemp).toFixed(1);
 				elem.data('desiredTempVal', desiredTemp);
-				elem.find("#status-temp").text(desiredTemp);
+				if(elem.data('main-display') == 'desired-temp') {
+				    elem.find("#main-temp").text(desiredTemp);
+				}else{				
+				    elem.find("#status-temp").text(desiredTemp);
+				};	
 				updateTicks(elem);
 			};
 		};
@@ -495,7 +514,7 @@ var Modul_fuip_thermostat = function () {
 			measuredTemp = parseFloat(measuredTemp).toFixed(1);
 			elem.data('measuredTempVal', measuredTemp);
 			updateTicks(elem);
-			if(elem.data('displaySwitchTimer')) {
+			if(elem.data('main-display') != 'measured-temp' || elem.data('displaySwitchTimer')) {
 				elem.find("#status-temp").text(measuredTemp);
 			}else{
 				elem.find("#main-temp").text(measuredTemp);
