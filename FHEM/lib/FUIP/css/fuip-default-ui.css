@@ -54,11 +54,13 @@
 /* main cell background color */
 	--fuip-color-background: #2A2A2A;
 	--fuip-color-background-transparent: rgba(42,42,42,.7);
+/* background when mouse hovers over, used in weatherdetail, defaults to #444 */
+	--fuip-color-background-hover: #444;
+/* intensified background, e.g. for zebra effect in lists */	
+	--fuip-color-background-intensified: var(--fuip-color-background-hover);	
 /* cell header */
 	--fuip-color-header: #262626;
 	--fuip-color-header-transparent: rgba(38,38,38,.7);
-/* background when mouse hovers over, used in weatherdetail, defaults to #444 */
-	--fuip-color-background-hover: #444;
 /* main theme color */
 	--fuip-color-symbol-active: #AA6900;
 /* color for inactive switches/symbols */

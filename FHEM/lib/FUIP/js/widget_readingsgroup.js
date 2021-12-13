@@ -31,6 +31,9 @@ var Modul_readingsgroup = function () {
 		// 2,3,4 : Distribute to 2,3,4 columns
 		// everything else: like 1
 		elem.initData('columns',1);
+		// zebra pattern 
+		elem.initData('zebra','on');
+		
         me.addReading(elem, 'get');
     }
 
@@ -73,17 +76,28 @@ var Modul_readingsgroup = function () {
 	function multiColumns(elem,newContent) {
 		var columns = elem.data('columns');
 		// only do anything for 2,3 or 4
-		if(columns < 2 || columns > 4) return;
+		if(columns < 1) columns = 1;
 		var theTable = newContent.find("table#readingsGroup-"+elem.data('device'));
 		var innerTables = new Array();
 		for(var i = 0; i < columns; i++) {
 			innerTables[i] = $("<table></table>");
 		};	
-		var i = 0;
+		var col = 0;
+		var row = 0;
 		theTable.find("tr").each(function() {
-			$(this).detach().appendTo(innerTables[i]);
-			i++;
-			if(i >= columns) i = 0;
+			$(this).detach().appendTo(innerTables[col]);
+			if(elem.data('zebra') == 'on') {
+			    if((row + col) % 2) {
+				    $(this).css( "background-color", "var(--fuip-color-background-intensified)");
+			    }else{
+				    $(this).css( "background-color", "var(--fuip-color-background)");
+			    };	
+			};	
+			col++;
+			if(col >= columns){
+			    col = 0;
+				row++;
+			};
 		});
 		var newLine = $("<tr></tr>");
 		for(var i = 0; i < columns; i++) {
@@ -92,7 +106,6 @@ var Modul_readingsgroup = function () {
 		};	
 		theTable.empty().append(newLine);
 	};	
-	
 	
 	// do a complete update
 	function doCompleteUpdate(elem) {

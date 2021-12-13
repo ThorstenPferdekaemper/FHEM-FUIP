@@ -129,6 +129,27 @@ function fuipInit(conf) { //baseWidth, baseHeight, maxCols, gridlines, snapTo
 };
 
 
+function colorVarToRgbaArray(variable) {
+	// Is this a reference to another variable?
+	// If yes, then resolve the reference
+	let colProperty = variable;
+	let found = false;
+	while(true) {
+		colProperty = fuip.colorVariables[colProperty];
+		colProperty = colProperty.replace(/\s/g, "");
+		if(/^var/.test(colProperty)) {
+		    colProperty = colProperty.substr(4,colProperty.length - 5);
+			found = true;
+		}else{
+			break;
+		};	
+	};	
+	if(found) {
+		document.documentElement.style.setProperty(variable,colProperty);
+		fuip.colorVariables[variable] = colProperty;
+	};	
+	return colorToRgbaArray(colProperty);
+};
 	
 	
 function pulsateColorStart(key) {
@@ -142,7 +163,7 @@ function pulsateColorStart(key) {
 	fuip.colorpulse.key = key;
 	fuip.colorpulse.resetValue = value;
 	// convert to rgba 	
-	fuip.colorpulse.rgbaValue = colorToRgbaArray(value);
+	fuip.colorpulse.rgbaValue = colorVarToRgbaArray(key);
 	fuip.colorpulse.currentOffset = 0;
 	fuip.colorpulse.currentDirection = 1;
 	fuip.colorpulse.timer = setInterval(pulsateColor,50);
@@ -231,7 +252,7 @@ function coloursChangeDialog() {
 	// create popup with color names and and input type="color"	
 	let html = "<form onsubmit='return false'><table>" 
 	fuip.oncolorinput = function(id) {
-		pulsateColorStop();
+		pulsateColorStop();		
 		let colArr = colorToRgbaArray($('#'+id).val());
 		colArr[3] = parseFloat($('#'+id+'-opacity').val());
 		let rgba = colorToRgbaString(colArr);
@@ -239,9 +260,11 @@ function coloursChangeDialog() {
 		$('#'+id+'-preview').css('background-color',rgba);
 	};	
 		
-	for(const key in fuip.colorVariables){
+	let keys = Object.keys(fuip.colorVariables);
+	keys.sort();
+	for(const key of keys){
 		// prepare color value
-		let colAsAr = colorToRgbaArray(fuip.colorVariables[key]);
+		let colAsAr = colorVarToRgbaArray(key);
 		let color = colorToCodeAndOpacity(colAsAr);
 		let rgbaString = colorToRgbaString(colAsAr);
 		html += '<tr><td style="text-align:left">' + key.substr(13) + '</td><td>' 
