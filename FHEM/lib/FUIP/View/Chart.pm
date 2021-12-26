@@ -96,7 +96,18 @@ sub getHTML($){
 			if($ldev->{Internals}{TYPE} eq "DbLog") {
 				($dev,undef) = split(/:/,$lspec,2);
 			}elsif($ldev->{Internals}{TYPE} eq "logProxy") {
-				$dev = "";  # TODO: can we determine anything at all here?
+				#FileLog:<log device>[,<options>]:<(alte) FileLog column_spec>
+				#or
+				#DbLog:<log device>,[<options>]:<(alte) DbLog column_spec>
+				my ($logType, $logDeviceSpec,$rest) = split(/:/,$lspec,3);
+				if($logType eq "FileLog"){
+					(undef,$rest) = split(/:/,$rest,2);
+					($dev,undef) = split(/\./,$rest,2);
+				}elsif($logType eq "DbLog"){
+					($dev,undef) = split(/:/,$rest,2);
+				}else{
+					$dev = "";  
+				};	
 			}else{	
 				my ($col,$rest) = split(/:/,$lspec,2);
 				($dev,undef) = split(/\./,$rest,2);

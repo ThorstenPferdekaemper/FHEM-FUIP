@@ -3,7 +3,17 @@
 var Modul_7segment = function () {
     var items = [];
 
-    // Definition of segments per number 0-9. Index 10 is "-"
+	//    a
+	//   ---
+	// f|   |b
+    //  | g |
+	//   ---
+	// e|   |c
+    //  | d |
+	//   ---
+	
+
+    // Definition of segments per number 0-9. Index 10 is "-". Index 11 is "E"
     const number_segments = [
         ["a", "b", "c", "d", "e", "f"],
         ["b", "c"],
@@ -15,7 +25,9 @@ var Modul_7segment = function () {
         ["a", "b", "c"],
         ["a", "b", "c", "d", "e", "f", "g"],
         ["a", "b", "c", "d", "f", "g"],
-        ["g"]
+        ["g"],
+		["a", "d", "e", "f", "g"]
+		
     ];
 
     function init() {
@@ -103,13 +115,12 @@ var Modul_7segment = function () {
 					if(isNaN(number)) {
 						var msg = '7segment widget: "' + value + '" (' + device + '-' + reading	+ ') is not a number';
 						ftui.toast(msg,'error');	
-					}else{	
-                      setColor(index, value);
-                      setNumber(index, value);
+					}else{	      
+					    setNumber(index, value);
+                        setColor(index, value);
 					};
                 }
             }
-
         });
     }
 
@@ -138,17 +149,10 @@ var Modul_7segment = function () {
     }
 
     function setDPColor(itm_index, color) {
-        if ((items[itm_index].decimals == 1 && items[itm_index].no_digits >= 2) || (items[itm_index].decimals == 2 && items[itm_index].no_digits >= 3)) {
-            if (items[itm_index].clockmode === 4) {
-                var dp = items[itm_index].svgobj.getElementById("dp1");
-                dp.setAttribute("fill", color);
-                dp = items[itm_index].svgobj.getElementById("dp2");
-                dp.setAttribute("fill", color);
-            } else {
-                var dp = items[itm_index].svgobj.getElementById("dp1");
-                dp.setAttribute("fill", color);
-            }
-        }
+		var dp = items[itm_index].svgobj.getElementById("dp1");
+		if(dp) dp.setAttribute("fill", color);
+		dp = items[itm_index].svgobj.getElementById("dp2");
+        if(dp) dp.setAttribute("fill", color);	
     }
 
     function setDigit(index, digit, value, justclear) {
@@ -185,39 +189,85 @@ var Modul_7segment = function () {
         });
     }
 
-    function setNumber(itm_index, value) {
-        var numbers = [];
-        for (var i = 0; i < items[itm_index].no_digits; i++) {
-            numbers.push(-1);
+	
+	function valueToArray(value, num_digits, num_decimals) {
+		var result = { numbers : [], decimals : num_decimals };
+        for (var i = 0; i < num_digits; i++) {
+            result.numbers.push(-1);
         }
         var number = parseFloat(value)
-        var isnegative = number < 0 ? true : false;
+        var isnegative = (number < 0);
         number = isnegative ? number * -1 : number;
-        if (items[itm_index].decimals == 2) {
-            number = parseFloat(Math.round(number * 100) / 100).toFixed(2);
-        } else if (items[itm_index].decimals == 1) {
-            number = parseFloat(Math.round(number * 10) / 10).toFixed(1);
-        } else {
-            number = parseInt(number);
-        }
+		number = number.toFixed(num_decimals);
         number = "" + number;
+		
+		// Now the number is in the format nnnn.mmmm 
+		// check whether we can display it properly
+		var parts = number.split('.');
+		var needed_intpart = isnegative ? parts[0].length + 1 : parts[0].length;
+		if(needed_intpart > num_digits) {
+			// we cannot display this, write E or -E
+			result.numbers[0] = 11;
+			if(isnegative && num_digits > 1) {
+			    result.numbers[1] = 10;	
+			};	
+			result.decimals = 0;
+			return result;
+		};	
+		
+		// we can display it, but maybe not with the required number of decimals
+		if(num_digits - num_decimals < needed_intpart) {
+			result.decimals = num_digits - needed_intpart;
+			number = parseFloat(value);
+			if(isnegative) number *= -1;
+			number = "" + number.toFixed(result.decimals);
+		};
+				
         number = number.replace(".", "");
 
-        for (var i = 0; i < items[itm_index].no_digits; i++) {
+        for (var i = 0; i < num_digits; i++) {
             if (number.length > i) {
-                numbers[i] = parseInt(number.charAt(number.length - 1 - i));
+                result.numbers[i] = parseInt(number.charAt(number.length - 1 - i));
             } else {
-                numbers[i] = isnegative ? 10 : -1;
-                numbers.forEach(function (item, index) {
-                    setDigit(itm_index, index, item);
-                });
-                return
+                result.numbers[i] = isnegative ? 10 : -1;
+                return result;
             }
         }
-        numbers.forEach(function (item, index) {
+		return result;		
+	};	
+
+
+    function setNumber(itm_index, value) {
+    	var elem = items[itm_index];
+        var nums = valueToArray(value,elem.no_digits,elem.decimals);
+		showDpAt(elem,nums.decimals);
+        nums.numbers.forEach(function (item, index) {
             setDigit(itm_index, index, item);
         });
     }
+	
+	
+	function showDpAt(elem,decimals) {
+		// create decimal point
+		var dp = elem.svgobj.getElementById("dp1");
+		if(decimals <= 0) {
+			if(dp) dp.remove();
+			return;
+		};	
+		// move or show decimal point
+		if(dp) {
+			dp.setAttributeNS(null, "cx", (elem.boxWidth - (decimals * 11) - 1.9));
+		}else{	
+			dp = document.createElementNS(elem.xmlns, "circle");
+            dp.setAttributeNS(null, "r", "1");
+            dp.setAttributeNS(null, "cx", (elem.boxWidth - (decimals * 11) - 1.9));
+            dp.setAttributeNS(null, "cy", elem.boxHeight - 1.1);
+            dp.setAttributeNS(null, "fill", elem.fgcolor);
+            dp.setAttributeNS(null, "id", "dp1");
+            elem.svgobj.appendChild(dp);
+        };
+	};		
+	
 
     function createSVG(index, elem) {
 
@@ -234,12 +284,14 @@ var Modul_7segment = function () {
         }
 
         var boxHeight = 18;
+		
+		items[index].boxWidth = boxWidth;
+		items[index].boxHeight = boxHeight;
+		items[index].xmlns = xmlns;
 
         var svgElem = document.createElementNS(xmlns, "svg");
         svgElem.setAttributeNS(null, "viewBox", "0 0 " + boxWidth + " " + boxHeight);
         svgElem.setAttributeNS(null, "id", id);
-        //svgElem.setAttributeNS(null, "width", boxWidth);
-        //svgElem.setAttributeNS(null, "height", boxHeight);
         svgElem.style.display = "block";
 
         var r = document.createElementNS(xmlns, "rect");
@@ -261,7 +313,7 @@ var Modul_7segment = function () {
 
             g.setAttributeNS(null, "id", "digit" + i);
             g.setAttributeNS(null, "fill", items[index].fgcolor);
-            g.setAttributeNS(null, "style", "fill-rule:evenodd; stroke:" + items[index].bgcolor + "; stroke-width:0.25; stroke-opacity:1; stroke-linecap:butt; stroke-linejoin:miter;");
+            g.setAttributeNS(null, "style", "fill-rule:evenodd; stroke:" + items[index].bgcolor + "; stroke-width:0.25; stroke-opacity:1; stroke-linecap:butt; stroke-linejoin:miter;"); 
 
             var p = document.createElementNS(xmlns, "polygon");
             p.setAttributeNS(null, "id", i + "a");
@@ -346,15 +398,7 @@ var Modul_7segment = function () {
             c.setAttributeNS(null, "id", "dp4");
             svgElem.appendChild(c);
         } else {
-            if ((items[index].decimals == 1 && items[index].no_digits >= 2) || (items[index].decimals == 2 && items[index].no_digits >= 3)) {
-                var c = document.createElementNS(xmlns, "circle");
-                c.setAttributeNS(null, "r", "1");
-                c.setAttributeNS(null, "cx", (boxWidth - (items[index].decimals * 11) - 1.9));
-                c.setAttributeNS(null, "cy", boxHeight - 1.1);
-                c.setAttributeNS(null, "fill", items[index].fgcolor);
-                c.setAttributeNS(null, "id", "dp1");
-                svgElem.appendChild(c);
-            }
+			// create decimal point later
         }
 
         $(svgElem).appendTo(elem);

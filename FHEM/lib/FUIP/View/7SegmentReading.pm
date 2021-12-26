@@ -80,6 +80,25 @@ sub getStructure($) {
 		];
 };
 	
+	
+our %docu = (
+	general => "Diese View zeigt ein numerisches Reading im 7-Segment-Design an. Es sind auch negative Zahlen und Nachkommastellen m&ouml;glich.",
+	digits => 'Anzahl der Ziffern.<br>
+	           Es k&ouml;nnen 1 bis 8 Ziffern (inklusive Nachkommastellen und ggf. das Minuszeichen) angezeigt werden. Wenn der Wert des Readings au&szlig;erhalb des darstellbaren Bereichs liegt, dann wird "E" bzw. "-E" angezeigt. Der Wert ist au&szlig;erhalb des darstellbaren Bereichs, wenn der Ganzzahlanteil (also das vor dem Komma) mehr Ziffern hat als bei <i>digits</i> angegeben. Bei negativen Zahlen muss man noch das Minuszeichen mit in Betracht ziehen.',
+	decimals => "Anzahl der Nachkommastellen.<br>
+				 Es k&ouml;nnen 0 bis 7 Nachkommastellen angezeigt werden. So lange der Ganzzahlanteil des darzustellenden Werts h&ouml;chstens <i>digits</i> - <i>decimals</i> Ziffern hat (inklusive Minuszeichen), dann werden immer <i>decimals</i> Nachkommastellen angezeigt. Gegebenenfalls wird entsprechend gerundet oder hinten mit Nullen aufgef&uuml;llt. Falls der Ganzzahlanteil zu gro&szlig; ist, dann wird das Komma (eigentlich der Dezimalpunkt) entsprechend nach rechts verschoben. Das funktioniert nat&uuml;rlich nur dann, wenn der Ganzzahlanteil nicht mehr als <i>digits</i> Stellen hat.",
+	colorscheme => 'Dieser Parameter steuert die Farbgebung. Es sind folgende Werte vorgesehen:
+	<ul>
+		<li>single: Es wird eine feste Farbe verwendet. Wird dieser Wert ausgew&auml;hlt, dann erscheint der Parameter <i>color</i>. Ansonsten bleibt <i>color</i> ausgeblendet.</li>
+		<li>temp-air: Dies ist f&uuml;r Lufttemperaturen gedacht. Die Farbgebung erfolgt je nach Temperatur, wobei &uuml;bliche Lufttemperaturen zu Grunde gelegt werden.</li>
+		<li>temp-boiler: Dies ist f&uuml;r die Wassertemperatur in einer Heizung gedacht. Die Farbgebung erfolgt je nach Temperatur, wobei &uuml;bliche Wassertemperaturen in einem Heizkreislauf zu Grunde gelegt werden.</li>
+		<li>humidity: Dies ist f&uuml;r relative Luftfeuchtigkeiten gedacht. Die Farbgebung erfolgt je nach Feuchtigkeit, wobei f&uuml;r Menschen angenehme Luftfeuchtigkeiten zu Grunde gelegt werden.</li>
+	</ul>',	   
+	color => "Farbe der Anzeige.<br>
+			Dieses Feld erscheint nur, wenn <i>colorscheme</i> auf \"single\" steht. Es kann so ziemlich alles eingegeben werden, was CSS als Farbe erlaubt sowie die \"FUIP-Farbsymbole\". Mit den \"FUIP-Farbsymbolen\" passt die Anzeige zum Rest der Oberfl&auml;che, auch wenn ein anderes <i>styleSchema</i> gew&auml;hlt wird oder die Farben im \"Colours\"-Menu anders eingestellt werden. In der Werthilfe zu diesem Feld erscheinen im Wesentlichen die \"FUIP-Farbsymbole\"."
+);
+	
+	
 # register me as selectable
 $FUIP::View::selectableViews{"FUIP::View::7SegmentReading"}{title} = "7-Segment-Display (Reading)"; 
 	
