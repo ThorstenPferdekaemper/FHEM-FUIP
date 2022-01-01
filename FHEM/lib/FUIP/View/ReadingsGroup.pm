@@ -29,7 +29,7 @@ sub getHTML($){
 				data-device="'.$self->{device}.'" 
 				data-columns="'.$self->{columns}.'"
 				data-zebra="'.$self->{zebra}.'"
-				style="text-align:left;"></div>'; 
+				style="text-align:left;height:100%;overflow-y:auto"></div>'; 
 };
 	
 
