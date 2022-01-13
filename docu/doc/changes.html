@@ -6,6 +6,19 @@
 <body>
 <h1>FUIP News</h1>
 
+<h2>13.01.2022</h2>
+<h3>Gr&ouml;&szlig;enanpassung bei WeatherDetail und WeatherOverview</h3>
+Bei den Views WeatherDetail und WeatherOverview hat manchmal die Anpassung der Gr&ouml;&szlig;e an den verf&uuml;gbaren Platz nicht richtig funktioniert. Das war auch der Fall, wenn das sizing auf "fixed" eingestellt war. Es sollte jetzt besser funktionieren.
+
+<h3>Mime-Type von jquery-ui.min.js</h3>
+Bei manchen Browsern gab es in der Javascript-Konsole Meldungen wie die hier:
+<div style='margin-left:5%;margin-right:5%'>
+<code>
+Das Skript von "http://.../lib/jquery-ui.min.js" wurde geladen, obwohl sein MIME-Typ ("text/plain") kein für JavaScript g&uuml;ltiger MIME-Typ ist.
+</code>
+</div>
+Das hatte zwar weiter keine Auswirkungen, aber es sollte jetzt trotzdem weg sein.
+
 <h2>01.01.2022</h2>
 <h3>ReadingsGroup scrollt jetzt</h3>
 Wenn die View "ReadingsGroup" nicht genug Platz hat, dann wird jetzt ein vertikaler Scrollbalken eingeblendet.

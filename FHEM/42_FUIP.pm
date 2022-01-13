@@ -2271,7 +2271,7 @@ sub CGI_inner($) {
 	# The following is to block any widget to load jquery-ui again. It would break drag/drop of views.
 	my $basename = basename($filename);
 	if($basename eq "jquery-ui.js" or $basename eq "jquery-ui.min.js") {
-		return("text/plain; charset=utf-8", "");	
+		return("text/javascript; charset=utf-8", "");	
 	};
 		
     my $MIMEtype= main::filename2MIMEType($filename);
@@ -3550,7 +3550,7 @@ sub _setSettings($$) {
 	};
 	autoArrangeNewViews($container);	
 	return undef;
-};		
+};	
 
 
 my %docuConfPopup = (

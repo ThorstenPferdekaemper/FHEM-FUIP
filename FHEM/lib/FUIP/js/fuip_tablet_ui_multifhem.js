@@ -1026,7 +1026,6 @@ var ftui = {
 	
  
 	shortPoll: function (sysid) {
-		// TODO: check what happens if one backend does not have any subscriptions
 		var deferred = $.Deferred();
         var ltime = Date.now() / 1000;
         ftui.log(1, 'start shortpoll ' + sysid, "base.poll");
@@ -1187,7 +1186,6 @@ var ftui = {
 				XHR: 1,
 				inform: 'type=status;filter=' + ftui.poll[sysid].long.filter + ';since=' +
 						ftui.poll[sysid].long.lastEventTimestamp + ';fmt=JSON',
-				// TODO: proper system id		
 				fwcsrf: ftui.config[sysid].csrf
 			},
 			username: ftui.config.username,
@@ -1247,7 +1245,7 @@ var ftui = {
             var lastChar = lines[i].slice(-1);
             if (ftui.isValid(lines[i]) && lines[i] !== '' && lastChar === "]") {
                 try {
-                    var dataJSON = JSON.parse(lines[i]);
+                    var dataJSON = JSON.parse(lines[i]);	
                     var params = null;
                     var param = null;
                     var isSTATE = (dataJSON[1] !== dataJSON[2]);
@@ -1558,7 +1556,6 @@ var ftui = {
 		// or already cleared data
 		var poll = ftui.poll[sysid];
 		if(!poll) return;
-		// do we have to connect at all?
 		if(!poll.hasSubscriptions) return;
 		
 		// disconnect first to start in a clean state

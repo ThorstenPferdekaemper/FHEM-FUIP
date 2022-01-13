@@ -16,7 +16,7 @@ var Modul_dotmatrix = function () {
 		elem.initData('shape', 'circle'); // or square
 		elem.initData('color', '#00FF00');
 
-		// me.addReading(elem, 'desired-temp');
+		me.addReading(elem, 'get-color');
 
     }
 
@@ -216,12 +216,27 @@ var Modul_dotmatrix = function () {
 	};
 
 
+	function setColor(elem,color) {
+		var dots = elem.data('dots');
+		for(var row of dots) {
+			for(var dot of row) {
+				dot.setAttribute("fill",color);
+			};
+		};	
+	};	
+
+
     function update(dev, par) {
         me.elements.each(function (index) {
             var elem = $(this);
 			var value = getValue(elem,'get',dev,par);
 			if(value !== null) {
 				setString(elem,value);
+				return;
+			};	
+			value = getValue(elem,'get-color',dev,par);
+			if(value !== null) {
+				setColor(elem,value);
 			};	
         });
     }

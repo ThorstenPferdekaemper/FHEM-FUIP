@@ -167,7 +167,7 @@ var Modul_weatherdetail = function() {
 	
 	function resize(id) {
 		// called when the widget is resized (this is the idea...)
-		// console.log("resize: " + id);	
+		ftui.log(4,"start resizing " + id,"weatherdetail.resize");	
 
  		var elem = $("#"+id);
 		// determine how big one element should be
@@ -190,7 +190,10 @@ var Modul_weatherdetail = function() {
 			// how big is it currently?
 			var actDim = getElemDims(elem);
 			// console.log("resize: " + actDim.width.toString() + "  " + actDim.height.toString());
-			if(actDim.width <= 0 || actDim.height <=0) break;  // happens at the beginning
+			if(actDim.width <= 0 || actDim.height <=0) {  // happens at the beginning
+				ftui.log(4, "no actual size (yet) for " + id,"weatherdetail.resize");
+				break;  
+			};	
 			// too large?
 			if(actDim.width > targetWidth || actDim.height > targetHeight) {
 				// try to make it smaller
@@ -449,7 +452,16 @@ var Modul_weatherdetail = function() {
 				myHtml += "</script>"
 				};
 				elem.html(myHtml);
-				$(function() { resize(elem.attr("id")) });  // care for correct sizing 
+				// care for correct sizing 
+				if(ftui.initialized) {
+					//If FTUI is initialized, resize as soon as possible, but not immediately
+				    $(function() { resize(elem.attr("id")) });  
+				}else{
+					//If FTUI is not initialized yet, resize after initialization.
+					//However, don't do this immediately as the last stuff is done on initWidgetsDone, so we 
+					//should come a bit afterwards.
+					$(document).on("initWidgetsDone", function() { $(function() { resize(elem.attr("id")) })} );
+				};	
 			});
 			//extra reading for hide
 			me.update_hide(device, reading);
