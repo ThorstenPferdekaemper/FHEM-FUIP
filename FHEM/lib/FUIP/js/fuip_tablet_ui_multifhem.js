@@ -1221,15 +1221,33 @@ var ftui = {
 			ftui.poll[sysid].long.request = null;
 		})
         .done(function (data) {
-            ftui.log(1, 'Longpoll done ' + data);
+            ftui.log(1, 'Longpoll done ' + data, "base.poll");
         })
         .fail(function (jqXHR, textStatus, errorThrown) {	
-			if(ftui.poll[sysid].status != 0 &&  ftui.poll[sysid].status != 3) // not if disconnected or disconnecting
-				ftui.showErrorOverlay(true,sysid);
-			var reason = textStatus + ": " + errorThrown;
-			ftui.log(1, "Longpoll error " + sysid + ' ' + reason + ", restarting...","base.poll");	
+			switch(ftui.poll[sysid].status) {
+				case 0:
+					// Intentionally disconnected anyway. It is a bit weird 
+					// that we come here, but it probably does not do much harm
+					ftui.log(2, "Longpoll for " + sysid + " failed (" + textStatus + ", " + 
+								errorThrown + "), but anyway disconnected","base.poll");	
+					break;			
+				case 3:
+					// We are disconnecting, so this is kind of normal
+					ftui.log(3, "Disconnecting, longpoll for " + sysid + " stopped","base.poll");
+					break;
+				default:	
+					// Otherwise, the connection has failed somehow, se we should show the user
+					// and try to restart later
+					ftui.showErrorOverlay(true,sysid);
+					ftui.log(1, "Longpoll for " + sysid + " failed (" + textStatus + ", " + 
+								errorThrown + "), trying to restart","base.poll");	
+			};			
         })
-		.always(function(){ftui.conditionalConnect(sysid, false)});
+		.always(function(){
+			// Reconnect, but only if we are not disconnected or disconnecting 
+			if(ftui.poll[sysid].status != 0 && ftui.poll[sysid].status != 3) 
+			    ftui.conditionalConnect(sysid, false)
+		});
     },
 
 	
@@ -1449,7 +1467,7 @@ var ftui = {
                 XHR: "1"
             },
             error: function (jqXHR, textStatus, errorThrown) {
-                ftui.log(1, "FHEM Command failed" + textStatus + ": " + errorThrown + " cmd=" + cmdline, 'base.command');
+                ftui.log(1, "FHEM Command failed " + textStatus + ": " + errorThrown + " cmd=" + cmdline, 'base.command');
             }
         });
 
