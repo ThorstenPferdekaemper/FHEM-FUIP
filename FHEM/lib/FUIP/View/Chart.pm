@@ -72,6 +72,27 @@ sub _convertTicks($) {
 };
 	
 	
+sub _convertYRange($$) {
+	
+	my ($conf,$key) = @_;	
+	my ($min,$max) = ("auto","auto");
+	
+	#Do we have an y range at all?
+	return ($min,$max) unless exists $conf->{$key};
+	my $yrange = $conf->{$key};
+	return ($min,$max) unless $yrange;
+	
+	#Perl coding or similar? 
+	$yrange = main::AnalyzeCommand(undef, $1) if($yrange =~ /^(\{.*\})$/);
+	
+	if($yrange =~ /\[(.*):(.*)\]/) {
+      $min = $1 if($1 ne "");
+      $max = $2 if($2 ne "");
+    };
+	return ($min,$max);
+};	
+	
+	
 sub getHTML($){
 	my ($self) = @_; 
 	my $sysid = $self->getSystem();
@@ -150,40 +171,9 @@ sub getHTML($){
 		push(@legend, $gplot->{conf}{lTitle}[$idx]);
 		push(@ptype, $gplot->{conf}{lType}[$idx]);
 	};
-	my @minmax;
-	if(exists($gplot->{conf}{yrange})) {
-		if(substr($gplot->{conf}{yrange},0,1) eq "[") {
-			$gplot->{conf}{yrange} = substr($gplot->{conf}{yrange},1,-1);
-		};	
-		@minmax = split(/:/,$gplot->{conf}{yrange});
-	};	
-	if(@minmax == 0) {
-		# empty, non-existing or ":"
-		@minmax = ("auto","auto");
-	}elsif(@minmax == 1) {
-		# "min:"
-		$minmax[1] = "auto";
-	}elsif($minmax[0] eq ''){
-		# ":max"
-		$minmax[0] = "auto";
-	};	
-	my @minmax_sec;
-	if(exists($gplot->{conf}{y2range})) {
-		if(substr($gplot->{conf}{y2range},0,1) eq "[") {
-			$gplot->{conf}{y2range} = substr($gplot->{conf}{y2range},1,-1);
-		};	
-		@minmax_sec = split(/:/,$gplot->{conf}{y2range});
-	};
-	if(@minmax_sec == 0) {
-		# empty, non-existing or ":"
-		@minmax_sec = ("auto","auto");
-	}elsif(@minmax_sec == 1) {
-		# "min:"
-		$minmax_sec[1] = "auto";
-	}elsif($minmax_sec[0] eq ''){
-		# ":max"
-		$minmax_sec[0] = "auto";
-	};		
+	# range as
+	my @minmax = _convertYRange($gplot->{conf}, 'yrange');
+	my @minmax_sec = _convertYRange($gplot->{conf}, 'y2range');;
 	# data-timeranges
 	my %timerangeKeys;
 	if(ref($self->{timeranges}) eq "ARRAY") {

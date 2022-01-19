@@ -6,6 +6,16 @@
 <body>
 <h1>FUIP News</h1>
 
+<h2>19.01.2022</h2>
+<h3>Chart: Perl-Coding als Range</h3>
+Bei der Definition eines SVG-Charts in FHEMWEB wird die Eingabe von Perl-Coding bei "Range as [min:max]" unterst&uuml;tzt. Das funktioniert jetzt auch mit der Chart View in FUIP. D.h. man kann hier so etwas angeben wie:
+<div style='margin-left:5%;margin-right:5%'>
+<code>
+{'['.ReadingsVal("min","state",0).':'.ReadingsVal("max","state",0).']'}
+</code>
+</div>
+Bei einer &Auml;nderung der benutzten Readings muss die Seite allerdings neu geladen werden. 
+
 <h2>18.01.2022</h2>
 <h3>"Aufblitzen" des roten Disconnected-Bildschirms</h3>
 Wenn f&uuml;r eine Weile keine Events vom Backend (FHEM) am Frontend (FUIP) landen, dann wird das Frontend nerv&ouml;s und startet die Verbindung durch. Dabei wird in der Regel nur der Longpoll neu gestartet. (Ungef&auml;hr alle 15 Minuten wird zus&auml;tzlich ein neuer Shortpoll gemacht.) Zum Neustart des Longpolls wird daf&uuml;r erst einmal die momentan offene Verbindung beendet. Dieser Verbindungs"abbruch" wurde dummerweise nicht von einer fehlerhaft abgebrochenen Verbindung unterschieden, wodurch es dann zu Aufr&auml;umarbeiten kam, bei denen die gerade neu aufgebaute Verbindung auch gleich wieder abgebrochen wurde. Falls an dem ganzen Vorgang auch noch ein Shortpoll beteiligt war, konnte es dabei sogar recht lange dauern, bis sich das ganze wieder erholt. Es kamen dabei auch Endlosschleifen vor.<br>
