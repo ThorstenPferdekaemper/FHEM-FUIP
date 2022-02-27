@@ -32,7 +32,24 @@ sub getStructure($) {
 			reading => { default => { type => "const", value => "humidity" } } },
 		{ id => "minTemp", type => "text", default => { type => "const", value => "10" } },
 		{ id => "maxTemp", type => "text", default => { type => "const", value => "30" } },
-		{ id => "step", type => "text", default => { type => "const", value => "0.5" } },		
+		{ id => "step", type => "text", default => { type => "const", value => "0.5" } },
+
+		{ id => "showControlMode", type => "text", options => ["on","off"], 
+			default => { type => "const", value => "off" } },
+		{ id => "controlModeDevice", type => "device", 
+			default => { type => "field", value => "device" }, 
+			depends => { field => "showControlMode", value => "on" } },
+		{ id => "showBoost", type => "text", options => ["on","off"], 
+			default => { type => "const", value => "off" } },
+		{ id => "boostDevice", type => "device", 
+			default => { type => "field", value => "device" }, 
+			depends => { field => "showBoost", value => "on" } },	
+		{ id => "showLock", type => "text", options => ["on","off"], 
+			default => { type => "const", value => "off" } },
+		{ id => "lockDevice", type => "device", 
+			default => { type => "field", value => "device" }, 
+			depends => { field => "showLock", value => "on" } },		
+		
 		{ id => "valvePos1", type => "device-reading",  
 			device => { default => { type => "field", value => "device"} },
 			reading => { default => { type => "const", value => "ValvePosition"} } },
@@ -120,6 +137,12 @@ sub getHTML($){
 		$self->{humidity} = { device => $self->{device}, reading => $self->{humidity} };
 	};
 	$self->{mainDisplay} = 'measured-temp' unless $self->{mainDisplay};
+	$self->{showControlMode} = 'off' unless $self->{showControlMode};
+	$self->{showBoost} = 'off' unless $self->{showBoost};
+	$self->{showLock} = 'off' unless $self->{showLock};
+	$self->{controlModeDevice} = $self->{device} unless $self->{controlModeDevice};
+	$self->{boostDevice} = $self->{device} unless $self->{boostDevice};
+	$self->{lockDevice} = $self->{device} unless $self->{lockDevice};
 	
 	my $result = '';
 	$result .= '<div';
@@ -134,7 +157,13 @@ sub getHTML($){
 		data-min="'.$self->{minTemp}.'" 
 		data-max="'.$self->{maxTemp}.'" 	
 		data-step="'.$self->{step}.'" 
-		data-main-display="'.$self->{mainDisplay}.'" ';
+		data-main-display="'.$self->{mainDisplay}.'" 
+		data-show-btn-lock="'.$self->{showLock}.'"
+		data-btn-lock-device="'.$self->{lockDevice}.'"
+		data-show-boost="'.$self->{showBoost}.'"
+		data-boost-device="'.$self->{boostDevice}.'"
+		data-show-control-mode="'.$self->{showControlMode}.'" 
+		data-control-mode-device="'.$self->{controlModeDevice}.'" ';
 	$result .= _getHTML_getHumidity($self);
 	my $valves = _getHTML_getValve($self, 'valvePos1');
 	my $valve = _getHTML_getValve($self, 'valvePos2');
@@ -155,7 +184,8 @@ sub getHTML($){
 
 
 our %docu = (
-	general => "Die View <i>ThermostatFuip</i> repr&auml;sentiert einen Heizungs- oder Wandthermostat. Sie zeigt die Soll- und die Ist-Temperatur an, wobei die Solltemperatur auch ge&auml;ndert werden kann. Zus&auml;tzlich kann die Luftfeuchtigkeit sowie die Ventilstellung von bis zu drei angeschlossenen (\"gepeerten\") Stellantrieben (Heizk&ouml;rperthermostaten) angezeigt werden.",
+	general => "Die View <i>ThermostatFuip</i> repr&auml;sentiert einen Heizungs- oder Wandthermostat. Sie zeigt die Soll- und die Ist-Temperatur an, wobei die Solltemperatur auch ge&auml;ndert werden kann. Zus&auml;tzlich kann die Luftfeuchtigkeit sowie die Ventilstellung von bis zu drei angeschlossenen (\"gepeerten\") Stellantrieben (Heizk&ouml;rperthermostaten) angezeigt werden.<br>
+	Au&szlig;erdem kann man noch Tasten f&uuml;r den Control Mode (auto/manual), den Boost-Modus und f&uuml;r die Tastensperre aktivieren. Diese Tasten sind etwas Homematic-spezifisch implementiert, so dass sie f&uuml;r andere Systeme wahrscheinlich nicht korrekt funktionieren.",
 	device => "Dies ist das Haupt-Device der Thermostat-Kombination. Das ist immer das Device, &uuml;ber das man die Solltemperatur einstellt. D.h. bei Kombinationen von Wand- und Heizk&ouml;rperthermostat ist das in der Regel der Wandthermostat. Wenn es nur um einen einzelnen Heizk&ouml;rperthermostat geht, dann ist es dieser.",
 	label => "Dies ist ein Text, der innerhalb der Thermostat-Grafik angezeigt wird. Man kann ihn auch weglassen.",
 	desiredTemp => "Hier wird das Reading angegeben, welches die Solltemperatur enth&auml;lt. Normalerweise ist das ein Reading des Haupt-Devices (im Parameter <i>device</i> angegeben). Es kann aber auch davon abweichen.",
@@ -165,6 +195,12 @@ our %docu = (
 	minTemp => "Dies ist die minimale darstellbare/einstellbare Temperatur.",
 	maxTemp => "Dies ist die maximale darstellbare/einstellbare Temperatur.",
 	step => "Hier wird die Schrittweite der Temperatureinstellung und -anzeige angegeben. Zusammen mit <i>minTemp</i> und <i>maxTemp</i> legt das fest, welche Temperaturen eingestellt werden k&ouml;nnen und wie genau die Temperaturen angezeigt werden. Man kann hier auch \"Kommazahlen\" eingeben (Voreinstellung ist 0.5). Dabei muss man darauf achten, dass als Dezimaltrennzeichen der Punkt und nicht das Komma benutzt wird.",
+	showControlMode => "Hiermit kann man die Taste f&uuml;r den Control Mode (auto/manual) aktivieren.",
+	controlModeDevice => "Dieses Feld erscheint, wenn die Taste f&uuml;r den Control Mode aktiviert ist. Man kann damit das Ger&auml;t bestimmen, dessen Control Mode geschaltet werden soll. Dies kann bei der Kombination von Wand- und Heizk&ouml;rperthermostat sinnvoll sein.",
+	showBoost => "Hiermit kann man die Taste f&uuml;r den Boost-Modus aktivieren.",
+	boostDevice => "Dieses Feld erscheint, wenn die Taste f&uuml;r den Boost-Modus aktiviert ist. Man kann damit das Ger&auml;t bestimmen, &uuml;ber das der Boost-Modus aktiviert werden soll. Bei der Kombination von Wand- und Heizk&ouml;rperthermostat ist es sinnvoll, hier den Heizk&ouml;rperthermostat zu w&auml;hlen.",
+	showLock => "Hiermit kann man die Taste f&uuml;r die Tastensperre aktivieren.",
+	lockDevice => "Dieses Feld erscheint, wenn die Taste f&uuml;r die Tastensperre aktiviert ist. Man kann damit das Ger&auml;t bestimmen, dessen Tasten gesperrt werden sollen. Bei der Kombination von Wand- und Heizk&ouml;rperthermostat sollte man wahrscheinlich immer den Heizk&ouml;rperthermostat w&auml;hlen.",
 	valvePos1 => "Die <i>valvePos</i>-Parameter sind Device/Reading-Kombinationen, aus denen der jeweilige Ventilstellungsgrad gelesen wird.",
 	valvePos2 => "Die <i>valvePos</i>-Parameter sind Device/Reading-Kombinationen, aus denen der jeweilige Ventilstellungsgrad gelesen wird.",
 	valvePos3 => "Die <i>valvePos</i>-Parameter sind Device/Reading-Kombinationen, aus denen der jeweilige Ventilstellungsgrad gelesen wird.",

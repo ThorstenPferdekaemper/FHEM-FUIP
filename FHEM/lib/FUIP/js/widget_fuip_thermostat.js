@@ -21,7 +21,7 @@ var Modul_fuip_thermostat = function () {
             return;
         }
 
-		// Signal that we are now setting the temperatur
+		// Signal that we are now setting the temperature
 		// to avoid that update interferes
 		elem.clicked = true;
 
@@ -110,11 +110,30 @@ var Modul_fuip_thermostat = function () {
 		//                  to desired temperatur when the widget is touched
 		// - desired-temp:  Always display the desired temperature
 		elem.initData('main-display', 'measured-temp');
+		elem.initData('show-btn-lock', 'off');
+		elem.initData('show-boost', 'off');
+		elem.initData('show-control-mode', 'off');
+		elem.initData('btn-lock-device',elem.data('device'));
+		elem.initData('boost-device',elem.data('device'));
+		elem.initData('control-mode-device',elem.data('device'));
 
 		me.addReading(elem, 'desired-temp');
 		me.addReading(elem, 'measured-temp');
 		me.addReading(elem, 'humidity');
 		me.addReading(elem, 'valve');
+
+		if(elem.data('show-control-mode') == 'on') {
+			elem.initData('control-mode-reading',elem.data('control-mode-device') + ':controlMode');
+			me.addReading(elem, 'control-mode-reading');
+		};	
+		if(elem.data('show-boost') == 'on') {
+			elem.initData('boost-reading',elem.data('boost-device') + ':controlMode');
+			me.addReading(elem, 'boost-reading');
+		};	
+		if(elem.data('show-btn-lock') == 'on') {
+			elem.initData('btn-lock-reading',elem.data('btn-lock-device') + ':R-btnLock');
+			me.addReading(elem, 'btn-lock-reading');
+		};	
 
     }
 
@@ -127,6 +146,22 @@ var Modul_fuip_thermostat = function () {
 		document.body.removeChild(tmp);
 		return color
 	}
+	
+	
+	function setBackground(elem,activity) {
+		// activity: on,off,/set/
+		if(activity == 'off' || activity == '' || !activity) {
+			elem.css('backgroundColor','');
+			return;
+		};	
+		var col = colorFromCSS("var(--fuip-color-symbol-active)");
+		if(/set/.test(activity)) {	
+			col = colorToRgbaArray(col); 
+			col[3] = 0.3;
+			col = colorToRgbaString(col);
+		};
+		elem.css('backgroundColor',col);	
+	};
 
 
 	function drawValvePosition(elem,canvas) {
@@ -292,6 +327,16 @@ var Modul_fuip_thermostat = function () {
 		var titleTop = ticksTop + ticksHeight;
 		var contentTop = label ? titleTop + titleHeight : titleTop + 2;
 		var contentHeight = height - ( contentTop + statusHeight );    // height * 0.4;
+		var controlHeight = 0;
+		var controlTop = 0;
+		var numControls = ( elem.data('show-btn-lock') == 'on' ? 1 : 0) 
+						+ ( elem.data('show-boost') == 'on' ? 1 : 0)	
+						+ ( elem.data('show-control-mode') == 'on' ? 1: 0);
+		if(numControls){
+			controlHeight = contentHeight * 0.35;
+			contentHeight = contentHeight - controlHeight;
+			controlTop = contentTop + contentHeight;
+		};	   
 		var statusBottom = transformDimension(height,75,150,1,2);
 		var tempFontSize = contentHeight * 0.7;
 		var tempWidth = (width -8) * 0.5;
@@ -367,6 +412,137 @@ var Modul_fuip_thermostat = function () {
             })
             .appendTo(contentLine);
         elemRightIcon.html('&plus;');
+
+		if(numControls) {
+			// font size: 
+			// controlHeight * 0.5 if this is >= 16
+			// controlHeight * 0.8 if this is <= 8
+			// in between linear
+			var factor = 0.8 - 0.3 * ( controlHeight - 10 ) / 22;
+			if(factor < 0.5) factor = 0.5;
+			if(factor > 0.8) factor = 0.8;
+			var controlFontSize = controlHeight * factor;
+			var controlAreaWidth = (numControls == 2) ? (width - 8) / 2 : (width - 8) / 3;
+			var textFontSize = controlFontSize;
+			if(textFontSize * 3 > controlAreaWidth) {
+				textFontSize = controlAreaWidth / 3;
+			};	
+			var controlLine = $('<div/>')
+		                      .css({ width : (width - 8) + 'px', height: controlHeight + 'px',
+									 position: 'absolute', top: controlTop + 'px', left: '4px',
+									 borderBottomStyle: 'solid', borderColor: '#6a6a6a', borderWidth: '1px',
+									 })
+				              .appendTo(elemWrapper);
+
+			// only one control: Put it in the middle like the levelArea
+			// two controls: Split 50/50
+			// three controls: Split 1/3	
+			var leftPos; 
+			if(elem.data('show-control-mode') == 'on') {
+				leftPos = (numControls == 1) ? (width - 8) / 3 : 0;
+				var showControlModeArea = $('<div id="control-mode" />').css({
+						width: controlAreaWidth + 'px',
+						height: (controlHeight-8)+'px',
+						lineHeight: (controlHeight-8)+'px',
+						fontSize: textFontSize + 'px',
+						padding: '0',
+						borderLeftStyle: ((numControls == 1) ? 'solid' : 'none') , borderRightStyle: 'solid', 
+						borderColor: '#6a6a6a', borderLeftWidth: '1px', borderRightWidth: '1px',
+						position: 'absolute', top: '3px', left: leftPos + 'px'
+					}).appendTo(controlLine);
+				showControlModeArea.on(ftui.config.clickEventType, function (e) {
+					showControlModeArea.fadeTo("fast", 0.5);
+					e.preventDefault();
+					e.stopPropagation();
+					// get current content
+					var mode = elem.getReading('control-mode-reading').val;
+					if(/auto/.test(mode)) {
+						mode = 'manual';
+					}else{
+						mode = 'auto';
+					};
+					ftui.sendFhemCommand('set ' + elem.data('control-mode-device') + ' controlMode ' + mode);	
+				});
+				showControlModeArea.on(ftui.config.releaseEventType + ' ' + ftui.config.leaveEventType, function (e) {
+					showControlModeArea.fadeTo("fast", 1);
+					e.preventDefault();
+					e.stopPropagation();
+				});			
+			};
+			
+			if(elem.data('show-boost') == 'on') {
+				leftPos = 0;  // if 2 and not controlMode
+				if(numControls != 2){
+					leftPos = (width - 8) / 3;
+				}else if(elem.data('show-control-mode') == 'on'){
+					leftPos = (width - 8) / 2;
+				};	
+				var showBoostArea = $('<div id="boost">boost</div>').css({
+					width: controlAreaWidth + 'px',
+					height: (controlHeight-8)+'px',
+					lineHeight: (controlHeight-8)+'px',
+					fontSize: textFontSize + 'px',
+					padding: '0',
+					borderLeftStyle: ((numControls == 1) ? 'solid' : 'none') , 
+					borderRightStyle: ((numControls != 2 || elem.data('show-control-mode') == 'off') ? 'solid' : 'none'), 
+					borderColor: '#6a6a6a', borderLeftWidth: '1px', borderRightWidth: '1px',
+					position: 'absolute', top: '3px', 
+					left: leftPos + 'px'
+				})
+				.appendTo(controlLine);
+				showBoostArea.on(ftui.config.clickEventType, function (e) {
+					showBoostArea.fadeTo("fast", 0.5);
+					e.preventDefault();
+					e.stopPropagation();
+					ftui.sendFhemCommand('set ' + elem.data('boost-device') + ' controlMode boost');	
+				});
+				showBoostArea.on(ftui.config.releaseEventType + ' ' + ftui.config.leaveEventType, function (e) {
+					showBoostArea.fadeTo("fast", 1);
+					e.preventDefault();
+					e.stopPropagation();
+				});			
+			};		
+			
+			if(elem.data('show-btn-lock') == 'on') {
+				if(numControls == 1){
+					leftPos = (width - 8) / 3;
+				}else if(numControls == 2){
+					leftPos = (width - 8) / 2;
+				}else{
+					leftPos = (width - 8) * 2 / 3;	
+				};	
+				var showLockArea = $('<div id="btn-lock" />').css({
+					width: controlAreaWidth + 'px',
+					height: (controlHeight-8)+'px',
+					lineHeight: (controlHeight-8)+'px',
+					fontSize: controlFontSize + 'px',
+					padding: '0',
+					borderLeftStyle: ((numControls == 1) ? 'solid' : 'none') , borderRightStyle: ((numControls == 1) ? 'solid' : 'none'), 
+					borderColor: '#6a6a6a', borderLeftWidth: '1px', borderRightWidth: '1px',
+					position: 'absolute', top: '3px', 
+					left: leftPos + 'px'
+				})
+				.appendTo(controlLine);
+				showLockArea.on(ftui.config.clickEventType, function (e) {
+					showLockArea.fadeTo("fast", 0.5);
+					e.preventDefault();
+					e.stopPropagation();
+					var lockValue = elem.getReading('btn-lock-reading').val;
+					if(/on/.test(lockValue)) {
+						lockValue = 'off';
+					}else{
+						lockValue = 'on';
+					};
+					ftui.sendFhemCommand('set ' + elem.data('btn-lock-device') + ' regSet btnLock ' + lockValue);	
+				});
+				showLockArea.on(ftui.config.releaseEventType + ' ' + ftui.config.leaveEventType, function (e) {
+					showLockArea.fadeTo("fast", 1);
+					e.preventDefault();
+					e.stopPropagation();
+				});			
+			};		 			
+							  
+		};
 
 		var statusContainer = $('<div/>')
 							.css({padding: '0px', height: statusHeight + 'px',
@@ -522,10 +698,50 @@ var Modul_fuip_thermostat = function () {
         };
 
 		// humidity
-		var humidity = getValue(elem,par,dev,'humidity');
+		var humidity = getValue(elem,'humidity',dev,par);
 		if(humidity != null){
 		    humidity = parseFloat(humidity).toFixed(0);
 		    elem.find("#humidity").text(humidity);
+		};
+		
+		// control mode
+		var controlMode = getValue(elem,'control-mode-reading',dev,par);
+		if(controlMode != null){
+		    var controlModeArea = elem.find("#control-mode");
+			if(/set/.test(controlMode)) {
+				setBackground(controlModeArea, 'set');
+				controlMode = controlMode.substring(4);
+			}else{
+				setBackground(controlModeArea);
+			};		
+			controlModeArea.text(controlMode);
+		};
+		
+		// boost
+		var boostValue = getValue(elem,'boost-reading',dev,par);
+		if(boostValue != null){
+			var boostArea = elem.find("#boost");			
+			if(/boost/.test(boostValue)) {
+				setBackground(boostArea,boostValue);
+			}else{
+				setBackground(boostArea);
+			};	
+		};
+		
+		// lock
+		var lockValue = getValue(elem,'btn-lock-reading',dev,par);
+		if(lockValue != null){
+			var lockArea = elem.find("#btn-lock");
+			if(/on/.test(lockValue)) {
+				lockArea.html('<i class="fa fa-lock fuip-color" />');
+			}else{	
+				lockArea.html('<i class="fa fa-lock-open fuip-color" />');
+			};
+			if(/set/.test(lockValue)) {
+				setBackground(lockArea,'set');
+			}else{
+				setBackground(lockArea);
+			};	
 		};
 
 		// valve
