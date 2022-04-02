@@ -5,6 +5,8 @@
 /* Version 2.10.0
 /* Compatible FTUI Version >= 2.7.2
 
+/* Special FUIP version Thorsten Pferdekaemper */
+
 /* global ftui:true, Modul_widget:true, Powerange:true */
 
 "use strict";
@@ -4984,13 +4986,12 @@ var widget_chart = {
 		for (k=0, lk=data.logProxy?data.nGraphs:data.nGraphs+1; k<lk; k++) { // prepare crosshair text elements for each graph
 			g = widget_chart.createElem('g').attr({'class':'crosshair', 'style':data.DDD.String.Rot+'; '+data.DDD.String.Trans(0,k<data.nGraphs?k+1:0,data.DDD,data.xStrTO,data.yStrTO)});
 			crosshair.append(g);
-			var t = widget_chart.createElem('text').attr({'class':'crosshair', 'filter':'url(#filterbackground)', 'style':'z-index:10001; stroke-width:0px', 'text-anchor':'end'});
+			var t = widget_chart.createElem('text').attr({'class':'crosshair', 'style':'z-index:10001; stroke-width:0px', 'text-anchor':'end'});
 			t.HTML2SVG((data.legend!==undefined)?((data.legend[k] && data.legend[k]!=='')?data.legend[k] + ": ":''):''+' ',true); // generate <tspan> contents
 			t.HTML2SVG(" ");
 			t.find('tspan').last().attr({'class':'crosshairValue'});
 			g.append(t);
 			t.hide();
-			//g.append(widget_chart.createElem('text').attr({'class':'crosshair', 'style':'z-index:10001; stroke-width:0px; filter: blur(10px)', 'text-anchor':'end'}));
 		}
 	
 		svg_new.find('[id="baseforDDD"]').append(crosshair); // add crosshair
