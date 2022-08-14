@@ -42,12 +42,19 @@
 }
 /* Definition for crosshair cursor */
 .crosshair {
-	stroke: #bababa;
-	background: #fff;
+	/* stroke: #bababa; */
+	stroke: var(--fuip-color-foreground);
+	background: var(--fuip-color-background);
 	stroke-width: 1px;
-	fill: #bababa;
-	font-size: 9px;
+	/* fill: #bababa; */
+	fill: var(--fuip-color-foreground);
+	font-size: 12px;
+	font-weight: bold;
 }
+
+rect.crosshair {
+	fill: var(--fuip-color-background);
+}	
 
 /* Definition of size etc. for the buttons */
 .buttons {

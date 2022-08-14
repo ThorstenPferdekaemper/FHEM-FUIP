@@ -2165,7 +2165,7 @@ var widget_chart = {
 				//$(event.delegateTarget).append(widget_chart.createElem('text').attr({'class':'debug','x':'20','y':'20'}));
 				//event.preventDefault();
 				if (data.crosshair)	{
-					//console.log("Mouseenter Event",$(event.delegateTarget).parents("[class^=basesvg]").parent().data'crs_inactive'));
+					console.log("Mouseenter Event",$(event.delegateTarget).parents("[class^=basesvg]").parent().data('crs_inactive'));
 					if (crosshair && !data.crs_inactive && data.pointsarrayCursor) {
 						var x = ((evt.pageX - data.chartArea.left));
 //						var x = ((evt.pageX - data.chartArea.left - data.offsetX) - data.graphArea.width*(1-data.scaleX))/data.scaleX) - data.graphArea.width*(1-data.scaleX))/data.scaleX;
@@ -2277,7 +2277,7 @@ var widget_chart = {
 							var rw = widget_chart.getTextSizePixels(target,textX2Value,'text crosshair').width;
 							var rh = widget_chart.getTextSizePixels(target,textX2Value,'text crosshair').height;
 							if (!crh_text[itime].parent().find('rect').length) {
-								crh_text[itime].parent().prepend(widget_chart.createElem('rect').attr({'class':'crosshair','x':x-rw/2,'y':legendY-rh/2,'width':rw+'px','height':rh+'px','style':'z-index:10000; fill:black;'}));
+								crh_text[itime].parent().prepend(widget_chart.createElem('rect').attr({'class':'crosshair','x':x-rw/2,'y':legendY-rh/2,'width':rw+'px','height':rh+'px','style':'z-index:10000'}));
 								crh_text[itime].parent().find('rect.crosshair').parent().css('clip-path','none');
 								crh_text[itime].attr({'text-anchor':'middle'});
 							}
@@ -3835,7 +3835,7 @@ var widget_chart = {
 		data.getDefaultSize($(theObj));
 
 		//include defs from svg_defs.svg for compatibility with fhem plots
-		var defsFHEM =
+ 		var defsFHEM =
 			"<defs>"+
 				'<linearGradient id="gr_bg" x1="0%" y1="0%" x2="0%" y2="100%">   <stop offset="0%"   style="stop-color:#FFFFF7; stop-opacity:1"/>    <stop offset="100%" style="stop-color:#FFFFC7; stop-opacity:1"/>  </linearGradient>'+
 				'<linearGradient id="gr_0" x1="0%" y1="0%" x2="0%" y2="100%">    <stop offset="0%"   style="stop-color:#f00; stop-opacity:.6"/>    <stop offset="100%" style="stop-color:#f88; stop-opacity:.4"/>  </linearGradient>'+
@@ -3924,7 +3924,7 @@ var widget_chart = {
 					'<feFlood flood-color="yellow"/>'+
 					'<feComposite in="SourceGraphic"/>'+
 				'</filter>'+
-			'</defs>';
+			'</defs>'; 
 
 		var clip = {};
 		clip.left = data.getGraphLeft();
@@ -3939,6 +3939,22 @@ var widget_chart = {
 		clip.top = (Math.min(p1.y,p2.y)-data.DDD.shiftY)/data.DDD.scaleY;
 		// prepare skeleton of SVG part of page
 		if (!$(document).find('body').children('svg.basicdefs').children('defs').length) $(document).find('body').prepend($('<svg class="basicdefs" style="position: absolute; height: 0px"> ' + defsFHEM + defs + '</svg>'));
+		// When using the chart widget in FUIP, we usually already have SVG defs. 
+		// However, there is some stuff missing
+		if(!$(document).find('#filterbackground').length) {
+			var filterbackground = 
+				'<defs>' +
+					'<filter x="0" y="0" width="1" height="1" id="filterbackground">'+
+						'<feFlood flood-color="var(--fuip-color-background)" result="bBlack"/>'+
+						'<feMerge>'+
+							'<feMergeNode in="bBlack"/>'+
+							'<feMergeNode in="SourceGraphic"/>'+
+						'</feMerge>'+
+					'</filter>'+
+				'</defs>';	
+			$(document).find('body').prepend($('<svg class="basicdefs" style="position: absolute; height: 0px"> ' + filterbackground + '</svg>'));
+		};	
+		
 		var svg_new = $(
 			'<svg class="basesvg'+instance+'" style="overflow: visible">' + (data.title?data.title_object:'') +
 			'<g id="classesContainer" stroke="grey"></g>' +
@@ -3947,7 +3963,7 @@ var widget_chart = {
 			'<defs><clipPath id="clipingRectXAxis'+instance+'">'+widget_chart.getClipPath(data,0,theObj,3)+widget_chart.getClipPath(data,0,theObj,3)+'</clipPath></defs>'+
 			'<defs><clipPath id="clipingRectGraphs'+instance+'">'+widget_chart.getClipPath(data,0,theObj,1)+widget_chart.getClipPath(data,0,theObj,1)+'</clipPath></defs>'+
 			'<defs><clipPath id="clipingRectCursor'+instance+'">'+widget_chart.getClipPath(data,0,theObj,2)+widget_chart.getClipPath(data,0,theObj,2)+'</clipPath></defs>'+
-			'<rect class="chart-background" x="'+data.xStr+'" width="'+data.yStr+'" preserveAspectRatio="none" '+'style="'+data.DDD.String.Rot+'; '+data.DDD.String.Trans(data.DDD.Width(data.nGraphs-1),data.nGraphs,data.DDD,data.xStrTO,data.yStrTO)+'"></rect>'+
+			'<rect class="chart-background" x="'+data.xStr+'" width="'+data.yStr+'" preserveAspectRatio="none" '+'style="'+data.DDD.String.Rot+'; '+data.DDD.String.Trans(data.DDD.Width(data.nGraphs-1),data.nGraphs,data.DDD,data.xStrTO,data.yStrTO)+'"  pointer-events="all"></rect>'+
 			'<g class="chart-gridlines" x="'+data.xStr+'" width="'+data.yStr+'" preserveAspectRatio="none" '+'style="'+data.DDD.String.Rot+'; '+data.DDD.String.Trans(data.DDD.Width(data.nGraphs-1),data.nGraphs,data.DDD,data.xStrTO,data.yStrTO)+'">'+
 			'</g>'+
 			'<g class="chart-left-gridlines" x="0px" y="0px" width="'+data.yStr+'" preserveAspectRatio="none" '+'style="overflow:inherit; '+data.DDD.prefix+'transform:scale('+1/data.DDD.scaleX+','+1/data.DDD.scaleY+') translate('+(-data.DDD.shiftX)+'px,'+(-data.DDD.shiftY)+'px)">'+
@@ -4986,12 +5002,12 @@ var widget_chart = {
 		for (k=0, lk=data.logProxy?data.nGraphs:data.nGraphs+1; k<lk; k++) { // prepare crosshair text elements for each graph
 			g = widget_chart.createElem('g').attr({'class':'crosshair', 'style':data.DDD.String.Rot+'; '+data.DDD.String.Trans(0,k<data.nGraphs?k+1:0,data.DDD,data.xStrTO,data.yStrTO)});
 			crosshair.append(g);
-			var t = widget_chart.createElem('text').attr({'class':'crosshair', 'style':'z-index:10001; stroke-width:0px', 'text-anchor':'end'});
+			var t = widget_chart.createElem('text').attr({'class':'crosshair', 'filter':'url(#filterbackground)', 'style':'z-index:10001; stroke-width:0px', 'text-anchor':'end'});
 			t.HTML2SVG((data.legend!==undefined)?((data.legend[k] && data.legend[k]!=='')?data.legend[k] + ": ":''):''+' ',true); // generate <tspan> contents
 			t.HTML2SVG(" ");
 			t.find('tspan').last().attr({'class':'crosshairValue'});
 			g.append(t);
-			t.hide();
+			t.hide();	
 		}
 	
 		svg_new.find('[id="baseforDDD"]').append(crosshair); // add crosshair
@@ -5019,7 +5035,7 @@ var widget_chart = {
 		// register events for crosshair cursor		// register events for swipe
 		if (!data.logProxy) widget_chart.detectSwipe(svg_new.find("rect.chart-background, [id*='graph-']"));
 
-		svg_new.find("rect.chart-background, [id*='graph-']").on("mouseenter touchstart",function(event) {
+	/*  	svg_new.find("rect.chart-background, [id*='graph-']").on("mouseenter touchstart",function(event) {
 			widget_chart.checkEvent(event);
 		});
 		
@@ -5029,8 +5045,13 @@ var widget_chart = {
 		
 		svg_new.find("rect.chart-background, [id*='graph-']").on('mousemove touchmove',function(event) {
 			widget_chart.checkEvent(event);
+		}); 
+ */
+ 
+		svg_new.find("rect.chart-background").on("mouseenter touchstart mouseleave touchend mousemove touchmove",function(event) {
+			widget_chart.checkEvent(event);
 		});
-
+		
 		// Hack for problem in IE11 with transform of SVG elements
 		browserCaps.doSVGTransformCorrection(svg_new);
 		
