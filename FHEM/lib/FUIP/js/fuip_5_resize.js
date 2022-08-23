@@ -68,17 +68,19 @@ $(function() {
 
 
 // helpers
-function fuip_getTargetHeight(elem) {
+
+function fuip_getTargetDimensions(elem) {
 	// search for something with a size
 	// is this currently being resized?
 	var resize = elem.closest(".fuip-resizable").data("fuipResize");
 	if(resize) {
-		return resize.height;
+		return { ...resize };
 	};	
 	// the issue here is that we might sit within a popup widget,
 	// which does not really have a size 
 	var elemWithSize = elem.parent();  // don't use the table itself
 	var targetHeight = 0;
+	var targetWidth = 0;
 	while(true) {
 		// ignore dialog-starter and fuip_popup
 		if(elemWithSize.hasClass("dialog-starter") || elemWithSize.data("type") == "fuip_popup") {
@@ -86,11 +88,17 @@ function fuip_getTargetHeight(elem) {
 			continue;
 		};	
 		targetHeight = elemWithSize.prop("clientHeight");
-		if(targetHeight) break;  // found
+		targetWidth = elemWithSize.prop("clientWidth");
+		if(targetHeight && targetWidth) break;  // found
 		if(typeof(elemWithSize.attr("data-viewid")) !== "undefined") break; // don't go further than the view container
 		elemWithSize = elemWithSize.parent();
 	};
-	return targetHeight;
+	return { height: targetHeight, width: targetWidth };
+};
+
+
+function fuip_getTargetHeight(elem) {
+	return fuip_getTargetDimensions(elem).height;
 };
 
 
