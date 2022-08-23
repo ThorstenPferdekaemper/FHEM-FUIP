@@ -764,7 +764,8 @@ sub renderCommonCss($) {
 			.'<link rel="stylesheet" href="'.urlBase($hash).'/fuip/css/fuip-default-ui.css" type="text/css" />'."\n"
 			.$styleSchemaLine
 			.'<link rel="stylesheet" href="'.urlBase($hash).'/lib/font-awesome.min.css"   type="text/css" />
-			<link rel="stylesheet" href="'.urlBase($hash).'/fuip/fonts/nesges.css" type="text/css" />'."\n";
+			<link rel="stylesheet" href="'.urlBase($hash).'/fuip/fonts/nesges.css" type="text/css" />
+			<link rel="stylesheet" href="'.urlBase($hash).'/fuip/fonts/icomoon-free.css" type="text/css" />'."\n";
 };
 
 

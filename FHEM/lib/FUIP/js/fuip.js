@@ -1809,7 +1809,7 @@ function getIcons() {
 				var selectors = currentSheet.cssRules[j].selectorText.split(",");
 				var key = false;
 				for(var k = 0; k < selectors.length; k++) {
-					var icons = selectors[k].match(/\.(fa|ftui|mi|oa|wi|fs|nesges)-.*(?=::before)/);
+					var icons = selectors[k].match(/\.(fa|ftui|mi|oa|wi|fs|nesges|icomoon)-.*(?=::before)/);
 					if(!icons){ continue; };
 					var icon = icons[0].substring(1);
 					// sometimes there is another class...
