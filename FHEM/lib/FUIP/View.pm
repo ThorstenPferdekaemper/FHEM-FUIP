@@ -74,7 +74,7 @@ sub getViewHTML($) {
 	if($popupField) {
 		$dialog = $view->{$popupField->{id}};
 		if( not blessed($dialog) or not $dialog->isa("FUIP::Dialog")) {
-			$dialog = FUIP::Dialog->createDefaultInstance($view->{fuip});
+			$dialog = FUIP::Dialog->createDefaultInstance($view->{fuip},$view);
 		};
 		my ($width,$height) = $dialog->dimensions();
 		$dialog->{position} = "screen-center" unless($dialog->{position});
