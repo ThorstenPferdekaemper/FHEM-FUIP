@@ -1236,8 +1236,39 @@ function validateField(id) {
 // check whether field "id" has a valid content
 // returns true if ok
 // otherwise, issues a message to the user and returns false
-// currently checks only variables of view templates
-	if(!/-variable$/.test(id)) return true;
+// currently checks only variables of view templates and cssClasses
+    if(id == 'cssClasses') return validateFieldCssClasses(id); 
+	if(/-variable$/.test(id)) return validateFieldVariable(id);
+	return true;
+};	
+
+
+function validateFieldCssClasses(id) {
+// check whether field "id" has a valid content, assuming that it contains css classes
+// returns true if ok
+// otherwise, issues a message to the user and returns false
+	let value = $('#'+id).val();
+	
+	// we allow commas as separators and an arbitrary number of spaces
+	value = value.replace(/,/g, ' ');
+	value = value.replace(/\s+/g, ' ');
+	value = value.trim();
+	if(value.length == 0) return true;
+	let classes = value.split(' ');
+	for (let i = 0; i < classes.length; i++) {
+	    if(!/^[a-zA-Z][-_a-zA-Z0-9]*$/.test(classes[i])){
+		    popupError('Css class name invalid', 'The css class name "'+classes[i]+'" is invalid. You can only use letters (a..b,A..B), numbers (0..9), the underscore (_) and the dash (-). The first character can only be a letter.<p>You have to change the class name.'); 
+		    return false;
+	    };
+	};
+	return true;
+};	
+
+
+function validateFieldVariable(id) {
+// check whether field "id" has a valid content, assuming that it contains a variable name
+// returns true if ok
+// otherwise, issues a message to the user and returns false
 	let value = $('#'+id).val();
 	if(!/^[_a-zA-Z][_a-zA-Z0-9]*$/.test(value)){
 		popupError('Variable name invalid', 'The variable name "'+value+'" is invalid. You can only use letters (a..b,A..B), numbers (0..9) and the underscore (_). The first character can only be a letter or the underscore. Whitespace (blanks) cannot be used.<p>You have to change the variable name.'); 
@@ -1397,7 +1428,10 @@ function getKeyForCommand(prefix) {
 function acceptPageSettings(doneFunc) {
 	var cmd = '';
 	// collect inputs and checkboxes
+	let allFieldsOk = true;
 	$("#viewsettings input, #viewsettings select.fuip").each(function() {
+		allFieldsOk = validateField($(this).attr("id"));
+		if(!allFieldsOk) return false;  // leave .each
 		var value;
 		if($(this).attr("type") == "checkbox") {
 			value = ($(this).is(":checked") ? 1 : 0);
@@ -1408,6 +1442,9 @@ function acceptPageSettings(doneFunc) {
 		value = '"' + value + '"'; 
 		cmd += " " + $(this).attr("id") + "=" + value;
 	});
+	// return if there is an issue with a field
+	// this should also make sure that the config popup stays open
+	if(!allFieldsOk) return;
 	var name = fuipName();
 	var pageId = $("html").attr("data-pageid");
 	cmd = "set " + name + " pagesettings " + pageId + cmd; 

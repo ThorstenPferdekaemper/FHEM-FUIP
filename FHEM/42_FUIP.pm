@@ -931,7 +931,7 @@ sub renderPage($$$) {
 				.renderHeaderHTML($hash,$currentLocation)
 				.renderBackgroundImage($hash,$pageWidth)
 				.'</head>
-            <body>'
+            <body class="'.$page->getUserCssClasses($locked).'">'
 				.renderUserHtmlBodyStart($hash,$currentLocation)."\n"
                 .'<div class="gridster"';
 	if($pageWidth) {
@@ -1022,7 +1022,7 @@ sub renderPageFlex($$) {
 				.renderHeaderHTML($hash,$currentLocation)
 				.renderBackgroundImage($hash,$pageWidth)
 				.'</head>
-            <body>'
+            <body class="'.$page->getUserCssClasses(1).'">'
 				.renderUserHtmlBodyStart($hash,$currentLocation)."\n"	
                 .'<div style="display:flex;"';
 	# TODO: does the following make any sense?
@@ -1093,8 +1093,8 @@ sub renderPageFlexMaint($$) {
                 "</style>"
 				.renderHeaderHTML($hash,$currentLocation)
 				.renderBackgroundImage($hash,$pageWidth)
-				."</head>
-            <body>"
+				.'</head>
+            <body class="'.$page->getUserCssClasses(0).'">'
 				.renderUserHtmlBodyStart($hash,$currentLocation)."\n"	
 		.'<div style="display:flex">
 			<div id="fuip-flex-menu" class="fuip-flex-region">'.renderCellsFlexMaint($hash,$currentLocation,"menu").'</div>
@@ -1228,7 +1228,7 @@ sub renderPopupMaint($$) {
 	$result .= '>'."\n"
 				.renderUserHtmlBodyStart($hash,$dialog);
 	$result .= '<div style="display:flex;"><div style="display:inline-flex;margin:20px;">
-		<div id="popupcontent" class="fuip-droppable fuip-cell"
+		<div id="popupcontent" class="'.$dialog->getCssClasses(0).'"
 			style="width:'.$width.'px;height:'.$height.'px;border:0;border-bottom:1px solid #aaa;
 					box-shadow: 0 3px 9px rgba(0, 0, 0, 0.5);">
 				<header class="fuip-cell-header">'.$dialog->{title}.'</header>';
@@ -1581,9 +1581,7 @@ sub renderCells($$$) {
 		my ($sizeX, $sizeY) = $cell->dimensions();
 		$sizeX = ceil($sizeX);
 		$sizeY = ceil($sizeY);
-		$result .= "<li data-cellid=\"".$i."\" data-row=\"".($row+1)."\" data-col=\"".($col+1)."\" data-sizex=\"".$sizeX."\" data-sizey=\"".$sizeY."\" class=\"fuip-droppable fuip-cell";
-		$result .= ' fuip-transparent' if $backgroundImage;
-		$result .= "\">";
+		$result .= '<li data-cellid="'.$i.'" data-row="'.($row+1).'" data-col="'.($col+1).'" data-sizex="'.$sizeX.'" data-sizey="'.$sizeY.'" class="'.$cell->getCssClasses($locked).'">';
 		$cell->applyDefaults();
 		# if there is no title and it is locked, we do not display a header
 		# TODO: find better handle for dragging
@@ -1696,11 +1694,10 @@ sub renderCellsFlexMaint($$$) {
 		my ($sizeX, $sizeY) = $cell->dimensions();
 		$sizeX = ceil($sizeX);
 		$sizeY = ceil($sizeY);
-		$result .= "<div id='fuip-flex-fake-".$i."' style=\"grid-area:".($row+1)." / ".($col+1)." / ".($row+$sizeY+1)." / ".($col+$sizeX+1).";position:relative;width:".$width."px;height:".$height."px;px;background-color:rgba(0,0,0,0);\">
-					<div id='fuip-flex-cell-".$i."' data-cellid=\"".$i."\" class=\"fuip-droppable fuip-cell";
-		$result .= ' fuip-transparent' if $backgroundImage;
-		$result .= "\" style=\"position:absolute;width:".$width."px;height:".$height."px;
-									border:0;\">";
+		$result .= '<div id="fuip-flex-fake-'.$i.'" style="grid-area:'.($row+1).' / '.($col+1).' / '.($row+$sizeY+1).' / '.($col+$sizeX+1).';position:relative;width:'.$width.'px;height:'.$height.'px;px;background-color:rgba(0,0,0,0);">
+					<div id="fuip-flex-cell-'.$i.'" data-cellid="'.$i.'" class="'.$cell->getCssClasses(0).'"';
+		$result .= ' style="position:absolute;width:'.$width.'px;height:'.$height.'px;
+									border:0;">';
 		$cell->applyDefaults();
 		# TODO: find better handle for dragging
 		$result .= "<header class='fuip-cell-header";
@@ -1773,9 +1770,7 @@ sub renderCellsFlex($$) {
 		my ($width,$height) = cellSizeToPixels($hash,$sizeX,$sizeY);
 		# TODO: col, row, sizex, sizey ?
 		# outer DIV: the cell itself
-		my $cellHtml = "<div data-cellid=\"".$i."\" data-row=\"".($row+1)."\" data-col=\"".($col+1)."\" data-sizex=\"".$sizeX."\" data-sizey=\"".$sizeY."\" class=\"fuip-droppable fuip-cell";
-		$cellHtml .= ' fuip-transparent' if $backgroundImage;
-		$cellHtml .= "\" style=\"width:";
+		my $cellHtml = '<div data-cellid="'.$i.'" data-row="'.($row+1).'" data-col="'.($col+1).'" data-sizex="'.$sizeX.'" data-sizey="'.$sizeY.'" class="'.$cell->getCssClasses(1).'" style="width:';
 		$cellHtml .= $width.'px';
 		$cellHtml .= ";height:".$height."px;position:relative;border:0;
 									order:".($row*100+$col).";";

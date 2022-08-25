@@ -106,7 +106,7 @@ sub getViewHTML($) {
 	if($popupField) {
 		# dialog->getHTML: always locked as we cannot configure the popup directly
 		$result .= '</div>
-					<div class="dialog fuip-cell">
+					<div class="'.$dialog->getCssClasses(1).'">
 					<header class="fuip-cell-header">'.$dialog->{title}.'</header>	
 				'.$dialog->getHTML(1).' 
 					</div>
@@ -386,6 +386,7 @@ sub getDefaultFields($;$) {
 	# TODO: Maybe add on top somewhere
 	# TODO: Maybe do the same for the class, if not there anyway
 	push(@$result, { id => "sysid", type => "sysid" } );
+	push(@$result, { id => "cssClasses", type => "css-class" } );
 	
 	if(not $includesInternals) {
 		my @withoutInternals = grep {$_->{type} ne "internal"} @$result;
@@ -396,6 +397,31 @@ sub getDefaultFields($;$) {
 	};
 	return $result;
 };
+
+
+sub getUserCssClasses($) {
+  my $self = shift;	
+  
+  return "" unless $self->{cssClasses};
+  my $result = $self->{cssClasses};
+  #replace comma with blanks (we allow comma as delimiter)
+  $result =~ tr/,/ /;	
+  #replace multiple whitespace by one whitespace
+  $result =~ s/\s+/ /g;
+  return $result;
+};	
+
+
+sub getCssClasses($$) {
+    my ($self,$locked) = @_;
+	
+	my $userCssClasses = $self->getUserCssClasses();
+	return $userCssClasses if $locked;
+	
+	my $result = 'fuip-draggable'.($self->isResizable() ? ' fuip-resizable' : '');
+	$result .= ' '.$userCssClasses if $userCssClasses;
+	return $result;
+};	
 
 
 sub createDefaultInstance($$$) {
@@ -662,7 +688,10 @@ my %docu = (
 		Normalerweise erscheinen unter dem Swiper-Widget Punkte, die den momentanen Zustand anzeigen und mit denen auch eine bestimmte View im Swiper angew&auml;hlt werden kann. Diese Punkte k&ouml;nnen hiermit abgeschaltet werden.",
 	sysid => "System-Id, also Name des zugeh&ouml;rigen FHEM-Systems<br>
         Dieses Feld erscheint nur, wenn tats&auml;chlich mehrere FHEM-Systeme (\"Backends\") f&uuml;r die FUIP-Instanz definiert wurden. D.h. es wurden mindestens zwei der <i>backend_</i>-Attribute gesetzt. Die dadurch definierten Systeme erscheinen dann in der Auswahl f&uuml;r das Feld <i>sysid</i>. Damit kann man dann das System zur View, zur Zelle zum Dialog (Popup) oder zur Seite ausw&auml;hlen.<br>
-		Standardwert ist <i>&lt;inherit&gt;</i>. Das bedeutet, dass das System vom &uuml;bergeordneten Objekt vererbt wird. Dabei wird von der Seite auf alle ihre Zellen und von der Zelle auf alle ihre Views vererbt. Wenn auch in der Seite <i>&lt;inherit&gt;</i> gesetzt ist, dann wird der Wert des Attributs <i>defaultBackend</i> benutzt."
+		Standardwert ist <i>&lt;inherit&gt;</i>. Das bedeutet, dass das System vom &uuml;bergeordneten Objekt vererbt wird. Dabei wird von der Seite auf alle ihre Zellen und von der Zelle auf alle ihre Views vererbt. Wenn auch in der Seite <i>&lt;inherit&gt;</i> gesetzt ist, dann wird der Wert des Attributs <i>defaultBackend</i> benutzt.",
+	cssClasses => "Zus&auml;tzliche CSS-Klassen<br>
+Man kann den meisten Entit&auml;ten (Views, Zellen, Seiten, Popups) zus&auml;tzliche CSS-Klassen zuordnen, die man dann z.B. in einem Stylesheet (siehe Attribut <i>userCss</i>) verwendet werden kann. Allerdings sollte diese M&ouml;glichkeit mit Bedacht verwendet werden. Sp&auml;tere Entwicklungen in FUIP k&ouml;nnten dazu f&uuml;hren, dass eigene Definitionen nicht mehr wie gew&uuml;nscht funktionieren. Au&szlig;erdem kann es schwierig sein, die von FUIP (oder den verwendeten Widgets) vorgegebenen Formatangaben zu &uuml;bersteuern. Bei Farben wird z.B. meistens die Angabe \"!important\" gebraucht.<br>
+Im Zweifelsfall ist es immer besser, \"eingebaute\" Funktionen zu verwenden, wie z.B. den \"Colours\"-Dialog."  
 	);
 
 

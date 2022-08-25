@@ -15,6 +15,7 @@ var Modul_dotmatrix = function () {
 		elem.initData('rows', '8');
 		elem.initData('shape', 'circle'); // or square
 		elem.initData('color', '#00FF00');
+		elem.initData('text', '');
 
 		me.addReading(elem, 'get-color');
 
@@ -57,6 +58,9 @@ var Modul_dotmatrix = function () {
 		var dots = [];
 		var svg = document.createElementNS(namespace, "svg");
 		svg.setAttribute("viewBox", "0 0 " + 20 * numCols + " " + 20 * numRows);
+		svg.style.position = 'absolute';
+		svg.style.left = '0'; 
+		svg.style.top = '0';  //width:100%; height:100%
 		elem.append(svg);
 		for(var yi = 0; yi < numRows; yi++) {
 			dots[yi] = [];
@@ -71,6 +75,7 @@ var Modul_dotmatrix = function () {
 
     function init_ui(elem) {
 		createPanel(elem, elem.data('columns'), elem.data('rows'));
+		setString(elem,elem.data('text'));
     };
 
 
@@ -232,7 +237,8 @@ var Modul_dotmatrix = function () {
 			var value = getValue(elem,'get',dev,par);
 			if(value !== null) {
 				setString(elem,value);
-				return;
+			}else{
+				setString(elem,elem.data('text'));	
 			};	
 			value = getValue(elem,'get-color',dev,par);
 			if(value !== null) {

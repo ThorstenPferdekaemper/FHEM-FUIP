@@ -55,12 +55,11 @@ sub getHTML_swiper($$){
 	my $i = 0;
 	for my $view (@$views) {
 		my ($width,$height) = $view->dimensions();
-		my $resizable = ($view->isResizable() ? " fuip-resizable" : "");
 		# TODO: hardcode 22px headers?
 		$result .= '
 		<li>
 			<div style="position:absolute;left:'.($self->{navbuttons} eq "on" ? '37' : '0').'px;width:'.($self->{navbuttons} eq "on" ? 'calc(100% - 74px)' : '100%').';">
-				<div data-viewid="'.$i.'"'.$self->getHTML_sysid($view).($locked ? '' : ' class="fuip-draggable'.$resizable.'"').' style="';
+				<div data-viewid="'.$i.'"'.$self->getHTML_sysid($view).' class="'.$view->getCssClasses($locked).'" style="';
 		my (undef, $cellHeight) = FUIP::cellSizeToPixels($self);
 		if($width eq "auto") {
 			$result .= 'width:100%;';
@@ -100,9 +99,8 @@ sub getHTML($$){
 	for my $view (@$views) {
 		my ($left,$top) = $view->position();
 		my ($width,$height) = $view->dimensions();
-		my $resizable = ($view->isResizable() ? " fuip-resizable" : "");
 		# TODO: hardcode 22px headers?
-		$result .= '<div><div data-viewid="'.$i.'"'.$self->getHTML_sysid($view).($locked ? '' : ' class="fuip-draggable'.$resizable.'"').' style="position:absolute;left:'.$left.'px;top:'.($top+22).'px;';
+		$result .= '<div><div data-viewid="'.$i.'"'.$self->getHTML_sysid($view).' class="'.$view->getCssClasses($locked).'" style="position:absolute;left:'.$left.'px;top:'.($top+22).'px;';
 		if($width eq "auto") {
 			$result .= 'width:calc(100% - '.$left.'px);';
 			$result .= 'height:calc(100% - '.($top+22).'px);'; 
@@ -121,6 +119,19 @@ sub getHTML($$){
 	};
 	return $result;	
 };
+
+
+sub getCssClasses($$) {
+    my ($self,$locked) = @_;
+	
+	my $result = 'fuip-cell';
+	$result = 'fuip-droppable '.$result unless $locked;
+	my $backgroundImage = main::AttrVal($self->{fuip}{NAME},"styleBackgroundImage",undef);
+	$result .= ' fuip-transparent' if $backgroundImage;	
+	my $userCssClasses = $self->getUserCssClasses();
+	$result .= ' '.$userCssClasses if $userCssClasses;
+	return $result;
+};	
 
 	
 sub getStructure($) {

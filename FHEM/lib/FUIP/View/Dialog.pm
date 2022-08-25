@@ -28,9 +28,8 @@ sub getHTML($$){
 	for my $view (@$views) {
 		my ($left,$top) = $view->position();
 		my ($width,$height) = $view->dimensions();
-		my $resizable = ($view->isResizable() ? " fuip-resizable" : "");
 		# TODO: hardcode 22px headers?
-		$result .= '<div><div data-viewid="'.$i.'"'.$self->getHTML_sysid($view).($locked ? '' : ' class="fuip-draggable'.$resizable.'"').' style="position:absolute;left:'.$left.'px;top:'.($top+22).'px;';
+		$result .= '<div><div data-viewid="'.$i.'"'.$self->getHTML_sysid($view).' class="'.$view->getCssClasses($locked).'" style="position:absolute;left:'.$left.'px;top:'.($top+22).'px;';
 		if($width eq "auto") {
 			$result .= 'width:calc(100% - '.$left.'px);';
 			$result .= 'height:calc(100% - '.($top+22).'px);'; 
@@ -49,6 +48,21 @@ sub getHTML($$){
 	};
 	return $result;	
 };
+
+
+sub getCssClasses($$) {
+    my ($self,$locked) = @_;
+	
+	my $result = ' fuip-cell';
+	if($locked) {
+		$result = 'dialog'.$result;
+	}else{
+		$result = 'fuip-droppable'.$result;
+	};	
+	my $userCssClasses = $self->getUserCssClasses();
+	$result .= ' '.$userCssClasses if $userCssClasses;
+	return $result;
+};	
 
 	
 sub getStructure($) {

@@ -32,11 +32,10 @@ sub getHTML_swiper($$){
 	my (undef, $cellHeight) = $self->dimensions();
 	for my $view (@$views) {
 		my ($width,$height) = $view->dimensions();
-		my $resizable = ($view->isResizable() ? " fuip-resizable" : "");
 		$result .= '
 		<li>
 			<div style="position:absolute;left:'.($self->{navbuttons} eq "on" ? '37' : '0').'px;width:'.($self->{navbuttons} eq "on" ? 'calc(100% - 74px)' : '100%').';">
-				<div data-viewid="'.$i.'"'.$self->getHTML_sysid($view).($locked ? '' : ' class="fuip-draggable'.$resizable.'"').' style="';
+				<div data-viewid="'.$i.'"'.$self->getHTML_sysid($view).' class="'.$view->getCssClasses($locked).'" style="';
 		if($width eq "auto") {
 			$result .= 'width:100%;';
 			# It seems that the swiper widget does some funny computations for the height, so 100% and calculations do not 
@@ -75,8 +74,7 @@ sub getHTML($$){
 	for my $view (@$views) {
 		my ($left,$top) = $view->position();
 		my ($width,$height) = $view->dimensions();
-		my $resizable = ($view->isResizable() ? " fuip-resizable" : "");
-		$result .= '<div><div data-viewid="'.$i.'"'.$self->getHTML_sysid($view).($locked ? '' : ' class="fuip-draggable'.$resizable.'"').' style="position:absolute;left:'.$left.'px;top:'.$top.'px;';
+		$result .= '<div><div data-viewid="'.$i.'"'.$self->getHTML_sysid($view).' class="'.$view->getCssClasses($locked).'" style="position:absolute;left:'.$left.'px;top:'.$top.'px;';
 		if($width eq "auto") {
 			$result .= 'width:calc(100% - '.$left.'px);';
 			$result .= 'height:calc(100% - '.$top.'px);'; 
