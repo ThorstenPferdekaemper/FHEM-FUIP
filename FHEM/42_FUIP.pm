@@ -1128,14 +1128,18 @@ sub findDialogFromFieldId($$$;$) {
 	# the related view
 	# $cKey: container key. Either pageid/cellid or templateid
 	my ($hash,$cKey,$fieldid,$prefix) = @_;
+	
 	$prefix = ($prefix ? $prefix : "");
 	# find the dialog (we start with the container, i.e. cell or view template
 	my $dialog;
 	if(exists($cKey->{$prefix."pageid"})) { 
+		#The stored page id might be an "old" one
+		decodePageid($hash,$cKey->{$prefix."pageid"});
 		$dialog = $hash->{pages}{$cKey->{$prefix."pageid"}}{cells}[$cKey->{$prefix."cellid"}];
 	}else{
 		$dialog = $hash->{viewtemplates}{$cKey->{$prefix."templateid"}};
 	};	
+	
 	my @fieldIdSplit = split(/-/,$fieldid);
 	# $fieldid should have the form like views-1-popup-views-4-popup-views...
 	# or in general
@@ -1153,7 +1157,7 @@ sub findDialogFromFieldId($$$;$) {
 		$dialog = FUIP::Dialog->createDefaultInstance($hash,$view);
 		$view->{$popupName} = $dialog;
 		$view->{defaulted}{$popupName} = 0;
-	};		
+	};	
 	return $dialog;
 };
 

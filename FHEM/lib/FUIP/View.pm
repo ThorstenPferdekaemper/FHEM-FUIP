@@ -443,6 +443,7 @@ sub createDefaultInstance($$$) {
 			$result->{$field->{id}} = $field->{value};
 		};
 	};
+	
 	bless($result,$class);
 	$result->setParent($parent);
 	return $result;
