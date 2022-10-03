@@ -9,8 +9,10 @@ use parent -norequire, 'FUIP::View';
 
 sub getHTML($){
 	my ($self) = @_;
+	$self->{layout} = 'week' unless defined $self->{layout};
 	return '<div data-type="fuip_calendar"
 			data-device=\'["'.join('","',@{$self->{device}}).'"]\'
+			data-layout="'.$self->{layout}.'"
 			style="height:100%;width:100%"
 			></div>';
 };
@@ -53,6 +55,12 @@ sub getStructure($) {
 		{ id => "class", type => "class", value => $class },
 		{ id => "device", type => "devices", filterfunc => "FUIP::View::Calendar::getDevicesForValueHelp" },
 		{ id => "title", type => "text", default => { type => "field", value => "device"} },
+		
+		#TODO
+		#The list layout is not really ready yet
+		#{ id => "layout", type => "text", options => [ "week", "list" ],
+		#	default => { type => "const", value => "week" } },
+		
 		{ id => "width", type => "dimension" },
 		{ id => "height", type => "dimension" },
 		{ id => "sizing", type => "sizing", options => [ "fixed", "auto", "resizable" ],

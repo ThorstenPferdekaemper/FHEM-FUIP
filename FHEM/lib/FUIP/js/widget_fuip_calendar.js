@@ -20,7 +20,7 @@ var Modul_fuip_calendar = function () {
 				event.description = decodeURIComponent(event.description);
 				event.startSec = parseInt(event.startSec);
 				event.endSec = parseInt(event.endSec);
-				event.duration = parseInt(event.duration);
+				event.duration = event.duration;
 				result.push(event);
 			}catch(e) {
 				console.log(lines[i]);
@@ -98,6 +98,26 @@ var Modul_fuip_calendar = function () {
 		};	
 		return result;
 	};	
+	
+	
+	function splitMultiDayEvents(events) {
+		// changes events so that all events are within one day
+		// i.e. events which span over midnight are split
+		// TODO: We might need the original start/end/duration in order to display it properly
+		for(var i = 0; i < events.length; i++) {
+			var eStart = new Date(events[i].startSec * 1000);
+			eStart.setHours(0,0,0,0);
+			var endOfDay = eStart.valueOf() / 1000 + 86400;
+			if(events[i].endSec > endOfDay) {
+				var newEntry = Object.assign({}, events[i]);
+				newEntry.startSec = endOfDay;
+				newEntry.durationSec = newEntry.endSec - newEntry.startSec;
+				events.push(newEntry);
+				events[i].endSec = endOfDay;
+				events[i].durationSec = events[i].endSec - events[i].startSec;
+			};	
+		};
+	};	
 
 	
 	function isToday(t) {
@@ -152,7 +172,8 @@ var Modul_fuip_calendar = function () {
 				if(isToday(event.startSec) && width == 1) {
 					html += ' class="fuip-calendar-today"';
 				};	
-				html += '><div class="fuip-color-symbol-foreground" style="background-color:var(--fuip-color-symbol-active);border:1px solid lightgrey;border-radius:10px;padding:0px 2px 0px 4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+event.summary+'</div></td>';
+				var title = event.summary.replace(/"/g, '&quot;');
+				html += '><div class="fuip-color-symbol-foreground" style="background-color:var(--fuip-color-symbol-active);border:1px solid lightgrey;border-radius:10px;padding:0px 2px 0px 4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;" title="'+title+'">'+event.summary+'</div></td>';
 			};
 			start = event.endSec;
 		};	
@@ -200,8 +221,8 @@ var Modul_fuip_calendar = function () {
 		// events
 		// ...and this is done per "component" of conflicting events
 		// i.e. result is [component][column][row]
-		// TODO: Maybe this needs to be split by days as well
 		var result = [];
+		events.sort(function(a, b){return a.startSec - b.startSec});
 		for(var compNum = 0; events.length; compNum++) {	
 			result[compNum] = [];
 			var component = extractNextOverlapComponent(events);
@@ -354,6 +375,7 @@ var Modul_fuip_calendar = function () {
 			};
 		};
 		// now place the events
+		splitMultiDayEvents(events);
 		var evtAr = solveConflicts(events);
 		for(var compNum = 0; compNum < evtAr.length; compNum++) {
 			var width = 100 / evtAr[compNum].length;
@@ -365,12 +387,14 @@ var Modul_fuip_calendar = function () {
 					// get first cell
 					var firstCell = theGrid[0][startDay];
 					var lastCell = theGrid[47][startDay];
-					// TODO: the following only works if the event does not go over midnight
 					var fullHeight = lastCell.position().top + lastCell.outerHeight() - firstCell.position().top +2;
-					var eventTop = (event.startSec - startOfWeek - startDay * 86400) * fullHeight / 86400 -1;
+					var gridIndex = Math.floor((event.startSec - startOfWeek - startDay * 86400) / 1800);
+					// var eventTop = (event.startSec - startOfWeek - startDay * 86400) * fullHeight / 86400 -1;
+					var eventTop = ((event.startSec - startOfWeek) % 1800) * fullHeight / 86400 -1;
 					var eventHeight = event.durationSec * fullHeight / 86400;
-					var eventDiv = $("<div class='fuip-color-symbol-foreground' style='background-color:var(--fuip-color-symbol-active);position:absolute;border:1px solid lightgrey;border-radius:10px;top:"+eventTop+"px;left:"+width*col+"%;height:"+eventHeight+"px;width:"+width*determineFreeWidth(evtAr[compNum],col,event)+"%;overflow:hidden;'>"+event.summary+"</div>");
-					theGrid[0][startDay].append(eventDiv);	
+					var title = event.summary.replace(/"/g, '&quot;');
+					var eventDiv = $("<div class='fuip-color-symbol-foreground' style='background-color:var(--fuip-color-symbol-active);position:absolute;border:1px solid lightgrey;border-radius:10px;z-index:1000;top:"+eventTop+"px;left:"+width*col+"%;height:"+eventHeight+"px;width:"+width*determineFreeWidth(evtAr[compNum],col,event)+"%;overflow:hidden;' title=\""+title+"\">"+event.summary+"</div>");
+					theGrid[gridIndex][startDay].append(eventDiv);	
 				};	
 			};
 		};
@@ -401,7 +425,7 @@ var Modul_fuip_calendar = function () {
 		var cmd = "get " + device + ' events limit:from='+from+'d,to='+to+'d format:custom={ sprintf(\'{"startSec":"%s", "start":"%s", "endSec":"%s", "end":"%s", "durationSec":"%s", "duration":"%s", "summary":"%s", "description":"%s", "location":"%s", "classification":"%s", "mode":"%s"}\', $t1, $T1, $t2, $T2, $d, $D, main::urlEncode($S), main::urlEncode($DS), $L, $CL,$M) }' + include; 
 		ftui.sendFhemCommand(cmd,elem)
 		.done(function(data ) {
-			renderWeek(elem,data);
+			render(elem,data);
 		})
 	};
 	
@@ -409,6 +433,7 @@ var Modul_fuip_calendar = function () {
 	function init_attr(elem) {
 			elem.initData('trigger', 'state');
 			elem.initData('weekOffset', 0);
+			elem.initData('layout', 'week');
 			// allow multiple devices with the same trigger
 			var devices = elem.data("device");
 			if(!Array.isArray(devices)) 
@@ -432,8 +457,17 @@ var Modul_fuip_calendar = function () {
     };
 	
 	
+	function render(elem,data) {
+		if(elem.data('layout') == 'list') {
+			renderList(elem,data);
+		}else{
+			renderWeek(elem,data);
+		};	
+	};	
+	
+	
 	function init_ui(elem) {
-		renderWeek(elem,"");
+		render(elem,"");
     }
 	
 
