@@ -830,7 +830,8 @@ sub renderCommonMetas($) {
 			<meta name="viewport" content="width=device-width, initial-scale='.$initialScale.', user-scalable='.$userScalable.'" />
 			<meta name="mobile-web-app-capable" content="yes" />
 			<meta name="apple-mobile-web-app-capable" content="yes" />'.
-			# <meta name="longpoll_type" content="ajax" />'. 
+			#The manifest is mainly used to allow "add to home screen" for apple devices as well
+			'<link rel="manifest" href="'.urlBase($hash).'/manifest.json" />'.
 			renderFhemwebUrl($hash).
 			($loglevel ? '<meta name="loglevel" content="'.$loglevel.'" />' : '').
 			($logtype ? '<meta name="logtype" content="'.$logtype.'" />' : '').
@@ -2196,6 +2197,17 @@ sub CGI_inner($) {
 		if(@path > 0){ shift @path };
 		return getFuipPage($hash,join('/',@path));
 	};
+	
+	#Minimal manifest file to make sure that the "standalone" (i.e. app-like) display
+	#is kept when changing pages (apple)
+	if($path[-1] eq "manifest.json") {
+		return("text/json; charset=utf-8", '
+		  {
+			"scope": "'.urlBase($hash).'/",
+			"display": "standalone"
+	      }
+		');  
+	};	
 	
 	# very special logic for tablet-ui kernel
 	if($path[0] ne "fuip" and ( $path[-1] eq "fhem-tablet-ui.js")) {
