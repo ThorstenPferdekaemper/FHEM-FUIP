@@ -116,6 +116,8 @@ var Modul_fuip_thermostat = function () {
 		elem.initData('btn-lock-device',elem.data('device'));
 		elem.initData('boost-device',elem.data('device'));
 		elem.initData('control-mode-device',elem.data('device'));
+		// HM-IP support: device type can be HM-CLASSIC or HM-IP
+		elem.initData('device-type','HM-CLASSIC');
 
 		me.addReading(elem, 'desired-temp');
 		me.addReading(elem, 'measured-temp');
@@ -123,14 +125,31 @@ var Modul_fuip_thermostat = function () {
 		me.addReading(elem, 'valve');
 
 		if(elem.data('show-control-mode') == 'on') {
-			elem.initData('control-mode-reading',elem.data('control-mode-device') + ':controlMode');
+			// HM-IP support
+			var controlModeReading;
+			if(elem.data('device-type') == 'HM-CLASSIC') {
+				controlModeReading = 'controlMode';
+			}else{  // HM-IP
+				controlModeReading = 'SET_POINT_MODE';
+			};		
+			elem.initData('control-mode-reading',elem.data('control-mode-device') + ':' + controlModeReading);
 			me.addReading(elem, 'control-mode-reading');
 		};	
 		if(elem.data('show-boost') == 'on') {
-			elem.initData('boost-reading',elem.data('boost-device') + ':controlMode');
+			// HM-IP support
+			// We could use BOOST_MODE or BOOST_TIME. The latter looks "safer"
+			var boostReading;
+			if(elem.data('device-type') == 'HM-CLASSIC') {
+				boostReading = 'controlMode';
+			}else{  // HM-IP
+				boostReading = 'BOOST_TIME';
+			};		
+			elem.initData('boost-reading',elem.data('boost-device') + ':' + boostReading);
 			me.addReading(elem, 'boost-reading');
 		};	
 		if(elem.data('show-btn-lock') == 'on') {
+			// It looks like HM-IP does not have a lock, so just keep it as it is
+			// (Or rather leave it to the user not to use it.)
 			elem.initData('btn-lock-reading',elem.data('btn-lock-device') + ':R-btnLock');
 			me.addReading(elem, 'btn-lock-reading');
 		};	
@@ -461,7 +480,14 @@ var Modul_fuip_thermostat = function () {
 					}else{
 						mode = 'auto';
 					};
-					ftui.sendFhemCommand('set ' + elem.data('control-mode-device') + ' controlMode ' + mode);	
+					// HM-IP support
+					if(elem.data('device-type') == 'HM-CLASSIC') {
+						ftui.sendFhemCommand('set ' + elem.data('control-mode-device') + ' controlMode ' + mode);	
+					}else{
+						if(mode == 'manual') mode = 'manu';
+						ftui.sendFhemCommand('set ' + elem.data('control-mode-device') + ' ' + mode);	
+					};	
+					
 				});
 				showControlModeArea.on(ftui.config.releaseEventType + ' ' + ftui.config.leaveEventType, function (e) {
 					showControlModeArea.fadeTo("fast", 1);
@@ -494,7 +520,13 @@ var Modul_fuip_thermostat = function () {
 					showBoostArea.fadeTo("fast", 0.5);
 					e.preventDefault();
 					e.stopPropagation();
-					ftui.sendFhemCommand('set ' + elem.data('boost-device') + ' controlMode boost');	
+					// HM-IP support
+					if(elem.data('device-type') == 'HM-CLASSIC') {
+						ftui.sendFhemCommand('set ' + elem.data('boost-device') + ' controlMode boost');	
+					}else{
+						ftui.sendFhemCommand('set ' + elem.data('boost-device') + ' boost');
+					};	
+						
 				});
 				showBoostArea.on(ftui.config.releaseEventType + ' ' + ftui.config.leaveEventType, function (e) {
 					showBoostArea.fadeTo("fast", 1);
@@ -720,8 +752,11 @@ var Modul_fuip_thermostat = function () {
 		// boost
 		var boostValue = getValue(elem,'boost-reading',dev,par);
 		if(boostValue != null){
-			var boostArea = elem.find("#boost");			
-			if(/boost/.test(boostValue)) {
+			var boostArea = elem.find("#boost");	
+			// HM-IP support	
+			// HM-CLASSIC: The reading contains something with "boost"
+			// HM-IP: The reading contains a number (seconds) where != 0 means "boost active"
+			if(/boost/.test(boostValue) || elem.data('device-type') == 'HM-IP' && boostValue != '0') {
 				setBackground(boostArea,boostValue);
 			}else{
 				setBackground(boostArea);

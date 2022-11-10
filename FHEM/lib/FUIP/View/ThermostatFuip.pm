@@ -108,6 +108,19 @@ sub _getHTML_getValve($$) {
 };
 
 
+sub _getHTML_getDeviceType($$) {
+	my ($self,$device) = @_;
+	
+	#Check for reading SET_POINT_MODE
+	#If SET_POINT_MODE exists, then the device is an HM-IP device, otherwise we
+	#are assuming classic HM
+  	my $devInfo = FUIP::Model::getDevice($self->{fuip}{NAME},$device,
+	                                    ['SET_POINT_MODE'],$self->getSystem());
+	return "HM-CLASSIC" unless $devInfo && exists $devInfo->{Readings}{'SET_POINT_MODE'};
+	return "HM-IP";
+};	
+
+
 sub _getHTML_getHumidity($) {
 	my ($self) = @_;
 	
@@ -150,6 +163,7 @@ sub getHTML($){
 		data-type="fuip_thermostat" 
 		data-fuip-type="fuip-thermostat"
 		data-device="'.$self->{device}.'" 
+		data-device-type="'._getHTML_getDeviceType($self,$self->{device}).'"
 		data-label="'.$self->{label}.'"
 		data-desired-temp="'.$self->{desiredTemp}{device}.':'.$self->{desiredTemp}{reading}.'" 
 		data-set="'.$self->{desiredSet}.'" 
