@@ -126,7 +126,8 @@ sub getCssClasses($$) {
 	
 	my $result = 'fuip-cell';
 	$result = 'fuip-droppable '.$result unless $locked;
-	my $backgroundImage = main::AttrVal($self->{fuip}{NAME},"styleBackgroundImage",undef);
+	#Does the page have a background image?
+	my $backgroundImage = FUIP::getBackgroundImage($self->{parent});
 	$result .= ' fuip-transparent' if $backgroundImage;	
 	my $userCssClasses = $self->getUserCssClasses();
 	$result .= ' '.$userCssClasses if $userCssClasses;

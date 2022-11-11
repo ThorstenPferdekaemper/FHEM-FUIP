@@ -623,16 +623,27 @@ sub renderHeaderHTML($$) {
 };
 
 
+sub getBackgroundImage($) {
+	#Determine background image for page
+	my ($page) = @_;
+	
+	if(exists($page->{backgroundImage}) && $page->{backgroundImage}) {
+		return $page->{backgroundImage};
+	};		
+	return main::AttrVal($page->{fuip}{NAME},"styleBackgroundImage",undef);
+};	
+
+
 sub renderBackgroundImage($$){
-	my ($hash,$pageWidth) = @_;
+	my ($page,$pageWidth) = @_;
 	my $result = '';
-	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
+	my $backgroundImage = getBackgroundImage($page);
 	if($backgroundImage) {
 		# load background picture only after (most of?) the rest has loaded
 		$result .= 
 			'<script type="text/javascript">
 				$(() =>
-					$(\'body\').css(\'background\',\'#000000 url('.urlBase($hash).'/fuip/images/'.$backgroundImage.') 0 0/';
+					$(\'body\').css(\'background\',\'#000000 url('.urlBase($page->{fuip}).'/fuip/images/'.$backgroundImage.') 0 0/';
 		if($pageWidth) {
 			$result .= $pageWidth.'px';
 		}else{	
@@ -930,7 +941,7 @@ sub renderPage($$$) {
 	$result .= renderCommonEditStyles($hash) unless $locked;				
 	$result .= "</style>\n"
 				.renderHeaderHTML($hash,$currentLocation)
-				.renderBackgroundImage($hash,$pageWidth)
+				.renderBackgroundImage($page,$pageWidth)
 				.'</head>
             <body class="'.$page->getUserCssClasses($locked).'">'
 				.renderUserHtmlBodyStart($hash,$currentLocation)."\n"
@@ -1021,7 +1032,7 @@ sub renderPageFlex($$) {
 					}
                 </style>'
 				.renderHeaderHTML($hash,$currentLocation)
-				.renderBackgroundImage($hash,$pageWidth)
+				.renderBackgroundImage($page,$pageWidth)
 				.'</head>
             <body class="'.$page->getUserCssClasses(1).'">'
 				.renderUserHtmlBodyStart($hash,$currentLocation)."\n"	
@@ -1093,7 +1104,7 @@ sub renderPageFlexMaint($$) {
 					".renderCommonEditStyles($hash).	
                 "</style>"
 				.renderHeaderHTML($hash,$currentLocation)
-				.renderBackgroundImage($hash,$pageWidth)
+				.renderBackgroundImage($page,$pageWidth)
 				.'</head>
             <body class="'.$page->getUserCssClasses(0).'">'
 				.renderUserHtmlBodyStart($hash,$currentLocation)."\n"	
@@ -1576,11 +1587,12 @@ sub renderCells($$$) {
 	my ($hash,$pageId,$locked) = @_;
 	positionsFlexToGridster($hash,$pageId);
 	findPositions($hash,$pageId);
-	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
+	my $page = $hash->{pages}{$pageId};
+	my $backgroundImage = getBackgroundImage($page);
 	# now try to render this
 	my $result;
 	my $i = 0;
-	my $cells = $hash->{pages}{$pageId}{cells};
+	my $cells = $page->{cells};
 	for my $cell (@{$cells}) {
 		my ($col,$row) = $cell->position();
 		my ($sizeX, $sizeY) = $cell->dimensions();
@@ -1686,11 +1698,12 @@ sub renderCellsFlexMaint($$$) {
 	# no region set yet? => determine
 	flexMaintFindRegion($hash,$pageId);	
 	findPositions($hash,$pageId);
-	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
+	my $page = $hash->{pages}{$pageId};
+	my $backgroundImage = getBackgroundImage($page);
 	# now try to render this
 	my $result;
 	my $i = -1;
-	my $cells = $hash->{pages}{$pageId}{cells};
+	my $cells = $page->{cells};
 	for my $cell (@{$cells}) {
 		$i++;
 		my ($col,$row) = $cell->position();
@@ -1756,7 +1769,8 @@ sub renderCellsFlex($$) {
 	my $titlebar = '<div id="fuip-flex-title">';
 	my $main = '<div id="fuip-flex-main">';
 	my $i = 0;
-	my $cells = $hash->{pages}{$pageId}{cells};
+	my $page = $hash->{pages}{$pageId};
+	my $cells = $page->{cells};
 	
 	# The "title cell" is the first of the title area
 	my $lastMenuRow = 0;
@@ -1764,7 +1778,7 @@ sub renderCellsFlex($$) {
 		my ($c,$r) = $cl->position();
 		$lastMenuRow = $r if($cl->{region} eq "menu" and $lastMenuRow < $r);
 	};
-	my $backgroundImage = main::AttrVal($hash->{NAME},"styleBackgroundImage",undef);
+	my $backgroundImage = getBackgroundImage($page);
 	for my $cell (@{$cells}) {
 		my ($col,$row) = $cell->position();
 		my ($sizeX, $sizeY) = $cell->dimensions();
@@ -3987,8 +4001,9 @@ F&uuml;r <code>snapTo</code> ist es egal, ob die Hilfslinien angezeigt werden od
 </li>
 	<li><a id="FUIP-attr-styleBackgroundImage">styleBackgroundImage</a>: Dateiname des Hintergrundbilds<br>
 	 Die Bilddatei muss sich im Verzeichnis &lt;fhem&gt;/FHEM/lib/FUIP/images befinden. (&lt;fhem&gt; steht meistens für /opt/fhem) Unterst&uuml;tzt werden jpg- und png- Dateien. Nachdem eine neue Datei hochgeladen wurde, muss man die FHEMWEB-Seite einmal neu laden, um die neue Datei verwenden zu können.<br>
-Falls das Attribut <code>pageWidth</code> gesetzt ist, dann wird die Breite des Hintergrundbilds auf die angegebene Gr&ouml;&szlig;e gesetzt. Ansonsten (ohne <code>pageWidth</code>) nimmt das Bild die Breite des Browser-Fensters ein. Die H&ouml;he des Bilds wird entsprechend skaliert, man muss sich also selbst darum k&uuml;mmern, dass das Bild ein passendes Seitenverh&auml;ltnis hat.<br>
-Bei Verwendung eines Hintergrundbilds werden die Zellenhintergr&uuml;nde automatisch auf halbtransparent gesetzt, so dass das Bild durchscheint.
+	Falls das Attribut <code>pageWidth</code> gesetzt ist, dann wird die Breite des Hintergrundbilds auf die angegebene Gr&ouml;&szlig;e gesetzt. Ansonsten (ohne <code>pageWidth</code>) nimmt das Bild die Breite des Browser-Fensters ein. Die H&ouml;he des Bilds wird entsprechend skaliert, man muss sich also selbst darum k&uuml;mmern, dass das Bild ein passendes Seitenverh&auml;ltnis hat.<br>
+	Bei Verwendung eines Hintergrundbilds werden die Zellenhintergr&uuml;nde automatisch auf halbtransparent gesetzt, so dass das Bild durchscheint.<br>
+	Es ist auch m&ouml;glich, jeder Seite ein eigenes Hintergrundbild zu geben. Daf&uuml;r speichert man alle Hintergrundbilder im Verzeichnis &lt;fhem&gt;/FHEM/lib/FUIP/images und verwendet dann das Feld <i>backgroundImage</i> im Konfigurations-Popup der Seiten (Pages) um die Hintergrundbilder zuzuordnen.
 </li>
 <li><a id="FUIP-attr-styleColor">styleColor</a>: Vordergrundfarbe (veraltet)<br>
 Dieses Attribut kann verwendet werden, um die Standard-Textfarbe (Vordergrundfarbe) f&uuml;r alle Views zu setzen. Allerdings sollten Farben in FUIP inzwischen &uuml;ber das Attribut <code>styleSchema</code> bzw. den Punkt "Colours" im Zellenmenu gesetzt werden. Das Attribut <code>styleColor</code> entspricht dem Eintrag "foreground" (bzw. der CSS-Variable --fuip-color-foreground). Ist <code>styleColor</code> gesetzt, dann &uuml;berschreibt es diesen Eintrag.
